@@ -18,12 +18,7 @@ object GalleryScanner {
     )
 
     fun scan(context: Context, onDone: (songs: Int, videos: Int) -> Unit) {
-        if (scanning) {
-            ThreadPool.onUi {
-                onDone(Library.allSongs(context).size, VideoLibrary.all(context).size)
-            }
-            return
-        }
+        if (scanning) return
         scanning = true
         ThreadPool.post {
             val dirs = listOfNotNull(

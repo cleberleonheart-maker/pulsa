@@ -85,6 +85,9 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     private var recognizing = false
     private var pendingRecognize = false
     private var resumeAfterRecognize = false
+    private var lastSpeechEndMs = 0L
+    private val RESUME_LISTENER_DELAY_MS = 800L
+    private val resumeListenerRunnable = Runnable { resumeListener() }
     private val uiHandler = Handler(Looper.getMainLooper())
     private lateinit var deleteLauncher: ActivityResultLauncher<IntentSenderRequest>
 
@@ -335,8 +338,9 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         if (Settings.djVoice(this)) {
             pauseListener()
             djVoice?.speak(text) {
+                lastSpeechEndMs = SystemClock.elapsedRealtime()
                 ThreadPool.onUi {
-                    if (!holdEnabled) resumeListener()
+                    if (!holdEnabled) uiHandler.postDelayed(resumeListenerRunnable, RESUME_LISTENER_DELAY_MS)
                     onDone?.invoke()
                 }
             }
@@ -347,6 +351,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     }
 
     private fun pauseListener() {
+        uiHandler.removeCallbacks(resumeListenerRunnable)
         if (micOn && !micShouldResume) {
             micShouldResume = true
             commandListener?.stop()
@@ -409,6 +414,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
 
     private fun resolveVoiceCommand(text: String) {
         if (isFinishing || isDestroyed) return
+        if (SystemClock.elapsedRealtime() - lastSpeechEndMs < 1500L) return
         val norm = DjCommander.norm(text)
         val hasWake = DjCommander.hasWake(norm)
         val action = DjCommander.action(norm)
