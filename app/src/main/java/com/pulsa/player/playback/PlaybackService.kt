@@ -28,6 +28,8 @@ import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Song
 import com.pulsa.player.util.AudioFx
+import com.pulsa.player.util.DjFacts
+import com.pulsa.player.util.DjVoice
 import com.pulsa.player.util.LastFm
 import com.pulsa.player.util.MusicVisualizer
 import com.pulsa.player.util.Settings
@@ -387,8 +389,32 @@ class PlaybackService : Service() {
             publishMetadata(song)
             LastFm.nowPlaying(applicationContext, song, song.durationMs)
             Playback.notifySong(song, index)
+            announceInBackground(song)
         } catch (e: Exception) {
             onTrackError()
+        }
+    }
+
+    private var bgVoice: DjVoice? = null
+    private var bgLastAnnounceId = -1L
+
+    private fun announceInBackground(song: Song) {
+        if (Playback.listener != null) return
+        if (!Settings.djRadio(this) || !Settings.djVoice(this)) return
+        if (song.id == bgLastAnnounceId) return
+        bgLastAnnounceId = song.id
+        val voice = bgVoice ?: DjVoice(
+            this, Settings.languageTag(Settings.language(this))
+        ).also { bgVoice = it }
+        val fact = DjFacts.curiosityFor(song.artist ?: "")
+        val announce = if (fact != null) {
+            "${DjFacts.leadIn(Settings.djIntensity(this))} $fact " +
+                getString(R.string.dj_voice_track, song.artist, song.title)
+        } else {
+            getString(R.string.dj_voice_track, song.artist, song.title)
+        }
+        voice.init { ready ->
+            if (ready) voice.speak(announce)
         }
     }
 
