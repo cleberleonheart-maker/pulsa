@@ -3,17 +3,24 @@ package com.pulsa.player
 import android.Manifest
 import android.content.ComponentName
 import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.media.MediaMetadataRetriever
+import android.media.MediaScannerConnection
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.MediaStore
+import android.view.ViewGroup
+import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
@@ -24,13 +31,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.model.Song
+import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.PlaybackService
 import com.pulsa.player.util.DjCommandListener
@@ -78,6 +88,12 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
 
     private var micShouldResume = false
     private var scanInFlight = false
+    private var pendingDuplicateSongs: List<Song> = emptyList()
+    private var pendingDuplicateVideos: List<Video> = emptyList()
+    private var pendingPendriveFiles: List<PendriveFile>? = null
+    private var pendingVirginAction: (() -> Unit)? = null
+    private var pendriveTotalFound = 0
+    private var pendriveDuplicatesSkipped = 0
 
     private var djVoice: DjVoice? = null
     private var commandListener: DjCommandListener? = null
@@ -90,6 +106,27 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     private val resumeListenerRunnable = Runnable { resumeListener() }
     private val uiHandler = Handler(Looper.getMainLooper())
     private lateinit var deleteLauncher: ActivityResultLauncher<IntentSenderRequest>
+    private lateinit var duplicatesLauncher: ActivityResultLauncher<IntentSenderRequest>
+
+    private val pendriveTreeLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri == null) {
+                if (isFinishing || isDestroyed) return@registerForActivityResult
+                pendingPendriveFiles = null
+                scanInFlight = false
+                resumeListener()
+                speak(getString(R.string.dj_voice_pen_none))
+                return@registerForActivityResult
+            }
+            runCatching {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+            Settings.setPendriveTreeUri(this, uri.toString())
+            scanPendriveTree(uri)
+        }
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -136,6 +173,21 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
                 finalizeDelete(song, alreadyDeleted = true)
             } else if (song != null) {
                 speak(getString(R.string.dj_voice_delete_cancel))
+            }
+        }
+
+        duplicatesLauncher = registerForActivityResult(
+            ActivityResultContracts.StartIntentSenderForResult()
+        ) { result ->
+            val songs = pendingDuplicateSongs
+            val videos = pendingDuplicateVideos
+            pendingDuplicateSongs = emptyList()
+            pendingDuplicateVideos = emptyList()
+            uiHandler.removeCallbacksAndMessages(null)
+            if (result.resultCode == RESULT_OK && (songs.isNotEmpty() || videos.isNotEmpty())) {
+                completeDuplicates(songs, videos, alreadyDeleted = true)
+            } else if (songs.isNotEmpty() || videos.isNotEmpty()) {
+                speak(getString(R.string.dj_voice_dup_failed))
             }
         }
 
@@ -261,7 +313,11 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
             REQ_STORAGE -> {
                 val granted = grantResults.isNotEmpty() &&
                     grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-                if (granted) {
+                val action = pendingVirginAction
+                pendingVirginAction = null
+                if (granted && action != null) {
+                    action()
+                } else if (granted) {
                     performScan()
                 } else {
                     speak(getString(R.string.dj_voice_scan_denied))
@@ -517,6 +573,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         micOn = true
         micBtn.setText(R.string.dj_mic_on)
         micBtn.setTextColor(ContextCompat.getColor(this, R.color.primary))
+        Playback.setMicListening(true)
         commandListener?.destroy()
         commandListener = DjCommandListener(this) { handleCommand(it) }
         commandListener?.start()
@@ -526,6 +583,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     private fun stopMic() {
         micOn = false
         micShouldResume = false
+        Playback.setMicListening(false)
         commandListener?.stop()
         micBtn.setText(R.string.dj_mic_off)
         micBtn.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
@@ -636,6 +694,8 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
                 }
             }
             "scan" -> scanLibrary()
+            "duplicates" -> findDuplicates()
+            "pendrive" -> readPendrive()
             "recognize" -> {
                 recognizeSong()
             }
@@ -657,15 +717,26 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
                 }
             }
             "confirm" -> {
-                val song = pendingDelete
-                pendingDelete = null
-                uiHandler.removeCallbacksAndMessages(null)
-                if (song != null) doDelete(song)
+                if (pendingPendriveFiles != null) {
+                    uiHandler.removeCallbacksAndMessages(null)
+                    completePendriveCopy()
+                } else {
+                    val song = pendingDelete
+                    pendingDelete = null
+                    uiHandler.removeCallbacksAndMessages(null)
+                    if (song != null) doDelete(song)
+                }
             }
             "cancel" -> {
-                pendingDelete = null
-                uiHandler.removeCallbacksAndMessages(null)
-                speak(getString(R.string.dj_voice_delete_cancel))
+                if (pendingPendriveFiles != null) {
+                    pendingPendriveFiles = null
+                    uiHandler.removeCallbacksAndMessages(null)
+                    speak(getString(R.string.dj_voice_pen_cancel))
+                } else {
+                    pendingDelete = null
+                    uiHandler.removeCallbacksAndMessages(null)
+                    speak(getString(R.string.dj_voice_delete_cancel))
+                }
             }
             "suggest" -> suggestSong()
             "identity" -> {
@@ -822,6 +893,383 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         }
     }
 
+    private fun hasMediaPermission(): Boolean =
+        if (Build.VERSION.SDK_INT >= 33) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+        } else {
+            Permissions.hasAccess(this)
+        }
+
+    private fun mediaPermissionNeeded(): Array<String> =
+        if (Build.VERSION.SDK_INT >= 33) {
+            arrayOf(Manifest.permission.READ_MEDIA_AUDIO)
+        } else {
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+
+    private fun findDuplicates() {
+        if (scanInFlight) return
+        if (!hasMediaPermission()) {
+            pendingVirginAction = { performDuplicates() }
+            ActivityCompat.requestPermissions(this, mediaPermissionNeeded(), REQ_STORAGE)
+            return
+        }
+        performDuplicates()
+    }
+
+    private fun performDuplicates() {
+        if (scanInFlight) return
+        scanInFlight = true
+        speak(getString(R.string.dj_voice_dup_search), holdEnabled = true)
+        ThreadPool.post {
+            val all = Library.allSongs(applicationContext)
+            val groups = LinkedHashMap<String, MutableList<Song>>()
+            for (s in all) {
+                if (s.title.isBlank()) continue
+                val key = "${s.artist.lowercase()}|${s.title.lowercase()}"
+                    .trim().replace("\\s+".toRegex(), " ")
+                groups.getOrPut(key) { mutableListOf() }.add(s)
+            }
+            val songsCopies = mutableListOf<Song>()
+            var songPairs = 0
+            for (list in groups.values) {
+                if (list.size > 1) {
+                    songsCopies += list.drop(1)
+                    songPairs++
+                }
+            }
+            val videos = VideoLibrary.all(applicationContext)
+            val videoGroups = LinkedHashMap<String, MutableList<Video>>()
+            for (v in videos) {
+                if (v.title.isBlank()) continue
+                val key = v.title.lowercase().trim().replace("\\s+".toRegex(), " ")
+                videoGroups.getOrPut(key) { mutableListOf() }.add(v)
+            }
+            val videoCopiesList = mutableListOf<Video>()
+            var videoPairs = 0
+            for (list in videoGroups.values) {
+                if (list.size > 1) {
+                    videoCopiesList += list.drop(1)
+                    videoPairs++
+                }
+            }
+            val pairs = songPairs + videoPairs
+            val copies = songsCopies.size + videoCopiesList.size
+            ThreadPool.onUi {
+                scanInFlight = false
+                if (isFinishing || isDestroyed) return@onUi
+                if (copies == 0) {
+                    speak(getString(R.string.dj_voice_dup_none))
+                    return@onUi
+                }
+                pendingDuplicateSongs = songsCopies
+                pendingDuplicateVideos = videoCopiesList
+                speak(getString(R.string.dj_voice_dup_found, pairs, copies))
+                if (Build.VERSION.SDK_INT >= 30) {
+                    val uris = buildList {
+                        songsCopies.forEach {
+                            add(ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, it.id))
+                        }
+                        videoCopiesList.forEach { add(VideoLibrary.contentUri(it.id)) }
+                    }
+                    val sender = runCatching {
+                        MediaStore.createDeleteRequest(contentResolver, uris)
+                    }.getOrNull()
+                    if (sender == null) {
+                        pendingDuplicateSongs = emptyList()
+                        pendingDuplicateVideos = emptyList()
+                        speak(getString(R.string.dj_voice_dup_failed))
+                        return@onUi
+                    }
+                    duplicatesLauncher.launch(IntentSenderRequest.Builder(sender).build())
+                } else {
+                    completeDuplicates(songsCopies, videoCopiesList, alreadyDeleted = false)
+                }
+            }
+        }
+    }
+
+    private fun completeDuplicates(
+        songsCopies: List<Song>,
+        videoCopiesList: List<Video>,
+        alreadyDeleted: Boolean
+    ) {
+        ThreadPool.post {
+            val deleted = if (alreadyDeleted) true else runCatching {
+                songsCopies.all { s ->
+                    contentResolver.delete(
+                        ContentUris.withAppendedId(
+                            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, s.id
+                        ),
+                        null, null
+                    ) > 0
+                } && videoCopiesList.all { v ->
+                    contentResolver.delete(VideoLibrary.contentUri(v.id), null, null) > 0
+                }
+            }.getOrDefault(false)
+            ThreadPool.onUi {
+                if (isFinishing || isDestroyed) return@onUi
+                if (deleted) {
+                    runCatching {
+                        val db = PlaylistDb.get(applicationContext)
+                        songsCopies.forEach {
+                            db.removeSongFromAll(it.id)
+                            db.removeFavorite(it.id)
+                        }
+                    }
+                    if (Playback.currentSong?.let { c -> songsCopies.any { it.id == c.id } } == true) {
+                        Playback.next()
+                    }
+                    speak(getString(R.string.dj_voice_dup_done, songsCopies.size + videoCopiesList.size))
+                } else {
+                    speak(getString(R.string.dj_voice_dup_failed))
+                }
+            }
+        }
+    }
+
+    private fun readPendrive() {
+        if (scanInFlight) return
+        if (!hasMediaPermission()) {
+            pendingVirginAction = { performPendrive() }
+            ActivityCompat.requestPermissions(this, mediaPermissionNeeded(), REQ_STORAGE)
+            return
+        }
+        performPendrive()
+    }
+
+    private fun performPendrive() {
+        if (scanInFlight) return
+        val savedTree = Settings.pendriveTreeUri(this)
+        if (savedTree.isNullOrBlank()) {
+            scanInFlight = true
+            speak(getString(R.string.dj_voice_pen_search), holdEnabled = true)
+            pendriveTreeLauncher.launch(null)
+            return
+        }
+        scanPendriveTree(runCatching { Uri.parse(savedTree) }.getOrNull() ?: return)
+    }
+
+    private fun scanPendriveTree(rootUri: Uri) {
+        if (scanInFlight) return
+        scanInFlight = true
+        speak(getString(R.string.dj_voice_pen_search), holdEnabled = true)
+        ThreadPool.post {
+            val extras = librarySongKeys()
+            val exts = setOf(
+                "mp3", "m4a", "aac", "ogg", "opus", "flac", "wav", "wma", "3gp", "mid", "midi", "amr"
+            )
+            val files = mutableListOf<PendriveFile>()
+            val seen = hashSetOf<String>()
+            fun walk(doc: DocumentFile?, depth: Int) {
+                if (doc == null || depth > 4 || files.size >= 4000) return
+                val children = runCatching { doc.listFiles() }.getOrNull() ?: return
+                for (f in children) {
+                    if (files.size >= 4000) return
+                    if (f.isDirectory) {
+                        walk(f, depth + 1)
+                    } else {
+                        val name = f.name ?: continue
+                        if (exts.contains(name.substringAfterLast('.', "").lowercase())) {
+                            if (seen.add(f.uri.toString())) {
+                                val (title, artist) = readAudioTags(f.uri)
+                                files.add(PendriveFile(f.uri, name, title, artist))
+                            }
+                        }
+                    }
+                }
+            }
+            walk(DocumentFile.fromTreeUri(applicationContext, rootUri), 0)
+            val newFiles = mutableListOf<PendriveFile>()
+            var skippedDuplicates = 0
+            val pendriveSeen = hashSetOf<String>()
+            val pendriveKeys = hashSetOf<String>()
+            for (f in files) {
+                val fname = f.name.substringBeforeLast('.').lowercase().trim()
+                if (fname.isEmpty()) {
+                    skippedDuplicates++
+                    continue
+                }
+                val title = f.title?.trim().orEmpty()
+                val artist = f.artist?.trim().orEmpty()
+                val tagKey = if (title.isNotEmpty()) "${artist.lowercase()}|${title.lowercase()}" else ""
+                val isDup =
+                    extras.names.contains(fname) ||
+                        (tagKey.isNotEmpty() && (extras.tags.contains(tagKey) || !pendriveKeys.add(tagKey))) ||
+                        !pendriveSeen.add(fname)
+                if (isDup) {
+                    skippedDuplicates++
+                } else {
+                    newFiles.add(f)
+                }
+            }
+            ThreadPool.onUi {
+                if (isFinishing || isDestroyed) {
+                    scanInFlight = false
+                    resumeListener()
+                    return@onUi
+                }
+                when {
+                    files.isEmpty() -> {
+                        scanInFlight = false
+                        speak(getString(R.string.dj_voice_pen_none))
+                    }
+                    newFiles.isEmpty() -> {
+                        scanInFlight = false
+                        speak(getString(R.string.dj_voice_pen_all_dups, files.size))
+                    }
+                    else -> {
+                        pendriveTotalFound = files.size
+                        pendriveDuplicatesSkipped = skippedDuplicates
+                        pendingPendriveFiles = newFiles
+                        uiHandler.removeCallbacksAndMessages(null)
+                        uiHandler.postDelayed({
+                            pendingPendriveFiles = null
+                        }, 60000)
+                        speak(penConfirmMessage(newFiles.size))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun penConfirmMessage(count: Int): String =
+        getString(R.string.dj_voice_pen_confirm, count)
+
+    private fun librarySongKeys(): SongKeys {
+        val names = hashSetOf<String>()
+        val tags = hashSetOf<String>()
+        runCatching {
+            Library.allSongs(applicationContext)
+        }.getOrDefault(emptyList()).forEach { s ->
+            val pathName = s.path.substringAfterLast('/').substringBeforeLast('.').lowercase().trim()
+            if (pathName.isNotEmpty()) names.add(pathName)
+            if (s.title.isNotBlank()) tags.add("${s.artist.lowercase()}|${s.title.lowercase()}")
+        }
+        return SongKeys(names, tags)
+    }
+
+    private class SongKeys(
+        val names: HashSet<String>,
+        val tags: HashSet<String>
+    )
+
+    private fun readAudioTags(uri: Uri): Pair<String?, String?> {
+        if (Build.VERSION.SDK_INT < 23) return null to null
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(applicationContext, uri)
+            val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+            val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+            title to artist
+        } catch (t: Throwable) {
+            null to null
+        } finally {
+            runCatching { retriever.release() }
+        }
+    }
+
+    private fun completePendriveCopy() {
+        val files = pendingPendriveFiles ?: return
+        pendingPendriveFiles = null
+        ThreadPool.post {
+            var copied = 0
+            for (f in files) {
+                if (copyPendriveFileToMusic(f)) copied++
+            }
+            ThreadPool.onUi {
+                if (isFinishing || isDestroyed) return@onUi
+                if (copied == 0) {
+                    speak(getString(R.string.dj_voice_pen_copy_failed))
+                    return@onUi
+                }
+                if (pendriveDuplicatesSkipped > 0) {
+                    speak(getString(
+                        R.string.dj_voice_pen_copy_done_dups,
+                        pendriveTotalFound, pendriveDuplicatesSkipped, copied
+                    ))
+                } else {
+                    speak(getString(R.string.dj_voice_pen_copy_done, copied))
+                }
+            }
+        }
+    }
+
+    private fun copyPendriveFileToMusic(f: PendriveFile): Boolean {
+        val mime = MimeTypeMap.getSingleton()
+            .getMimeTypeFromExtension(f.name.substringAfterLast('.', "").lowercase())
+            ?: "audio/mpeg"
+        val input = runCatching {
+            contentResolver.openInputStream(f.uri)
+        }.getOrNull() ?: return false
+        return try {
+            input.use { stream ->
+                if (Build.VERSION.SDK_INT >= 29) {
+                    val resolver = contentResolver
+                    val values = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, f.name)
+                        put(MediaStore.MediaColumns.MIME_TYPE, mime)
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_MUSIC + "/")
+                        put(MediaStore.Audio.Media.IS_MUSIC, 1)
+                        put(MediaStore.MediaColumns.IS_PENDING, 1)
+                        if (!f.title.isNullOrBlank()) put(MediaStore.Audio.Media.TITLE, f.title)
+                        if (!f.artist.isNullOrBlank()) put(MediaStore.Audio.Media.ARTIST, f.artist)
+                    }
+                    val uri = resolver.insert(
+                        MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY),
+                        values
+                    ) ?: return false
+                    try {
+                        resolver.openOutputStream(uri)?.use { out ->
+                            stream.copyTo(out)
+                        } ?: return false
+                        resolver.update(uri, ContentValues().apply {
+                            put(MediaStore.MediaColumns.IS_PENDING, 0)
+                        }, null, null)
+                        true
+                    } catch (t: Throwable) {
+                        runCatching { resolver.delete(uri, null, null) }
+                        false
+                    }
+                } else {
+                    val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+                    if (!dir.exists() && !dir.mkdirs()) return false
+                    val target = java.io.File(dir, helperUniqueName(f.name))
+                    target.outputStream().use { out -> stream.copyTo(out) }
+                    val ok = target.exists() && target.length() > 0
+                    if (ok) {
+                        MediaScannerConnection.scanFile(
+                            applicationContext, arrayOf(target.absolutePath), null
+                        ) { _, _ -> }
+                    }
+                    ok
+                }
+            }
+        } catch (t: Throwable) {
+            false
+        }
+    }
+
+    private fun helperUniqueName(name: String): String {
+        if (!java.io.File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), name
+            ).exists()
+        ) return name
+        val dot = name.lastIndexOf('.')
+        val base = if (dot > 0) name.substring(0, dot) else name
+        val ext = if (dot > 0) name.substring(dot) else ""
+        var i = 1
+        while (true) {
+            val candidate = "${base}_$i$ext"
+            if (!java.io.File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), candidate
+                ).exists()
+            ) return candidate
+            i++
+        }
+    }
+
     private fun doDelete(song: Song) {
         if (Build.VERSION.SDK_INT >= 30) {
             val sender = runCatching {
@@ -952,37 +1400,54 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
 
     private fun showCommandsDialog() {
         val commands = listOf(
-            R.string.dj_commands_mix,
-            R.string.dj_commands_sleep,
-            R.string.dj_commands_only,
-            R.string.dj_commands_mixwith,
-            R.string.dj_commands_repeat,
-            R.string.dj_commands_next,
-            R.string.dj_commands_prev,
-            R.string.dj_commands_skip,
-            R.string.dj_commands_dislike,
-            R.string.dj_commands_pause,
-            R.string.dj_commands_play,
-            R.string.dj_commands_fav,
-            R.string.dj_commands_info,
-            R.string.dj_commands_scan,
-            R.string.dj_commands_recognize,
-            R.string.dj_commands_delete,
-            R.string.dj_commands_duplicates,
-            R.string.dj_commands_pendrive,
-            R.string.dj_commands_suggest,
-            R.string.dj_commands_visualizer,
-            R.string.dj_commands_identity,
-            R.string.dj_commands_thanks,
-            R.string.dj_commands_hello
-        ).map { getString(it) }.toTypedArray()
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.dj_commands)
-            .setMessage(
-                getString(R.string.dj_commands_msg) + "\n\n" + commands.joinToString("\n")
-            )
-            .setPositiveButton(R.string.close, null)
-            .show()
+            R.string.dj_commands_mix to R.drawable.ic_shuffle,
+            R.string.dj_commands_sleep to R.drawable.ic_sleep,
+            R.string.dj_commands_only to R.drawable.ic_music_note,
+            R.string.dj_commands_mixwith to R.drawable.ic_queue_music,
+            R.string.dj_commands_repeat to R.drawable.ic_repeat,
+            R.string.dj_commands_next to R.drawable.ic_skip_next,
+            R.string.dj_commands_prev to R.drawable.ic_skip_prev,
+            R.string.dj_commands_skip to R.drawable.ic_skip_next,
+            R.string.dj_commands_dislike to R.drawable.ic_heart,
+            R.string.dj_commands_pause to R.drawable.ic_pause,
+            R.string.dj_commands_play to R.drawable.ic_play,
+            R.string.dj_commands_fav to R.drawable.ic_favorite,
+            R.string.dj_commands_info to R.drawable.ic_album,
+            R.string.dj_commands_scan to R.drawable.ic_search,
+            R.string.dj_commands_recognize to R.drawable.ic_mic,
+            R.string.dj_commands_delete to R.drawable.ic_delete,
+            R.string.dj_commands_duplicates to R.drawable.ic_copy,
+            R.string.dj_commands_pendrive to R.drawable.ic_download,
+            R.string.dj_commands_suggest to R.drawable.ic_play_circle,
+            R.string.dj_commands_visualizer to R.drawable.ic_dj,
+            R.string.dj_commands_identity to R.drawable.virgin_avatar,
+            R.string.dj_commands_thanks to R.drawable.ic_favorite,
+            R.string.dj_commands_hello to R.drawable.ic_mic
+        )
+        val accent = ContextCompat.getColor(this, R.color.primary)
+        val view = layoutInflater.inflate(R.layout.dialog_voice_commands, null)
+        val container = view.findViewById<ViewGroup>(R.id.commands_container)
+        for ((strRes, iconRes) in commands) {
+            val row = layoutInflater.inflate(R.layout.item_command, container, false)
+            val text = getString(strRes)
+            val dash = text.indexOf(" — ")
+            row.findViewById<TextView>(R.id.command_phrase).text =
+                if (dash > 0) text.substring(0, dash).trim() else text
+            row.findViewById<TextView>(R.id.command_desc).text =
+                if (dash > 0) text.substring(dash + 3).trim() else ""
+            val icon = row.findViewById<ImageView>(R.id.command_icon)
+            icon.setImageResource(iconRes)
+            if (iconRes != R.drawable.virgin_avatar) icon.setColorFilter(accent)
+            container.addView(row)
+        }
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .setCancelable(true)
+            .create()
+        view.findViewById<MaterialButton>(R.id.commands_close).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
     }
 
     private fun chooseIntensity() {
@@ -1136,4 +1601,11 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         private const val REQ_MIC = 1001
         private const val REQ_STORAGE = 1002
     }
+
+    private data class PendriveFile(
+        val uri: Uri,
+        val name: String,
+        val title: String?,
+        val artist: String?
+    )
 }

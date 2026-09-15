@@ -451,6 +451,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             virginOn = false
             syncVirginIcon()
         }
+        Playback.setMicListening(false)
         virginListener?.stop()
         virginVoice?.stop()
         super.onStop()
@@ -548,6 +549,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private fun startVirgin() {
         virginOn = true
         syncVirginIcon()
+        Playback.setMicListening(true)
         virginListener?.destroy()
         virginListener = DjCommandListener(this) { handleVirginCommand(it) }
         virginListener?.start()
@@ -563,6 +565,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private fun stopVirgin(silent: Boolean) {
         virginOn = false
         virginHandler.removeCallbacks(resumeListenerRunnable)
+        Playback.setMicListening(false)
         virginListener?.stop()
         syncVirginIcon()
         if (!silent) virginSpeak(getString(R.string.dj_voice_goodbye))
@@ -601,7 +604,6 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     private fun doResumeVirginListener() {
         if (isFinishing || isDestroyed || !virginOn || virginSpeechPaused) return
-        virginLastSpeechEndMs = SystemClock.elapsedRealtime()
         virginListener?.start()
     }
 
@@ -646,6 +648,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
                 return@init
             }
             voice.speak(text) {
+                virginLastSpeechEndMs = SystemClock.elapsedRealtime()
                 ThreadPool.onUi {
                     if (!hold) resumeVirginSpeech()
                 }

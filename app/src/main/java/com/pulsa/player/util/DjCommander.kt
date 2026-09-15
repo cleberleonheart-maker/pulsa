@@ -78,9 +78,11 @@ object DjCommander {
         norm.contains("stem") || norm.contains("separ") -> "stems"
         norm.contains("buscar") || norm.contains("busca") || norm.contains("novidade") ||
             norm.contains("importar") || norm.contains("escanear") || norm.contains("scan") -> "scan"
-        norm.contains("repetid") || norm.contains("duplic") || norm.contains("copias") -> "duplicates"
-        norm.contains("pendrive") || norm.contains("pen drive") || norm.contains("cartao") ||
-            norm.contains("cartão") || norm.contains("usb") -> "pendrive"
+        norm.contains("repetid") || norm.contains("repitid") || norm.contains("repeti") ||
+            norm.contains("duplic") || norm.contains("copias") || norm.contains("iguais") -> "duplicates"
+        norm.contains("pendrive") || norm.contains("pendr") || norm.contains("pen drive") ||
+            norm.contains("pen-drive") || norm.contains("pen d") || norm.contains("cartao") ||
+            norm.contains("usb") || norm.contains("memoria") -> "pendrive"
         norm.contains("confirm") || norm == "sim" || norm == "pode" ||
             norm.contains("pode apagar") || norm.contains("pode excluir") ||
             norm.contains("pode deleta") -> "confirm"

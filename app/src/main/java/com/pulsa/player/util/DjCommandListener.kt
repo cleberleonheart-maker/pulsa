@@ -30,7 +30,9 @@ class DjCommandListener(
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var lastStartMs = 0L
-    private val minGapMs = 2000L
+    private val minGapMs = 3000L
+    private val errorRetryMs = 1500L
+    private val retryRunnable = Runnable { restart() }
 
     init {
         recognizer?.setRecognitionListener(object : RecognitionListener {
@@ -42,12 +44,17 @@ class DjCommandListener(
             override fun onError(error: Int) {
                 if (!listening) return
                 when (error) {
-                    // Erros transitorios: reinicia de novo (com delay pra nao travar a CPU)
+                    // Erros transitorios: reinicia com um cooldown maior para nao
+                    // ficar bipando sem parar (cada reinicio re-aciona o bip do reconhecedor).
                     SpeechRecognizer.ERROR_NO_MATCH,
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> mainHandler.postDelayed({ restart() }, 350)
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                        mainHandler.removeCallbacks(retryRunnable)
+                        mainHandler.postDelayed(retryRunnable, errorRetryMs)
+                    }
                     // Erros fatais: para de ouvir e avisa a UI uma unica vez
                     else -> {
                         listening = false
+                        mainHandler.removeCallbacks(retryRunnable)
                         mainHandler.post {
                             if (!reportedUnsupported) {
                                 reportedUnsupported = true
@@ -89,11 +96,13 @@ class DjCommandListener(
 
     fun stop() {
         listening = false
+        mainHandler.removeCallbacks(retryRunnable)
         runCatching { recognizer?.cancel() }
     }
 
     fun destroy() {
         listening = false
+        mainHandler.removeCallbacks(retryRunnable)
         runCatching { recognizer?.cancel() }
         runCatching { recognizer?.destroy() }
     }

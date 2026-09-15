@@ -70,6 +70,11 @@ class PlaybackService : Service() {
     private var audioManager: AudioManager? = null
     private var ducked = false
     private var pauseOnFocusLoss = false
+
+    @Volatile
+    private var micListening = false
+
+    private var micDucked = false
     private val mainHandler = Handler(Looper.getMainLooper())
     private val fadeHandler = Handler(Looper.getMainLooper())
     private var fadeOutRunnable: Runnable? = null
@@ -92,7 +97,12 @@ class PlaybackService : Service() {
                     runCatching { audioManager?.abandonAudioFocus(this) }
                 }
                 AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                    if (isPlaying) {
+                    if (micListening) {
+                        // Reconhecedor de voz da Virgin ativo: abaixa a musica em vez de pausar.
+                        micDucked = true
+                        runCatching { mp?.setVolume(0.35f, 0.35f) }
+                        mainHandler.removeCallbacks(panRunnable)
+                    } else if (isPlaying) {
                         pauseOnFocusLoss = true
                         pause()
                     }
@@ -103,9 +113,10 @@ class PlaybackService : Service() {
                     mainHandler.removeCallbacks(panRunnable)
                 }
                 AudioManager.AUDIOFOCUS_GAIN -> {
-                    if (ducked) {
+                    if (micDucked || ducked) {
+                        micDucked = false
                         ducked = false
-                        updateEightD()
+                        restoreVolume()
                     }
                     if (pauseOnFocusLoss) {
                         pauseOnFocusLoss = false
@@ -130,6 +141,39 @@ class PlaybackService : Service() {
     private fun abandonAudioFocus() {
         val am = audioManager ?: return
         runCatching { am.abandonAudioFocus(focusListener) }
+    }
+
+    private fun restoreVolume() {
+        if (ducked) {
+            runCatching { mp?.setVolume(0.25f, 0.25f) }
+            return
+        }
+        if (micListening) {
+            runCatching { mp?.setVolume(0.35f, 0.35f) }
+            return
+        }
+        updateEightD()
+        if (!Settings.audio8d(this) || !isPlaying) {
+            runCatching { mp?.setVolume(1f, 1f) }
+        }
+    }
+
+    /** A Virgin esta ouvindo via microfone: baixa (nao pausa) a musica. */
+    fun setMicListening(on: Boolean) {
+        if (micListening == on) return
+        micListening = on
+        mainHandler.post {
+            if (on) {
+                if (isPlaying) {
+                    micDucked = true
+                    runCatching { mp?.setVolume(0.35f, 0.35f) }
+                    mainHandler.removeCallbacks(panRunnable)
+                }
+            } else if (micDucked) {
+                micDucked = false
+                restoreVolume()
+            }
+        }
     }
 
     private var panAngle = 0.0
