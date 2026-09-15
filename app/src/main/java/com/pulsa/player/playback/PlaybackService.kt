@@ -25,6 +25,7 @@ import androidx.media.app.NotificationCompat.MediaStyle
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
 import com.pulsa.player.data.ArtLoader
+import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Song
 import com.pulsa.player.util.AudioFx
 import com.pulsa.player.util.LastFm
@@ -265,6 +266,27 @@ class PlaybackService : Service() {
         queue = songs.toList()
         index = startIndex.coerceIn(0, queue.size - 1)
         prepareCurrent()
+    }
+
+    fun refreshCurrentMeta() {
+        val song = currentSong ?: return
+        val meta = runCatching {
+            PlaylistDb.get(this).songMeta(song.id)
+        }.getOrNull() ?: return
+        if (meta.title.isBlank()) return
+        val i = index.coerceAtLeast(0)
+        if (i >= queue.size) return
+        val updated = song.copy(
+            title = meta.title,
+            artist = if (meta.artist.isBlank()) song.artist else meta.artist,
+            album = if (meta.album.isBlank()) song.album else meta.album
+        )
+        val q = queue.toMutableList()
+        q[i] = updated
+        queue = q
+        publishMetadata(updated)
+        updateNotification()
+        Playback.notifySong(updated, i)
     }
 
     fun toggle() {

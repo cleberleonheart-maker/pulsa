@@ -402,6 +402,8 @@ class PlaylistDb private constructor(context: Context) :
         return out
     }
 
+    fun songMeta(songId: Long): SongMeta? = metaOverrides()[songId]
+
     fun songs(playlistId: Long): List<Song> {
         val out = mutableListOf<Song>()
         val db = readableDatabase

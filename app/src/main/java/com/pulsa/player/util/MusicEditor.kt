@@ -15,6 +15,7 @@ import com.pulsa.player.MainActivity
 import com.pulsa.player.R
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Song
+import com.pulsa.player.playback.Playback
 
 object MusicEditor {
 
@@ -100,7 +101,6 @@ object MusicEditor {
             }.getOrDefault(false)
             val dbSaved = runCatching {
                 PlaylistDb.get(context).updateSongMeta(song.id, title, artist, album ?: song.album)
-                PlaylistDb.get(context).clearMetaOverride(song.id)
                 true
             }.getOrDefault(false)
             if (song.path.isNotBlank()) {
@@ -110,7 +110,10 @@ object MusicEditor {
                     )
                 }
             }
-            ThreadPool.onUi { onDone(updated || dbSaved) }
+            ThreadPool.onUi {
+                if (updated || dbSaved) Playback.refreshCurrentMeta()
+                onDone(updated || dbSaved)
+            }
         }
     }
 

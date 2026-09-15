@@ -27,6 +27,10 @@ object Playback {
         service?.refreshFx()
     }
 
+    fun refreshCurrentMeta() {
+        service?.refreshCurrentMeta()
+    }
+
     fun start(songs: List<Song>, startIndex: Int) {
         service?.start(songs, startIndex)
     }
