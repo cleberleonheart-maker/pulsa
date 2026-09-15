@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/ic_search"
+        android:title="@string/search"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_sort"
+        android:icon="@drawable/ic_sort"
+        android:title="@string/sort_alphabetical"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_radio"
+        android:icon="@drawable/ic_radio"
+        android:title="@string/radio"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_dj"
+        android:icon="@drawable/ic_dj"
+        android:title="@string/dj_title"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_settings"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/settings"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_add"
+        android:icon="@drawable/ic_add"
+        android:title="@string/new_playlist"
+        android:visible="false"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_playlists"
+        android:icon="@drawable/ic_queue_music"
+        android:title="@string/tab_playlists"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_trends"
+        android:title="@string/trends_title"
+        app:showAsAction="never" />
+</menu>

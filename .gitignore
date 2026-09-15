@@ -1,0 +1,14 @@
+.gradle/
+build/
+app/build/
+local.properties
+.webapp/
+web/
+.netlify/
+*.apk
+*.zip
+captures/
+.cxx/
+.namespace/
+.idea/
+.kotlin/

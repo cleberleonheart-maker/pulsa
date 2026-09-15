@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#0B0918</color>
+    <color name="surface">#161226</color>
+    <color name="surface_variant">#241E3D</color>
+    <color name="glass_fill">#1E1833</color>
+    <color name="neon_border">#4D4A8C</color>
+    <color name="neon_border_soft">#33FFFFFF</color>
+    <color name="glow_start">#66C77DFF</color>
+    <color name="primary">#C77DFF</color>
+    <color name="primary_dark">#9D4EDD</color>
+    <color name="on_primary">#1A0B2E</color>
+    <color name="primary_blue">#4CC9F0</color>
+    <color name="primary_blue_dark">#3AA8E0</color>
+    <color name="primary_green">#2BE7A3</color>
+    <color name="primary_green_dark">#1FC98C</color>
+    <color name="primary_amber">#FFD166</color>
+    <color name="primary_amber_dark">#FFB703</color>
+    <color name="primary_red">#FF5C7A</color>
+    <color name="primary_red_dark">#E63946</color>
+    <color name="primary_pink">#FF6EB4</color>
+    <color name="primary_pink_dark">#E0489C</color>
+    <color name="primary_teal">#35E8D8</color>
+    <color name="primary_teal_dark">#18C5BE</color>
+    <color name="text_primary">#F3EEFF</color>
+    <color name="text_secondary">#A9A1CE</color>
+    <color name="divider">#332C55</color>
+    <color name="white">#FFFFFF</color>
+    <color name="yellow">#FFEB3B</color>
+    <color name="yellow_dark">#F9A825</color>
+    <color name="video_bg">#F5F5F5</color>
+    <color name="video_text">#1A1A1A</color>
+    <color name="video_text2">#6B6B6B</color>
+</resources>
