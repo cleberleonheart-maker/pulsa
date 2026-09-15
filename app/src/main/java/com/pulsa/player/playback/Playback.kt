@@ -63,6 +63,10 @@ object Playback {
         service?.setRepeatAll(value)
     }
 
+    fun setRepeatOne(value: Boolean) {
+        service?.setRepeatOne(value)
+    }
+
     fun cycleRepeat() {
         service?.cycleRepeat()
     }

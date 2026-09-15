@@ -252,6 +252,11 @@ class PlaybackService : Service() {
         repeatAll = value
     }
 
+    fun setRepeatOne(value: Boolean) {
+        repeatOne = value
+        if (value) repeatAll = false
+    }
+
     fun cycleRepeat() {
         when {
             repeatOne -> repeatOne = false

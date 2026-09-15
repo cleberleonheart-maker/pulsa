@@ -308,6 +308,10 @@
     <string name="dj_commands">Comandos de voz</string>
     <string name="dj_commands_msg">Diga "Virgin" antes de cada comando. Ex.: "Virgin, próxima música".</string>
     <string name="dj_commands_mix">"Virgin, mix" — prepara um mix novo</string>
+    <string name="dj_commands_sleep">"Virgin, toca uma pra eu dormir" — fila calma e curta</string>
+    <string name="dj_commands_only">"Virgin, toca só [artista]" — só aquele artista</string>
+    <string name="dj_commands_mixwith">"Virgin, mistura com [artista]" — intercala aquele artista no mix</string>
+    <string name="dj_commands_repeat">"Virgin, repete essa" — liga/desliga repetir a música atual</string>
     <string name="dj_commands_next">"Virgin, próxima / passa" — toca a próxima</string>
     <string name="dj_commands_prev">"Virgin, volta / anterior" — toca a anterior</string>
     <string name="dj_commands_skip">"Virgin, pula" — pula a música atual</string>
@@ -335,6 +339,13 @@
     <string name="dj_voice_delete_cancel">Ok, não vou apagar nada.</string>
     <string name="dj_voice_delete_no_song">Não tem nenhuma música tocando para apagar.</string>
     <string name="dj_voice_delete_failed">Não consegui apagar. Esse arquivo pode ser protegido pelo sistema.</string>
+    <string name="dj_voice_repeat_on">Combinado! Repetindo essa música.</string>
+    <string name="dj_voice_repeat_off">Ok, parei de repetir essa música.</string>
+    <string name="dj_voice_sleep">Agora vai! Preparei uma seleção calma e curta de %1$d músicas para você dormir.</string>
+    <string name="dj_voice_only">Só %1$s daqui pra frente! São %2$d músicas.</string>
+    <string name="dj_voice_only_none">Não encontrei nenhum artista chamado %1$s.</string>
+    <string name="dj_voice_mixwith">Boa! Misturei %1$s no mix, com %2$d músicas no total.</string>
+    <string name="dj_voice_mixwith_none">Não encontrei nenhum artista chamado %1$s para misturar.</string>
     <string name="dj_voice_dup_search">Vou procurar músicas e vídeos repetidos na sua coleção e apagar as cópias.</string>
     <string name="dj_voice_dup_none">Ótima notícia! Não encontrei nenhuma música ou vídeo repetido.</string>
     <string name="dj_voice_dup_found">Achei %1$d grupos de músicas e vídeos repetidos, totalizando %2$d cópias. Vou apagar as repetidas e deixar só a original.</string>

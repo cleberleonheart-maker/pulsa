@@ -64,6 +64,7 @@ import com.pulsa.player.util.Changelog
 import com.pulsa.player.util.CrashLogger
 import com.pulsa.player.util.DjCommandListener
 import com.pulsa.player.util.DjCommander
+import com.pulsa.player.util.DjEngine
 import com.pulsa.player.util.DjFacts
 import com.pulsa.player.util.DjLearn
 import com.pulsa.player.util.DjRecognizer
@@ -652,6 +653,116 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         }
     }
 
+    private fun findVirginArtist(query: String?): String? {
+        val q = DjCommander.norm(query.orEmpty()).trim()
+        if (q.isEmpty()) return null
+        val names = runCatching {
+            Library.allSongs(this).map { it.artist }.toSet()
+        }.getOrDefault(emptySet())
+        var best: String? = null
+        var bestScore = -1
+        for (name in names) {
+            val n = DjCommander.norm(name)
+            if (n.isEmpty()) continue
+            val score = when {
+                n == q -> 1000
+                n.contains(q) -> 100 + q.length
+                q.contains(n) && q.length >= n.length -> 50 + n.length
+                else -> -1
+            }
+            if (score > bestScore) {
+                bestScore = score
+                best = name
+            }
+        }
+        return best
+    }
+
+    private fun virgSleepMix() {
+        ThreadPool.post {
+            val songs = Library.allSongs(applicationContext)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi { virginSpeak(getString(R.string.dj_voice_only_none, "")) }
+                return@post
+            }
+            val favIds = runCatching {
+                PlaylistDb.get(applicationContext).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val learn = DjLearn.learn(applicationContext)
+            val set = DjEngine.build(
+                songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.CALM, learn,
+                maxSize = 8
+            )
+            ThreadPool.onUi {
+                if (set.isEmpty()) {
+                    virginSpeak(getString(R.string.dj_voice_only_none, ""))
+                    return@onUi
+                }
+                Telemetry.log(this, "Virgin sleep n=${set.size}")
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(true)
+                Playback.start(set, 0)
+                virginSpeak(getString(R.string.dj_voice_sleep, set.size))
+            }
+        }
+    }
+
+    private fun virgArtistOnly(query: String?) {
+        val artist = findVirginArtist(query)
+        if (artist == null) {
+            virginSpeak(getString(R.string.dj_voice_only_none, query ?: ""))
+            return
+        }
+        ThreadPool.post {
+            val songs = Library.songsByArtist(applicationContext, artist)
+            ThreadPool.onUi {
+                if (songs.isEmpty()) {
+                    virginSpeak(getString(R.string.dj_voice_only_none, artist))
+                    return@onUi
+                }
+                Telemetry.log(this, "Virgin only artist=$artist n=${songs.size}")
+                Playback.setShuffle(true)
+                Playback.setRepeatAll(true)
+                Playback.start(songs.shuffled(), 0)
+                virginSpeak(getString(R.string.dj_voice_only, artist, songs.size))
+            }
+        }
+    }
+
+    private fun virgMixWithArtist(query: String?) {
+        val artist = findVirginArtist(query)
+        if (artist == null) {
+            virginSpeak(getString(R.string.dj_voice_mixwith_none, query ?: ""))
+            return
+        }
+        ThreadPool.post {
+            val songs = Library.allSongs(applicationContext)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi { virginSpeak(getString(R.string.dj_voice_only_none, "")) }
+                return@post
+            }
+            val favIds = runCatching {
+                PlaylistDb.get(applicationContext).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val learn = DjLearn.learn(applicationContext)
+            val set = DjEngine.build(
+                songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.BALANCED, learn,
+                includeArtist = artist
+            )
+            ThreadPool.onUi {
+                if (set.isEmpty()) {
+                    virginSpeak(getString(R.string.dj_voice_only_none, ""))
+                    return@onUi
+                }
+                Telemetry.log(this, "Virgin mixwith artist=$artist n=${set.size}")
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(true)
+                Playback.start(set, 0)
+                virginSpeak(getString(R.string.dj_voice_mixwith, artist, set.size))
+            }
+        }
+    }
+
     private fun handleVirginCommand(text: String) {
         if (text == "__unsupported__") {
             stopVirgin(silent = false)
@@ -678,6 +789,16 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         }
         when (action) {
             "mix" -> virginSpeak(getString(R.string.dj_voice_mix_main))
+            "sleep" -> virgSleepMix()
+            "repeat" -> {
+                val on = !Playback.repeatOne
+                Playback.setRepeatOne(on)
+                virginSpeak(getString(
+                    if (on) R.string.dj_voice_repeat_on else R.string.dj_voice_repeat_off
+                ))
+            }
+            "only" -> virgArtistOnly(DjCommander.onlyArtist(norm))
+            "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong
                 if (action == "dislike" && cur != null) {

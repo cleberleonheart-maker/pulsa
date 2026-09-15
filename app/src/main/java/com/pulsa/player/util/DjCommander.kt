@@ -16,7 +16,43 @@ object DjCommander {
         norm.contains("virgin") || norm.contains("virgem") ||
             norm.contains("virgene") || norm.contains("vargin")
 
+    fun onlyArtist(norm: String): String? {
+        val markers = listOf(
+            "toca so ", "toque so ", "tocar so ", "toca somente ", "toque somente ",
+            "tocar somente ", "somente ", "apenas "
+        )
+        for (m in markers) {
+            val i = norm.indexOf(m)
+            if (i >= 0) {
+                val rest = norm.substring(i + m.length).trim().trim(',', '.', '!', '?', ' ')
+                if (rest.isNotEmpty()) return rest
+            }
+        }
+        return null
+    }
+
+    fun mixArtist(norm: String): String? {
+        val markers = listOf("mistura com ", "misturar com ", "mixar com ", "mixa com ")
+        for (m in markers) {
+            val i = norm.indexOf(m)
+            if (i >= 0) {
+                val rest = norm.substring(i + m.length).trim().trim(',', '.', '!', '?', ' ')
+                if (rest.isNotEmpty()) return rest
+            }
+        }
+        return null
+    }
+
+    private fun sleepMatch(norm: String): Boolean =
+        listOf("dormir", "dorme", "dormi", "sono", "relaxar", "relaxa", "calma", "calmo",
+            "descansar", "acalma", "tranquila", "tranquilo", "modo sono").any { norm.contains(it) }
+
     fun action(norm: String): String? = when {
+        sleepMatch(norm) -> "sleep"
+        norm.contains("repete essa") || norm.contains("repete a musica") ||
+            norm.contains("repetir essa") || norm.contains("repita essa") -> "repeat"
+        onlyArtist(norm) != null -> "only"
+        mixArtist(norm) != null -> "mixwith"
         norm.contains("mix") || norm.contains("mistura") || norm.contains("mixa") -> "mix"
         norm.contains("odia") || norm.contains("odeio") || norm.contains("nao gostei") -> "dislike"
         norm.contains("pula") || norm.contains("pular") || norm.contains("pule") ||

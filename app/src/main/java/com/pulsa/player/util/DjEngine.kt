@@ -25,7 +25,9 @@ object DjEngine {
         favoriteIds: Set<Long>,
         source: Source,
         intensity: Intensity,
-        learn: Learn = Learn()
+        learn: Learn = Learn(),
+        maxSize: Int = Int.MAX_VALUE,
+        includeArtist: String? = null
     ): List<Song> {
         val base = when (source) {
             Source.FAVORITES -> pool.filter { it.id in favoriteIds }
@@ -87,6 +89,32 @@ object DjEngine {
             while (recentArtists.size > intensity.artistSpread) recentArtists.removeFirst()
             lastDurBin = durBin(pick)
         }
-        return used.toList()
+        return applyConstraints(used.toList(), pool, includeArtist).take(maxSize)
+    }
+
+    private fun applyConstraints(base: List<Song>, pool: List<Song>, includeArtist: String?): List<Song> {
+        val artistKey = includeArtist?.let { DjCommander.norm(it).trim() }
+        if (artistKey.isNullOrEmpty()) return base
+        val featured = pool.filter { song ->
+            DjCommander.norm(song.artist).trim() == artistKey
+        }.shuffled()
+        if (featured.isEmpty()) return base
+        val featuredIds = featured.map { it.id }.toSet()
+        val rest = base.filter { it.id !in featuredIds }
+        val out = ArrayList<Song>(rest.size + featured.size)
+        val spacing = 3
+        var fi = 0
+        var count = 0
+        for (song in rest) {
+            if (fi < featured.size && count >= spacing) {
+                out.add(featured[fi++])
+                count = 0
+            } else {
+                out.add(song)
+                count++
+            }
+        }
+        while (fi < featured.size) out.add(featured[fi++])
+        return out
     }
 }

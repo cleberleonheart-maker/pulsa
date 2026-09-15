@@ -315,6 +315,134 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         }
     }
 
+    private fun findArtist(query: String?): String? {
+        val q = DjCommander.norm(query.orEmpty()).trim()
+        if (q.isEmpty()) return null
+        val names = runCatching {
+            Library.allSongs(this).map { it.artist }.toSet()
+        }.getOrDefault(emptySet())
+        var best: String? = null
+        var bestScore = -1
+        for (name in names) {
+            val n = DjCommander.norm(name)
+            if (n.isEmpty()) continue
+            val score = when {
+                n == q -> 1000
+                n.contains(q) -> 100 + q.length
+                q.contains(n) && q.length >= n.length -> 50 + n.length
+                else -> -1
+            }
+            if (score > bestScore) {
+                bestScore = score
+                best = name
+            }
+        }
+        return best
+    }
+
+    private fun startSleepMix() {
+        if (!Permissions.hasAccess(this)) {
+            Toast.makeText(this, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+            return
+        }
+        ThreadPool.post {
+            val songs = Library.allSongs(this)
+            val favIds = runCatching {
+                PlaylistDb.get(applicationContext).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val learn = DjLearn.learn(applicationContext)
+            val set = DjEngine.build(
+                songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.CALM, learn,
+                maxSize = 8
+            )
+            ThreadPool.onUi {
+                if (set.isEmpty()) {
+                    Toast.makeText(this, R.string.dj_empty, Toast.LENGTH_LONG).show()
+                    return@onUi
+                }
+                Telemetry.log(this, "DJ Virgin sleep n=${set.size}")
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(true)
+                djActive = true
+                learnId = -1L
+                lastCompleted = false
+                suppressNextLearnSkip = false
+                Playback.start(set, 0)
+                resetCrossfader()
+                render()
+                speak(getString(R.string.dj_voice_sleep, set.size))
+            }
+        }
+    }
+
+    private fun startArtistOnly(query: String?) {
+        val artist = findArtist(query)
+        if (artist == null) {
+            speak(getString(R.string.dj_voice_only_none, query ?: ""))
+            return
+        }
+        ThreadPool.post {
+            val songs = Library.songsByArtist(this, artist)
+            ThreadPool.onUi {
+                if (songs.isEmpty()) {
+                    speak(getString(R.string.dj_voice_only_none, artist))
+                    return@onUi
+                }
+                Telemetry.log(this, "DJ Virgin only artist=$artist n=${songs.size}")
+                Playback.setShuffle(true)
+                Playback.setRepeatAll(true)
+                djActive = true
+                learnId = -1L
+                lastCompleted = false
+                suppressNextLearnSkip = false
+                Playback.start(songs.shuffled(), 0)
+                resetCrossfader()
+                render()
+                speak(getString(R.string.dj_voice_only, artist, songs.size))
+            }
+        }
+    }
+
+    private fun startMixWithArtist(query: String?) {
+        val artist = findArtist(query)
+        if (artist == null) {
+            speak(getString(R.string.dj_voice_mixwith_none, query ?: ""))
+            return
+        }
+        if (!Permissions.hasAccess(this)) {
+            Toast.makeText(this, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+            return
+        }
+        ThreadPool.post {
+            val songs = Library.allSongs(this)
+            val favIds = runCatching {
+                PlaylistDb.get(applicationContext).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val learn = DjLearn.learn(applicationContext)
+            val set = DjEngine.build(
+                songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.BALANCED, learn,
+                includeArtist = artist
+            )
+            ThreadPool.onUi {
+                if (set.isEmpty()) {
+                    Toast.makeText(this, R.string.dj_empty, Toast.LENGTH_LONG).show()
+                    return@onUi
+                }
+                Telemetry.log(this, "DJ Virgin mixwith artist=$artist n=${set.size}")
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(true)
+                djActive = true
+                learnId = -1L
+                lastCompleted = false
+                suppressNextLearnSkip = false
+                Playback.start(set, 0)
+                resetCrossfader()
+                render()
+                speak(getString(R.string.dj_voice_mixwith, artist, set.size))
+            }
+        }
+    }
+
     private fun toggleVoice() {
         val enabled = !Settings.djVoice(this)
         Settings.setDjVoice(this, enabled)
@@ -431,6 +559,20 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
             "mix" -> {
                 speak(getString(R.string.dj_voice_mix))
                 startMix()
+            }
+            "sleep" -> startSleepMix()
+            "repeat" -> {
+                val on = !Playback.repeatOne
+                Playback.setRepeatOne(on)
+                speak(getString(
+                    if (on) R.string.dj_voice_repeat_on else R.string.dj_voice_repeat_off
+                ))
+            }
+            "only" -> {
+                startArtistOnly(DjCommander.onlyArtist(norm))
+            }
+            "mixwith" -> {
+                startMixWithArtist(DjCommander.mixArtist(norm))
             }
             "skip" -> {
                 val cur = Playback.currentSong
@@ -811,6 +953,10 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     private fun showCommandsDialog() {
         val commands = listOf(
             R.string.dj_commands_mix,
+            R.string.dj_commands_sleep,
+            R.string.dj_commands_only,
+            R.string.dj_commands_mixwith,
+            R.string.dj_commands_repeat,
             R.string.dj_commands_next,
             R.string.dj_commands_prev,
             R.string.dj_commands_skip,
