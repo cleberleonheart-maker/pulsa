@@ -191,7 +191,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
 
         djVoice = DjVoice(this, Settings.languageTag(Settings.language(this))).also { vm ->
             vm.init { _ ->
-                if (Settings.djVoice(this)) {
+                if (Settings.djVoice(this) && savedInstanceState == null) {
                     vm.speak(getString(R.string.dj_voice_hello))
                 }
             }
@@ -878,6 +878,15 @@ suppressNextLearnSkip = false
                                             getString(R.string.dj_voice_track, song?.artist, song?.title)
                                     }
                                 }
+            }
+        }
+        if (!djActive && announce == null && Settings.djRadio(this)) {
+            val fact = DjFacts.curiosityFor(song?.artist ?: "")
+            announce = if (fact != null) {
+                "${DjFacts.leadIn(intensity)} $fact " +
+                    getString(R.string.dj_voice_track, song?.artist, song?.title)
+            } else {
+                getString(R.string.dj_voice_track, song?.artist, song?.title)
             }
         }
         if (announce != null) speak(announce)
