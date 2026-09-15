@@ -406,15 +406,34 @@ class PlaybackService : Service() {
         val voice = bgVoice ?: DjVoice(
             this, Settings.languageTag(Settings.language(this))
         ).also { bgVoice = it }
-        val fact = DjFacts.curiosityFor(song.artist ?: "")
-        val announce = if (fact != null) {
-            "${DjFacts.leadIn(Settings.djIntensity(this))} $fact " +
-                getString(R.string.dj_voice_track, song.artist, song.title)
-        } else {
-            getString(R.string.dj_voice_track, song.artist, song.title)
+        val leading = DjFacts.leadIn(Settings.djIntensity(this))
+        val track = getString(R.string.dj_voice_track, song.artist, song.title)
+        val songId = song.id
+        val speakNow = { text: String ->
+            voice.init { ready ->
+                if (ready && song.id == bgLastAnnounceId) voice.speak(text)
+            }
         }
-        voice.init { ready ->
-            if (ready) voice.speak(announce)
+        if (!DjFacts.curiosityDue()) {
+            speakNow(track)
+            return
+        }
+        val fact = DjFacts.curiosityFor(song.artist ?: "")
+        if (fact != null) {
+            DjFacts.markCuriositySpoken()
+            speakNow("$leading $fact $track")
+            return
+        }
+        speakNow(track)
+        DjFacts.fetchRemoteCuriosity(this, song.artist ?: "") { remote ->
+            if (remote == null || Playback.listener != null) return@fetchRemoteCuriosity
+            if (song.id != songId || !DjFacts.curiosityDue()) return@fetchRemoteCuriosity
+            DjFacts.markCuriositySpoken()
+            voice.init { ready ->
+                if (ready && song.id == songId && Playback.listener == null) {
+                    voice.speak("$leading $remote")
+                }
+            }
         }
     }
 

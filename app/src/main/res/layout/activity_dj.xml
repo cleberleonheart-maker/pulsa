@@ -340,6 +340,17 @@
             android:text="@string/dj_scan"
             android:textColor="?attr/colorPrimary" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dj_btn_commands"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/dj_commands"
+            android:textColor="?attr/colorPrimary"
+            app:icon="@drawable/ic_dj"
+            app:iconTint="?attr/colorPrimary" />
+
         <TextView
             android:id="@+id/dj_config_hint"
             android:layout_width="match_parent"

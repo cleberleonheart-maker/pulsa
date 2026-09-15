@@ -1,5 +1,11 @@
 package com.pulsa.player.util
 
+import android.content.Context
+import android.os.SystemClock
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
 import java.util.Locale
 
 object DjFacts {
@@ -28,6 +34,121 @@ object DjFacts {
     }
 
     fun hasCuriosity(artistName: String): Boolean = curiosityFor(artistName) != null
+
+    private const val REMOTE_COOLDOWN_MS = 1100L
+    private const val CURIOSITY_MIN_MS = 5L * 60_000L
+    private const val CURIOSITY_MAX_MS = 10L * 60_000L
+
+    private val remoteCache = HashMap<String, String>()
+    private val remoteInFlight = HashSet<String>()
+    private var lastRemoteQueryMs = 0L
+    private var lastCuriosityMs = 0L
+    private var nextCuriosityDelayMs = 0L
+
+    fun curiosityDue(): Boolean {
+        if (nextCuriosityDelayMs == 0L) nextCuriosityDelayMs = randomDelayMs()
+        return SystemClock.elapsedRealtime() - lastCuriosityMs >= nextCuriosityDelayMs
+    }
+
+    fun markCuriositySpoken() {
+        lastCuriosityMs = SystemClock.elapsedRealtime()
+        nextCuriosityDelayMs = randomDelayMs()
+    }
+
+    private fun randomDelayMs(): Long = CURIOSITY_MIN_MS + (Math.random() * (CURIOSITY_MAX_MS - CURIOSITY_MIN_MS + 1)).toLong()
+
+    fun fetchRemoteCuriosity(context: Context, artistName: String, onResult: (String?) -> Unit) {
+        val key = normalize(artistName)
+        if (key.isEmpty()) {
+            onResult(null)
+            return
+        }
+        synchronized(remoteCache) {
+            remoteCache[key]?.let { cached ->
+                onResult(cached.ifBlank { null })
+                return
+            }
+            if (key in remoteInFlight) {
+                onResult(null)
+                return
+            }
+            remoteInFlight.add(key)
+        }
+        ThreadPool.post {
+            val fact = musicBrainzFact(key)
+            synchronized(remoteCache) {
+                remoteCache[key] = fact ?: ""
+                remoteInFlight.remove(key)
+            }
+            ThreadPool.onUi { onResult(fact) }
+        }
+    }
+
+    private fun musicBrainzFact(key: String): String? {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastRemoteQueryMs < REMOTE_COOLDOWN_MS) return null
+        lastRemoteQueryMs = now
+        val query = URLEncoder.encode("artist:\"$key\"", "UTF-8")
+        val url = "https://musicbrainz.org/ws/2/artist/?query=$query&limit=3&fmt=json"
+        val json = httpGetJson(url) ?: return null
+        val artists = runCatching { json.getJSONArray("artists") }.getOrNull() ?: return null
+        var best: JSONObject? = null
+        var bestScore = 0
+        for (i in 0 until artists.length()) {
+            val a = artists.getJSONObject(i)
+            val s = runCatching { a.getInt("score") }.getOrDefault(0)
+            if (s > bestScore) {
+                bestScore = s
+                best = a
+            }
+        }
+        val a = best ?: return null
+        val name = runCatching { a.getString("name") }.getOrNull() ?: return null
+        val type = runCatching { a.getString("type") }.getOrNull()
+        val area = runCatching { a.getJSONObject("area").getString("name") }.getOrNull()
+            ?: runCatching { a.getString("country") }.getOrNull()
+        val life = runCatching { a.getJSONObject("life-span").getString("begin") }.getOrNull()
+        val year = life?.take(4)?.toIntOrNull()
+        val kind = when (type) {
+            "Person" -> "artista solo"
+            "Group" -> "banda"
+            else -> null
+        }
+        return when {
+            area != null && year != null ->
+                "Segundo o MusicBrainz, $name surgiu em $area e está na ativa desde $year."
+            area != null ->
+                "Segundo o MusicBrainz, $name tem raízes registradas em $area."
+            year != null ->
+                "Segundo o MusicBrainz, $name está em atividade desde $year."
+            kind != null ->
+                "Segundo o MusicBrainz, $name é $kind."
+            else -> null
+        }
+    }
+
+    private fun httpGetJson(url: String): JSONObject? {
+        return try {
+            val conn = URL(url).openConnection() as HttpURLConnection
+            try {
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 2500
+                conn.readTimeout = 3500
+                conn.setRequestProperty(
+                    "User-Agent",
+                    "Pulsa/3.5 ( +https://cleberleonheart-maker.github.io/pulsaweb/ )"
+                )
+                conn.setRequestProperty("Accept", "application/json")
+                if (conn.responseCode != 200) return null
+                val body = conn.inputStream.bufferedReader().use { it.readText() }
+                runCatching { JSONObject(body) }.getOrNull()
+            } finally {
+                runCatching { conn.disconnect() }
+            }
+        } catch (t: Throwable) {
+            null
+        }
+    }
 
     fun fallbackFor(songYear: Int, hasMB: Boolean, isCover: Boolean, isLive: Boolean, albumName: String?): String {
         val mb = hasMB

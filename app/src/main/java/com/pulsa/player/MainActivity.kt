@@ -609,14 +609,28 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         val newId = song.id
         if (radioLastId == newId) return
         radioLastId = newId
-        var announce = getString(
+        val track = getString(
             R.string.dj_voice_track, song.artist, song.title
         )
+        val leading = DjFacts.leadIn(Settings.djIntensity(this))
+        if (!DjFacts.curiosityDue()) {
+            virginSpeak(track)
+            return
+        }
         val fact = DjFacts.curiosityFor(song.artist ?: "")
         if (fact != null) {
-            announce = "${DjFacts.leadIn(Settings.djIntensity(this))} $fact " + announce
+            DjFacts.markCuriositySpoken()
+            virginSpeak("$leading $fact $track")
+            return
         }
-        virginSpeak(announce)
+        virginSpeak(track)
+        val songId = song.id
+        DjFacts.fetchRemoteCuriosity(this, song.artist ?: "") { remote ->
+            if (remote == null || Playback.currentSong?.id != songId) return@fetchRemoteCuriosity
+            if (!DjFacts.curiosityDue()) return@fetchRemoteCuriosity
+            DjFacts.markCuriositySpoken()
+            virginSpeak("$leading $remote")
+        }
     }
 
     private fun virginSpeak(text: String, hold: Boolean = false) {

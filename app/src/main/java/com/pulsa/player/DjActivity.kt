@@ -183,6 +183,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         }
         findViewById<MaterialButton>(R.id.dj_btn_scan).setOnClickListener { scanLibrary() }
         findViewById<MaterialButton>(R.id.dj_btn_suggest).setOnClickListener { suggestSong() }
+        findViewById<MaterialButton>(R.id.dj_btn_commands).setOnClickListener { showCommandsDialog() }
 
         source = Settings.djSource(this)
         intensity = Settings.djIntensity(this)
@@ -807,6 +808,37 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
             .show()
     }
 
+    private fun showCommandsDialog() {
+        val commands = listOf(
+            R.string.dj_commands_mix,
+            R.string.dj_commands_next,
+            R.string.dj_commands_prev,
+            R.string.dj_commands_skip,
+            R.string.dj_commands_dislike,
+            R.string.dj_commands_pause,
+            R.string.dj_commands_play,
+            R.string.dj_commands_fav,
+            R.string.dj_commands_info,
+            R.string.dj_commands_scan,
+            R.string.dj_commands_recognize,
+            R.string.dj_commands_delete,
+            R.string.dj_commands_duplicates,
+            R.string.dj_commands_pendrive,
+            R.string.dj_commands_suggest,
+            R.string.dj_commands_visualizer,
+            R.string.dj_commands_identity,
+            R.string.dj_commands_thanks,
+            R.string.dj_commands_hello
+        ).map { getString(it) }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.dj_commands)
+            .setMessage(
+                getString(R.string.dj_commands_msg) + "\n\n" + commands.joinToString("\n")
+            )
+            .setPositiveButton(R.string.close, null)
+            .show()
+    }
+
     private fun chooseIntensity() {
         val options = listOf(
             getString(R.string.dj_intensity_calm) to Settings.DJ_CALM,
@@ -850,6 +882,24 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         return queue.getOrNull(i + 1) ?: queue.firstOrNull()
     }
 
+    private fun curiosityBody(song: Song?): String? {
+        if (!DjFacts.curiosityDue()) return null
+        val local = DjFacts.curiosityFor(song?.artist ?: "")
+        if (local != null) {
+            DjFacts.markCuriositySpoken()
+            return "${DjFacts.leadIn(intensity)} $local"
+        }
+        val songId = song?.id
+        if (songId == null) return null
+        DjFacts.fetchRemoteCuriosity(this, song?.artist ?: "") { remote ->
+            if (remote == null || isFinishing || isDestroyed) return@fetchRemoteCuriosity
+            if (Playback.currentSong?.id != songId || !DjFacts.curiosityDue()) return@fetchRemoteCuriosity
+            DjFacts.markCuriositySpoken()
+            speak("${DjFacts.leadIn(intensity)} $remote")
+        }
+        return null
+    }
+
     override fun onSongChanged(song: Song?, index: Int) {
         val app = applicationContext
         var announce: String? = null
@@ -864,30 +914,25 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
                     }
                     announce = getString(R.string.dj_voice_track, song?.artist, song?.title)
                 }
-suppressNextLearnSkip = false
-                                if (newId >= 0L) {
-                                    DjLearn.recordPlay(app, newId)
-                                }
-                                learnId = newId
-                                learnStartedAt = SystemClock.elapsedRealtime()
-                                lastCompleted = false
-                                if (Settings.djRadio(app)) {
-                                    val fact = DjFacts.curiosityFor(song?.artist ?: "")
-                                    if (fact != null) {
-                                        announce = "${DjFacts.leadIn(intensity)} $fact " +
-                                            getString(R.string.dj_voice_track, song?.artist, song?.title)
-                                    }
-                                }
+                suppressNextLearnSkip = false
+                if (newId >= 0L) {
+                    DjLearn.recordPlay(app, newId)
+                }
+                learnId = newId
+                learnStartedAt = SystemClock.elapsedRealtime()
+                lastCompleted = false
+                if (Settings.djRadio(app)) {
+                    val body = curiosityBody(song)
+                    if (body != null) {
+                        announce = "$body " +
+                            getString(R.string.dj_voice_track, song?.artist, song?.title)
+                    }
+                }
             }
         }
         if (!djActive && announce == null && Settings.djRadio(this)) {
-            val fact = DjFacts.curiosityFor(song?.artist ?: "")
-            announce = if (fact != null) {
-                "${DjFacts.leadIn(intensity)} $fact " +
-                    getString(R.string.dj_voice_track, song?.artist, song?.title)
-            } else {
-                getString(R.string.dj_voice_track, song?.artist, song?.title)
-            }
+            val base = getString(R.string.dj_voice_track, song?.artist, song?.title)
+            announce = curiosityBody(song)?.let { "$it $base" } ?: base
         }
         if (announce != null) speak(announce)
         render()
