@@ -123,7 +123,7 @@ object DjRecognizer {
             return null
         }
         val totalFrames = SAMPLE_RATE * RECORD_SECONDS
-        val pcm = ByteArrayOutputStream(totalFrames * 2)
+        val samples = ShortArray(totalFrames)
         val buf = ShortArray(bufferSize / 2)
         try {
             record.startRecording()
@@ -132,11 +132,7 @@ object DjRecognizer {
                 val n = record.read(buf, 0, buf.size, AudioRecord.READ_BLOCKING)
                 if (n < 0) throw IllegalStateException("mic read failed ($n)")
                 if (n == 0) continue
-                for (i in 0 until n) {
-                    val s = buf[i]
-                    pcm.write(s.toInt() and 0xFF)
-                    pcm.write((s.toInt() shr 8) and 0xFF)
-                }
+                buf.copyInto(samples, framesRead, 0, n)
                 framesRead += n
             }
         } catch (t: Throwable) {
@@ -146,6 +142,21 @@ object DjRecognizer {
         }
         runCatching { record.stop() }
         runCatching { record.release() }
+
+        // ---- normalização de ganho (gravações fracas/distantes) ----
+        var peak = 0
+        for (i in samples.indices) {
+            val a = Math.abs(samples[i].toInt())
+            if (a > peak) peak = a
+        }
+        val gain = if (peak == 0) 1.0 else (0.80 * 32767 / peak).coerceAtMost(4.0)
+        val pcm = ByteArrayOutputStream(totalFrames * 2)
+        for (i in samples.indices) {
+            val v = (samples[i] * gain).toInt()
+                .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
+            pcm.write(v and 0xFF)
+            pcm.write((v shr 8) and 0xFF)
+        }
         return withWavHeader(pcm.toByteArray())
     }
 

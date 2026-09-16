@@ -19,10 +19,11 @@ object Ambient {
 
     private const val SAMPLE_RATE = 44100
     private const val FRAME = 4410
+    private const val OUTPUT_GAIN = 2.0f
 
     @Volatile private var running = false
     @Volatile private var mode: String? = null
-    @Volatile private var volume = 0.35f
+    @Volatile private var volume = 0.6f
 
     private var thread: Thread? = null
     private var track: AudioTrack? = null
@@ -106,11 +107,11 @@ object Ambient {
                         .build()
                 )
                 .setTransferMode(AudioTrack.MODE_STREAM)
-                .setBufferSizeInBytes(FRAME * 4)
+                .setBufferSizeInBytes(FRAME * 4 * 4)
             t = builder.build()
             track = t
             t.setVolume(volume)
-            val gen = when (ambient) {
+            t.play()
                 PINK -> ::genPink
                 BROWN -> ::genBrown
                 RAIN -> ::genRain
@@ -144,16 +145,15 @@ object Ambient {
     private inline fun emit(buf: ShortArray, n: Int, next: () -> Float) {
         var i = 0
         while (i < n) {
-            val sample = next()
+            val sample = next() * OUTPUT_GAIN
             val v = (sample * 32767f).toInt()
             buf[i] = if (v > 32767) 32767 else if (v < -32768) -32768 else v.toShort()
             i++
         }
     }
+    }
 
-    private fun genWhite(buf: ShortArray, n: Int) = emit(buf, n) { rand.nextFloat() * 2f - 1f }
-
-    @Suppress("LocalVariableName")
+    private fun genWhite(buf: ShortArray, n: Int) = emit(buf, n) { rand.nextFloat() * 2f - 1f }    @Suppress("LocalVariableName")
     private fun genPink(buf: ShortArray, n: Int) {
         var b0 = 0f; var b1 = 0f; var b2 = 0f; var b3 = 0f; var b4 = 0f; var b5 = 0f; var b6 = 0f
         emit(buf, n) {

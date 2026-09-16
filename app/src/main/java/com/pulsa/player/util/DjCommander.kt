@@ -10,7 +10,36 @@ object DjCommander {
             .replace('ó', 'o').replace('ò', 'o').replace('ô', 'o').replace('õ', 'o').replace('ö', 'o')
             .replace('ú', 'u').replace('ù', 'u').replace('û', 'u').replace('ü', 'u')
             .replace('ç', 'c')
+            .trim()
     }
+
+    // Lê a intenção do usuário contornando a pontuacao/enj of the recognizer
+    // (ex: "sim.", "Sim!", "sim, pode" -> afirmacao; "nao.", "nao!" -> negacao).
+    private fun affirm(norm: String): Boolean =
+        norm == "sim" || norm == "afirmativo" || norm == "confirmo" ||
+            norm == "pode" || norm == "claro" || norm == "pode apagar" ||
+            norm.contains("sim,") || norm.contains("sim ") || norm.endsWith("sim.") ||
+            norm.endsWith("sim!") || norm.endsWith("sim?") ||
+            norm.contains("pode apagar") || norm.contains("pode excluir") ||
+            norm.contains("pode deleta") || norm.contains("pode apaga") ||
+            norm.contains("pode exclui") || norm.contains("pode remove") ||
+            norm.contains("confirma") || norm.contains("confirmo")
+
+    private fun deny(norm: String): Boolean =
+        norm == "nao" || norm == "nao quero" || norm == "não" || norm == "nao!" ||
+            norm.contains("nao,") || norm.contains("nao ") || norm.endsWith("nao.") ||
+            norm.contains("cancel") || norm.contains("esquece") || norm.contains("cala a boca")
+
+    private fun affirm(norm: String): Boolean =
+        norm == "sim" || norm == "confirmo" ||
+            norm.startsWith("sim") || norm.endsWith("sim") ||
+            norm.contains(", sim") || norm.contains("sim,") ||
+            norm.contains("pode apagar") || norm.contains("pode excluir") ||
+            norm.contains("pode deletar") || norm.contains("pode deleta") ||
+            norm.contains("confirma") || norm.contains("pode") ||
+            norm.contains("claro") || norm.contains("pode apaga") ||
+            norm.contains("pode exclui")
+
 
     fun hasWake(norm: String): Boolean =
         norm.contains("virgin") || norm.contains("virgem") ||
@@ -83,7 +112,7 @@ object DjCommander {
         norm.contains("pendrive") || norm.contains("pendr") || norm.contains("pen drive") ||
             norm.contains("pen-drive") || norm.contains("pen d") || norm.contains("cartao") ||
             norm.contains("usb") || norm.contains("memoria") -> "pendrive"
-        norm.contains("confirm") || norm == "sim" || norm == "pode" ||
+        norm.contains("confirm") || affirm(norm) || norm == "pode" ||
             norm.contains("pode apagar") || norm.contains("pode excluir") ||
             norm.contains("pode deleta") -> "confirm"
         norm.contains("cancel") || norm.contains("esquece") || norm == "nao" -> "cancel"

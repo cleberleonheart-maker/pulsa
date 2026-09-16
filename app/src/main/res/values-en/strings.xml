@@ -367,4 +367,8 @@
 
     <string name="lyrics_button">Lyrics</string>
     <string name="lyrics_none">No LRC file found for this song.</string>
+    <string name="lyrics_searching">Searching lyrics...</string>
+    <string name="lyrics_downloaded">Synced lyrics saved locally</string>
+    <string name="lyrics_online_lrc">Synced lyrics (online)</string>
+    <string name="lyrics_online_plain">Lyrics (online)</string>
 </resources>

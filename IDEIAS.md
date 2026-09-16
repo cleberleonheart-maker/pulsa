@@ -3,6 +3,19 @@
 > Lista de melhorias futuras (não implementadas ainda).
 > Status: <dashboards/em progresso> etc.
 
+
+## ✓ Feito (2026)
+
+(sem reescrever nada abaixo — itens entregues nesta rodada)
+
+- [x] **Delete por voz com confirmação**: a Virgínia pergunta "quer apagar?" e aceita "sim", "sim.", ", sim", "pode apagar"/"pode excluir" diretamente (ignora pontuação/enj do reconhecedor — `DjCommander.affirm`, via `DjVoice.kt`)
+- [x] **Som ambiente audível**: geradores (noite/chuva/oceano/via) agora com ganho de saída (`OUTPUT_GAIN` em `Ambient.kt`) + volume padrão maior; deixou de sair quase mudo
+## Feito em 2026
+- [x] Delete por voz com confirmação: a Virgínia pergunta "quer apagar?" e aceita "sim", "sim, pode", "pode apagar" (ignora pontuação do reconhecedor — `DjCommander.affirm`)
+- [x] Som ambiente (noite/chuva/oceano/via-mar…): agora com ganho de saída (`OUTPUT_GAIN`) + volume padrão maior, deixou de sair quase inaudível (`Ambient.kt`)
+- [x] Normalização de ganho no reconhecimento do DJ (audD): áudio do microfone amplificado de forma consistente (`DjRecognizer`)
+- [x] Letras: busca recursiva por pasta + por título + fallback online (LRCLIB), com cache local (`Lyrics.kt`)
+
 ## DJ Virgin (mais natural)
 - [ ] Relembrar contexto: guardar última conversa e responder com telefone/WhatsApp/Bluetooth (hoje ela só fala sozinha)
 - [ ] Perfis de humor: "toca uma pra eu dormir" → fila menor, playlists calmas

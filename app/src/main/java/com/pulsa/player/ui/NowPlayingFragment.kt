@@ -380,21 +380,26 @@ class NowPlayingFragment : Fragment() {
 
     private fun showLyricsDialog() {
         val song = Playback.currentSong ?: return
+        Toast.makeText(requireContext(), getString(R.string.lyrics_searching), Toast.LENGTH_SHORT).show()
         ThreadPool.post {
-            val lines = Lyrics.loadFor(song)
+            val result = Lyrics.resolve(song, requireContext().applicationContext)
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
-                if (lines == null || lines.isEmpty()) {
+                if (result == null || result.lines.isEmpty()) {
                     Toast.makeText(requireContext(), getString(R.string.lyrics_none), Toast.LENGTH_SHORT).show()
                     return@onUi
                 }
-                showLyricsDialogContent(song.title, song.artist, lines)
+                if (result.source == Lyrics.Result.Source.ONLINE_SYNCED) {
+                    Toast.makeText(requireContext(), getString(R.string.lyrics_downloaded), Toast.LENGTH_SHORT).show()
+                }
+                showLyricsDialogContent(song, result)
             }
         }
     }
 
-    private fun showLyricsDialogContent(title: String, artist: String, lines: List<Lyrics.Line>) {
+    private fun showLyricsDialogContent(song: com.pulsa.player.model.Song, result: Lyrics.Result) {
         val context = requireContext()
+        val lines = result.lines
         val lineTexts = lines.map { it.text }
         val tv = TextView(context).apply {
             textSize = 16f
@@ -407,8 +412,16 @@ class NowPlayingFragment : Fragment() {
         val scroll = ScrollView(context).apply {
             addView(tv)
         }
+        val dialogTitle = buildString {
+            append(song.title)
+            when (result.source) {
+                Lyrics.Result.Source.ONLINE_SYNCED -> append(" — ").append(getString(R.string.lyrics_online_lrc))
+                Lyrics.Result.Source.ONLINE_PLAIN -> append(" — ").append(getString(R.string.lyrics_online_plain))
+                Lyrics.Result.Source.LOCAL -> Unit
+            }
+        }
         val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle(title)
+            .setTitle(dialogTitle)
             .setView(scroll)
             .setNegativeButton(R.string.close, null)
             .show()
