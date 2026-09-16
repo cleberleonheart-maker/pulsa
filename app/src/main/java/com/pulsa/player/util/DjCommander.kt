@@ -30,17 +30,6 @@ object DjCommander {
             norm.contains("nao,") || norm.contains("nao ") || norm.endsWith("nao.") ||
             norm.contains("cancel") || norm.contains("esquece") || norm.contains("cala a boca")
 
-    private fun affirm(norm: String): Boolean =
-        norm == "sim" || norm == "confirmo" ||
-            norm.startsWith("sim") || norm.endsWith("sim") ||
-            norm.contains(", sim") || norm.contains("sim,") ||
-            norm.contains("pode apagar") || norm.contains("pode excluir") ||
-            norm.contains("pode deletar") || norm.contains("pode deleta") ||
-            norm.contains("confirma") || norm.contains("pode") ||
-            norm.contains("claro") || norm.contains("pode apaga") ||
-            norm.contains("pode exclui")
-
-
     fun hasWake(norm: String): Boolean =
         norm.contains("virgin") || norm.contains("virgem") ||
             norm.contains("virgene") || norm.contains("vargin")
