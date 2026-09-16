@@ -112,6 +112,7 @@ object Ambient {
             track = t
             t.setVolume(volume)
             t.play()
+            val gen = when (ambient) {
                 PINK -> ::genPink
                 BROWN -> ::genBrown
                 RAIN -> ::genRain
