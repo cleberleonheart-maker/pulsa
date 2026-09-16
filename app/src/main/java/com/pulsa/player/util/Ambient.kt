@@ -152,7 +152,6 @@ object Ambient {
             i++
         }
     }
-    }
 
     private fun genWhite(buf: ShortArray, n: Int) = emit(buf, n) { rand.nextFloat() * 2f - 1f }    @Suppress("LocalVariableName")
     private fun genPink(buf: ShortArray, n: Int) {
