@@ -19,6 +19,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.MediaStore
+import android.view.KeyEvent
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.widget.ImageView
@@ -43,6 +44,7 @@ import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.PlaybackService
+import com.pulsa.player.util.Ambient
 import com.pulsa.player.util.DjCommandListener
 import com.pulsa.player.util.DjCommander
 import com.pulsa.player.util.DjEngine
@@ -286,6 +288,27 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     override fun onResume() {
         super.onResume()
         render()
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (Ambient.isOn()) {
+            val step = 0.05f
+            val vol = when (keyCode) {
+                KeyEvent.KEYCODE_VOLUME_UP -> Ambient.state().volume + step
+                KeyEvent.KEYCODE_VOLUME_DOWN -> Ambient.state().volume - step
+                else -> null
+            }
+            if (vol != null) {
+                Ambient.setVolume(vol.coerceIn(0f, 1f))
+                Toast.makeText(
+                    this,
+                    "${getString(R.string.ambient_volume)}: ${(Ambient.state().volume * 100).toInt()}%",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onRequestPermissionsResult(
