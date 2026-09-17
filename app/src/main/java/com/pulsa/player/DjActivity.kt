@@ -302,7 +302,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
                 Ambient.setVolume(vol.coerceIn(0f, 1f))
                 Toast.makeText(
                     this,
-                    "${getString(R.string.ambient_volume)}: ${(Ambient.state().volume * 100).toInt()}%",
+                    getString(R.string.ambient_volume, (Ambient.state().volume * 100).toInt()),
                     Toast.LENGTH_SHORT
                 ).show()
                 return true
