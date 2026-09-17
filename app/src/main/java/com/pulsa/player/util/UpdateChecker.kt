@@ -9,7 +9,6 @@ import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.ParcelFileDescriptor
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -271,12 +270,12 @@ object UpdateChecker {
             val session = installer.openSession(sessionId)
             try {
                 val out = session.openWrite("pulsa.apk", 0, apk.length())
-                apk.inputStream().use { input ->
-                    ParcelFileDescriptor.AutoCloseOutputStream(out).use { pfd ->
-                        input.copyTo(pfd)
-                    }
+                try {
+                    apk.inputStream().use { input -> input.copyTo(out) }
+                    session.fsync(out)
+                } finally {
+                    out.close()
                 }
-                session.fsync(out)
                 val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
                     (if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
                 val pi = PendingIntent.getBroadcast(
