@@ -112,24 +112,37 @@ object Lyrics {
      */
     private fun localSearch(song: Song): File? {
         val music = File(song.path)
-        val dir = music.parentFile ?: return null
-        val baseNorm = normalize(stem(music.name))
         val titleNorm = normalize(song.title)
         val artistNorm = normalize(song.artist)
         val albumNorm = normalize(song.album)
         var best: File? = null
         var bestScore = Int.MIN_VALUE
-        dir.walkTopDown()
-            .filter { it.isFile && it != music && it.extension.equals("lrc", true) }
-            .take(2000)
-            .forEach { lrc ->
-                val name = normalize(stem(lrc.name))
-                val score = score(name, baseNorm, titleNorm, artistNorm, albumNorm)
-                if (score > bestScore) {
-                    bestScore = score
-                    best = lrc
+        fun tryDir(dir: File?) {
+            if (dir == null || !dir.isDirectory) return
+            val baseNorm = normalize(stem(music.name))
+            dir.walkTopDown()
+                .filter { it.isFile && it != music && it.extension.equals("lrc", true) }
+                .take(2000)
+                .forEach { lrc ->
+                    val name = normalize(stem(lrc.name))
+                    val score = score(name, baseNorm, titleNorm, artistNorm, albumNorm)
+                    if (score > bestScore) {
+                        bestScore = score
+                        best = lrc
+                    }
                 }
-            }
+        }
+        tryDir(music.parentFile)
+        if (bestScore <= 0) {
+            val roots = listOfNotNull(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS),
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RINGTONES),
+                Environment.getExternalStorageDirectory()
+            ).distinct()
+            roots.forEach { tryDir(it) }
+        }
         return best?.takeIf { bestScore > 0 }
     }
 
@@ -205,10 +218,16 @@ object Lyrics {
     // ---------- busca online (LRCLIB) ----------
 
     private fun fetchOnline(song: Song): Result? {
-        val artist = URLEncoder.encode(song.artist.trim(), "UTF-8")
-        val track = URLEncoder.encode(song.title.trim(), "UTF-8")
+        val fromName = fromFileName(song)
+        var artist = song.artist.trim()
+        var track = song.title.trim()
+        if (artist.isEmpty() || track.isEmpty()) {
+            if (artist.isEmpty()) artist = fromName.first ?: ""
+            if (track.isEmpty()) track = fromName.second ?: ""
+        }
+        if (track.isEmpty()) return null
         val durationSec = (song.durationMs / 1000).coerceIn(1, 9999)
-        val api = "https://lrclib.net/api/get?artist_name=$artist&track_name=$track&duration=$durationSec"
+        val api = "https://lrclib.net/api/get?artist_name=${enc(artist)}&track_name=${enc(track)}&duration=$durationSec"
         return try {
             val conn = (URL(api).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 10_000
