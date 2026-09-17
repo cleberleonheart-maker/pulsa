@@ -11,8 +11,8 @@ android {
         applicationId = "com.pulsa.player"
         minSdk = 23
         targetSdk = 34
-versionCode = 73
-versionName = "3.64"
+versionCode = 74
+versionName = "3.65"
     }
 
     buildFeatures {

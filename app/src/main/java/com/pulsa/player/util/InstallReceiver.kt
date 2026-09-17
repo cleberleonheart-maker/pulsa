@@ -16,6 +16,21 @@ class InstallReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, -1)
+        if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+            try {
+                @Suppress("DEPRECATION")
+                val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+                if (confirm != null) {
+                    confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(confirm)
+                }
+            } catch (t: Throwable) {
+                CrashLogger.writeLog(context, "INSTALACAO: pending user action falhou $t")
+            }
+            CrashLogger.writeLog(context, "INSTALACAO: aguardando confirmacao do usuario")
+            Telemetry.log(context, "UPDATE status instalacao=pendente usuario")
+            return
+        }
         val msg = when (status) {
             PackageInstaller.STATUS_SUCCESS -> "Pulsa atualizada com sucesso"
             PackageInstaller.STATUS_PENDING_USER_ACTION -> "aguardando confirmacao do usuario"

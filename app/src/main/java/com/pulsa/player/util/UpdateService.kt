@@ -17,6 +17,7 @@ class UpdateService : Service() {
     companion object {
         const val EXTRA_NAME = "name"
         const val EXTRA_URL = "url"
+        const val EXTRA_APK = "apk_path"
         const val CHANNEL_ID = "updates"
         const val NOTIF_ANNOUNCE = 9000
         const val NOTIF_PROGRESS = 9001
@@ -38,6 +39,17 @@ class UpdateService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val apkPath = intent?.getStringExtra(EXTRA_APK)
+        if (!apkPath.isNullOrEmpty()) {
+            Thread {
+                try {
+                    UpdateChecker.installApk(this, java.io.File(apkPath))
+                } finally {
+                    stopSelf()
+                }
+            }.start()
+            return START_NOT_STICKY
+        }
         val name = intent?.getStringExtra(EXTRA_NAME) ?: "latest"
         val url = intent?.getStringExtra(EXTRA_URL) ?: ""
         Thread {
@@ -83,7 +95,7 @@ class UpdateService : Service() {
         if (target != null) {
             nm.cancel(NOTIF_PROGRESS)
             CrashLogger.writeLog(this, "UPDATE: servico baixou ${target.absolutePath}")
-            UpdateChecker.openApk(applicationContext, target)
+            UpdateChecker.installApk(applicationContext, target)
         } else {
             val pi = PendingIntent.getService(
                 this, 1,

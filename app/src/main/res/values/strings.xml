@@ -26,7 +26,7 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão:\n\n• Botões físicos de volume agora controlam o som ambiente quando ele está ativo (chuva, noite, oceano etc.) — com indicação de % na tela\n• Busca de letras (LRC) ampliada: procura nas pastas públicas (Música, Downloads, Podcasts, Ringtones) e na internet quando o arquivo não tem metadados</string>
+    <string name="changelog">Novidades desta versão:\n\n• Atualização automática: o app baixa e instala a nova versão sozinho, sem abrir o instalador (confirme apenas se o sistema pedir na primeira vez)\n• Botões físicos de volume agora controlam o som ambiente quando ele está ativo (chuva, noite, oceano etc.) — com indicação de % na tela\n• Busca de letras (LRC) ampliada: procura nas pastas públicas (Música, Downloads, Podcasts, Ringtones) e na internet quando o arquivo não tem metadados</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>

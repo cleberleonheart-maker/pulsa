@@ -5,9 +5,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.ParcelFileDescriptor
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -119,7 +121,7 @@ object UpdateChecker {
                 } catch (t: Throwable) {
                 }
                 if (target != null) {
-                    openApk(context, target)
+                    installApk(context.applicationContext, target)
                 } else {
                     CrashLogger.writeLog(context, "UPDATE MANUAL: download nao concluido")
                     android.widget.Toast.makeText(
@@ -168,19 +170,28 @@ object UpdateChecker {
         }
         if (lastShownCode == latestCode) return
         lastShownCode = latestCode
+        try {
+            val prefs = context.getSharedPreferences("pulsa_update", Context.MODE_PRIVATE)
+            if (prefs.getLong("attempted_code", 0L) >= latestCode) return
+            prefs.edit().putLong("attempted_code", latestCode).apply()
+        } catch (t: Throwable) {
+        }
         ThreadPool.onUi {
             if (context !is android.app.Activity) return@onUi
             if (context.isFinishing) return@onUi
-            MaterialAlertDialogBuilder(context)
-                .setTitle(R.string.update_title)
-                .setMessage(context.getString(R.string.update_message, latestName))
-                .setPositiveButton(R.string.update_now) { d, _ ->
-                    d.dismiss()
-                    startDownload(context, latestName, apkUrl)
-                }
-                .setNegativeButton(R.string.update_later, null)
-                .show()
-            postUpdateNotification(context, latestName, apkUrl)
+            try {
+                UpdateService.ensureChannel(context)
+                context.startService(
+                    Intent(context, UpdateService::class.java)
+                        .putExtra(UpdateService.EXTRA_NAME, latestName)
+                        .putExtra(UpdateService.EXTRA_URL, apkUrl)
+                )
+                CrashLogger.writeLog(context, "UPDATE: atualizacao automatica iniciada $latestName")
+                Telemetry.log(context, "UPDATE automatico iniciado $latestName")
+            } catch (t: Throwable) {
+                CrashLogger.writeLog(context, "UPDATE: auto start falhou $t")
+                postUpdateNotification(context, latestName, apkUrl)
+            }
         }
     }
 
@@ -244,45 +255,65 @@ object UpdateChecker {
         return true
     }
 
-    private fun startDownload(context: Context, latestName: String, apkUrl: String = "") {
-        if (context !is android.app.Activity) return
-        if (!ensureInstallPermission(context)) return
-        val pd = android.app.ProgressDialog(context)
-        pd.setTitle(context.getString(R.string.update_title))
-        pd.setMessage(context.getString(R.string.update_downloading))
-        pd.setProgressStyle(android.app.ProgressDialog.STYLE_HORIZONTAL)
-        pd.setMax(100)
-        pd.setProgress(0)
-        pd.setCancelable(false)
-        pd.show()
-        ThreadPool.post {
-            val target = downloadFromServer(context.applicationContext, latestName, apkUrl) { pct ->
-                ThreadPool.onUi {
-                    try {
-                        pd.progress = pct
-                        pd.setMessage(context.getString(R.string.update_downloading))
-                    } catch (t: Throwable) {
+    /** Instala um APK via PackageInstaller; se qualquer passo exigir confirmação/for bloqueado, cai no instalador do sistema (openApk). */
+    fun installApk(context: Context, apk: File) {
+        if (Build.VERSION.SDK_INT >= 26 && !context.packageManager.canRequestPackageInstalls()) {
+            Telemetry.log(context, "UPDATE sem permissao (installApk)")
+            installFallback(context, apk)
+            return
+        }
+        val installer = context.packageManager.packageInstaller
+        var sessionId = -1
+        try {
+            val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+            params.setAppPackageName(context.packageName)
+            sessionId = installer.createSession(params)
+            val session = installer.openSession(sessionId)
+            try {
+                val out = session.openWrite("pulsa.apk", 0, apk.length())
+                apk.inputStream().use { input ->
+                    ParcelFileDescriptor.AutoCloseOutputStream(out).use { pfd ->
+                        input.copyTo(pfd)
                     }
                 }
+                session.fsync(out)
+                val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or
+                    (if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
+                val pi = PendingIntent.getBroadcast(
+                    context,
+                    sessionId,
+                    Intent(context, InstallReceiver::class.java),
+                    piFlags
+                )
+                session.commit(pi.intentSender)
+                CrashLogger.writeLog(context, "UPDATE: instalacao via PackageInstaller enviada ($sessionId)")
+                Telemetry.log(context, "UPDATE instalacao silenciosa enviada")
+            } finally {
+                session.close()
             }
-            ThreadPool.onUi {
+        } catch (t: Throwable) {
+            CrashLogger.writeLog(context, "UPDATE: installApk excecao $t")
+            Telemetry.log(context, "UPDATE instalacao silenciosa falhou -> fallback")
+            if (sessionId >= 0) {
                 try {
-                    pd.dismiss()
-                } catch (t: Throwable) {
-                }
-                if (target != null) {
-                    Telemetry.log(context, "UPDATE baixado ok $latestName")
-                    openApk(context.applicationContext, target)
-                } else {
-                    CrashLogger.writeLog(context, "UPDATE: download nao concluido")
-                    Telemetry.log(context, "UPDATE download falhou")
-                    android.widget.Toast.makeText(
-                        context,
-                        R.string.update_failed,
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
+                    installer.abandonSession(sessionId)
+                } catch (t2: Throwable) {
                 }
             }
+            installFallback(context, apk)
+        }
+    }
+
+    private fun installFallback(context: Context, apk: File) {
+        try {
+            if (Build.VERSION.SDK_INT >= 26 && !context.packageManager.canRequestPackageInstalls()) {
+                openUnknownSources(context)
+                return
+            }
+            openApk(context, apk)
+        } catch (t: Throwable) {
+            CrashLogger.writeLog(context, "UPDATE: installFallback excecao $t")
+            openUnknownSources(context)
         }
     }
 
