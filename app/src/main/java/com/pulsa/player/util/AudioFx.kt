@@ -25,7 +25,7 @@ object AudioFx {
         } catch (t: Throwable) {
             null
         }
-        applyPreset(eq, Settings.audioQuality(context), customBands(context))
+        applyPreset(eq, Settings.audioQuality(context), if (Settings.customEqOn(context)) customBands(context) else IntArray(0))
         bb?.let {
             runCatching { it.setStrength(if (Settings.audioQuality(context) == Settings.QUALITY_DANCE) 900 else 500) }
         }
@@ -50,6 +50,8 @@ object AudioFx {
                 Settings.QUALITY_TREBLE -> intArrayOf(-5, -3, 0, 4, 7)
                 Settings.QUALITY_ROCK -> intArrayOf(4, 2, -1, 2, 5)
                 Settings.QUALITY_DANCE -> intArrayOf(1, -3, -4, 0, 6)
+                Settings.QUALITY_POP -> intArrayOf(-2, 0, 3, 2, -1)
+                Settings.QUALITY_JAZZ -> intArrayOf(3, 2, -1, 2, 4)
                 else -> intArrayOf(0, 0, 0, 0, 0)
             }
         }

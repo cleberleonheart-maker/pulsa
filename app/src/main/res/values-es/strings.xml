@@ -22,7 +22,7 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Qué hay de nuevo</string>
-    <string name="changelog">Novedades de esta versión:\n\n• Actualización automática: la app descarga e instala la nueva versión por sí sola, sin abrir el instalador (confirma solo si el sistema lo pide la primera vez)\n• Los botones físicos de volumen ahora controlan el sonido ambiente cuando está activo (lluvia, noche, océano, etc.) — con indicador de % en pantalla\n• Búsqueda de letras (LRC) ampliada: busca en carpetas públicas (Música, Descargas, Podcasts, Timbres) y en línea cuando el archivo no tiene metadatos</string>
+    <string name="changelog">Novedades de esta versión (4.0):\n\n• Ecualizador mejorado: nuevos presets Pop y Jazz, además de Graves, Voces, Agudos, Rock y Dance\n• El ecualizador personalizado de 5 bandas ahora respeta el encendido/apagado (antes las bandas personalizadas anulaban los presets y el ajuste no se aplicaba correctamente)\n• Nueva numeración de versión: 4.0</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
@@ -118,6 +118,8 @@
     <string name="quality_treble">Agudos</string>
     <string name="quality_rock">Rock</string>
     <string name="quality_dance">Dance/Electro</string>
+    <string name="quality_pop">Pop</string>
+    <string name="quality_jazz">Jazz</string>
     <string name="sdr_pause">Pausar escucha</string>
     <string name="equalizer">Ecualizador</string>
     <string name="eq_subtitle">Aplica la calidad de audio elegida</string>

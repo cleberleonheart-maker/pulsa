@@ -246,7 +246,7 @@ object Lyrics {
                 connectTimeout = 10_000
                 readTimeout = 10_000
                 requestMethod = "GET"
-                setRequestProperty("User-Agent", "Pulsa-Android/3.59")
+                setRequestProperty("User-Agent", "Pulsa-Android/4.0")
                 setRequestProperty("Accept", "application/json")
             }
             try {

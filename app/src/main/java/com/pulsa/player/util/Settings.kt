@@ -26,6 +26,8 @@ object Settings {
     const val QUALITY_TREBLE = "treble"
     const val QUALITY_ROCK = "rock"
     const val QUALITY_DANCE = "dance"
+    const val QUALITY_POP = "pop"
+    const val QUALITY_JAZZ = "jazz"
     const val DANCE_SPEED = 1.12f
     const val DANCE_PITCH = 1.06f
 
@@ -179,6 +181,8 @@ object Settings {
         QUALITY_TREBLE -> R.string.quality_treble
         QUALITY_ROCK -> R.string.quality_rock
         QUALITY_DANCE -> R.string.quality_dance
+        QUALITY_POP -> R.string.quality_pop
+        QUALITY_JAZZ -> R.string.quality_jazz
         else -> R.string.quality_default
     }
 

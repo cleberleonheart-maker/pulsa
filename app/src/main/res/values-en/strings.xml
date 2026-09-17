@@ -22,7 +22,7 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What\'s new</string>
-    <string name="changelog">What\'s new in this version:\n\n• Automatic update: the app downloads and installs the new version by itself, without opening the installer (just confirm if the system asks the first time)\n• Physical volume buttons now control the ambient sound while it is active (rain, night, ocean, etc.) — with on-screen % indicator\n• Wider lyrics (LRC) search: looks in public folders (Music, Downloads, Podcasts, Ringtones) and online when the file has no metadata</string>
+    <string name="changelog">What\'s new in this version (4.0):\n\n• Upgraded equalizer: new Pop and Jazz presets, plus Bass, Vocals, Treble, Rock and Dance\n• Custom 5-band equalizer now respects the on/off toggle (previously custom bands overrode the presets and the setting was not applied correctly)\n• New version numbering: 4.0</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -119,6 +119,8 @@
     <string name="quality_rock">Rock</string>
     <string name="sdr_pause">Pause listening</string>
     <string name="quality_dance">Dance/Electro</string>
+    <string name="quality_pop">Pop</string>
+    <string name="quality_jazz">Jazz</string>
     <string name="equalizer">Equalizer</string>
     <string name="eq_subtitle">Applies the chosen audio quality</string>
     <string name="audio_8d">8D Audio</string>
