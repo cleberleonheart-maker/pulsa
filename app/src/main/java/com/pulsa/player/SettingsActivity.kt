@@ -213,6 +213,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun pickQuality() {
         val keys = arrayOf(
+            Settings.QUALITY_AUTO,
             Settings.QUALITY_DEFAULT,
             Settings.QUALITY_BASS,
             Settings.QUALITY_VOICES,

@@ -80,6 +80,26 @@ object Library {
         return map
     }
 
+    @Volatile
+    private var genreCache: Map<Long, String>? = null
+
+    @Volatile
+    private var genreCacheAt = 0L
+
+    private const val GENRE_CACHE_TTL_MS = 60_000L
+
+    /** Gênero de uma faixa (com cache curto, pois consulta várias vezes o MediaStore). */
+    fun genreOf(context: Context, songId: Long): String? {
+        val now = System.currentTimeMillis()
+        var map = genreCache
+        if (map == null || now - genreCacheAt > GENRE_CACHE_TTL_MS) {
+            map = genreMap(context)
+            genreCache = map
+            genreCacheAt = now
+        }
+        return map[songId]
+    }
+
     fun songsByAlbum(context: Context, albumId: Long): List<Song> {
         return querySongs(
             context,

@@ -20,6 +20,7 @@ object Settings {
     const val ACCENT_PINK = "pink"
     const val ACCENT_TEAL = "teal"
 
+    const val QUALITY_AUTO = "auto"
     const val QUALITY_DEFAULT = "default"
     const val QUALITY_BASS = "bass"
     const val QUALITY_VOICES = "voices"
@@ -176,6 +177,7 @@ object Settings {
         if (audioQuality(context) == QUALITY_DANCE) DANCE_PITCH else 1f
 
     fun qualityLabelRes(quality: String): Int = when (quality) {
+        QUALITY_AUTO -> R.string.quality_auto
         QUALITY_BASS -> R.string.quality_bass
         QUALITY_VOICES -> R.string.quality_voices
         QUALITY_TREBLE -> R.string.quality_treble

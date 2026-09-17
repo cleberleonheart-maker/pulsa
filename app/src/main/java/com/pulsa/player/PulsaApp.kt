@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.pm.PackageManager
 import com.pulsa.player.util.CrashLogger
 import com.pulsa.player.util.Migrations
+import com.pulsa.player.util.RemoteSync
 import com.pulsa.player.util.Settings
 import com.pulsa.player.util.Telemetry
 import java.io.PrintWriter
@@ -32,6 +33,10 @@ class PulsaApp : Application() {
             Telemetry.log(this, "APP start ${info.versionName} (${info.versionCode})")
         } catch (e: Exception) {
             Telemetry.log(this, "APP start (sem versao)")
+        }
+        try {
+            RemoteSync.start(this)
+        } catch (t: Throwable) {
         }
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {

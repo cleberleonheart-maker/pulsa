@@ -25,6 +25,7 @@ import androidx.media.app.NotificationCompat.MediaStyle
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
 import com.pulsa.player.data.ArtLoader
+import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Song
 import com.pulsa.player.util.AudioFx
@@ -201,6 +202,9 @@ class PlaybackService : Service() {
     val isPlaying: Boolean get() = mp?.isPlaying == true
     val audioSessionId: Int get() = mp?.audioSessionId ?: 0
 
+    private fun currentSongGenre(): String? =
+        runCatching { currentSong?.id?.let { Library.genreOf(applicationContext, it) } }.getOrNull()
+
     inner class LocalBinder : Binder() {
         val service: PlaybackService get() = this@PlaybackService
     }
@@ -247,7 +251,7 @@ class PlaybackService : Service() {
     }
 
     fun refreshFx() {
-        mp?.let { AudioFx.apply(applicationContext, it.audioSessionId) }
+        mp?.let { AudioFx.apply(applicationContext, it.audioSessionId, currentSongGenre()) }
         updateEightD()
     }
 
@@ -432,7 +436,7 @@ class PlaybackService : Service() {
                 throw e
             }
             mp = player
-            AudioFx.apply(applicationContext, player.audioSessionId)
+            AudioFx.apply(applicationContext, player.audioSessionId, currentSongGenre())
             MusicVisualizer.attach(player.audioSessionId)
             ensureForeground(song)
             publishMetadata(song)

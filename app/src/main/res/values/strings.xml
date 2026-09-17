@@ -117,6 +117,7 @@
     <string name="audio_quality">Qualidade do áudio</string>
     <string name="pick_quality">Escolha a qualidade do áudio</string>
     <string name="quality_default">Padrão</string>
+    <string name="quality_auto">Automático (por gênero)</string>
     <string name="quality_bass">Graves</string>
     <string name="quality_voices">Vozes</string>
     <string name="quality_treble">Agudos</string>

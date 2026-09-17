@@ -13,6 +13,16 @@
 - [x] **Changelog "O que foi feito"** a cada versão, com o texto da versão atual (pt/en/es)
 - [x] **Dashboard de telemetria**: músicas mais tocadas, horários, sugestões aceitas/rejeitadas (`/dashboard` + `/stats` em http://192.168.100.7:8081/dashboard)
 - [x] **CI publicando release automática no push**: build + publicação do APK no `pulsaweb` via GitHub Actions (`.github/workflows/build.yml`)
+- [x] **Equalizador**: presets Graves/Vozes/Agudos/Rock/Dance/**Pop**/**Jazz** (`Settings`) + EQ personalizado de 5 bandas com sliders, salvar/resetar (`NowPlayingFragment` → `AudioFx`); corrigido o liga/desliga que as bandas custom ignoravam
+- [x] **EQ automático por gênero**: qualidade "Automático (por gênero)" aplica preset conforme o gênero da faixa (Rock/Dance/Pop/Jazz/Graves/Vozes) via `AudioFx.presetForGenre` + `Library.genreOf` (seleção no `SettingsActivity`)
+- [x] **Migração para v4.0**: `versionCode 75` / `versionName "4.0"`
+
+## Web player (pulsaweb) — remote/sync via telemetria
+- [x] **Espelho da biblioteca**: o app manda a lista de músicas pro servidor (/songs, hash p/ reenviar só quando muda); o web mostra "Músicas do celular"
+- [x] **Sync de fila/agora-tocando**: o app empurra estado (/state: tocando, faixa, posição, fila, volume) a cada 3s; o web consulta /remote e exibe
+- [x] **Remote control pelo PC**: o web posta comandos (/cmd: play/pause/next/prev/seek/shuffle/repeat/volume); o app consulta e executa (`RemoteSync` → `Playback`/`AudioManager`)
+- [x] **Botão "Buscar novidades" no web**: recarrega a lista do celular direto do servidor
+- [x] Servidor serve o próprio web player em `/` (static) na porta 8081
 
 ## DJ Virgin (mais natural)
 - [ ] Relembrar contexto: guardar última conversa e responder com telefone/WhatsApp/Bluetooth (hoje ela só fala sozinha)
@@ -20,16 +30,11 @@
 - [ ] Comandos faltantes: "toca só X", "mistura com Y", "repete essa" (hoje só tem next/prev/pause/vol/fav)
 
 ## Áudio/qualidade de som
-- [ ] Equalizador + presets no app (MediaPlayer tem 2 bandas básicas)
-
-## Web player (pulsaweb)
-- [ ] Sincronizar fila entre app e web via telemetria
-- [ ] Remote control pelo PC (play/pause/volume do celular)
+- [ ] Mais bandas/presets no equalizador (ex.: EQ com bandas reais do aparelho)
 
 ## Uso/dados
 - [ ] Espelhar DjLearn (skips/likes) pra nuvem → Virgin aprende entre sessões/dispositivos
 
 ## Engenharia
 - [ ] Assinatura via GitHub Actions (secrets) pra publicar sem depender do PC
-- [ ] Migrar/canaleta de update para v4.x
 - [ ] Verificar status SMTP (sendmail) — autenticação Gmail estava falhando (536/535); testar senha de app
