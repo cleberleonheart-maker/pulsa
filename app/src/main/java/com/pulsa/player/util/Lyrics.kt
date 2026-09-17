@@ -1,6 +1,7 @@
 package com.pulsa.player.util
 
 import android.content.Context
+import android.os.Environment
 import com.pulsa.player.model.Song
 import org.json.JSONObject
 import java.io.File
@@ -214,6 +215,18 @@ object Lyrics {
 
     private fun sanitizeFileName(s: String): String =
         s.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().take(80)
+
+    private fun enc(s: String): String = URLEncoder.encode(s.trim(), "UTF-8")
+
+    private fun fromFileName(song: Song): Pair<String?, String?> {
+        val name = song.path.substringAfterLast('/').substringBeforeLast('.')
+        val idx = name.lastIndexOf(" - ")
+        return if (idx > 0) {
+            name.substring(0, idx).trim() to name.substring(idx + 3).trim()
+        } else {
+            null to name.trim()
+        }
+    }
 
     // ---------- busca online (LRCLIB) ----------
 
