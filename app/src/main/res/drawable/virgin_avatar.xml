@@ -1,92 +1,87 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Ombros -->
+    <!-- Cabeça: esfera rosada estilo TAMI (gradiente radial rosa -> roxo) -->
     <path
-        android:fillColor="#3A2366"
-        android:pathData="M18,110A36,22 0 1 0 90,110Z" />
+        android:pathData="M54,2a52,52 0 1 1 0,104a52,52 0 1 1 0,-104Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="0.35"
+                android:centerY="0.28"
+                android:gradientRadius="90"
+                android:startColor="#FFE3F2"
+                android:centerColor="#FF8AD0"
+                android:endColor="#B388FF" />
+        </aapt:attr>
+    </path>
 
-    <!-- Cabeça -->
-    <path
-        android:fillColor="#4C2A8F"
-        android:pathData="M54,31A26,29 0 1 0 54,89A26,29 0 1 0 54,31Z" />
-
-    <!-- Cabelo/franja roxa clara -->
-    <path
-        android:fillColor="#7446C8"
-        android:pathData="M54,33A26,29 0 1 0 54,59A10,9 0 1 1 44,51A26,29 0 1 0 54,33Z" />
-
-    <!-- Fone tira esquerda -->
-    <path
-        android:fillColor="#2BE7A3"
-        android:pathData="M24,55h10a5,5 0 0 1 5,5v19a5,5 0 0 1 -5,5h-10a5,5 0 0 1 -5,-5v-19a5,5 0 0 1 5,-5Z" />
-
-    <!-- Fone tira direita -->
-    <path
-        android:fillColor="#2BE7A3"
-        android:pathData="M74,55h10a5,5 0 0 1 5,5v19a5,5 0 0 1 -5,5h-10a5,5 0 0 1 -5,-5v-19a5,5 0 0 1 5,-5Z" />
-
-    <!-- Arco do fone -->
-    <path
-        android:pathData="M27,39C27,20 81,20 81,39"
-        android:strokeColor="#2BE7A3"
-        android:strokeLineCap="round"
-        android:strokeWidth="7" />
-
-    <!-- Brilho do arco do fone -->
-    <path
-        android:pathData="M38,26C48,20 60,20 70,26"
-        android:strokeColor="#CCFFFFFF"
-        android:strokeLineCap="round"
-        android:strokeWidth="2.4" />
-
-    <!-- Microfone: haste -->
-    <path
-        android:pathData="M28,80C20,80 15,76 14,71"
-        android:strokeColor="#2BE7A3"
-        android:strokeLineCap="round"
-        android:strokeWidth="4" />
-
-    <!-- Microfone: cápsula -->
-    <path
-        android:fillColor="#2BE7A3"
-        android:pathData="M8,64h14a7,7 0 0 1 7,7v6a7,7 0 0 1 -7,7h-14a7,7 0 0 1 -7,-7v-6a7,7 0 0 1 7,-7Z" />
-
-    <!-- Microfone: grade -->
-    <path
-        android:pathData="M11,67h8M11,74h8"
-        android:strokeColor="#0B0918"
-        android:strokeLineCap="round"
-        android:strokeWidth="1.3" />
+    <!-- Laço: asas + nó + fitas, levemente girado como na TAMI -->
+    <group
+        android:rotation="12"
+        android:pivotX="85"
+        android:pivotY="10">
+        <!-- asa esquerda -->
+        <path
+            android:fillColor="#FF6EC7"
+            android:pathData="M85,10C80,3 72,3 68,8C72,13 79,15 85,13Z" />
+        <!-- asa direita -->
+        <path
+            android:fillColor="#FF6EC7"
+            android:pathData="M85,10C90,3 98,3 102,8C98,13 91,15 85,13Z" />
+        <!-- fita esquerda -->
+        <path
+            android:fillColor="#FF4D9D"
+            android:pathData="M82,12L86,11L82,21L79,20Z" />
+        <!-- fita direita -->
+        <path
+            android:fillColor="#FF4D9D"
+            android:pathData="M87,11L90,12L91,21L88,22Z" />
+        <!-- nó -->
+        <path
+            android:fillColor="#FF2E9E"
+            android:pathData="M85,10m-3,0a3,3 0 1 1 6,0a3,3 0 1 1 -6,0Z" />
+    </group>
 
     <!-- Olho esquerdo -->
     <path
-        android:fillColor="#0B0918"
-        android:pathData="M40,57m-4.5,0a4.5,4.5 0 1 0 9,0a4.5,4.5 0 1 0 -9,0"
-        android:strokeColor="#35E8D8"
-        android:strokeWidth="1.6" />
+        android:fillColor="#33113A"
+        android:pathData="M30.2,53a6.5,8 0 1 0 13,0a6.5,8 0 1 0 -13,0Z" />
+
+    <!-- Brilho do olho esquerdo -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36.7,48.4m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
 
     <!-- Olho direito -->
     <path
-        android:fillColor="#0B0918"
-        android:pathData="M68,57m-4.5,0a4.5,4.5 0 1 0 9,0a4.5,4.5 0 1 0 -9,0"
-        android:strokeColor="#35E8D8"
-        android:strokeWidth="1.6" />
+        android:fillColor="#33113A"
+        android:pathData="M64.8,53a6.5,8 0 1 0 13,0a6.5,8 0 1 0 -13,0Z" />
 
-    <!-- Boca -->
+    <!-- Brilho do olho direito -->
     <path
-        android:pathData="M47,73C50,78 58,78 61,73"
-        android:strokeColor="#35E8D8"
+        android:fillColor="#FFFFFF"
+        android:pathData="M71.3,48.4m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+
+    <!-- Bochecha esquerda -->
+    <path
+        android:fillColor="#8CFF378C"
+        android:pathData="M17.3,67.6a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
+
+    <!-- Bochecha direita -->
+    <path
+        android:fillColor="#8CFF378C"
+        android:pathData="M72.7,67.6a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
+
+    <!-- Sorriso -->
+    <path
+        android:pathData="M44,77C48,85 60,85 64,77"
+        android:strokeColor="#33113A"
         android:strokeLineCap="round"
-        android:strokeWidth="4" />
-
-    <!-- Nota musical à esquerda -->
-    <path
-        android:fillColor="#FFD166"
-        android:pathData="M18,30m-3,0a3,3 0 1 0 6,0a3,3 0 1 0 -6,0
-            L21,21V12L28,10V22M25,22m-3,0a3,3 0 1 0 6,0a3,3 0 1 0 -6,0" />
+        android:strokeWidth="3.5" />
 </vector>

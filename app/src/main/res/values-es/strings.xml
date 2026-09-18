@@ -22,7 +22,7 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Qué hay de nuevo</string>
-    <string name="changelog">Novedades de esta versión (4.2.1):\n\n• Sonido ambiente corregido: océano y lluvia ahora suenan como deben — olas largas del océano y el chisporroteo constante de la lluvia con gotas</string>
+    <string name="changelog">Novedades de esta versión (4.2.2):\n\n• Nuevo avatar de Virginia: look estilo TAMI — esfera rosa con lazo, ojos brillantes, rubor y sonrisa</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>

@@ -26,7 +26,7 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.2.1):\n\n• Som ambiente corrigido: oceano e chuva agora soam como devem — o oceano tem ondas longas e a chuva tem o chiar constante com gotas</string>
+    <string name="changelog">Novidades desta versão (4.2.2):\n\n• Avatar novo da Virgínia: visual estilo TAMI — esfera rosada com laço, olhos brilhantes, bochechas e sorriso</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
