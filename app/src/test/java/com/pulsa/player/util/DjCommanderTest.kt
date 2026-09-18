@@ -27,7 +27,8 @@ class DjCommanderTest {
     fun action_preposition_para_does_not_pause() {
         assertEquals("suggest", DjCommander.action(DjCommander.norm("virgin, manda uma sugestao para mim")))
         assertEquals("scan", DjCommander.action(DjCommander.norm("virgin, busca para mim")))
-        assertNull(DjCommander.action(DjCommander.norm("virgin, o que voce faria para animar")))
+        assertNull(DjCommander.action(DjCommander.norm("virgin, o que voce faria para melhorar hoje")))
+        assertEquals("mood_wild", DjCommander.action(DjCommander.norm("virgin, o que voce faria para animar")))
     }
 
     @Test
