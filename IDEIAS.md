@@ -17,6 +17,10 @@
 - [x] **EQ automático por gênero**: qualidade "Automático (por gênero)" aplica preset conforme o gênero da faixa (Rock/Dance/Pop/Jazz/Graves/Vozes) via `AudioFx.presetForGenre` + `Library.genreOf` (seleção no `SettingsActivity`)
 - [x] **Migração para v4.0**: `versionCode 75` / `versionName "4.0"`
 - [x] **Virgínia dançando**: a Virgin assume a capa do álbum e balança no ritmo da música (bass do visualizer) — `DancingVirginView` no `NowPlayingFragment`, com microfone de karaokê no desenho
+- [x] **Avatar estilo TAMI** (4.2.2): esfera rosada com laço, olhos brilhantes, bochechas e sorriso — `virgin_avatar.xml`
+- [x] **Piscada estilo TAMI** (4.2.3): a Virgin pisca os olhos a cada ~4s via `AnimatedVectorDrawable` (`virgin_avatar_animated` + `virgin_blink`) no DJ, comandos de voz e na dança
+- [x] **Nunca mais parada** (4.2.4): respiração/balanço contínuo mesmo sem música — idle breathe no `DancingVirginView` + avatar bob no `DjActivity`
+- [x] **Som ambiente corrigido** (4.2.1): oceano com ondas longas (~8s) e chuva com chiar constante + gotas — antes soavam trocados (`Ambient.genOcean`/`genRain`)
 - [x] **Migração para v4.2**: `versionCode 77` / `versionName "4.2"`
 
 ## Web player (pulsaweb) — remote/sync via telemetria
