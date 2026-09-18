@@ -16,6 +16,8 @@
 - [x] **Equalizador**: presets Graves/Vozes/Agudos/Rock/Dance/**Pop**/**Jazz** (`Settings`) + EQ personalizado de 5 bandas com sliders, salvar/resetar (`NowPlayingFragment` → `AudioFx`); corrigido o liga/desliga que as bandas custom ignoravam
 - [x] **EQ automático por gênero**: qualidade "Automático (por gênero)" aplica preset conforme o gênero da faixa (Rock/Dance/Pop/Jazz/Graves/Vozes) via `AudioFx.presetForGenre` + `Library.genreOf` (seleção no `SettingsActivity`)
 - [x] **Migração para v4.0**: `versionCode 75` / `versionName "4.0"`
+- [x] **Virgínia dançando**: a Virgin assume a capa do álbum e balança no ritmo da música (bass do visualizer) — `DancingVirginView` no `NowPlayingFragment`, com microfone de karaokê no desenho
+- [x] **Migração para v4.2**: `versionCode 77` / `versionName "4.2"`
 
 ## Web player (pulsaweb) — remote/sync via telemetria
 - [x] **Espelho da biblioteca**: o app manda a lista de músicas pro servidor (/songs, hash p/ reenviar só quando muda); o web mostra "Músicas do celular"

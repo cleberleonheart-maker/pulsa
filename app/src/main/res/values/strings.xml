@@ -26,7 +26,7 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.0):\n\n• Equalizador turbinado: novos presets Pop e Jazz, além de Graves, Vozes, Agudos, Rock e Dance\n• Equalizador personalizado de 5 bandas agora respeita o liga/desliga (antes as bandas custom anulavam os presets e o ajuste não era aplicado corretamente)\n• Nova numeração de versão: 4.0</string>
+    <string name="changelog">Novidades desta versão (4.2):\n\n• A Virgínia agora dança sobre a capa do álbum no ritmo da música, com microfone de karaokê\n• Equalizador automático por gênero: a qualidade \"Automático (por gênero)\" aplica o preset certo para o estilo da faixa\n• Controle remoto: o player web (pulsaweb) permite pausar, trocar, pular e ajustar o volume pelo computador\n• Sincronização: fila, agora-tocando e volume ficam em sincronia com o celular</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>

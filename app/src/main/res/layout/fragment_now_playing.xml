@@ -53,6 +53,16 @@
                     android:src="@drawable/ic_music_note"
                     android:tint="#66C77DFF" />
             </com.google.android.material.card.MaterialCardView>
+
+            <com.pulsa.player.ui.DancingVirginView
+                android:id="@+id/np_virgin_dance"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="-12dp"
+                android:layout_marginBottom="-4dp"
+                android:contentDescription="@null"
+                android:elevation="18dp" />
         </FrameLayout>
 
         <TextView
