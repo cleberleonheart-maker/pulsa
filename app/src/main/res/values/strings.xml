@@ -26,7 +26,7 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.2.3):\n\n• A Virgínia agora pisca os olhos de tempos em tempos, como no TAMI — no DJ, nos comandos de voz e na dança da capa</string>
+    <string name="changelog">Novidades desta versão (4.2.4):\n\n• A Virgínia nunca mais fica parada: ela respira e balança suavemente na tela do DJ e na capa do álbum mesmo sem música (e dança mais forte no ritmo quando toca)</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>

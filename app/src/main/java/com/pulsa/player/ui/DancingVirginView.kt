@@ -54,10 +54,11 @@ class DancingVirginView @JvmOverloads constructor(
         val cy = height * 0.52f
         computeSm()
 
-        val bob = sm * (height * 0.06f)
+        val breathe = 0.5f + 0.5f * kotlin.math.sin(phase * 0.06f)
+        val bob = sm * (height * 0.06f) + breathe * height * 0.035f
         val scale = 1f + sm * 0.07f
-        val rot = sin(phase) * 5f * sm
-        val sway = cos(phase * 0.7f) * 2f * (0.2f + sm)
+        val rot = sin(phase) * 5f * (0.12f + sm)
+        val sway = cos(phase * 0.35f) * (2f + sm * 4f)
 
         canvas.save()
         canvas.translate(cw + sway, cy - bob)
@@ -67,7 +68,7 @@ class DancingVirginView @JvmOverloads constructor(
         a.draw(canvas)
         canvas.restore()
 
-        phase += 0.14f + sm * 0.18f
+        phase += 0.06f + sm * 0.12f
     }
 
     private fun startLoop() {

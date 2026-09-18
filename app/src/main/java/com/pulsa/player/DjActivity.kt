@@ -20,6 +20,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.view.KeyEvent
+import android.animation.ValueAnimator
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.widget.ImageView
@@ -75,6 +76,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var micBtn: MaterialButton
     private lateinit var configHint: TextView
     private var avatarView: android.view.View? = null
+    private var avatarBob: ValueAnimator? = null
 
     private var source = Settings.DJ_ALL
     private var intensity = Settings.DJ_BALANCED
@@ -164,6 +166,15 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         voiceBtn = findViewById(R.id.dj_btn_voice)
         micBtn = findViewById(R.id.dj_btn_mic)
         avatarView = findViewById(R.id.dj_avatar)
+        stopAvatarBob()
+        avatarView?.let { avatarBob = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 2400
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.REVERSE
+            addUpdateListener { a ->
+                it.translationY = -6f * (a.animatedValue as Float).coerceIn(0f, 1f)
+            }
+        }.also { it.start() } }
 
         deleteLauncher = registerForActivityResult(
             ActivityResultContracts.StartIntentSenderForResult()
@@ -280,6 +291,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     }
 
     override fun onDestroy() {
+        stopAvatarBob()
         djVoice?.shutdown()
         djVoice = null
         super.onDestroy()
@@ -1592,6 +1604,12 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         bindDeck(now, titleA, artistA, artA)
         bindDeck(next, titleB, artistB, artB)
         animateAvatar(playing)
+    }
+
+    private fun stopAvatarBob() {
+        avatarBob?.cancel()
+        avatarBob = null
+        avatarView?.translationY = 0f
     }
 
     private fun animateAvatar(playing: Boolean) {

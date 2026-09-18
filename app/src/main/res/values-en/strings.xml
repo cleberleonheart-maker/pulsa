@@ -22,7 +22,7 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What\'s new</string>
-    <string name="changelog">What\'s new in this version (4.2.3):\n\n• Virginia now blinks her eyes from time to time, like TAMI — on the DJ screen, voice commands and the dancing album art</string>
+    <string name="changelog">What\'s new in this version (4.2.4):\n\n• Virginia is never still anymore: she breathes and sways softly on the DJ screen and on the album art even without music (and dances harder to the beat when it plays)</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
