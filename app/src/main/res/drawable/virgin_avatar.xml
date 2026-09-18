@@ -84,4 +84,20 @@
         android:strokeColor="#33113A"
         android:strokeLineCap="round"
         android:strokeWidth="3.5" />
+
+    <!-- Pálpebras (invisíveis; usadas pelo AnimatedVectorDrawable para piscar) -->
+    <path
+        android:name="blinkL"
+        android:pathData="M30.8,51.5C34,56.5 39.4,56.5 42.6,51.5"
+        android:strokeColor="#33113A"
+        android:strokeLineCap="round"
+        android:strokeWidth="3"
+        android:strokeAlpha="0" />
+    <path
+        android:name="blinkR"
+        android:pathData="M65.4,51.5C68.6,56.5 74,56.5 76.2,51.5"
+        android:strokeColor="#33113A"
+        android:strokeLineCap="round"
+        android:strokeWidth="3"
+        android:strokeAlpha="0" />
 </vector>

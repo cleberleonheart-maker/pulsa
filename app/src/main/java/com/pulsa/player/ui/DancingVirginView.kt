@@ -3,6 +3,7 @@ package com.pulsa.player.ui
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
@@ -22,7 +23,7 @@ class DancingVirginView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private val avatar = resources.getDrawable(R.drawable.virgin_avatar, null)
+    private val avatar = resources.getDrawable(R.drawable.virgin_avatar_animated, null)
     private var sm = 0f
     private var phase = 0f
     private var animator: ValueAnimator? = null
@@ -71,6 +72,7 @@ class DancingVirginView @JvmOverloads constructor(
 
     private fun startLoop() {
         if (animator?.isRunning == true) return
+        (avatar as? AnimatedVectorDrawable)?.start()
         animator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 30
             repeatCount = ValueAnimator.INFINITE
@@ -80,6 +82,7 @@ class DancingVirginView @JvmOverloads constructor(
     }
 
     private fun stopLoop() {
+        (avatar as? AnimatedVectorDrawable)?.stop()
         animator?.cancel()
         animator = null
         sm = 0f

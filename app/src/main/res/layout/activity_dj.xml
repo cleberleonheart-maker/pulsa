@@ -46,7 +46,7 @@
                     android:background="@drawable/bg_avatar"
                     android:contentDescription="@string/dj_voice_name"
                     android:scaleType="fitCenter"
-                    android:src="@drawable/virgin_avatar" />
+                    android:src="@drawable/virgin_avatar_animated" />
             </FrameLayout>
 
             <LinearLayout

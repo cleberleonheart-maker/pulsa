@@ -27,7 +27,7 @@
                 android:layout_height="32dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/virgin_avatar" />
+                android:src="@drawable/virgin_avatar_animated" />
         </FrameLayout>
 
         <LinearLayout
