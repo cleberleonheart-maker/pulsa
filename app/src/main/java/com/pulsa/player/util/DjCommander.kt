@@ -65,7 +65,39 @@ object DjCommander {
         listOf("dormir", "dorme", "dormi", "sono", "relaxar", "relaxa", "calma", "calmo",
             "descansar", "acalma", "tranquila", "tranquilo", "modo sono").any { norm.contains(it) }
 
+    private fun moodWildMatch(norm: String): Boolean =
+        listOf("bombar", "bombra", "anima", "animar", "acelera", "acelerar",
+            "festa", "agit", "empolg", "firmeza", "pancadao").any { norm.contains(it) }
+
+    private fun memoryKey(norm: String): Boolean =
+        listOf("numero", "telefone", "whats", "zap", "watss", "bluetooth", "bitu",
+            "fone", "contato", "ligar").any { norm.contains(it) }
+
+    private fun hasPhoneDigits(norm: String): Boolean {
+        if (norm.filter { it.isDigit() }.length in 8..15) return true
+        return Regex("""[0-9]+(?:\s*-?\s*[0-9]+)*""").findAll(norm).any {
+            it.value.filter { c -> c.isDigit() }.length in 8..13
+        }
+    }
+
+    private fun memorySave(norm: String): Boolean {
+        if (!memoryKey(norm)) return false
+        if (hasPhoneDigits(norm)) return true
+        if (norm.contains("qual") || norm.contains("lembra")) return false
+        return norm.contains("bluetooth") || norm.contains("bitu") || norm.contains("fone")
+    }
+
+    private fun memoryRecall(norm: String): Boolean {
+        if (!memoryKey(norm)) return false
+        if (hasPhoneDigits(norm)) return false
+        return norm.contains("qual") || norm.contains("meu") || norm.contains("minha") ||
+            norm.contains("lembra")
+    }
+
     fun action(norm: String): String? = when {
+        memorySave(norm) -> "memory_save"
+        memoryRecall(norm) -> "memory_recall"
+        moodWildMatch(norm) -> "mood_wild"
         sleepMatch(norm) -> "sleep"
         norm.contains("repete essa") || norm.contains("repete a musica") ||
             norm.contains("repetir essa") || norm.contains("repita essa") -> "repeat"

@@ -22,7 +22,7 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Qué hay de nuevo</string>
-    <string name="changelog">Novedades de esta versión (4.2.4):\n\n• Virginia ya no se queda quieta: respira y se mece suavemente en la pantalla del DJ y en la carátula del álbum incluso sin música (y baila más fuerte al ritmo cuando suena)</string>
+    <string name="changelog">Novedades de esta versión (4.2.5):\n\n• Icono nuevo de Pulsa: la cara de Virginia (estilo TAMI) con fondo neón\n• Virginia tiene memoria: dile "mi teléfono es 99999-9999" y después pregunta "¿cuál es mi número?" y lo recordará\n• Ánimo nuevo: dile "a toda energía" o "anímame" y arma un mix mucho más movido</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>

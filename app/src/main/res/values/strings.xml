@@ -26,7 +26,7 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.2.4):\n\n• A Virgínia nunca mais fica parada: ela respira e balança suavemente na tela do DJ e na capa do álbum mesmo sem música (e dança mais forte no ritmo quando toca)</string>
+    <string name="changelog">Novidades desta versão (4.2.5):\n\n• Ícone novo do Pulsa: a cara da Virgínia (estilo TAMI) com fundo neon\n• A Virgínia ganhou memória: diga "Virgem, meu telefone é 99999-9999" e depois pergunte "qual é meu número?" que ela lembra\n• Novo humor: peça "bombar", "anima" ou "acelera" e ela monta um mix bem mais animado</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
@@ -345,6 +345,12 @@
     <string name="dj_voice_repeat_on">Combinado! Repetindo essa música.</string>
     <string name="dj_voice_repeat_off">Ok, parei de repetir essa música.</string>
     <string name="dj_voice_sleep">Agora vai! Preparei uma seleção calma e curta de %1$d músicas para você dormir.</string>
+    <string name="dj_voice_memory_saved">Anotado! Lembro: seu %1$s é %2$s.</string>
+    <string name="dj_voice_memory_ask">Ainda não guardei isso. Me conta seu %1$s que eu guardo.</string>
+    <string name="dj_voice_mood_wild">E aí, energia total! Preparei %1$d músicas pra empolgar.</string>
+    <string name="dj_memory_phone">número</string>
+    <string name="dj_memory_whatsapp">WhatsApp</string>
+    <string name="dj_memory_bluetooth">Bluetooth</string>
     <string name="dj_voice_only">Só %1$s daqui pra frente! São %2$d músicas.</string>
     <string name="dj_voice_only_none">Não encontrei nenhum artista chamado %1$s.</string>
     <string name="dj_voice_mixwith">Boa! Misturei %1$s no mix, com %2$d músicas no total.</string>

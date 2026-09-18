@@ -22,6 +22,7 @@
 - [x] **Nunca mais parada** (4.2.4): respiração/balanço contínuo mesmo sem música — idle breathe no `DancingVirginView` + avatar bob no `DjActivity`
 - [x] **Som ambiente corrigido** (4.2.1): oceano com ondas longas (~8s) e chuva com chiar constante + gotas — antes soavam trocados (`Ambient.genOcean`/`genRain`)
 - [x] **Migração para v4.2**: `versionCode 77` / `versionName "4.2"`
+- [x] **Ícone novo do Pulsa** (4.2.5): a cara da Virgínia (estilo TAMI) com fundo neon + notas musicais — `ic_launcher.xml`
 
 ## Web player (pulsaweb) — remote/sync via telemetria
 - [x] **Espelho da biblioteca**: o app manda a lista de músicas pro servidor (/songs, hash p/ reenviar só quando muda); o web mostra "Músicas do celular"
@@ -31,9 +32,9 @@
 - [x] Servidor serve o próprio web player em `/` (static) na porta 8081
 
 ## DJ Virgin (mais natural)
-- [ ] Relembrar contexto: guardar última conversa e responder com telefone/WhatsApp/Bluetooth (hoje ela só fala sozinha)
-- [ ] Perfis de humor: "toca uma pra eu dormir" → fila menor, playlists calmas
-- [ ] Comandos faltantes: "toca só X", "mistura com Y", "repete essa" (hoje só tem next/prev/pause/vol/fav)
+- [x] **Relembrar contexto** (4.2.5): memória persistida (`DjMemory`) — "meu telefone/whats é 99999-9999" é guardado e "qual é meu número?" é respondido; também pergunta/elembra do Bluetooth
+- [x] **Perfis de humor** (4.2.5): dormir → fila calma curta (CALM); "bombar/anima/acelera/festa" → mix enérgico (WILD); padrão → balançado
+- [x] **Comandos faltantes** (4.2.5): "toca só X" (`only`), "mistura com Y" (`mixwith`), "repete essa" (`repeat`) já existiam — agora com a memória e o humor novos também regem esses fluxos
 
 ## Áudio/qualidade de som
 - [ ] Mais bandas/presets no equalizador (ex.: EQ com bandas reais do aparelho)

@@ -52,6 +52,7 @@ import com.pulsa.player.util.DjEngine
 import com.pulsa.player.util.DjFacts
 import com.pulsa.player.util.DjIdentity
 import com.pulsa.player.util.DjLearn
+import com.pulsa.player.util.DjMemory
 import com.pulsa.player.util.DjRecognizer
 import com.pulsa.player.util.DjSuggest
 import com.pulsa.player.util.DjVoice
@@ -466,6 +467,67 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         }
     }
 
+    private fun startWildMix() {
+        if (!Permissions.hasAccess(this)) {
+            Toast.makeText(this, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+            return
+        }
+        ThreadPool.post {
+            val songs = Library.allSongs(this)
+            val favIds = runCatching {
+                PlaylistDb.get(applicationContext).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val learn = DjLearn.learn(applicationContext)
+            val set = DjEngine.build(
+                songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.WILD, learn,
+                maxSize = 16
+            )
+            ThreadPool.onUi {
+                if (set.isEmpty()) {
+                    Toast.makeText(this, R.string.dj_empty, Toast.LENGTH_LONG).show()
+                    return@onUi
+                }
+                Telemetry.log(this, "DJ Virgin wild n=${set.size}")
+                Playback.setShuffle(true)
+                Playback.setRepeatAll(true)
+                djActive = true
+                learnId = -1L
+                lastCompleted = false
+                suppressNextLearnSkip = false
+                Playback.start(set.shuffled(), 0)
+                resetCrossfader()
+                render()
+                speak(getString(R.string.dj_voice_mood_wild, set.size))
+            }
+        }
+    }
+
+    private fun memoryLabel(key: String): String = when (key) {
+        DjMemory.WHATSAPP -> getString(R.string.dj_memory_whatsapp)
+        DjMemory.BLUETOOTH -> getString(R.string.dj_memory_bluetooth)
+        else -> getString(R.string.dj_memory_phone)
+    }
+
+    private fun voiceMemorySave(norm: String) {
+        val saved = DjMemory.save(applicationContext, norm)
+        if (saved != null) {
+            DjMemory.log(applicationContext, norm, "memorizado ${saved.first}")
+            speak(getString(R.string.dj_voice_memory_saved, memoryLabel(saved.first), saved.second))
+        } else {
+            speak(getString(R.string.dj_voice_memory_ask, memoryLabel(DjMemory.PHONE)))
+        }
+    }
+
+    private fun voiceMemoryRecall(norm: String) {
+        val fact = DjMemory.recall(applicationContext, norm)
+        if (fact != null) {
+            DjMemory.log(applicationContext, norm, "lembra ${fact.first}")
+            speak(getString(R.string.dj_voice_memory_saved, memoryLabel(fact.first), fact.second))
+        } else {
+            speak(getString(R.string.dj_voice_memory_ask, memoryLabel(DjMemory.PHONE)))
+        }
+    }
+
     private fun startArtistOnly(query: String?) {
         val artist = findArtist(query)
         if (artist == null) {
@@ -653,6 +715,9 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
                 speak(getString(R.string.dj_voice_mix))
                 startMix()
             }
+            "memory_save" -> voiceMemorySave(norm)
+            "memory_recall" -> voiceMemoryRecall(norm)
+            "mood_wild" -> startWildMix()
             "sleep" -> startSleepMix()
             "repeat" -> {
                 val on = !Playback.repeatOne

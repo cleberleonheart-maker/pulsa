@@ -69,6 +69,7 @@ import com.pulsa.player.util.DjCommander
 import com.pulsa.player.util.DjEngine
 import com.pulsa.player.util.DjFacts
 import com.pulsa.player.util.DjLearn
+import com.pulsa.player.util.DjMemory
 import com.pulsa.player.util.DjRecognizer
 import com.pulsa.player.util.DjVoice
 import com.pulsa.player.util.GalleryScanner
@@ -789,6 +790,61 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         }
     }
 
+    private fun virgWildMix() {
+        ThreadPool.post {
+            val songs = Library.allSongs(applicationContext)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi { virginSpeak(getString(R.string.dj_voice_only_none, "")) }
+                return@post
+            }
+            val favIds = runCatching {
+                PlaylistDb.get(applicationContext).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val learn = DjLearn.learn(applicationContext)
+            val set = DjEngine.build(
+                songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.WILD, learn,
+                maxSize = 16
+            )
+            ThreadPool.onUi {
+                if (set.isEmpty()) {
+                    virginSpeak(getString(R.string.dj_voice_only_none, ""))
+                    return@onUi
+                }
+                Telemetry.log(this, "Virgin wild n=${set.size}")
+                Playback.setShuffle(true)
+                Playback.setRepeatAll(true)
+                Playback.start(set.shuffled(), 0)
+                virginSpeak(getString(R.string.dj_voice_mood_wild, set.size))
+            }
+        }
+    }
+
+    private fun memoryLabel(key: String): String = when (key) {
+        DjMemory.WHATSAPP -> getString(R.string.dj_memory_whatsapp)
+        DjMemory.BLUETOOTH -> getString(R.string.dj_memory_bluetooth)
+        else -> getString(R.string.dj_memory_phone)
+    }
+
+    private fun virgMemorySave(norm: String) {
+        val saved = DjMemory.save(applicationContext, norm)
+        if (saved != null) {
+            DjMemory.log(applicationContext, norm, "memorizado ${saved.first}")
+            virginSpeak(getString(R.string.dj_voice_memory_saved, memoryLabel(saved.first), saved.second))
+        } else {
+            virginSpeak(getString(R.string.dj_voice_memory_ask, memoryLabel(DjMemory.PHONE)))
+        }
+    }
+
+    private fun virgMemoryRecall(norm: String) {
+        val fact = DjMemory.recall(applicationContext, norm)
+        if (fact != null) {
+            DjMemory.log(applicationContext, norm, "lembra ${fact.first}")
+            virginSpeak(getString(R.string.dj_voice_memory_saved, memoryLabel(fact.first), fact.second))
+        } else {
+            virginSpeak(getString(R.string.dj_voice_memory_ask, memoryLabel(DjMemory.PHONE)))
+        }
+    }
+
     private fun handleVirginCommand(text: String) {
         if (text == "__unsupported__") {
             stopVirgin(silent = false)
@@ -815,6 +871,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         }
         when (action) {
             "mix" -> virginSpeak(getString(R.string.dj_voice_mix_main))
+            "memory_save" -> virgMemorySave(norm)
+            "memory_recall" -> virgMemoryRecall(norm)
+            "mood_wild" -> virgWildMix()
             "sleep" -> virgSleepMix()
             "repeat" -> {
                 val on = !Playback.repeatOne
