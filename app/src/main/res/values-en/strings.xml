@@ -22,7 +22,7 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What\'s new</string>
-    <string name="changelog">What\'s new in this version (4.2):\n\n• Virginia now dances over the album art, grooving to the beat with a karaoke mic\n• Genre-based auto EQ: the \"Auto (by genre)\" quality applies the right preset for the song\'s style\n• Remote control: the web player (pulsaweb) lets you pause, switch, skip and adjust volume from your computer\n• Sync: queue, now-playing and volume stay in sync with your phone</string>
+    <string name="changelog">What\'s new in this version (4.2.1):\n\n• Ambient sound fix: ocean and rain now sound as they should — long ocean waves and steady rain patter with drops</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>

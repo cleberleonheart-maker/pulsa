@@ -180,25 +180,42 @@ object Ambient {
 
     @Suppress("LocalVariableName")
     private fun genRain(buf: ShortArray, n: Int) {
-        var lp = 0f
+        var bed = 0f
+        var tickPhase = 0f
+        var tickStep = 0f
+        var tickAmp = 0f
+        var untilTick = 0f
         emit(buf, n) {
             val w = rand.nextFloat() * 2f - 1f
-            lp += 0.12f * (w - lp)
-            (lp * 2.2f + w * 0.08f + (if (rand.nextFloat() < 0.00045f) 2.0f else 0f))
+            bed += 0.18f * (w - bed)
+            untilTick -= 1f
+            if (untilTick <= 0f) {
+                untilTick = 60f + rand.nextFloat() * 380f
+                tickAmp = 0.7f + rand.nextFloat() * 0.9f
+                tickStep = 0.06f + rand.nextFloat() * 0.24f
+                tickPhase = rand.nextFloat() * 6.283f
+            }
+            val tick: Float = if (tickAmp > 0.01f) {
+                tickPhase += tickStep
+                kotlin.math.sin(tickPhase) * tickAmp
+            } else 0f
+            tickAmp *= 0.94f
+            bed * 1.0f + tick * 0.45f + w * 0.06f
         }
     }
 
     @Suppress("LocalVariableName")
     private fun genOcean(buf: ShortArray, n: Int) {
-        var lp = 0f
-        var phase = rand.nextFloat() * 6.283f
-        var swell = 0f
+        var low = 0f
+        var hiss = 0f
+        var swellPhase = 0f
         emit(buf, n) {
-            phase += 0.0009f
-            swell = 0.5f + 0.5f * kotlin.math.sin(phase)
+            swellPhase += 0.000017f
+            val swell = 0.5f + 0.5f * kotlin.math.sin(swellPhase)
             val w = rand.nextFloat() * 2f - 1f
-            lp += 0.012f * (w - lp)
-            lp * 2.6f * (0.4f + swell)
+            low += 0.015f * (w - low)
+            hiss += 0.07f * (w - hiss)
+            (low * 1.25f + hiss * 0.55f) * (0.30f + swell * 1.05f)
         }
     }
 
