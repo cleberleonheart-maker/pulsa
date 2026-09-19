@@ -30,10 +30,9 @@ object UpdateChecker {
         "https://pulsaweb.netlify.app/version",
         "https://docs.google.com/document/d/1FEj7Rvlyz6o67-EVWLVP9oTo3mU4ShG0jj6w206ZvQA/export?format=txt"
     )
-    private val privateHosts = listOf(
-        "http://192.168.100.7:8081/version",
-        "http://127.0.0.1:8081/version"
-    )
+    private fun privateHosts(context: Context): List<String> {
+        return Settings.serverCandidates(context).map { "$it/version" }
+    }
 
     // Servidor privado primeiro; publico (GitHub Pages / Netlify) fica de fallback.
     private val fallbackApkHosts = listOf(
@@ -45,8 +44,8 @@ object UpdateChecker {
     private data class VersionResult(val code: Long, val name: String, val apkUrl: String)
 
     /** Consulta TODOS os hosts (publicos primeiro) e devolve o de MAIOR versionCode. */
-    private fun queryLatest(): VersionResult? {
-        return bestFrom(publicHosts) ?: bestFrom(privateHosts)
+    private fun queryLatest(context: Context): VersionResult? {
+        return bestFrom(publicHosts) ?: bestFrom(privateHosts(context))
     }
 
     private fun bestFrom(hostList: List<String>): VersionResult? {
@@ -69,7 +68,7 @@ object UpdateChecker {
     fun downloadFromSite(context: Context) {
         if (context !is android.app.Activity) return
         ThreadPool.post {
-            val latest = queryLatest()
+            val latest = queryLatest(context)
             ThreadPool.onUi {
                 val code = latest?.code
                 if (code != null && code <= BuildConfig.VERSION_CODE.toLong()) {
@@ -151,7 +150,7 @@ object UpdateChecker {
 
     fun check(context: Context) {
         ThreadPool.post {
-            val latest = queryLatest()
+            val latest = queryLatest(context)
             if (latest != null) handle(context, "${latest.code}|${latest.name}|${latest.apkUrl}")
         }
     }

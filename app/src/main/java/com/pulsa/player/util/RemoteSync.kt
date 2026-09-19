@@ -26,10 +26,11 @@ object RemoteSync {
     private const val INTERVAL_MS = 3_000L
     private const val SONGS_MS = 60_000L
 
-    private val hosts = listOf(
-        "http://192.168.100.7:8081",
-        "http://127.0.0.1:8081"
-    )
+    private fun hosts(): List<String> {
+        val ctx = appContext
+        return if (ctx != null) Settings.serverCandidates(ctx) else
+            listOf("http://192.168.100.7:8081", "http://127.0.0.1:8081")
+    }
 
     @Volatile
     private var running = false
@@ -136,7 +137,7 @@ object RemoteSync {
 
     private fun pullDjLearn(ctx: Context) {
         val device = Settings.deviceId(ctx)
-        for (base in hosts) {
+        for (base in hosts()) {
             try {
                 val conn = URL("$base/djlearn").openConnection() as HttpURLConnection
                 conn.requestMethod = "GET"
@@ -162,7 +163,7 @@ object RemoteSync {
 
     private fun pollCommands(ctx: Context) {
         val device = Settings.deviceId(ctx)
-        for (base in hosts) {
+        for (base in hosts()) {
             try {
                 val conn = URL("$base/cmd").openConnection() as HttpURLConnection
                 conn.requestMethod = "GET"
@@ -206,7 +207,7 @@ object RemoteSync {
     private fun postJson(ctx: Context, path: String, body: String): Boolean {
         val device = Settings.deviceId(ctx)
         val payload = body.toByteArray()
-        for (base in hosts) {
+        for (base in hosts()) {
             try {
                 val conn = URL("$base$path").openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"

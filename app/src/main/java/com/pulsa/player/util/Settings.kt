@@ -12,6 +12,7 @@ object Settings {
     private const val KEY_DEVICE_ID = "device_id"
     private const val KEY_MIRROR_CODE = "mirror_code"
     private const val KEY_MIRROR_HOST = "mirror_host"
+    private const val KEY_SERVER = "server_base"
     private const val DEFAULT_TELEMETRY_TOKEN = "pulsa-local-2026"
 
     const val ACCENT_PURPLE = "purple"
@@ -87,6 +88,25 @@ object Settings {
 
     fun setMirrorHost(context: Context, host: Boolean) {
         prefs(context).edit().putBoolean(KEY_MIRROR_HOST, host).apply()
+    }
+
+    /** Endereço do servidor de telemetria (vazio = padrão da LAN/localhost). */
+    fun serverBase(context: Context): String = prefs(context).getString(KEY_SERVER, "") ?: ""
+
+    fun setServerBase(context: Context, url: String) {
+        val cleaned = url.trim().trimEnd('/')
+        prefs(context).edit().putString(KEY_SERVER, cleaned).apply()
+    }
+
+    /** Hosts a tentar, na ordem: configurado primeiro, depois LAN e localhost. */
+    fun serverCandidates(context: Context): List<String> {
+        val out = ArrayList<String>(3)
+        val custom = serverBase(context)
+        if (custom.isNotEmpty() && !out.contains(custom)) out.add(custom)
+        for (def in listOf("http://192.168.100.7:8081", "http://127.0.0.1:8081")) {
+            if (!out.contains(def)) out.add(def)
+        }
+        return out
     }
 
     /** Prefs criptografadas (Android Keystore) para chaves/secrets/sessão. */

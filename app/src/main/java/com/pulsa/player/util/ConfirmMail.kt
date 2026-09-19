@@ -16,22 +16,19 @@ object ConfirmMail {
 
     private val main = Handler(Looper.getMainLooper())
 
-    private val hosts = listOf(
-        "http://192.168.100.7:8081",
-        "http://127.0.0.1:8081"
-    )
+    private fun hosts(context: Context): List<String> = Settings.serverCandidates(context)
 
     fun send(context: Context, to: String, name: String, onResult: (SendResult) -> Unit) {
         ThreadPool.post {
-            val result = sendSync(to, name)
+            val result = sendSync(context, to, name)
             Telemetry.log(context, "SENDMAIL ok=${result.ok} smtp=${result.smtpOnline} ${result.detail ?: ""}".trim())
             main.post { onResult(result) }
         }
     }
 
-    private fun sendSync(to: String, name: String): SendResult {
+    private fun sendSync(context: Context, to: String, name: String): SendResult {
         var last: SendResult? = null
-        for (base in hosts) {
+        for (base in hosts(context)) {
             try {
                 val params = "to=${URLEncoder.encode(to, "UTF-8")}&name=${URLEncoder.encode(name, "UTF-8")}"
                 val conn = URL("$base/sendmail").openConnection() as HttpURLConnection
@@ -69,10 +66,10 @@ object ConfirmMail {
     }
 
     /** Verifica o status do servidor de e-mail (GET /smtp/status). */
-    fun smtpStatus(context: Context, onStatus: (String) -> Unit) {
+fun smtpStatus(context: Context, onStatus: (String) -> Unit) {
         ThreadPool.post {
             var status = "?"
-            for (base in hosts) {
+            for (base in hosts(context)) {
                 try {
                     val conn = URL("$base/smtp/status").openConnection() as HttpURLConnection
                     conn.requestMethod = "GET"

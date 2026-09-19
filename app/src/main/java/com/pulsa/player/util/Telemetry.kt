@@ -12,7 +12,7 @@ object Telemetry {
             val payload = URLEncoder.encode(msg, "UTF-8")
             val token = Settings.telemetryToken(context)
             val device = Settings.deviceId(context)
-            val hosts = listOf("http://192.168.100.7:8081/telem", "http://127.0.0.1:8081/telem")
+            val hosts = Settings.serverCandidates(context).map { "$it/telem" }
             for (base in hosts) {
                 try {
                     val conn = URL(base).openConnection() as HttpURLConnection

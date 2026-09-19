@@ -22,7 +22,8 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What\'s new</string>
-    <string name="changelog">New in this version (4.3.1):
+    <string name="changelog">\n• Configurable server: set the server address (LAN/tunnel/VPS) in Settings → Listen together; a guest in another state can join over the internet
+New in this version (4.3.2):
 
 • NEW – Listen together: create a session and sync the same track with another person (shared code, position and play/pause mirrored)
 • Complete redesign: modern futuristic "Indigo Aurora" look (deep-space background with violet/cyan gradients, glass cards, neon buttons)
@@ -409,4 +410,9 @@
     <string name="mirror_left">Left the session</string>
     <string name="mirror_error">Could not reach the server</string>
     <string name="mirror_not_found">This track is not in your library: %1$s</string>
+    <string name="server_title">Server</string>
+    <string name="server_default">Automatic (local network / default)</string>
+    <string name="server_hint">https://your-server:8081</string>
+    <string name="server_saved">Server updated — everything will use the new address</string>
+    <string name="server_reset">Use default</string>
 </resources>

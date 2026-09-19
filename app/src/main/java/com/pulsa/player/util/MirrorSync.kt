@@ -26,10 +26,11 @@ object MirrorSync {
     private const val INTERVAL_MS = 4_000L
     private const val MAX_DRIFT_MS = 6_000L
 
-    private val hosts = listOf(
-        "http://192.168.100.7:8081",
-        "http://127.0.0.1:8081"
-    )
+    private fun hosts(): List<String> {
+        val ctx = appContext
+        return if (ctx != null) Settings.serverCandidates(ctx) else
+            listOf("http://192.168.100.7:8081", "http://127.0.0.1:8081")
+    }
 
     @Volatile
     private var running = false
@@ -161,7 +162,7 @@ object MirrorSync {
     private fun fetch(ctx: Context, code: String): JSONObject? {
         val device = Settings.deviceId(ctx)
         val encoded = URLEncoder.encode(code, "UTF-8")
-        for (base in hosts) {
+        for (base in hosts()) {
             try {
                 val conn = URL("$base/session?code=$encoded").openConnection() as HttpURLConnection
                 conn.requestMethod = "GET"

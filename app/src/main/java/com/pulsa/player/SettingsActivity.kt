@@ -61,6 +61,8 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.quality_row).setOnClickListener { pickQuality() }
         findViewById<View>(R.id.mirror_row).setOnClickListener { mirrorMenu() }
         refreshMirrorLabel()
+        findViewById<View>(R.id.server_row).setOnClickListener { serverDialog() }
+        refreshServerLabel()
 
         findViewById<TextView>(R.id.crossfade_value).text = crossfadeLabel()
         findViewById<View>(R.id.crossfade_row).setOnClickListener { pickCrossfade() }
@@ -312,6 +314,38 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun serverDialog() {
+        refreshServerLabel()
+        val input = EditText(this).apply {
+            setText(Settings.serverBase(this@SettingsActivity))
+            hint = getString(R.string.server_hint)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_URI
+            setSingleLine(true)
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.server_title)
+            .setView(input)
+            .setPositiveButton(R.string.save) { _, _ ->
+                Settings.setServerBase(this, input.text.toString().trim())
+                refreshServerLabel()
+                Toast.makeText(this, R.string.server_saved, Toast.LENGTH_SHORT).show()
+            }
+            .setNeutralButton(R.string.server_reset) { _, _ ->
+                Settings.setServerBase(this, "")
+                refreshServerLabel()
+                Toast.makeText(this, R.string.server_saved, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun refreshServerLabel() {
+        val label = findViewById<TextView>(R.id.server_value)
+        val base = Settings.serverBase(this)
+        label.text = if (base.isEmpty()) getString(R.string.server_default) else base
+    }
+
     private fun sessionCall(body: String): String {
         val device = Settings.deviceId(this)
         for (base in sessionHosts()) {
@@ -353,10 +387,7 @@ class SettingsActivity : AppCompatActivity() {
         return ""
     }
 
-    private fun sessionHosts(): List<String> = listOf(
-        "http://192.168.100.7:8081",
-        "http://127.0.0.1:8081"
-    )
+    private fun sessionHosts(): List<String> = Settings.serverCandidates(this)
 
     private fun pickAccent() {
         val keys = arrayOf(

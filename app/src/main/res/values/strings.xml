@@ -26,7 +26,8 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.3.1):
+    <string name="changelog">\n• Servidor configurável: mude o endereço do servidor (LAN/túnel/VPS) em Configurações → Ouvir juntos; o convidado de outro estado pode entrar pela internet
+Novidades desta versão (4.3.2):
 
 • NOVO – Ouvir juntos: crie uma sessão e sincronize a mesma música com outra pessoa (código compartilhado, posição e play/pause espelhados)
 • Redesenho completo: visual "Aurora Índigo" moderno e futurista (fundo deep-space com gradientes violeta/ciano, cartões em vidro, botões neon)
@@ -511,4 +512,9 @@
     <string name="mirror_left">Saiu da sessão</string>
     <string name="mirror_error">Não foi possível falar com o servidor</string>
     <string name="mirror_not_found">Esta música não está na sua biblioteca: %1$s</string>
+    <string name="server_title">Servidor</string>
+    <string name="server_default">Automático (rede local / padrão)</string>
+    <string name="server_hint">https://seu-servidor:8081</string>
+    <string name="server_saved">Servidor atualizado — tudo passa a usar o novo endereço</string>
+    <string name="server_reset">Usar padrão</string>
 </resources>
