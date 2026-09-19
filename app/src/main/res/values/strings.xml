@@ -26,7 +26,16 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.3.0):\n\n• Redesenho completo: visual "Aurora Índigo" moderno e futurista (fundo deep-space com gradientes violeta/ciano, cartões em vidro, botões neon)\n• Tipografia nova: Space Grotesk nos títulos + Outfit no texto\n• Animações de transição entre todas as telas\n• Equalizador com as bandas REAIS do aparelho + presets novos (Acústico, Clássico, Sonoridade)\n• A Virgínia agora aprende entre dispositivos: os gostos (skips/likes) são espelhados na nuvem\n• Builds assinados via GitHub Actions (keystore por secrets)\n• Verificação do status do servidor de e-mail na tela de login</string>
+    <string name="changelog">Novidades desta versão (4.3.1):
+
+• NOVO – Ouvir juntos: crie uma sessão e sincronize a mesma música com outra pessoa (código compartilhado, posição e play/pause espelhados)
+• Redesenho completo: visual "Aurora Índigo" moderno e futurista (fundo deep-space com gradientes violeta/ciano, cartões em vidro, botões neon)
+• Tipografia nova: Space Grotesk nos títulos + Outfit no texto
+• Animações de transição entre todas as telas
+• Equalizador com as bandas REAIS do aparelho + presets novos (Acústico, Clássico, Sonoridade)
+• A Virgínia agora aprende entre dispositivos: os gostos (skips/likes) são espelhados na nuvem
+• Builds assinados via GitHub Actions (keystore por secrets)
+• Verificação do status do servidor de e-mail na tela de login</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
@@ -486,4 +495,20 @@
     <string name="lyrics_downloaded">Letra sincronizada salva localmente</string>
     <string name="lyrics_online_lrc">Letra sincronizada (online)</string>
     <string name="lyrics_online_plain">Letra (online)</string>
+    <string name="mirror_title">Ouvir juntos</string>
+    <string name="mirror_subtitle">Sincronize a mesma música com outra pessoa</string>
+    <string name="mirror_create">Criar sessão (sou o DJ)</string>
+    <string name="mirror_join">Entrar com código</string>
+    <string name="mirror_leave">Sair da sessão %1$s</string>
+    <string name="mirror_code_hint">Código da sessão (5 letras)</string>
+    <string name="mirror_share_title">Convidar para ouvir junto</string>
+    <string name="mirror_share">Vem ouvir a mesma música que eu no Pulsa! Entra com o código %1$s em Configurações → Ouvir juntos.</string>
+    <string name="mirror_active">Sessão %1$s · %2$s</string>
+    <string name="mirror_role_host">sou o DJ</string>
+    <string name="mirror_role_guest">escutando com o DJ</string>
+    <string name="mirror_created">Sessão criada</string>
+    <string name="mirror_joined">Entrou na sessão %1$s</string>
+    <string name="mirror_left">Saiu da sessão</string>
+    <string name="mirror_error">Não foi possível falar com o servidor</string>
+    <string name="mirror_not_found">Esta música não está na sua biblioteca: %1$s</string>
 </resources>

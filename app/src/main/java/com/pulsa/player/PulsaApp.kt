@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.pm.PackageManager
 import com.pulsa.player.util.CrashLogger
 import com.pulsa.player.util.Migrations
+import com.pulsa.player.util.MirrorSync
 import com.pulsa.player.util.RemoteSync
 import com.pulsa.player.util.Settings
 import com.pulsa.player.util.Telemetry
@@ -36,6 +37,10 @@ class PulsaApp : Application() {
         }
         try {
             RemoteSync.start(this)
+        } catch (t: Throwable) {
+        }
+        try {
+            MirrorSync.start(this)
         } catch (t: Throwable) {
         }
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->

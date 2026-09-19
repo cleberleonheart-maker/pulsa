@@ -28,6 +28,7 @@
 - [x] **DjLearn espelhado na nuvem** (4.3.0): stats de play/skip/like/dislike espelhados via `/djlearn` (POST push quando sujo + GET pull/merge max a cada 5min) — Virgin aprende entre sessões/dispositivos (`DjLearn.snapshot/mergeRemote` + `RemoteSync.maybeSyncDjLearn`)
 - [x] **Assinatura via GitHub Actions** (4.3.0): keystore/senhas fora do código, via secrets `KEYSTORE_BASE64/PASSWORD/ALIAS` com fallback local (`app/build.gradle.kts` + `.github/workflows/build.yml`)
 - [x] **Status SMTP verificado** (4.3.0): envio parseia resposta do `/sendmail` (distingue falha de SMTP 535/536) e a tela de login consulta `/smtp/status` mostrando online/offline/não verificado (`ConfirmMail` + `LoginActivity`)
+- [x] **Ouvir juntos** (4.3.1): sessão entre dois aparelhos Pulsa via servidor (`/session` — criar/entrar/sair com código de 5 letras); o convidado espelha faixa (match por id → título+artista), posição (seek quando drift > 6s) e play/pause (`MirrorSync` + `SettingsActivity`)
 
 ## Web player (pulsaweb) — remote/sync via telemetria
 - [x] **Espelho da biblioteca**: o app manda a lista de músicas pro servidor (/songs, hash p/ reenviar só quando muda); o web mostra "Músicas do celular"

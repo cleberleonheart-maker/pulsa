@@ -15,9 +15,15 @@ import com.pulsa.player.util.Account
 import com.pulsa.player.util.AnimatedBackground
 import com.pulsa.player.util.Changelog
 import com.pulsa.player.util.Helper
+import com.pulsa.player.util.MirrorSync
 import com.pulsa.player.util.MusicDownloader
 import com.pulsa.player.util.Settings
+import com.pulsa.player.util.Telemetry
+import com.pulsa.player.util.ThreadPool
 import com.pulsa.player.util.UpdateChecker
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -53,6 +59,8 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.quality_value).text = qualityLabel()
         findViewById<View>(R.id.quality_row).setOnClickListener { pickQuality() }
+        findViewById<View>(R.id.mirror_row).setOnClickListener { mirrorMenu() }
+        refreshMirrorLabel()
 
         findViewById<TextView>(R.id.crossfade_value).text = crossfadeLabel()
         findViewById<View>(R.id.crossfade_row).setOnClickListener { pickCrossfade() }
@@ -187,6 +195,168 @@ class SettingsActivity : AppCompatActivity() {
             .setNegativeButton(R.string.cancel, null)
             .show()
     }
+
+    private fun mirrorMenu() {
+        val activeCode = Settings.mirrorCode(this)
+        val options = if (activeCode.isBlank()) {
+            arrayOf(getString(R.string.mirror_create), getString(R.string.mirror_join))
+        } else {
+            arrayOf(
+                getString(R.string.mirror_create),
+                getString(R.string.mirror_join),
+                getString(R.string.mirror_leave, activeCode)
+            )
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.mirror_title)
+            .setItems(options) { _, which ->
+                when {
+                    which == 0 -> createSession()
+                    activeCode.isBlank() || which == 1 -> joinSessionDialog()
+                    else -> leaveSession()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun createSession() {
+        ThreadPool.post {
+            val res = sessionCall("""{"create":true}""")
+            runOnUiThread {
+                val code = runCatching { JSONObject(res) }.getOrNull()?.optString("code")
+                if (code.isNullOrBlank()) {
+                    Toast.makeText(this, R.string.mirror_error, Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+                Settings.setMirrorCode(this, code)
+                Settings.setMirrorHost(this, true)
+                MirrorSync.start(this)
+                refreshMirrorLabel()
+                shareCode(code)
+            }
+        }
+    }
+
+    private fun joinSessionDialog() {
+        val input = EditText(this).apply {
+            hint = getString(R.string.mirror_code_hint)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+            setSingleLine(true)
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.mirror_join)
+            .setView(input)
+            .setPositiveButton(R.string.mirror_join) { _, _ ->
+                val code = input.text.toString().trim().uppercase()
+                if (code.length < 3) {
+                    Toast.makeText(this, R.string.mirror_code_hint, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                ThreadPool.post {
+                    val res = sessionGet(code)
+                    val ok = runCatching { JSONObject(res) }.getOrNull()?.optBoolean("ok", false) == true
+                    runOnUiThread {
+                        if (!ok) {
+                            Toast.makeText(this, R.string.mirror_error, Toast.LENGTH_SHORT).show()
+                            return@runOnUiThread
+                        }
+                        Settings.setMirrorCode(this, code)
+                        Settings.setMirrorHost(this, true)
+                        MirrorSync.start(this)
+                        refreshMirrorLabel()
+                        Toast.makeText(this, getString(R.string.mirror_joined, code), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun leaveSession() {
+        ThreadPool.post {
+            sessionCall("""{"leave":true}""")
+            Settings.setMirrorCode(this@SettingsActivity, "")
+            Settings.setMirrorHost(this@SettingsActivity, false)
+            MirrorSync.stop()
+            runOnUiThread {
+                refreshMirrorLabel()
+                Toast.makeText(this@SettingsActivity, R.string.mirror_left, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun shareCode(code: String) {
+        val text = getString(R.string.mirror_share, code)
+        startActivity(
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                },
+                getString(R.string.mirror_share_title)
+            )
+        )
+    }
+
+    private fun refreshMirrorLabel() {
+        val label = findViewById<TextView>(R.id.mirror_value)
+        val code = Settings.mirrorCode(this)
+        if (code.isBlank()) {
+            label.text = getString(R.string.mirror_subtitle)
+        } else {
+            val role = if (Settings.mirrorHost(this)) getString(R.string.mirror_role_host)
+            else getString(R.string.mirror_role_guest)
+            label.text = getString(R.string.mirror_active, code, role)
+        }
+    }
+
+    private fun sessionCall(body: String): String {
+        val device = Settings.deviceId(this)
+        for (base in sessionHosts()) {
+            try {
+                val conn = URL("$base/session").openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.connectTimeout = 2000
+                conn.readTimeout = 2500
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                conn.setRequestProperty("X-Pulsa-Device", device)
+                conn.doOutput = true
+                conn.setFixedLengthStreamingMode(body.toByteArray().size)
+                conn.outputStream.use { it.write(body.toByteArray()) }
+                val text = conn.inputStream.bufferedReader().use { it.readText() }
+                conn.inputStream.close()
+                return text
+            } catch (t: Throwable) {
+            }
+        }
+        return ""
+    }
+
+    private fun sessionGet(code: String): String {
+        val device = Settings.deviceId(this)
+        for (base in sessionHosts()) {
+            try {
+                val conn = URL("$base/session?code=${java.net.URLEncoder.encode(code, "UTF-8")}")
+                    .openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 2000
+                conn.readTimeout = 2500
+                conn.setRequestProperty("X-Pulsa-Device", device)
+                val text = conn.inputStream.bufferedReader().use { it.readText() }
+                conn.inputStream.close()
+                return text
+            } catch (t: Throwable) {
+            }
+        }
+        return ""
+    }
+
+    private fun sessionHosts(): List<String> = listOf(
+        "http://192.168.100.7:8081",
+        "http://127.0.0.1:8081"
+    )
 
     private fun pickAccent() {
         val keys = arrayOf(

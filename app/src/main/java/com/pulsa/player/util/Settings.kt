@@ -10,6 +10,8 @@ object Settings {
     private const val FILE = "pulsa_settings"
     private const val SECRET_FILE = "pulsa_secrets"
     private const val KEY_DEVICE_ID = "device_id"
+    private const val KEY_MIRROR_CODE = "mirror_code"
+    private const val KEY_MIRROR_HOST = "mirror_host"
     private const val DEFAULT_TELEMETRY_TOKEN = "pulsa-local-2026"
 
     const val ACCENT_PURPLE = "purple"
@@ -70,6 +72,21 @@ object Settings {
         val id = java.util.UUID.randomUUID().toString()
         sp.edit().putString(KEY_DEVICE_ID, id).apply()
         return id
+    }
+
+    /** Código da sessão "ouvir juntos" (vazio = sem sessão). */
+    fun mirrorCode(context: Context): String =
+        prefs(context).getString(KEY_MIRROR_CODE, "") ?: ""
+
+    fun setMirrorCode(context: Context, code: String) {
+        prefs(context).edit().putString(KEY_MIRROR_CODE, code.trim().uppercase()).apply()
+    }
+
+    /** True se este aparelho criou a sessão (anfitrião) em vez de apenas entrar. */
+    fun mirrorHost(context: Context): Boolean = prefs(context).getBoolean(KEY_MIRROR_HOST, false)
+
+    fun setMirrorHost(context: Context, host: Boolean) {
+        prefs(context).edit().putBoolean(KEY_MIRROR_HOST, host).apply()
     }
 
     /** Prefs criptografadas (Android Keystore) para chaves/secrets/sessão. */

@@ -22,7 +22,16 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What\'s new</string>
-    <string name="changelog">What\'s new in this version (4.3.0):\n\n• Complete redesign: modern, futuristic "Aurora Indigo" look (deep-space background with violet/cyan gradients, glass cards, neon buttons)\n• New typography: Space Grotesk for headings + Outfit for body text\n• Screen transition animations everywhere\n• Equalizer now uses the REAL device bands + new presets (Acoustic, Classical, Loudness)\n• Virginia now learns across devices: tastes (skips/likes) are mirrored to the cloud\n• Release builds signed via GitHub Actions (keystore from secrets)\n• Mail server status check on the login screen</string>
+    <string name="changelog">New in this version (4.3.1):
+
+• NEW – Listen together: create a session and sync the same track with another person (shared code, position and play/pause mirrored)
+• Complete redesign: modern futuristic "Indigo Aurora" look (deep-space background with violet/cyan gradients, glass cards, neon buttons)
+• New typography: Space Grotesk for titles + Outfit for body text
+• Screen transition animations everywhere
+• Equalizer with the REAL device bands + new presets (Acoustic, Classical, Loudness)
+• Virginia now learns across devices: tastes (skips/likes) are mirrored in the cloud
+• Builds signed via GitHub Actions (keystore from secrets)
+• Email server status check on the login screen</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -384,4 +393,20 @@
     <string name="lyrics_downloaded">Synced lyrics saved locally</string>
     <string name="lyrics_online_lrc">Synced lyrics (online)</string>
     <string name="lyrics_online_plain">Lyrics (online)</string>
+    <string name="mirror_title">Listen together</string>
+    <string name="mirror_subtitle">Play the same music with another person</string>
+    <string name="mirror_create">Create session (host)</string>
+    <string name="mirror_join">Join with code</string>
+    <string name="mirror_leave">Leave session %1$s</string>
+    <string name="mirror_code_hint">Session code (5 letters)</string>
+    <string name="mirror_share_title">Invite to listen together</string>
+    <string name="mirror_share">Come listen to the same track as me on Pulsa! Enter code %1$s in Settings → Listen together.</string>
+    <string name="mirror_active">Session %1$s · %2$s</string>
+    <string name="mirror_role_host">I\'m the host</string>
+    <string name="mirror_role_guest">listening with the host</string>
+    <string name="mirror_created">Session created</string>
+    <string name="mirror_joined">Joined session %1$s</string>
+    <string name="mirror_left">Left the session</string>
+    <string name="mirror_error">Could not reach the server</string>
+    <string name="mirror_not_found">This track is not in your library: %1$s</string>
 </resources>
