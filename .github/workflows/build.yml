@@ -78,4 +78,11 @@ jobs:
           git -C pulsaweb config user.email "pulsa-ci@users.noreply.github.com"
           git -C pulsaweb add Pulsa.apk version
           git -C pulsaweb commit -m "v$NAME (code $CODE): publicacao automatica via CI"
-          git -C pulsaweb push origin main
+          git -C pulsaweb fetch origin main
+          REMOTE_CODE=$(git -C pulsaweb show origin/main:version 2>/dev/null | cut -d'|' -f1)
+          if [ -n "$REMOTE_CODE" ] && [ "$REMOTE_CODE" -ge "$CODE" ]; then
+            echo "Pulsaweb ja tem v$REMOTE_CODE (>= $CODE); nada a publicar"
+          else
+            git -C pulsaweb pull --rebase origin main
+            git -C pulsaweb push origin main
+          fi
