@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Glow violeta -->
+    <path
+        android:fillColor="#26C77DFF"
+        android:pathData="M54,14a42,42 0 1 1 0,84a42,42 0 1 1 0,-84Z" />
+
+    <!-- Anel neon duplo (aurora) -->
+    <path
+        android:pathData="M54,20a34,34 0 1 1 0,68a34,34 0 1 1 0,-68Z"
+        android:strokeColor="#668A7CFB"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M54,15a38,38 0 1 1 0,76a38,38 0 1 1 0,-76Z"
+        android:strokeColor="#332FD8E8"
+        android:strokeWidth="1.4" />
+
+    <!-- Avatar da Virgin: esfera rosada estilo TAMI -->
+    <path
+        android:pathData="M54,24a32,32 0 1 1 0,64a32,32 0 1 1 0,-64Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="0.38"
+                android:centerY="0.32"
+                android:gradientRadius="56"
+                android:startColor="#FFE3F2"
+                android:centerColor="#FF8AD0"
+                android:endColor="#B388FF" />
+        </aapt:attr>
+    </path>
+
+    <!-- Laço -->
+    <group
+        android:rotation="12"
+        android:pivotX="76"
+        android:pivotY="30">
+        <path
+            android:fillColor="#FF6EC7"
+            android:pathData="M76,30C72.5,25 67.5,25 66,28.5C67.5,31.5 71.5,32.5 76,31Z" />
+        <path
+            android:fillColor="#FF6EC7"
+            android:pathData="M76,30C79.5,25 84.5,25 86,28.5C84.5,31.5 80.5,32.5 76,31Z" />
+        <path
+            android:fillColor="#FF4D9D"
+            android:pathData="M74,31L77,30.5L74.5,36L72.5,35.5Z" />
+        <path
+            android:fillColor="#FF4D9D"
+            android:pathData="M77.5,30.5L79.5,31L80,36.5L77.5,37Z" />
+        <path
+            android:fillColor="#FF2E9E"
+            android:pathData="M76,30m-2,0a2,2 0 1 1 4,0a2,2 0 1 1 -4,0Z" />
+    </group>
+
+    <!-- Olhos -->
+    <path
+        android:fillColor="#33113A"
+        android:pathData="M39.4,55.4a4,4.9 0 1 0 8,0a4,4.9 0 1 0 -8,0Z" />
+    <path
+        android:fillColor="#33113A"
+        android:pathData="M60.6,55.4a4,4.9 0 1 0 8,0a4,4.9 0 1 0 -8,0Z" />
+
+    <!-- Brilho dos olhos -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42.4,51.9m-1.7,0a1.7,1.7 0 1 1 3.4,0a1.7,1.7 0 1 1 -3.4,0Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M63.6,51.9m-1.7,0a1.7,1.7 0 1 1 3.4,0a1.7,1.7 0 1 1 -3.4,0Z" />
+
+    <!-- Bochechas -->
+    <path
+        android:fillColor="#8CFF378C"
+        android:pathData="M31.5,64.4a5.5,3.1 0 1 0 11,0a5.5,3.1 0 1 0 -11,0Z" />
+    <path
+        android:fillColor="#8CFF378C"
+        android:pathData="M65.5,64.4a5.5,3.1 0 1 0 11,0a5.5,3.1 0 1 0 -11,0Z" />
+
+    <!-- Sorriso -->
+    <path
+        android:pathData="M47.8,69.6C50.6,73.6 57.4,73.6 60.2,69.6"
+        android:strokeColor="#33113A"
+        android:strokeLineCap="round"
+        android:strokeWidth="2.2" />
+</vector>

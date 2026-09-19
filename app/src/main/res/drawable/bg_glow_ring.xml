@@ -3,10 +3,24 @@
     <item>
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#66C77DFF"
-                android:endColor="#00C77DFF"
+                android:centerColor="#668A7CFB"
+                android:endColor="#008A7CFB"
                 android:gradientRadius="120dp"
-                android:startColor="#B3C77DFF"
+                android:startColor="#B38A7CFB"
+                android:type="radial" />
+        </shape>
+    </item>
+    <item
+        android:bottom="20dp"
+        android:left="20dp"
+        android:right="20dp"
+        android:top="20dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#592FD8E8"
+                android:endColor="#002FD8E8"
+                android:gradientRadius="60dp"
+                android:startColor="#2E2FD8E8"
                 android:type="radial" />
         </shape>
     </item>

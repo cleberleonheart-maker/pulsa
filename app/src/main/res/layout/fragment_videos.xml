@@ -31,11 +31,10 @@
 
             <TextView
                 android:id="@+id/videos_header_title"
+                style="@style/TextAppearance.Pulsa.Title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/videos_header"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <TextView

@@ -12,7 +12,8 @@
     <FrameLayout
         android:layout_width="96dp"
         android:layout_height="72dp"
-        android:background="@drawable/bg_album_art">
+        android:background="@drawable/bg_album_art"
+        android:clipToOutline="true">
 
         <ImageView
             android:id="@+id/video_thumb"

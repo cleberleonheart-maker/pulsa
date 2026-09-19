@@ -36,6 +36,8 @@ object RemoteSync {
     private var appContext: Context? = null
     private var lastSongsPush = 0L
     private var lastSongsHash = ""
+    private var lastDjSync = 0L
+    private var lastDjPull = 0L
     private var busy = false
 
     private val handler = Handler(Looper.getMainLooper())
@@ -50,6 +52,7 @@ object RemoteSync {
                         pushState(ctx)
                         pollCommands(ctx)
                         maybePushSongs(ctx)
+                        maybeSyncDjLearn(ctx)
                     } finally {
                         busy = false
                     }
@@ -107,6 +110,53 @@ object RemoteSync {
         }.toString()
         if (postJson(ctx, "/songs", body)) {
             Telemetry.log(ctx, "SYNC songs=${songs.size}")
+        }
+    }
+
+    /** Empurra e puxa os dados de aprendizagem (DjLearn) pro servidor. */
+    private fun maybeSyncDjLearn(ctx: Context) {
+        val now = System.currentTimeMillis()
+        if (DjLearn.dirty || now - lastDjSync > 10 * 60_000L) {
+            pushDjLearn(ctx)
+        }
+        if (now - lastDjPull > 5 * 60_000L) {
+            lastDjPull = now
+            pullDjLearn(ctx)
+        }
+    }
+
+    private fun pushDjLearn(ctx: Context) {
+        val body = DjLearn.snapshot(ctx).toString()
+        if (postJson(ctx, "/djlearn", body)) {
+            DjLearn.markSynced()
+            lastDjSync = System.currentTimeMillis()
+            Telemetry.log(ctx, "DJLEARN push")
+        }
+    }
+
+    private fun pullDjLearn(ctx: Context) {
+        val device = Settings.deviceId(ctx)
+        for (base in hosts) {
+            try {
+                val conn = URL("$base/djlearn").openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 800
+                conn.readTimeout = 1500
+                conn.setRequestProperty("X-Pulsa-Device", device)
+                val code = conn.responseCode
+                val text = if (code == 200) {
+                    conn.inputStream.bufferedReader().use { it.readText() }
+                } else ""
+                runCatching { conn.inputStream.close() }
+                if (code != 200) continue
+                if (text.isBlank()) return
+                val json = JSONObject(text)
+                if (DjLearn.mergeRemote(ctx, json)) {
+                    Telemetry.log(ctx, "DJLEARN pull")
+                }
+                return
+            } catch (t: Throwable) {
+            }
         }
     }
 

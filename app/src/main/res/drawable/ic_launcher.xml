@@ -6,7 +6,7 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Fundo: gradiente roxo-escuro (tema do app) -->
+    <!-- Fundo: deep space aurora (tema do app) -->
     <path
         android:pathData="M0,0h108v108h-108z">
         <aapt:attr name="android:fillColor">
@@ -16,20 +16,20 @@
                 android:startY="0"
                 android:endX="0"
                 android:endY="108"
-                android:startColor="#2B1D54"
-                android:endColor="#120D24" />
+                android:startColor="#151C3B"
+                android:endColor="#06091A" />
         </aapt:attr>
     </path>
 
-    <!-- Brilho atrás da avatar -->
+    <!-- Aurora atrás da avatar: violeta + ciano -->
     <path
-        android:fillColor="#26C77DFF"
-        android:pathData="M54,14a42,42 0 1 1 0,84a42,42 0 1 1 0,-84Z" />
+        android:fillColor="#338A7CFB"
+        android:pathData="M54,8a46,46 0 1 1 0,88a46,46 0 1 1 0,-88Z" />
 
     <!-- Anel neon -->
     <path
-        android:pathData="M54,20a36,36 0 1 1 0,72a36,36 0 1 1 0,-72Z"
-        android:strokeColor="#4DC77DFF"
+        android:pathData="M54,20a34,34 0 1 1 0,68a34,34 0 1 1 0,-68Z"
+        android:strokeColor="#668A7CFB"
         android:strokeWidth="2" />
 
     <!-- Nota musical (âmbar, canto sup. esquerdo) -->
@@ -45,13 +45,13 @@
 
     <!-- Nota musical (azul neon, canto inf. direito) -->
     <path
-        android:fillColor="#4CC9F0"
+        android:fillColor="#3EC6F5"
         android:pathData="M88.3,70h2.3v12h-2.3z" />
     <path
-        android:fillColor="#4CC9F0"
+        android:fillColor="#3EC6F5"
         android:pathData="M85,78.2m-3.8,0a3.8,3.8 0 1 1 7.6,0a3.8,3.8 0 1 1 -7.6,0" />
     <path
-        android:fillColor="#4CC9F0"
+        android:fillColor="#3EC6F5"
         android:pathData="M90.6,70C94,71.5 96,71 96,68.5C94.2,70.6 92,70.8 90.6,70Z" />
 
     <!-- Avatar da Vaness: esfera rosada estilo TAMI (centrada 54,56 · r32) -->

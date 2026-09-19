@@ -221,7 +221,10 @@ class SettingsActivity : AppCompatActivity() {
             Settings.QUALITY_ROCK,
             Settings.QUALITY_DANCE,
             Settings.QUALITY_POP,
-            Settings.QUALITY_JAZZ
+            Settings.QUALITY_JAZZ,
+            Settings.QUALITY_ACOUSTIC,
+            Settings.QUALITY_CLASSICAL,
+            Settings.QUALITY_LOUDNESS
         )
         val names = keys.map { getString(Settings.qualityLabelRes(it)) }.toTypedArray()
         val current = keys.indexOf(Settings.audioQuality(this))

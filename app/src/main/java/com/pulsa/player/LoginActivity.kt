@@ -56,6 +56,8 @@ class LoginActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.login_version).text =
             getString(R.string.app_version, packageManager.getPackageInfo(packageName, 0).versionName)
 
+        checkSmtpStatus()
+
         val tabs = findViewById<TabLayout>(R.id.login_tabs)
         tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
@@ -257,6 +259,21 @@ class LoginActivity : AppCompatActivity() {
             .start()
     }
 
+    private fun checkSmtpStatus() {
+        val tv = findViewById<TextView>(R.id.login_smtp_status) ?: return
+        ConfirmMail.smtpStatus(this) { status ->
+            if (isFinishing || isDestroyed) return@smtpStatus
+            val res = when {
+                status.isBlank() || status == "?" -> R.string.smtp_status_unknown
+                status.startsWith("online", true) || status.startsWith("ok", true) ->
+                    R.string.smtp_status_online
+                else -> R.string.smtp_status_offline
+            }
+            tv.setText(getString(res, status))
+            tv.visibility = View.VISIBLE
+        }
+    }
+
     private fun confirmReset() {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.login_forgot)
@@ -275,16 +292,24 @@ class LoginActivity : AppCompatActivity() {
 
     private fun sendWelcome(identifier: String) {
         if (Account.looksLikeEmail(identifier)) {
-            ConfirmMail.send(this, identifier, identifier) { ok ->
+            ConfirmMail.send(this, identifier, identifier) { result ->
+                val res = messageEmailResult(result)
                 Toast.makeText(
                     this,
-                    if (ok) R.string.email_sent else R.string.email_send_failed,
+                    res,
                     Toast.LENGTH_SHORT
                 ).show()
             }
         } else {
             Toast.makeText(this, R.string.sms_not_configured, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun messageEmailResult(result: ConfirmMail.SendResult): Int = when {
+        result.ok && result.smtpOnline -> R.string.email_sent
+        result.ok && !result.smtpOnline -> R.string.email_sent_smtp_pending
+        !result.ok && result.detail.isNullOrBlank() -> R.string.email_send_failed
+        else -> R.string.email_send_failed_smtp
     }
 
     private fun enterGuest() {

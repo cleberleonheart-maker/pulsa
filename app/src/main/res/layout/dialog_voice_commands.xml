@@ -38,12 +38,10 @@
             android:orientation="vertical">
 
             <TextView
+                style="@style/TextAppearance.Pulsa.Title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:text="@string/dj_commands"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp" />
+                android:text="@string/dj_commands" />
 
             <TextView
                 android:layout_width="wrap_content"

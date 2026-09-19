@@ -22,7 +22,7 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Qué hay de nuevo</string>
-    <string name="changelog">Novedades de esta versión (4.2.5):\n\n• Icono nuevo de Pulsa: la cara de Virginia (estilo TAMI) con fondo neón\n• Virginia tiene memoria: dile "mi teléfono es 99999-9999" y después pregunta "¿cuál es mi número?" y lo recordará\n• Ánimo nuevo: dile "a toda energía" o "anímame" y arma un mix mucho más movido</string>
+    <string name="changelog">Novedades de esta versión (4.3.0):\n\n• Rediseño completo: aspecto "Aurora Índigo" moderno y futurista (fondo deep-space con degradados violeta/cian, tarjetas de vidrio, botones neón)\n• Tipografía nueva: Space Grotesk en títulos + Outfit en el cuerpo\n• Animaciones de transición entre todas las pantallas\n• Ecualizador con las bandas REALES del dispositivo + presets nuevos (Acústico, Clásico, Sonoridad)\n• Virginia ahora aprende entre dispositivos: los gustos (skips/likes) se reflejan en la nube\n• Builds firmados vía GitHub Actions (keystore por secrets)\n• Verificación del estado del servidor de correo en la pantalla de inicio de sesión</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
@@ -121,6 +121,9 @@
     <string name="quality_dance">Dance/Electro</string>
     <string name="quality_pop">Pop</string>
     <string name="quality_jazz">Jazz</string>
+    <string name="quality_acoustic">Acústico</string>
+    <string name="quality_classical">Clásico</string>
+    <string name="quality_loudness">Sonoridad</string>
     <string name="sdr_pause">Pausar escucha</string>
     <string name="equalizer">Ecualizador</string>
     <string name="eq_subtitle">Aplica la calidad de audio elegida</string>
@@ -171,6 +174,11 @@
     <string name="app_version">Pulsa v%1$s</string>
     <string name="email_sent">Correo de confirmación enviado</string>
     <string name="email_send_failed">No se pudo enviar el correo ahora</string>
+    <string name="email_sent_smtp_pending">Correo aceptado (confirmación SMTP pendiente)</string>
+    <string name="email_send_failed_smtp">Envío fallido: SMTP del servidor no disponible</string>
+    <string name="smtp_status_online">Servidor de correo: en línea (%1$s)</string>
+    <string name="smtp_status_offline">Servidor de correo: fuera de línea (%1$s)</string>
+    <string name="smtp_status_unknown">Servidor de correo: no verificado</string>
     <string name="sms_not_configured">Número de teléfono: confirmación por SMS no configurada</string>
     <string name="logout">Cerrar sesión</string>
 
@@ -364,8 +372,10 @@
     <string name="dj_suggest_enable">Activar sugerencias con IA</string>
 
     <string name="eq_button">Ecualizador</string>
-    <string name="eq_title">Ecualizador (5 bandas)</string>
+    <string name="eq_title">Ecualizador (bandas reales)</string>
     <string name="eq_saved">Ecualizador personalizado guardado</string>
+    <string name="eq_device_bands">Bandas reales del dispositivo: %d</string>
+    <string name="eq_fallback_bands">El dispositivo no expuso el ecualizador; usando 5 bandas estándar</string>
     <string name="eq_reset">Restablecer</string>
 
     <string name="lyrics_button">Letra</string>

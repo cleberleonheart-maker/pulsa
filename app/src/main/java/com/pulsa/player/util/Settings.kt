@@ -29,6 +29,9 @@ object Settings {
     const val QUALITY_DANCE = "dance"
     const val QUALITY_POP = "pop"
     const val QUALITY_JAZZ = "jazz"
+    const val QUALITY_ACOUSTIC = "acoustic"
+    const val QUALITY_CLASSICAL = "classical"
+    const val QUALITY_LOUDNESS = "loudness"
     const val DANCE_SPEED = 1.12f
     const val DANCE_PITCH = 1.06f
 
@@ -185,6 +188,9 @@ object Settings {
         QUALITY_DANCE -> R.string.quality_dance
         QUALITY_POP -> R.string.quality_pop
         QUALITY_JAZZ -> R.string.quality_jazz
+        QUALITY_ACOUSTIC -> R.string.quality_acoustic
+        QUALITY_CLASSICAL -> R.string.quality_classical
+        QUALITY_LOUDNESS -> R.string.quality_loudness
         else -> R.string.quality_default
     }
 

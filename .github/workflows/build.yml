@@ -21,6 +21,22 @@ jobs:
         run: echo "ANDROID_HOME=$ANDROID_HOME" && test -n "$ANDROID_HOME"
       - name: Make gradlew executable
         run: chmod +x gradlew
+      - name: Restaura keystore a partir dos secrets (CI)
+        if: env.KEYSTORE_BASE64 != ''
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p app/keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > app/keystore/pulsa.keystore
+      - name: Expõe credenciais de assinatura (com fallback p/ keystore local)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD:-android}" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=${KEY_ALIAS:-androiddebugkey}" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=${KEY_PASSWORD:-android}" >> "$GITHUB_ENV"
       - name: Unit tests
         run: ./gradlew :app:test --console=plain
       - name: Assemble release (assinado)

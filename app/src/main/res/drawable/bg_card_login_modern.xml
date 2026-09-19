@@ -1,20 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:top="10dp" android:bottom="10dp">
+    <item android:bottom="10dp" android:top="10dp">
         <shape android:shape="rectangle">
             <corners android:radius="32dp" />
             <gradient
-                android:angle="135"
-                android:endColor="#2E2152"
-                android:startColor="#1B1433" />
+                android:angle="45"
+                android:endColor="#402FD8E8"
+                android:startColor="#408A7CFB" />
         </shape>
     </item>
-    <item android:top="10dp" android:bottom="10dp">
+    <item
+        android:bottom="11dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:top="11dp">
         <shape android:shape="rectangle">
-            <corners android:radius="32dp" />
-            <stroke
-                android:width="1.5dp"
-                android:color="#66A78BFF" />
+            <corners android:radius="31dp" />
+            <gradient
+                android:angle="135"
+                android:endColor="#0C1126"
+                android:startColor="#1B2144" />
+        </shape>
+    </item>
+    <item android:bottom="28dp" android:top="28dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#338A7CFB"
+                android:endColor="#008A7CFB"
+                android:centerX="0.5"
+                android:centerY="0.12"
+                android:gradientRadius="120dp"
+                android:startColor="#208A7CFB"
+                android:type="radial" />
         </shape>
     </item>
 </layer-list>

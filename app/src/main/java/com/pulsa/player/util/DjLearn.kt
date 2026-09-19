@@ -4,10 +4,17 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import org.json.JSONArray
+import org.json.JSONObject
 
 object DjLearn {
 
     private val helpers = HashMap<String, Learner>()
+
+    /** Marcado em toda mutação local; limpo após push bem-sucedido para a nuvem. */
+    @Volatile
+    var dirty: Boolean = false
+        private set
 
     data class Stats(
         val plays: Int,
@@ -119,6 +126,7 @@ object DjLearn {
 
         fun recordListenMs(songId: Long, ms: Long) {
             if (ms <= 0L) return
+            dirty = true
             runCatching {
                 val db = writableDatabase
                 db.execSQL(
@@ -133,6 +141,7 @@ object DjLearn {
         }
 
         private fun bump(songId: Long, column: String, by: Int) {
+            dirty = true
             runCatching {
                 val db = writableDatabase
                 db.execSQL(
@@ -182,6 +191,76 @@ object DjLearn {
             }
             return DjEngine.Learn(disliked, skipCount, plays, liked)
         }
+
+        /** Snapshot completo dos contadores, para espelhar no servidor. */
+        fun snapshot(): JSONObject {
+            val arr = JSONArray()
+            runCatching {
+                val db = readableDatabase
+                db.rawQuery(
+                    "SELECT song_id, plays, skips, listen_ms, disliked, liked FROM dj_stats",
+                    null
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        arr.put(JSONObject().apply {
+                            put("songId", c.getLong(0))
+                            put("plays", c.getInt(1))
+                            put("skips", c.getInt(2))
+                            put("listenMs", c.getLong(3))
+                            put("disliked", c.getInt(4) > 0)
+                            put("liked", c.getInt(5))
+                        })
+                    }
+                }
+            }
+            return JSONObject().apply { put("songs", arr) }
+        }
+
+        /** Mescla snapshot remoto no banco local (max por contador; disliked vira flag). */
+        fun mergeRemote(json: JSONObject): Boolean {
+            val songs = json.optJSONArray("songs") ?: return false
+            var changed = false
+            runCatching {
+                val db = writableDatabase
+                for (i in 0 until songs.length()) {
+                    val o = songs.optJSONObject(i) ?: continue
+                    val id = o.optLong("songId")
+                    if (id <= 0L) continue
+                    val rPlays = o.optInt("plays")
+                    val rSkips = o.optInt("skips")
+                    val rListen = o.optLong("listenMs")
+                    val rDisliked = o.optBoolean("disliked")
+                    val rLiked = o.optInt("liked")
+                    val local = stats(id)
+                    val lPlays = local?.plays ?: 0
+                    val lSkips = local?.skips ?: 0
+                    val lListen = local?.listenMs ?: 0L
+                    val lDisliked = local?.disliked ?: false
+                    val lLiked = local?.liked ?: 0
+                    if (local != null && rPlays <= lPlays && rSkips <= lSkips &&
+                        rListen <= lListen && (!rDisliked || lDisliked) && rLiked <= lLiked
+                    ) continue
+                    db.execSQL(
+                        "INSERT OR IGNORE INTO dj_stats (song_id) VALUES (?)",
+                        arrayOf(id)
+                    )
+                    db.execSQL(
+                        "UPDATE dj_stats SET plays = ?, skips = ?, listen_ms = ?, " +
+                            "disliked = ?, liked = ? WHERE song_id = ?",
+                        arrayOf(
+                            maxOf(rPlays, lPlays),
+                            maxOf(rSkips, lSkips),
+                            maxOf(rListen, lListen),
+                            if (rDisliked || lDisliked) 1 else 0,
+                            maxOf(rLiked, lLiked),
+                            id
+                        )
+                    )
+                    changed = true
+                }
+            }
+            return changed
+        }
     }
 
     private fun learner(context: Context): Learner {
@@ -199,6 +278,16 @@ object DjLearn {
 
     fun recordListenMs(context: Context, songId: Long, ms: Long) =
         learner(context).recordListenMs(songId, ms)
+
+    fun snapshot(context: Context): JSONObject = learner(context).snapshot()
+
+    fun mergeRemote(context: Context, json: JSONObject): Boolean =
+        learner(context).mergeRemote(json)
+
+    /** Limpa a flag dirty após push bem-sucedido. */
+    fun markSynced() {
+        dirty = false
+    }
 
     fun learn(context: Context): DjEngine.Learn = learner(context).learn()
 

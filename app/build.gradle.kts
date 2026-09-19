@@ -11,8 +11,8 @@ android {
         applicationId = "com.pulsa.player"
         minSdk = 23
 targetSdk = 34
-        versionCode = 82
-        versionName = "4.2.5"
+        versionCode = 83
+        versionName = "4.3.0"
     }
 
     buildFeatures {
@@ -21,10 +21,11 @@ targetSdk = 34
 
     signingConfigs {
         create("pulsa") {
-            storeFile = file("keystore/pulsa.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+            val env = System.getenv()
+            storeFile = file(env["KEYSTORE_PATH"] ?: "keystore/pulsa.keystore")
+            storePassword = env["KEYSTORE_PASSWORD"] ?: "android"
+            keyAlias = env["KEY_ALIAS"] ?: "androiddebugkey"
+            keyPassword = env["KEY_PASSWORD"] ?: "android"
         }
     }
 

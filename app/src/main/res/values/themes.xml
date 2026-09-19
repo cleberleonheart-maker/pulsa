@@ -3,29 +3,58 @@
     <style name="Theme.Pulsa" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/on_primary</item>
-        <item name="colorSecondary">@color/primary_dark</item>
-        <item name="colorOnSecondary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/surface_variant</item>
+        <item name="colorOnPrimaryContainer">@color/text_primary</item>
+        <item name="colorSecondary">@color/primary_blue</item>
+        <item name="colorOnSecondary">@color/bg</item>
+        <item name="colorSecondaryContainer">@color/surface_variant</item>
+        <item name="colorOnSecondaryContainer">@color/text_primary</item>
+        <item name="colorTertiary">@color/aurora_cyan</item>
+        <item name="colorOnTertiary">@color/bg</item>
         <item name="android:colorBackground">@color/bg</item>
         <item name="colorSurface">@color/surface</item>
         <item name="colorOnSurface">@color/text_primary</item>
         <item name="colorOnSurfaceVariant">@color/text_secondary</item>
         <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorSurfaceContainer">@color/glass_fill</item>
+        <item name="colorSurfaceContainerHigh">@color/glass_fill_strong</item>
         <item name="colorOutline">@color/neon_border</item>
+        <item name="colorOutlineVariant">@color/divider</item>
         <item name="colorError">@color/primary_red</item>
         <item name="android:statusBarColor">@color/bg</item>
         <item name="android:navigationBarColor">@color/bg</item>
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:fontFamily">@font/outfit_regular</item>
+        <item name="android:windowLightStatusBar">false</item>
         <item name="android:seekBarStyle">@style/Widget.Pulsa.SeekBar</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Pulsa.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Pulsa.BottomSheet</item>
+<item name="android:windowAnimationStyle">@style/WindowTransitionsPulsa</item>
+        <item name="android:windowSplashScreenBackground">@color/bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+        <item name="android:windowSplashScreenAnimationDuration">300</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/bg</item>
     </style>
 
-    <style name="ThemeOverlay.Pulsa.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="colorSurface">@color/surface</item>
-        <item name="colorOnSurface">@color/text_primary</item>
-        <item name="colorOutline">@color/neon_border</item>
+    <!-- Tema de fato pós-splash -->
+    <style name="Theme.Pulsa.Default" parent="Theme.Pulsa" />
+
+    <!-- Transições entre atividades: slide + fade (Aurora) -->
+    <style name="WindowTransitionsPulsa">
+        <item name="android:activityOpenEnterAnimation">@anim/activity_open_in</item>
+        <item name="android:activityOpenExitAnimation">@anim/activity_open_out</item>
+        <item name="android:activityCloseEnterAnimation">@anim/activity_close_in</item>
+        <item name="android:activityCloseExitAnimation">@anim/activity_close_out</item>
+        <item name="android:taskOpenEnterAnimation">@anim/activity_open_in</item>
+        <item name="android:taskOpenExitAnimation">@anim/activity_open_out</item>
+        <item name="android:taskCloseEnterAnimation">@anim/activity_close_in</item>
+        <item name="android:taskCloseExitAnimation">@anim/activity_close_out</item>
+        <item name="android:taskToBackEnterAnimation">@anim/activity_close_in</item>
+        <item name="android:taskToBackExitAnimation">@anim/activity_close_out</item>
+        <item name="android:taskToFrontEnterAnimation">@anim/activity_open_in</item>
+        <item name="android:taskToFrontExitAnimation">@anim/activity_open_out</item>
     </style>
 
     <style name="Theme.Pulsa.Blue" parent="Theme.Pulsa">
@@ -64,6 +93,13 @@
         <item name="colorOnPrimary">@color/bg</item>
     </style>
 
+    <style name="ThemeOverlay.Pulsa.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOutline">@color/neon_border</item>
+        <item name="android:fontFamily">@font/outfit_regular</item>
+    </style>
+
     <style name="ThemeOverlay.Pulsa.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/Widget.Pulsa.BottomSheet</item>
     </style>
@@ -78,38 +114,47 @@
         <item name="titleTextColor">@color/text_primary</item>
         <item name="subtitleTextColor">@color/text_secondary</item>
         <item name="navigationIconTint">@color/text_primary</item>
+        <item name="titleTextAppearance">@style/TextAppearance.Pulsa.Title</item>
     </style>
 
     <style name="BottomNav" parent="Widget.Material3.BottomNavigationView">
-        <item name="android:background">@color/surface</item>
+        <item name="android:background">@color/bg_elev</item>
         <item name="itemIconTint">@color/nav_item_color</item>
         <item name="itemTextColor">@color/nav_item_color</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.Pulsa.NavIndicator</item>
         <item name="labelVisibilityMode">labeled</item>
+    </style>
+
+    <style name="Widget.Pulsa.NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/glow_start</item>
     </style>
 
     <style name="CardPlayerMini" parent="Widget.Material3.CardView.Filled">
         <item name="cardBackgroundColor">@color/glass_fill</item>
-        <item name="cardCornerRadius">26dp</item>
-        <item name="cardElevation">8dp</item>
+        <item name="cardCornerRadius">22dp</item>
+        <item name="cardElevation">12dp</item>
         <item name="strokeColor">@color/neon_border_soft</item>
         <item name="strokeWidth">1dp</item>
     </style>
 
     <style name="Widget.Pulsa.SeekBar" parent="@android:style/Widget.SeekBar">
-        <item name="android:progressTint">@color/primary</item>
+        <item name="android:progressTint">?attr/colorPrimary</item>
         <item name="android:progressBackgroundTint">@color/divider</item>
-        <item name="android:thumbTint">@color/primary</item>
+        <item name="android:thumbTint">?attr/colorPrimary</item>
     </style>
 
     <style name="Widget.Pulsa.NeonButton" parent="Widget.Material3.Button">
-        <item name="cornerRadius">18dp</item>
-        <item name="android:minHeight">52dp</item>
-        <item name="android:textAllCaps">true</item>
+        <item name="cornerRadius">16dp</item>
+        <item name="android:minHeight">50dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="backgroundTint">@color/primary</item>
+        <item name="android:textColor">@color/on_primary</item>
+        <item name="android:fontFamily">@font/outfit_semibold</item>
     </style>
 
     <style name="TextAppearance.Pulsa.Tab" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/outfit_semibold</item>
         <item name="android:textSize">14sp</item>
-        <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">false</item>
     </style>
 </resources>

@@ -1582,6 +1582,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         currentTag = tag
         CrashLogger.writeLog(this, "MARK: showTab $tag iniciado")
         supportFragmentManager.beginTransaction()
+            .setCustomAnimations(R.anim.frag_tab_in, R.anim.frag_slide_up_out)
             .replace(R.id.fragment_container, fragment, tag)
             .commit()
         crashContainerCheck()
@@ -1598,6 +1599,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     private fun pushDetail(fragment: Fragment, tag: String) {
         supportFragmentManager.beginTransaction()
+            .setCustomAnimations(R.anim.frag_slide_up_in, R.anim.frag_slide_up_out, R.anim.frag_pop_in, R.anim.frag_slide_down_out)
             .replace(R.id.fragment_container, fragment, tag)
             .addToBackStack(tag)
             .commit()

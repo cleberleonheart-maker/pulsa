@@ -329,19 +329,27 @@ class NowPlayingFragment : Fragment() {
 
     private fun showEqDialog() {
         val context = requireContext()
-        val initial = if (Settings.customEqOn(context)) AudioFx.customBands(context)
+        val freqs = AudioFx.deviceFrequencies(Playback.audioSessionId)
+        val realBands = freqs.isNotEmpty()
+        val bandCount = if (realBands) freqs.size.coerceAtMost(10) else 5
+        val stored = if (Settings.customEqOn(context)) AudioFx.customBands(context)
         else intArrayOf(0, 0, 0, 0, 0)
-        val bandNames = arrayOf("60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz")
-        val sliders = arrayOfNulls<SeekBar>(5)
+        val initial = AudioFx.rescale(stored, bandCount)
+        val bandNames = if (realBands) {
+            Array(bandCount) { "${AudioFx.formatFreq(freqs[it])}Hz" }
+        } else arrayOf("60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz")
+        val sliders = arrayOfNulls<SeekBar>(bandCount)
         val box = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(48, 16, 48, 0)
         }
-        for (i in 0 until 5) {
+        for (i in 0 until bandCount) {
             val label = TextView(context).apply {
                 text = bandNames[i]
                 textSize = 13f
                 setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_secondary))
+                minWidth = 64.dp()
+                gravity = android.view.Gravity.END
             }
             val slider = SeekBar(context).apply {
                 max = 200
@@ -351,7 +359,7 @@ class NowPlayingFragment : Fragment() {
             val row = LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
-                addView(label, LinearLayout.LayoutParams(64.dp(), LinearLayout.LayoutParams.WRAP_CONTENT))
+                addView(label, LinearLayout.LayoutParams(96.dp(), LinearLayout.LayoutParams.WRAP_CONTENT))
                 addView(slider, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
             }
             box.addView(row, LinearLayout.LayoutParams(
@@ -359,18 +367,31 @@ class NowPlayingFragment : Fragment() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ))
         }
+        val subtitle = TextView(context).apply {
+            text = if (realBands)
+                context.getString(R.string.eq_device_bands, bandCount)
+            else context.getString(R.string.eq_fallback_bands)
+            textSize = 12f
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_secondary))
+            setPadding(48, 0, 48, 4)
+        }
+        box.addView(subtitle, 0, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.eq_title)
             .setView(box)
             .setPositiveButton(R.string.save) { _, _ ->
-                val bands = IntArray(5) { (sliders[it]?.progress ?: 100) - 100 }
+                val bands = IntArray(bandCount) { (sliders[it]?.progress ?: 100) - 100 }
                 Settings.setCustomEqBands(context, bands.joinToString(","))
                 Settings.setCustomEqOn(context, true)
                 Playback.refreshFx()
                 Toast.makeText(context, getString(R.string.eq_saved), Toast.LENGTH_SHORT).show()
             }
             .setNeutralButton(R.string.eq_reset) { _, _ ->
-                Settings.setCustomEqBands(context, "0,0,0,0,0")
+                val flat = IntArray(bandCount)
+                Settings.setCustomEqBands(context, flat.joinToString(","))
                 Settings.setCustomEqOn(context, false)
                 Playback.refreshFx()
             }

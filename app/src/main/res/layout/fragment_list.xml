@@ -15,14 +15,16 @@
         android:padding="16dp"
         android:visibility="gone">
 
-        <ImageView
+        <!-- com.google.android.material.imageview.ShapeableImageView -->
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/header_art"
             android:layout_width="72dp"
             android:layout_height="72dp"
             android:background="@drawable/bg_album_art"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_music_note"
-            android:tint="#66C77DFF" />
+            android:tint="#668A7CFB"
+            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -33,23 +35,21 @@
 
             <TextView
                 android:id="@+id/header_title"
+                style="@style/TextAppearance.Pulsa.Title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:maxLines="1" />
 
             <TextView
                 android:id="@+id/header_subtitle"
+                style="@style/TextAppearance.Pulsa.BodySecondary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="14sp" />
+                android:textColor="?attr/colorPrimary" />
         </LinearLayout>
 
         <ImageView
@@ -88,19 +88,20 @@
             android:visibility="gone">
 
             <ImageView
-                android:layout_width="72dp"
-                android:layout_height="72dp"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:alpha="0.55"
                 android:src="@drawable/ic_music_note"
-                app:tint="@color/text_secondary" />
+                app:tint="@color/text_tertiary" />
 
             <TextView
                 android:id="@+id/empty_text"
+                style="@style/TextAppearance.Pulsa.BodySecondary"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:gravity="center"
                 android:text="@string/empty_no_music"
-                android:textColor="@color/text_secondary"
                 android:textSize="15sp" />
 
             <com.google.android.material.button.MaterialButton

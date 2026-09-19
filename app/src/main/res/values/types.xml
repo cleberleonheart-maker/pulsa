@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tipografia Aurora: Space Grotesk (display) + Outfit (corpo) -->
+
+    <style name="TextAppearance.Pulsa.Display" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="android:fontFamily">@font/space_grotesk_bold</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:letterSpacing">0.02</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="TextAppearance.Pulsa.Headline" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/space_grotesk_semibold</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="TextAppearance.Pulsa.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/space_grotesk_semibold</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="TextAppearance.Pulsa.TitleSmall" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/outfit_semibold</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="TextAppearance.Pulsa.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/outfit_regular</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="TextAppearance.Pulsa.BodySecondary" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/outfit_regular</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <style name="TextAppearance.Pulsa.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">@font/outfit_medium</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <style name="TextAppearance.Pulsa.Overline" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/outfit_semibold</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0.14</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">@color/text_tertiary</item>
+    </style>
+</resources>

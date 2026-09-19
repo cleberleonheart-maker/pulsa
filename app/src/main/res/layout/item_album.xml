@@ -9,7 +9,7 @@
     app:cardBackgroundColor="@color/glass_fill"
     app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
-    app:rippleColor="#40C77DFF"
+    app:rippleColor="#408A7CFB"
     app:strokeColor="@color/neon_border_soft"
     app:strokeWidth="1dp">
 

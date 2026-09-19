@@ -22,7 +22,7 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What\'s new</string>
-    <string name="changelog">What\'s new in this version (4.2.5):\n\n• New Pulsa icon: Virginia\'s face (TAMI style) on a neon background\n• Virginia got a memory: tell her "my phone number is 99999-9999" and later ask "what\'s my number?" and she\'ll remember\n• New mood: say "pump it up" or "get going" and she\'ll build a high-energy mix</string>
+    <string name="changelog">What\'s new in this version (4.3.0):\n\n• Complete redesign: modern, futuristic "Aurora Indigo" look (deep-space background with violet/cyan gradients, glass cards, neon buttons)\n• New typography: Space Grotesk for headings + Outfit for body text\n• Screen transition animations everywhere\n• Equalizer now uses the REAL device bands + new presets (Acoustic, Classical, Loudness)\n• Virginia now learns across devices: tastes (skips/likes) are mirrored to the cloud\n• Release builds signed via GitHub Actions (keystore from secrets)\n• Mail server status check on the login screen</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -122,6 +122,9 @@
     <string name="quality_dance">Dance/Electro</string>
     <string name="quality_pop">Pop</string>
     <string name="quality_jazz">Jazz</string>
+    <string name="quality_acoustic">Acoustic</string>
+    <string name="quality_classical">Classical</string>
+    <string name="quality_loudness">Loudness</string>
     <string name="equalizer">Equalizer</string>
     <string name="eq_subtitle">Applies the chosen audio quality</string>
     <string name="audio_8d">8D Audio</string>
@@ -171,6 +174,11 @@
     <string name="app_version">Pulsa v%1$s</string>
     <string name="email_sent">Confirmation email sent</string>
     <string name="email_send_failed">Could not send the email right now</string>
+    <string name="email_sent_smtp_pending">Email accepted (SMTP confirmation pending)</string>
+    <string name="email_send_failed_smtp">Send failed: server SMTP unavailable</string>
+    <string name="smtp_status_online">Mail server: online (%1$s)</string>
+    <string name="smtp_status_offline">Mail server: offline (%1$s)</string>
+    <string name="smtp_status_unknown">Mail server: not verified</string>
     <string name="sms_not_configured">Phone number: SMS confirmation not configured</string>
     <string name="logout">Sign out</string>
 
@@ -364,8 +372,10 @@
     <string name="dj_suggest_enable">Turn on AI suggestions</string>
 
     <string name="eq_button">Equalizer</string>
-    <string name="eq_title">Equalizer (5 bands)</string>
+    <string name="eq_title">Equalizer (real device bands)</string>
     <string name="eq_saved">Custom equalizer saved</string>
+    <string name="eq_device_bands">Real device bands: %d</string>
+    <string name="eq_fallback_bands">Device did not expose the equalizer; using 5 default bands</string>
     <string name="eq_reset">Reset</string>
 
     <string name="lyrics_button">Lyrics</string>

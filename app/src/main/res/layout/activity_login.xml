@@ -2,7 +2,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_aurora">
 
     <View
         android:id="@+id/login_orb_purple"
@@ -65,24 +66,22 @@
                     android:background="@drawable/bg_logo_circle" />
 
                 <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
                     android:layout_gravity="center"
                     android:contentDescription="@string/app_name"
-                    android:src="@drawable/ic_music_note"
-                    android:tint="@android:color/white" />
+                    android:src="@drawable/ic_splash" />
             </FrameLayout>
 
             <TextView
                 android:id="@+id/login_brand"
+                style="@style/TextAppearance.Pulsa.Display"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.14"
+                android:layout_marginTop="14dp"
+                android:letterSpacing="0.18"
                 android:text="@string/app_name"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="36sp"
+                android:textSize="34sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -138,20 +137,17 @@
 
                 <TextView
                     android:id="@+id/login_title"
+                    style="@style/TextAppearance.Pulsa.Headline"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:textColor="@color/text_primary"
-                    android:textSize="22sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/login_subtitle"
+                    style="@style/TextAppearance.Pulsa.BodySecondary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:layout_marginTop="4dp" />
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/login_identifier_layout"
@@ -305,6 +301,15 @@
                 android:layout_marginTop="20dp"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/login_smtp_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/text_tertiary"
+                android:textSize="12sp"
+                android:visibility="gone" />
         </LinearLayout>
     </ScrollView>
 </FrameLayout>

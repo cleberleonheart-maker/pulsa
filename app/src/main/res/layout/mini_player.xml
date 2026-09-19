@@ -16,7 +16,7 @@
         android:orientation="horizontal"
         android:paddingHorizontal="8dp">
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/mini_art"
             android:layout_width="48dp"
             android:layout_height="48dp"
@@ -24,7 +24,8 @@
             android:contentDescription="@null"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_music_note"
-            android:tint="#66C77DFF" />
+            android:tint="#668A7CFB"
+            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -35,22 +36,19 @@
 
             <TextView
                 android:id="@+id/mini_title"
+                style="@style/TextAppearance.Pulsa.TitleSmall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:maxLines="1" />
 
             <TextView
                 android:id="@+id/mini_artist"
+                style="@style/TextAppearance.Pulsa.BodySecondary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:maxLines="1" />
         </LinearLayout>
 
         <ImageView
@@ -97,10 +95,10 @@
             android:id="@+id/mini_play"
             android:layout_width="42dp"
             android:layout_height="42dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/bg_play_btn"
             android:contentDescription="@null"
-            android:padding="9dp"
+            android:padding="10dp"
             android:src="@drawable/ic_play"
-            android:tint="?attr/colorPrimary" />
+            android:tint="@android:color/white" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
