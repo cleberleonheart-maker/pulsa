@@ -22,17 +22,21 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Qué hay de nuevo</string>
-    <string name="changelog">\n• Servidor configurable: cambia la dirección del servidor (LAN/túnel/VPS) en Configuración → Escuchar juntos; un invitado de otro estado puede unirse por internet
-Novedades de esta versión (4.3.2):
+    <string name="changelog">Novedades de esta versión (4.3.3):
 
-• NUEVO – Escuchar juntos: crea una sesión y sincroniza la misma canción con otra persona (código compartido, posición y play/pause reflejados)
+➜ NUEVO
+• Servidor configurable: cambia la dirección del servidor (LAN/túnel/VPS) en Configuración → Escuchar juntos; un invitado de otro estado puede unirse por internet
+• Escuchar juntos: crea una sesión y sincroniza la misma canción con otra persona (código compartido, posición y play/pause reflejados)
 • Rediseño completo: aspecto moderno futurista "Aurora Índigo" (fondo deep-space con degradados violeta/cian, tarjetas de vidrio, botones neón)
 • Tipografía nueva: Space Grotesk para títulos + Outfit para texto
 • Animaciones de transición entre todas las pantallas
 • Ecualizador con las bandas REALES del dispositivo + nuevos presets (Acústico, Clásico, Sonoridad)
 • Virginia ahora aprende entre dispositivos: gustos (skips/likes) reflejados en la nube
 • Builds firmados mediante GitHub Actions (keystore por secrets)
-• Verificación del estado del servidor de correo en la pantalla de login</string>
+• Verificación del estado del servidor de correo en la pantalla de login
+
+➜ CORRECCIÓN
+• Sonido ambiente corregido: el océano ahora tiene olas largas y la lluvia tiene llovizna/gotas (antes sonaban intercambiados: el océano era un rugido pulsante y la lluvia un siseo constante)</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
@@ -414,5 +418,8 @@ Novedades de esta versión (4.3.2):
     <string name="server_default">Automático (red local / predeterminado)</string>
     <string name="server_hint">https://tu-servidor:8081</string>
     <string name="server_saved">Servidor actualizado — todo usará la nueva dirección</string>
-    <string name="server_reset">Usar predeterminado</string>
+    <string name="server_online">Túnel online automático (lee la URL pública del pulsaweb)</string>
+    <string name="server_opt_lan">Red local / predeterminado (192.168.100.7)</string>
+    <string name="server_opt_online">Online automático (dirección pública del túnel)</string>
+    <string name="server_opt_custom">Dirección personalizada</string>
 </resources>

@@ -3,7 +3,11 @@ package com.pulsa.player
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -316,23 +320,49 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun serverDialog() {
         refreshServerLabel()
+        val mode = Settings.serverMode(this)
         val input = EditText(this).apply {
-            setText(Settings.serverBase(this@SettingsActivity))
             hint = getString(R.string.server_hint)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or
                 android.text.InputType.TYPE_TEXT_VARIATION_URI
             setSingleLine(true)
+            if (mode == "custom") setText(Settings.serverBase(this@SettingsActivity))
+        }
+        val rbLan = RadioButton(this).apply { text = getString(R.string.server_opt_lan) }
+        val rbOnline = RadioButton(this).apply { text = getString(R.string.server_opt_online) }
+        val rbCustom = RadioButton(this).apply { text = getString(R.string.server_opt_custom) }
+        val radio = RadioGroup(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(rbLan)
+            addView(rbOnline)
+            addView(rbCustom)
+        }
+        when (mode) {
+            "online" -> rbOnline.isChecked = true
+            "custom" -> rbCustom.isChecked = true
+            else -> rbLan.isChecked = true
+        }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(radio)
+            addView(
+                input,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = (10 * resources.displayMetrics.density).toInt() }
+            )
         }
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.server_title)
-            .setView(input)
+            .setView(container)
             .setPositiveButton(R.string.save) { _, _ ->
-                Settings.setServerBase(this, input.text.toString().trim())
-                refreshServerLabel()
-                Toast.makeText(this, R.string.server_saved, Toast.LENGTH_SHORT).show()
-            }
-            .setNeutralButton(R.string.server_reset) { _, _ ->
-                Settings.setServerBase(this, "")
+                val chosen = when {
+                    rbOnline.isChecked -> Settings.SERVER_ONLINE
+                    rbCustom.isChecked -> input.text.toString().trim()
+                    else -> Settings.SERVER_LAN
+                }
+                Settings.setServerBase(this, chosen)
                 refreshServerLabel()
                 Toast.makeText(this, R.string.server_saved, Toast.LENGTH_SHORT).show()
             }
@@ -342,8 +372,11 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun refreshServerLabel() {
         val label = findViewById<TextView>(R.id.server_value)
-        val base = Settings.serverBase(this)
-        label.text = if (base.isEmpty()) getString(R.string.server_default) else base
+        label.text = when (Settings.serverMode(this)) {
+            "online" -> getString(R.string.server_online)
+            "custom" -> Settings.serverBase(this)
+            else -> getString(R.string.server_default)
+        }
     }
 
     private fun sessionCall(body: String): String {

@@ -22,17 +22,21 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What\'s new</string>
-    <string name="changelog">\n• Configurable server: set the server address (LAN/tunnel/VPS) in Settings → Listen together; a guest in another state can join over the internet
-New in this version (4.3.2):
+    <string name="changelog">What\'s new in this version (4.3.3):
 
-• NEW – Listen together: create a session and sync the same track with another person (shared code, position and play/pause mirrored)
+➜ NEW
+• Configurable server: set the server address (LAN/tunnel/VPS) in Settings → Listen together; a guest in another state can join over the internet
+• Listen together: create a session and sync the same track with another person (shared code, mirrored position and play/pause)
 • Complete redesign: modern futuristic "Indigo Aurora" look (deep-space background with violet/cyan gradients, glass cards, neon buttons)
 • New typography: Space Grotesk for titles + Outfit for body text
 • Screen transition animations everywhere
 • Equalizer with the REAL device bands + new presets (Acoustic, Classical, Loudness)
-• Virginia now learns across devices: tastes (skips/likes) are mirrored in the cloud
+• Virginia now learns across devices: tastes (skips/likes) mirrored in the cloud
 • Builds signed via GitHub Actions (keystore from secrets)
-• Email server status check on the login screen</string>
+• Email server status check on the login screen
+
+➜ FIXES
+• Ambient sound fixed: ocean now has long waves and rain has drizzle/drops (before they sounded swapped — ocean was a pulsing rumble and rain a constant hiss)</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -414,5 +418,8 @@ New in this version (4.3.2):
     <string name="server_default">Automatic (local network / default)</string>
     <string name="server_hint">https://your-server:8081</string>
     <string name="server_saved">Server updated — everything will use the new address</string>
-    <string name="server_reset">Use default</string>
+    <string name="server_online">Automatic online tunnel (reads the public URL from pulsaweb)</string>
+    <string name="server_opt_lan">Local network / default (192.168.100.7)</string>
+    <string name="server_opt_online">Automatic online (tunnel public address)</string>
+    <string name="server_opt_custom">Custom address</string>
 </resources>

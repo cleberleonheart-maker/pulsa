@@ -13,6 +13,11 @@ object Settings {
     private const val KEY_MIRROR_CODE = "mirror_code"
     private const val KEY_MIRROR_HOST = "mirror_host"
     private const val KEY_SERVER = "server_base"
+    private const val KEY_TUNNEL_URL = "tunnel_url"
+    private const val TUNNEL_INFO_HOST = "https://raw.githubusercontent.com/cleberleonheart-maker/pulsaweb/main/tunnel.txt"
+
+    const val SERVER_LAN = ""
+    const val SERVER_ONLINE = "auto"
     private const val DEFAULT_TELEMETRY_TOKEN = "pulsa-local-2026"
 
     const val ACCENT_PURPLE = "purple"
@@ -98,11 +103,48 @@ object Settings {
         prefs(context).edit().putString(KEY_SERVER, cleaned).apply()
     }
 
-    /** Hosts a tentar, na ordem: configurado primeiro, depois LAN e localhost. */
+    /** "lan" | "online" (auto via túnel) | "custom". */
+    fun serverMode(context: Context): String {
+        val base = serverBase(context)
+        return when {
+            base.isEmpty() -> "lan"
+            base == SERVER_ONLINE -> "online"
+            else -> "custom"
+        }
+    }
+
+    private var cachedTunnel: String? = null
+    private var lastTunnelFetch = 0L
+
+    /** URL pública atual do túnel, lida do pulsaweb (cache de 120s). */
+    fun onlineServer(context: Context): String? {
+        val now = System.currentTimeMillis()
+        if (cachedTunnel != null && now - lastTunnelFetch < 120_000L) return cachedTunnel
+        var url: String? = null
+        try {
+            val conn = java.net.URL(TUNNEL_INFO_HOST).openConnection() as java.net.HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connectTimeout = 5000
+            conn.readTimeout = 5000
+            val text = conn.inputStream.bufferedReader().use { it.readText() }.trim()
+            conn.inputStream.close()
+            if (text.startsWith("https://") && text.contains(".trycloudflare.com")) url = text
+        } catch (t: Throwable) {
+        }
+        if (url != null) {
+            cachedTunnel = url
+            lastTunnelFetch = now
+        }
+        return cachedTunnel
+    }
+
+    /** Hosts a tentar, na ordem: configurado/túnel primeiro, depois LAN e localhost. */
     fun serverCandidates(context: Context): List<String> {
         val out = ArrayList<String>(3)
-        val custom = serverBase(context)
-        if (custom.isNotEmpty() && !out.contains(custom)) out.add(custom)
+        when (serverMode(context)) {
+            "online" -> onlineServer(context)?.let { if (!out.contains(it)) out.add(it) }
+            "custom" -> serverBase(context).let { if (it.isNotEmpty() && !out.contains(it)) out.add(it) }
+        }
         for (def in listOf("http://192.168.100.7:8081", "http://127.0.0.1:8081")) {
             if (!out.contains(def)) out.add(def)
         }
