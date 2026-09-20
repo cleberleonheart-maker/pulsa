@@ -21,14 +21,14 @@
     <string name="update_error">No se pudo verificar si hay actualizaciones. Inténtalo de nuevo más tarde.</string>
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
-    <string name="changelog_title">Qué hay de nuevo</string>
-    <string name="changelog">Novedades de esta versión (4.4.0):
+    <string name="changelog_title">Novedades de esta versión</string>
+    <string name="changelog">Novedades de esta versión (4.4.1):
 
 ➜ NUEVO
-• Rediseño "Holográfico": nueva identidad visual futurista — fondo violeta profundo con brillos magenta/cian, navegación inferior flotante, mini-reproductor holográfico, filas redondeadas
-• Nueva paleta: magenta eléctrico como color principal (combina con Virginia), violeta y cian neón
-• Detalles renovados: cabeceras con degradado, brillos y orbes, botones, tarjetas, login y pantalla del DJ
-• El avatar de Virginia, Ajustes y todas las funciones se mantienen intactos</string>
+• Vuelve a la música: la Virgínia retoma tu última sesión — vuelve a sonar la pista desde donde la dejaste, solo pidiéndolo
+• Entiende muchas frases: vuelve a la música, vuelve a tocar, sigue desde donde paraste, reanuda, retoma — sin chocar con volver (pista anterior) ni con tocar
+• Recuerda la última pista y su posición, incluso después de cerrar la app
+• Ajustes, avatar y todas las funciones intactas</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
@@ -308,6 +308,9 @@
     <string name="dj_voice_prev">¡Volviendo atrás!</string>
     <string name="dj_voice_pause">¡Pausado!</string>
     <string name="dj_voice_play">¡Reproduciendo de nuevo!</string>
+    <string name="dj_voice_resume_searching">Déjame ver dónde nos quedamos...</string>
+    <string name="dj_voice_resume">¡Volví! Reproduciendo %1$s, de %2$s, desde donde te quedaste.</string>
+    <string name="dj_voice_resume_none">No encontré dónde paraste la última vez. ¡Pídeme que toque una canción y arranco ahora mismo!</string>
     <string name="dj_voice_mix">¡Claro! Preparando un mix nuevo para ti.</string>
     <string name="dj_voice_fav">¡Marcada como favorita!</string>
     <string name="dj_voice_thanks">¡De nada! Nos vemos en la próxima.</string>

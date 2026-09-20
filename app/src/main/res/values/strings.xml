@@ -26,13 +26,13 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.4.0):
+    <string name="changelog">Novidades desta versão (4.4.1):
 
-➜ NOVO
-• Redesign "Holográfico": nova identidade visual futurista — fundo em violeta profundo com brilhos magenta/ciano, menu inferior flutuante, mini-player holográfico, listas com cantos arredondados
-• Nova paleta: magenta elétrico como cor principal (combina com a Virgínia), violeta e ciano neon
-• Detalhes repaginados: headers em gradiente, brilhos e orbes, botões, cartões, login e tela do DJ
-• Avatar da Virgínia, Configurações e todas as funções mantidas intactas</string>
+→ NOVIDADES
+• Volta pra música: a Virgínia retoma a última sessão — volta a tocar a faixa de onde você parou, só falando
+• Entende várias frases: volta pra música, volta a tocar, continua de onde parou, recomeça, retoma — sem conflitar com voltar (faixa anterior) ou tocar
+• Lembra da última música e da posição, mesmo depois de fechar o app
+• Configurações, avatar e todas as funções mantidas intactas</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
@@ -311,6 +311,9 @@
     <string name="dj_voice_prev">Voltando!</string>
     <string name="dj_voice_pause">Pausado!</string>
     <string name="dj_voice_play">Tocando de novo!</string>
+    <string name="dj_voice_resume_searching">Deixa eu ver onde paramos da última vez...</string>
+    <string name="dj_voice_resume">Voltei! Tocando %1$s, de %2$s, de onde você parou.</string>
+    <string name="dj_voice_resume_none">Não encontrei quando você parou da última vez. Me peça para tocar uma música e eu começo agora!</string>
     <string name="dj_voice_mix">Claro! Preparando um mix novo para você.</string>
     <string name="dj_voice_fav">Marcada como favorita!</string>
     <string name="dj_voice_thanks">Por nada! A gente se vê na próxima.</string>

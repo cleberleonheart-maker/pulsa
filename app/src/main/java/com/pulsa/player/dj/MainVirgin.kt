@@ -349,6 +349,28 @@ class MainVirgin(
         }
     }
 
+    private fun resumeLastSession() {
+        val ctx = activity.applicationContext
+        val songId = Settings.resumeSongId(ctx)
+        if (songId < 0L) {
+            virginSpeak(activity.getString(R.string.dj_voice_resume_none))
+            return
+        }
+        virginSpeak(activity.getString(R.string.dj_voice_resume_searching))
+        ThreadPool.post {
+            val song = Library.songsById(ctx, songId).firstOrNull()
+            ThreadPool.onUi {
+                if (song == null) {
+                    virginSpeak(activity.getString(R.string.dj_voice_resume_none))
+                    return@onUi
+                }
+                Telemetry.log(activity, "Virgin resume id=$songId pos=${Settings.resumePosition(ctx)}")
+                Playback.start(listOf(song), 0)
+                virginSpeak(activity.getString(R.string.dj_voice_resume, song.title, song.artist))
+            }
+        }
+    }
+
     private fun virgMixWithArtist(query: String?) {
         val artist = VirginMedia.findArtist(activity, query)
         if (artist == null) {
@@ -495,6 +517,7 @@ class MainVirgin(
                     virginSpeak(activity.getString(R.string.dj_voice_play))
                 }
             }
+            "resume" -> resumeLastSession()
             "fav" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {

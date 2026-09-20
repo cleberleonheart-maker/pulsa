@@ -25,6 +25,14 @@ object Library {
         return querySongs(context, null, null)
     }
 
+    fun songsById(context: Context, id: Long): List<Song> {
+        return querySongs(
+            context,
+            "${MediaStore.Audio.Media._ID}=? AND ${MediaStore.Audio.Media.IS_MUSIC}!=0",
+            arrayOf(id.toString())
+        )
+    }
+
     private val gospelKeywords = listOf(
         "gospel", "louvor", "adora", "adorac", "adorã", "hinario", "hino", "harpa",
         "igreja", "jesus", "cristo", "deus", "fiel", "salm", "cantico", "cântico",

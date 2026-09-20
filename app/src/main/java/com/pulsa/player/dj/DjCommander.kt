@@ -69,6 +69,18 @@ object DjCommander {
         listOf("bombar", "bombra", "anima", "animar", "acelera", "acelerar",
             "festa", "agit", "empolg", "firmeza", "pancadao").any { norm.contains(it) }
 
+    private fun resumeMatch(norm: String): Boolean =
+        norm.contains("de onde parou") || norm.contains("da onde parou") ||
+            norm.contains("de onde eu parei") || norm.contains("onde parei") ||
+            norm.contains("onde eu parei") ||
+            norm.contains("volta pra musica") || norm.contains("volta a musica") ||
+            norm.contains("voltar a musica") ||
+            norm.contains("volta pra tocar") || norm.contains("volta a tocar") ||
+            norm.contains("voltar a tocar") ||
+            norm.contains("volta de onde") || norm.contains("voltar de onde") ||
+            norm.contains("retoma") || norm.contains("retomar") ||
+            norm.contains("recomeca") || norm.contains("recomecar")
+
     private fun memoryKey(norm: String): Boolean =
         listOf("numero", "telefone", "whats", "zap", "watss", "bluetooth", "bitu",
             "fone", "contato", "ligar").any { norm.contains(it) }
@@ -108,6 +120,7 @@ object DjCommander {
         norm.contains("pula") || norm.contains("pular") || norm.contains("pule") ||
             norm.contains("skip") -> "skip"
         norm.contains("proxima") || norm.contains("passa") || norm.contains("avanc") -> "next"
+        resumeMatch(norm) -> "resume"
         norm.contains("anterior") || norm.contains("volta") || norm.contains("voltar") -> "prev"
         norm.contains("pausa") || norm.contains("pausar") || norm.contains("parar") ||
             norm.contains("pare") || norm.contains("stop") ||

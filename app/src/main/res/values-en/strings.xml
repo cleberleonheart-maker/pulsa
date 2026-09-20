@@ -21,14 +21,14 @@
     <string name="update_error">Could not check for updates. Please try again later.</string>
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
-    <string name="changelog_title">What\'s new</string>
-    <string name="changelog">What\'s new in this version (4.4.0):
+    <string name="changelog_title">What is new</string>
+    <string name="changelog">What is new (4.4.1):
 
 ➜ NEW
-• "Holographic" redesign: brand-new futuristic look — deep violet night background with magenta/cyan glows, floating bottom navigation, holographic mini-player, rounded song rows
-• New palette: electric magenta as the main accent (matches Virginia), violet and neon cyan
-• Restyled details: gradient headers, glows and orbs, buttons, cards, login and DJ screen
-• Virginia\'s avatar, Settings and every feature kept untouched</string>
+• Back to the music: Virginia picks up your last session — she starts playing the track again from where you left off, just by saying it
+• Understands many phrases: back to the music, keep playing, continue where you left off, start over, resume — without clashing with back (previous track) or play
+• Remembers your last song and position, even after closing the app
+• Settings, avatar and every feature kept untouched</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -308,6 +308,9 @@
     <string name="dj_voice_prev">Going back!</string>
     <string name="dj_voice_pause">Paused!</string>
     <string name="dj_voice_play">Playing again!</string>
+    <string name="dj_voice_resume_searching">Let me see where we left off...</string>
+    <string name="dj_voice_resume">Back! Playing %1$s, by %2$s, from where you stopped.</string>
+    <string name="dj_voice_resume_none">I couldn\'t find where you stopped last time. Ask me to play a song and I\'ll start right now!</string>
     <string name="dj_voice_mix">Sure! Preparing a new mix for you.</string>
     <string name="dj_voice_fav">Marked as favorite!</string>
     <string name="dj_voice_thanks">You\'re welcome! See you at the next one.</string>

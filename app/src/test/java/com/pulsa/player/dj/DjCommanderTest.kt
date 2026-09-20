@@ -51,4 +51,20 @@ class DjCommanderTest {
         assertEquals("play", DjCommander.action(DjCommander.norm("toca")))
         assertEquals("hello", DjCommander.action(DjCommander.norm("oi")))
     }
+
+    @Test
+    fun action_resume_beats_prev_and_play() {
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, volta pra musica")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, volta a tocar")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, continua de onde parou")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, retoma a musica")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgi, recomeca a musica")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, de onde eu parei")))
+    }
+
+    @Test
+    fun action_volta_alone_still_prev() {
+        assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta")))
+        assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta a anterior")))
+    }
 }
