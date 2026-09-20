@@ -1,9 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <gradient
-        android:angle="0"
-        android:centerColor="#333CE4FF"
-        android:endColor="#26FF2E9E"
-        android:startColor="#CC8A5CFF" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Base violeta → ciano → magenta (cantos esquadriados) -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="0"
+                android:centerColor="#333CE4FF"
+                android:endColor="#26FF2E9E"
+                android:startColor="#CC8A5CFF" />
+        </shape>
+    </item>
+
+    <!-- Linha néon inferior (grid holográfico) -->
+    <item
+        android:bottom="0dp"
+        android:left="8dp"
+        android:right="8dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="0"
+                android:centerColor="#B346D6FF"
+                android:endColor="#B3FF2E9E"
+                android:startColor="#B38A5CFF" />
+            <size android:height="2dp" />
+        </shape>
+    </item>
+
+    <!-- Traços HUD inferiores -->
+    <item
+        android:bottom="6dp"
+        android:gravity="bottom|left"
+        android:left="22dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hud_tick" />
+            <size
+                android:width="24dp"
+                android:height="4dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="12dp"
+        android:gravity="bottom|left"
+        android:left="22dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#99FFFFFF" />
+            <size
+                android:width="12dp"
+                android:height="3dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="6dp"
+        android:gravity="bottom|right"
+        android:right="22dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hud_tick" />
+            <size
+                android:width="24dp"
+                android:height="4dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="12dp"
+        android:gravity="bottom|right"
+        android:right="22dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#99FFFFFF" />
+            <size
+                android:width="12dp"
+                android:height="3dp" />
+        </shape>
+    </item>
+
+    <!-- Linhas verticais de varredura (HUD) no canto superior direito -->
+    <item
+        android:gravity="top|end"
+        android:right="20dp"
+        android:top="10dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hud_grid" />
+            <size
+                android:width="2dp"
+                android:height="34dp" />
+        </shape>
+    </item>
+    <item
+        android:gravity="top|end"
+        android:right="27dp"
+        android:top="14dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hud_grid" />
+            <size
+                android:width="2dp"
+                android:height="22dp" />
+        </shape>
+    </item>
+    <item
+        android:gravity="top|end"
+        android:right="33dp"
+        android:top="8dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hud_grid" />
+            <size
+                android:width="2dp"
+                android:height="42dp" />
+        </shape>
+    </item>
+</layer-list>

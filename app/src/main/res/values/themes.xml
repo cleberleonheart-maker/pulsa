@@ -122,8 +122,10 @@
         <item name="android:elevation">16dp</item>
         <item name="itemIconTint">@color/nav_item_color</item>
         <item name="itemTextColor">@color/nav_item_color</item>
+        <item name="itemIconSize">22dp</item>
         <item name="itemActiveIndicatorStyle">@style/Widget.Pulsa.NavIndicator</item>
         <item name="labelVisibilityMode">labeled</item>
+        <item name="itemTextAppearance">@style/TextAppearance.Pulsa.Tab</item>
     </style>
 
     <style name="Widget.Pulsa.NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">

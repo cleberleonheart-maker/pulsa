@@ -1,9 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <corners android:radius="30dp" />
-    <solid android:color="#F2120C20" />
-    <stroke
-        android:width="1dp"
-        android:color="#40FF2E9E" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Corpo da pílula (vidro escuro) -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="30dp" />
+            <solid android:color="#E6120C20" />
+        </shape>
+    </item>
+
+    <!-- Contorno néon -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="30dp" />
+            <stroke
+                android:width="1dp"
+                android:color="#46FF2E9E" />
+        </shape>
+    </item>
+
+    <!-- Linha superior holográfica -->
+    <item
+        android:gravity="top"
+        android:left="46dp"
+        android:right="46dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="0"
+                android:centerColor="#8046D6FF"
+                android:endColor="#20FF2E9E"
+                android:startColor="#208A5CFF" />
+            <size android:height="2dp" />
+        </shape>
+    </item>
+
+    <!-- Farol esquerdo (ciano) -->
+    <item
+        android:bottom="26dp"
+        android:gravity="left|center_vertical"
+        android:left="18dp"
+        android:top="26dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#AA46D6FF"
+                android:endColor="#0046D6FF"
+                android:gradientRadius="12dp"
+                android:startColor="#FF46D6FF"
+                android:type="radial" />
+            <size
+                android:width="24dp"
+                android:height="24dp" />
+        </shape>
+    </item>
+
+    <!-- Farol direito (magenta) -->
+    <item
+        android:bottom="26dp"
+        android:gravity="right|center_vertical"
+        android:right="18dp"
+        android:top="26dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#AAFF2E9E"
+                android:endColor="#00FF2E9E"
+                android:gradientRadius="12dp"
+                android:startColor="#FFFF2E9E"
+                android:type="radial" />
+            <size
+                android:width="24dp"
+                android:height="24dp" />
+        </shape>
+    </item>
+</layer-list>

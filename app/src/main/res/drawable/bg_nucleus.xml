@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Halo exterior do núcleo -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#59FF2E9E"
+                android:endColor="#00FF2E9E"
+                android:gradientRadius="30dp"
+                android:startColor="#B3FF2E9E"
+                android:type="radial" />
+        </shape>
+    </item>
+    <!-- Halo ciano intermediário -->
+    <item
+        android:bottom="6dp"
+        android:left="6dp"
+        android:right="6dp"
+        android:top="6dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#598A5CFF"
+                android:endColor="#003CE4FF"
+                android:gradientRadius="18dp"
+                android:startColor="#8A8A5CFF"
+                android:type="radial" />
+        </shape>
+    </item>
+    <!-- Núcleo sólido -->
+    <item
+        android:bottom="13dp"
+        android:left="13dp"
+        android:right="13dp"
+        android:top="13dp">
+        <shape android:shape="oval">
+            <gradient
+                android:angle="315"
+                android:endColor="#46D6FF"
+                android:startColor="#FF2E9E" />
+        </shape>
+    </item>
+</layer-list>

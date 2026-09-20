@@ -6,6 +6,8 @@
     android:background="@drawable/bg_song_normal"
     android:gravity="center_vertical"
     android:orientation="horizontal"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="5dp"
     android:paddingHorizontal="16dp"
     android:paddingVertical="8dp">
 

@@ -22,13 +22,16 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (4.4.1):
+    <string name="changelog">Novedades de esta versión (4.5.0):
 
 ➜ NUEVO
-• Vuelve a la música: la Virgínia retoma tu última sesión — vuelve a sonar la pista desde donde la dejaste, solo pidiéndolo
-• Entiende muchas frases: vuelve a la música, vuelve a tocar, sigue desde donde paraste, reanuda, retoma — sin chocar con volver (pista anterior) ni con tocar
-• Recuerda la última pista y su posición, incluso después de cerrar la app
-• Ajustes, avatar y todas las funciones intactas</string>
+• Fusión espacial (casi como Tami): planeta anillado, luna y nebulosas violeta/magenta/cian en el fondo de toda la app
+• El mini-reproductor pasó a ser una cápsula de órbita: anillo alrededor del arte y play brillando como núcleo de energía
+• La pantalla Reproduciendo ahora ganó anillos de órbita animados alrededor del álbum y del play, con escáner holográfico
+• Barra inferior estilo cabina: faros cian/magenta y línea de energía en el borde superior
+• Pestañas y cabeceras con esquinas rectas, cuadrícula holográfica y tarjetas de vidrio flotantes en las listas
+• Títulos con espaciado futurista e indicador de pestaña en cápsula
+• Ajustes, avatar de la Virgínia y todas las funciones intactas</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>

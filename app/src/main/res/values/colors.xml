@@ -55,4 +55,13 @@
     <color name="video_bg">#F5F5F5</color>
     <color name="video_text">#1A1A1A</color>
     <color name="video_text2">#6B6B6B</color>
+
+    <!-- Espaço Profundo · camada técnica (redesign v4.5) -->
+    <color name="panel_glass">#CC1B0F30</color>
+    <color name="panel_border">#3A2C66</color>
+    <color name="panel_border_cyan">#593CE4FF</color>
+    <color name="hud_grid">#1F3CE4FF</color>
+    <color name="hud_tick">#B3FFFFFF</color>
+    <color name="orbit_cyan">#4D46D6FF</color>
+    <color name="orbit_magenta">#40FF2E9E</color>
 </resources>

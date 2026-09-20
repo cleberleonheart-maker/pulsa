@@ -1,44 +1,171 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Espaço profundo -->
     <item>
         <shape android:shape="rectangle">
             <solid android:color="@color/bg" />
         </shape>
     </item>
+
+    <!-- Nébula violeta central -->
     <item>
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#28FF2E9E"
-                android:centerX="0.92"
-                android:centerY="0.04"
-                android:endColor="#00FF2E9E"
-                android:gradientRadius="0.75"
-                android:startColor="#1AFF2E9E"
-                android:type="radial" />
-        </shape>
-    </item>
-    <item>
-        <shape android:shape="oval">
-            <gradient
-                android:centerColor="#1E8A5CFF"
-                android:centerX="0.05"
-                android:centerY="0.95"
+                android:centerX="0.48"
+                android:centerY="0.42"
+                android:centerColor="#228A5CFF"
                 android:endColor="#008A5CFF"
-                android:gradientRadius="0.85"
+                android:gradientRadius="0.95"
                 android:startColor="#148A5CFF"
                 android:type="radial" />
         </shape>
     </item>
+
+    <!-- Nébula magenta p/ canto superior direito -->
     <item>
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#143CE4FF"
-                android:centerX="0.7"
-                android:centerY="0.88"
-                android:endColor="#003CE4FF"
-                android:gradientRadius="0.45"
-                android:startColor="#0E3CE4FF"
+                android:centerX="0.88"
+                android:centerY="0.04"
+                android:centerColor="#1CFF2E9E"
+                android:endColor="#00FF2E9E"
+                android:gradientRadius="0.72"
+                android:startColor="#14FF2E9E"
                 android:type="radial" />
+        </shape>
+    </item>
+
+    <!-- Nébula ciano p/ canto inferior esquerdo -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:centerX="0.04"
+                android:centerY="0.96"
+                android:centerColor="#1A3CE4FF"
+                android:endColor="#003CE4FF"
+                android:gradientRadius="0.8"
+                android:startColor="#123CE4FF"
+                android:type="radial" />
+        </shape>
+    </item>
+
+    <!-- Núcleo de brilho magenta -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:centerX="0.94"
+                android:centerY="0.14"
+                android:centerColor="#26FF2E9E"
+                android:endColor="#00FF2E9E"
+                android:gradientRadius="0.3"
+                android:startColor="#1AFF2E9E"
+                android:type="radial" />
+        </shape>
+    </item>
+
+    <!-- Anel do planeta (Saturno) — atrás do corpo -->
+    <item
+        android:bottom="78dp"
+        android:gravity="bottom|right"
+        android:right="2dp">
+        <shape android:shape="oval">
+            <gradient
+                android:angle="0"
+                android:centerColor="#4D46D6FF"
+                android:endColor="#1AFF2E9E"
+                android:startColor="#208A5CFF" />
+            <stroke
+                android:width="1dp"
+                android:color="#8046D6FF" />
+            <size
+                android:width="120dp"
+                android:height="34dp" />
+        </shape>
+    </item>
+
+    <!-- Corpo do planeta na borda inferior direita -->
+    <item
+        android:bottom="70dp"
+        android:gravity="bottom|right"
+        android:right="10dp">
+        <shape android:shape="oval">
+            <solid android:color="#FF1B1138" />
+            <stroke
+                android:width="1dp"
+                android:color="#403CE4FF" />
+            <size
+                android:width="82dp"
+                android:height="82dp" />
+        </shape>
+    </item>
+
+    <!-- Iluminação de terminador do planeta -->
+    <item
+        android:bottom="71dp"
+        android:gravity="bottom|right"
+        android:right="11dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerX="0.28"
+                android:centerY="0.2"
+                android:centerColor="#663B2268"
+                android:endColor="#001B1138"
+                android:gradientRadius="41dp"
+                android:startColor="#99432578"
+                android:type="radial" />
+            <size
+                android:width="80dp"
+                android:height="80dp" />
+        </shape>
+    </item>
+
+    <!-- Reflexo specular no planeta -->
+    <item
+        android:bottom="124dp"
+        android:gravity="bottom|right"
+        android:right="24dp">
+        <shape android:shape="oval">
+            <solid android:color="#3DFFF0DF" />
+            <size
+                android:width="16dp"
+                android:height="7dp" />
+        </shape>
+    </item>
+
+    <!-- Lua pequena no canto superior esquerdo -->
+    <item
+        android:gravity="left|top"
+        android:left="16dp"
+        android:top="14dp">
+        <shape android:shape="oval">
+            <solid android:color="#22FFF0DF" />
+            <size
+                android:width="36dp"
+                android:height="36dp" />
+        </shape>
+    </item>
+
+    <item
+        android:gravity="left|top"
+        android:left="20dp"
+        android:top="19dp">
+        <shape android:shape="oval">
+            <solid android:color="#B3FFF0DF" />
+            <size
+                android:width="24dp"
+                android:height="24dp" />
+        </shape>
+    </item>
+
+    <item
+        android:gravity="left|top"
+        android:left="29dp"
+        android:top="23dp">
+        <shape android:shape="oval">
+            <solid android:color="#79CFB8D2" />
+            <size
+                android:width="9dp"
+                android:height="9dp" />
         </shape>
     </item>
 </layer-list>

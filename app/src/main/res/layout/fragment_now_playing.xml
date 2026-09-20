@@ -28,13 +28,21 @@
         <FrameLayout
             android:layout_width="300dp"
             android:layout_height="300dp"
+            android:clipChildren="false"
             android:gravity="center">
 
             <View
-                android:layout_width="200dp"
-                android:layout_height="200dp"
+                android:layout_width="324dp"
+                android:layout_height="324dp"
                 android:background="@drawable/bg_glow"
                 android:elevation="0dp" />
+
+            <com.pulsa.player.ui.OrbitRingsView
+                android:id="@+id/np_orbit_art"
+                android:layout_width="344dp"
+                android:layout_height="344dp"
+                android:alpha="0.85"
+                android:contentDescription="@null" />
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="280dp"
@@ -65,6 +73,14 @@
                 android:contentDescription="@null"
                 android:elevation="18dp" />
         </FrameLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginEnd="40dp"
+            android:background="@drawable/bg_scanner" />
 
         <TextView
             android:id="@+id/np_title"
@@ -182,9 +198,16 @@
                 android:gravity="center">
 
                 <View
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
+                    android:layout_width="92dp"
+                    android:layout_height="92dp"
                     android:background="@drawable/bg_glow" />
+
+                <com.pulsa.player.ui.OrbitRingsView
+                    android:id="@+id/np_orbit_play"
+                    android:layout_width="96dp"
+                    android:layout_height="96dp"
+                    android:alpha="0.9"
+                    android:contentDescription="@null" />
 
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@+id/np_play"

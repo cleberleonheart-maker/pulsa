@@ -17,16 +17,25 @@
         android:orientation="horizontal"
         android:paddingHorizontal="8dp">
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/mini_art"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_album_art"
-            android:contentDescription="@null"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_music_note"
-            android:tint="@color/ic_placeholder"
-            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium" />
+        <FrameLayout
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_mini_art_ring"
+            android:clickable="false"
+            android:focusable="false">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/mini_art"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_album_art"
+                android:contentDescription="@null"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_music_note"
+                android:tint="@color/ic_placeholder"
+                app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -96,7 +105,7 @@
             android:id="@+id/mini_play"
             android:layout_width="42dp"
             android:layout_height="42dp"
-            android:background="@drawable/bg_play_btn"
+            android:background="@drawable/bg_nucleus"
             android:contentDescription="@null"
             android:padding="10dp"
             android:src="@drawable/ic_play"

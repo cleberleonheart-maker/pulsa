@@ -22,13 +22,16 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.4.1):
+    <string name="changelog">What is new (4.5.0):
 
 ➜ NEW
-• Back to the music: Virginia picks up your last session — she starts playing the track again from where you left off, just by saying it
-• Understands many phrases: back to the music, keep playing, continue where you left off, start over, resume — without clashing with back (previous track) or play
-• Remembers your last song and position, even after closing the app
-• Settings, avatar and every feature kept untouched</string>
+• Space fusion (almost like Tami): ringed planet, moon and violet/magenta/cyan nebulae in the background across the whole app
+• Mini-player became an orbit capsule: ring around the art and the play button glowing as an energy core
+• Now playing screen got animated orbit rings around the album art and the play button, with a holographic scanner bar
+• Bottom nav in cockpit style: cyan/magenta beacons and an energy line on top
+• Squared-off tabs and headers with holographic grid and floating glass cards in the lists
+• Titles with futuristic letter spacing and capsule active tab indicator
+• Settings, Virginia\'s avatar and every feature kept untouched</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
