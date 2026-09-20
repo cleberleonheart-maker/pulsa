@@ -1,4 +1,4 @@
-package com.pulsa.player.util
+package com.pulsa.player.dj
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

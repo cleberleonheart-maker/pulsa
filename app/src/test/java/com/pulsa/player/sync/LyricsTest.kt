@@ -1,4 +1,4 @@
-package com.pulsa.player.util
+package com.pulsa.player.sync
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
