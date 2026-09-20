@@ -22,7 +22,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.8.2):
+    <string name="changelog">What is new (4.8.3):
+
+➜ FIX
+• Home screen opens again: the Virgin tab (6th) broke the bottom bar (BottomNavigation\'s 5-item limit); now it lives in a toolbar card (home icon) and the bar works everywhere
+
+↺ Version 4.8.2
 
 ➜ NEW
 • Set of the day: "Virgin, set of the day" builds a set picked just for today (changes daily, favorites first)

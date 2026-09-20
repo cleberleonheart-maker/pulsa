@@ -22,7 +22,12 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (4.8.2):
+    <string name="changelog">Novedades de esta versión (4.8.3):
+
+➜ CORRECCIÓN
+• La pantalla inicial vuelve a abrir: la pestaña Virgin (6ª) reventaba la barra inferior (límite de 5 ítems del BottomNavigation); ahora vive en una tarjeta de la barra superior (icono casa) y la barra funciona en todos los dispositivos
+
+↺ Versión 4.8.2
 
 ➜ NUEVO
 • Set del día: "Virgin, set del día" arma un set elegido solo para hoy (cambia cada día, prioriza favoritas)

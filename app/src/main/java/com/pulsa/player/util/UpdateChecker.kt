@@ -31,9 +31,7 @@ object UpdateChecker {
 
     // Publicos sao a fonte de verdade; o servidor privado so e fallback offline/debug.
     private val publicHosts = listOf(
-        "https://cleberleonheart-maker.github.io/pulsaweb/version",
-        "https://pulsaweb.netlify.app/version",
-        "https://docs.google.com/document/d/1FEj7Rvlyz6o67-EVWLVP9oTo3mU4ShG0jj6w206ZvQA/export?format=txt"
+        "https://cleberleonheart-maker.github.io/pulsaweb/version"
     )
     private fun privateHosts(context: Context): List<String> {
         return Settings.serverCandidates(context).map { "$it/version" }

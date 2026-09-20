@@ -208,6 +208,10 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         toolbar = findViewById(R.id.main_toolbar)
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                R.id.action_virgin -> {
+                    openTab(VirginHomeFragment::class.java.simpleName, VirginHomeFragment())
+                    true
+                }
                 R.id.action_search -> {
                     startActivity(Intent(this, SearchActivity::class.java))
                     true
@@ -262,10 +266,6 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         bottomNav = findViewById(R.id.bottom_nav)
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_virgin -> {
-                    openTab(VirginHomeFragment::class.java.simpleName, VirginHomeFragment())
-                    true
-                }
                 R.id.nav_songs -> {
                     openTab(SongsTabFragment::class.java.simpleName, SongsTabFragment())
                     true
@@ -484,6 +484,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     private fun fragmentFor(tag: String): Fragment {
         return when (tag) {
+            VirginHomeFragment::class.java.simpleName -> VirginHomeFragment()
             FavoritesTabFragment::class.java.simpleName -> FavoritesTabFragment()
             VideosTabFragment::class.java.simpleName -> VideosTabFragment()
             AlbumsTabFragment::class.java.simpleName -> AlbumsTabFragment()
@@ -495,7 +496,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     private fun navIdFor(tag: String): Int {
         return when (tag) {
-            VirginHomeFragment::class.java.simpleName -> R.id.nav_virgin
+            VirginHomeFragment::class.java.simpleName -> R.id.nav_songs
             FavoritesTabFragment::class.java.simpleName -> R.id.nav_favorites
             VideosTabFragment::class.java.simpleName -> R.id.nav_videos
             AlbumsTabFragment::class.java.simpleName -> R.id.nav_albums
