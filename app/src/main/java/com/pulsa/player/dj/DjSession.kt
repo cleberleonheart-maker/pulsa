@@ -66,6 +66,7 @@ class DjSession(
         const val REQ_MIC = 1001
         const val REQ_STORAGE = 1002
         private const val RESUME_LISTENER_DELAY_MS = 800L
+        private const val CHAIN_DELAY_MS = 1800L
     }
 
     private val launcher = launchers
@@ -99,6 +100,7 @@ class DjSession(
     private var lastSpeechEndMs = 0L
     private val resumeListenerRunnable = Runnable { resumeListener() }
     private val uiHandler = Handler(Looper.getMainLooper())
+    private val chainHandler = Handler(Looper.getMainLooper())
 
     fun create(savedInstanceState: Bundle?) {
         source = Settings.djSource(activity)
@@ -211,6 +213,7 @@ class DjSession(
                 suppressNextLearnSkip = false
                 if (newId >= 0L) {
                     DjLearn.recordPlay(app, newId)
+                    DjSessionMemory.notePlayed(newId)
                 }
                 learnId = newId
                 learnStartedAt = SystemClock.elapsedRealtime()
@@ -288,9 +291,10 @@ class DjSession(
                     Settings.DJ_CALM -> DjEngine.Intensity.CALM
                     Settings.DJ_WILD -> DjEngine.Intensity.WILD
                     else -> DjEngine.Intensity.BALANCED
-                },
-                learn
-            )
+},
+                    learn,
+                    exclude = DjSessionMemory.recentIds()
+                )
             ThreadPool.onUi {
                 host.setMixBusy(false)
                 if (set.isEmpty()) {
@@ -300,7 +304,9 @@ class DjSession(
                 Telemetry.log(activity, "DJ Virgin mix source=$activeSource style=$activeIntensity n=${set.size}")
                 Playback.setShuffle(false)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
                 djActive = true
+                DjSessionMemory.notePlayed(set.map { it.id })
                 learnId = -1L
                 lastCompleted = false
                 suppressNextLearnSkip = false
@@ -325,7 +331,8 @@ class DjSession(
             val learn = DjLearn.learn(activity.applicationContext)
             val set = DjEngine.build(
                 songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.CALM, learn,
-                maxSize = 8
+                maxSize = 8,
+                exclude = DjSessionMemory.recentIds()
             )
             ThreadPool.onUi {
                 if (set.isEmpty()) {
@@ -335,7 +342,9 @@ class DjSession(
                 Telemetry.log(activity, "DJ Virgin sleep n=${set.size}")
                 Playback.setShuffle(false)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(true)
                 djActive = true
+                DjSessionMemory.notePlayed(set.map { it.id })
                 learnId = -1L
                 lastCompleted = false
                 suppressNextLearnSkip = false
@@ -360,7 +369,8 @@ class DjSession(
             val learn = DjLearn.learn(activity.applicationContext)
             val set = DjEngine.build(
                 songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.WILD, learn,
-                maxSize = 16
+                maxSize = 16,
+                exclude = DjSessionMemory.recentIds()
             )
             ThreadPool.onUi {
                 if (set.isEmpty()) {
@@ -370,7 +380,9 @@ class DjSession(
                 Telemetry.log(activity, "DJ Virgin wild n=${set.size}")
                 Playback.setShuffle(true)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
                 djActive = true
+                DjSessionMemory.notePlayed(set.map { it.id })
                 learnId = -1L
                 lastCompleted = false
                 suppressNextLearnSkip = false
@@ -398,6 +410,7 @@ class DjSession(
                 Telemetry.log(activity, "DJ Virgin only artist=$artist n=${songs.size}")
                 Playback.setShuffle(true)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
                 djActive = true
                 learnId = -1L
                 lastCompleted = false
@@ -428,7 +441,8 @@ class DjSession(
             val learn = DjLearn.learn(activity.applicationContext)
             val set = DjEngine.build(
                 songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.BALANCED, learn,
-                includeArtist = artist
+                includeArtist = artist,
+                exclude = DjSessionMemory.recentIds()
             )
             ThreadPool.onUi {
                 if (set.isEmpty()) {
@@ -438,7 +452,9 @@ class DjSession(
                 Telemetry.log(activity, "DJ Virgin mixwith artist=$artist n=${set.size}")
                 Playback.setShuffle(false)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
                 djActive = true
+                DjSessionMemory.notePlayed(set.map { it.id })
                 learnId = -1L
                 lastCompleted = false
                 suppressNextLearnSkip = false
@@ -468,6 +484,7 @@ class DjSession(
                 Telemetry.log(activity, "DJ Virgin resume id=$songId pos=${Settings.resumePosition(ctx)}")
                 Playback.setShuffle(false)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
                 djActive = true
                 learnId = -1L
                 lastCompleted = false
@@ -596,6 +613,7 @@ class DjSession(
     }
 
     fun destroy() {
+        chainHandler.removeCallbacksAndMessages(null)
         djVoice?.shutdown()
         djVoice = null
     }
@@ -667,7 +685,20 @@ class DjSession(
     private fun resolveVoiceCommand(text: String) {
         if (activity.isFinishing || activity.isDestroyed) return
         if (SystemClock.elapsedRealtime() - lastSpeechEndMs < 1500L) return
+        dispatchVoiceCommand(text)
+    }
+
+    private fun dispatchVoiceCommand(text: String) {
+        if (activity.isFinishing || activity.isDestroyed) return
         val norm = DjCommander.norm(text)
+        val chainParts = DjCommander.chain(norm)
+        if (chainParts.size == 2) {
+            dispatchVoiceCommand(chainParts[0])
+            chainHandler.postDelayed({
+                if (!activity.isFinishing && !activity.isDestroyed) dispatchVoiceCommand(chainParts[1])
+            }, CHAIN_DELAY_MS)
+            return
+        }
         val hasWake = DjCommander.hasWake(norm)
         val action = DjCommander.action(norm)
         if (action == null) {
@@ -706,7 +737,7 @@ class DjSession(
                     DjLearn.recordSkip(activity.applicationContext, cur.id)
                     suppressNextLearnSkip = true
                 }
-                speak(activity.getString(R.string.dj_voice_skip))
+                speak(DjReactions.skip(activity))
                 if (Playback.queue.isNotEmpty()) Playback.next() else startMix()
             }
             "dislike" -> {
@@ -715,11 +746,11 @@ class DjSession(
                     DjLearn.recordDislike(activity.applicationContext, cur.id)
                     suppressNextLearnSkip = true
                 }
-                speak(activity.getString(R.string.dj_voice_dislike))
+                speak(DjReactions.dislike(activity))
                 if (Playback.queue.isNotEmpty()) Playback.next() else startMix()
             }
             "next" -> {
-                speak(activity.getString(R.string.dj_voice_next))
+                speak(DjReactions.next(activity))
                 if (Playback.queue.isNotEmpty()) Playback.next() else startMix()
             }
             "prev" -> {
@@ -741,6 +772,7 @@ class DjSession(
                 }
             }
             "resume" -> resumeLastSession()
+            "yesterday" -> speakYesterday()
             "fav" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {
@@ -749,9 +781,7 @@ class DjSession(
                     db.setFavorite(cur, nextValue)
                     if (nextValue) DjLearn.recordLiked(activity.applicationContext, cur.id)
                     Toast.makeText(activity, R.string.dj_voice_fav, Toast.LENGTH_SHORT).show()
-                    speak(activity.getString(
-                        if (nextValue) R.string.dj_voice_learn_like else R.string.dj_voice_fav
-                    ))
+                    speak(if (nextValue) DjReactions.like(activity) else DjReactions.unliked(activity))
                 }
             }
             "info" -> {
@@ -820,6 +850,33 @@ class DjSession(
         DjMemory.WHATSAPP -> activity.getString(R.string.dj_memory_whatsapp)
         DjMemory.BLUETOOTH -> activity.getString(R.string.dj_memory_bluetooth)
         else -> activity.getString(R.string.dj_memory_phone)
+    }
+
+    private fun speakYesterday() {
+        ThreadPool.post {
+            val ranks = DjLearn.playedOnDay(activity.applicationContext, -1, 8)
+            val songs = Library.allSongs(activity.applicationContext)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (ranks.isEmpty()) {
+                    speak(activity.getString(R.string.dj_voice_yesterday_none))
+                    return@onUi
+                }
+                val byId = songs.associateBy { it.id }
+                val items = ranks.mapNotNull { (id, _) ->
+                    byId[id]?.let { s ->
+                        activity.getString(R.string.dj_voice_yesterday_item, s.artist, s.title)
+                    }
+                }
+                if (items.isEmpty()) {
+                    speak(activity.getString(R.string.dj_voice_yesterday_none))
+                } else {
+                    speak(activity.getString(
+                        R.string.dj_voice_yesterday_all, items.joinToString("; ")
+                    ))
+                }
+            }
+        }
     }
 
     private fun voiceMemorySave(norm: String) {

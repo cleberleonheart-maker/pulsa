@@ -111,6 +111,33 @@ object DjLearn {
             return result
         }
 
+        /** Músicas tocadas em um dia específico (dayOffset 0 = hoje, -1 = ontem). */
+        fun playedOnDay(nowSec: Long, dayOffset: Int, limit: Int): List<Pair<Long, Int>> {
+            val result = ArrayList<Pair<Long, Int>>()
+            runCatching {
+                val cal = java.util.Calendar.getInstance()
+                cal.timeInMillis = nowSec * 1000L
+                cal.add(java.util.Calendar.DAY_OF_YEAR, dayOffset)
+                cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                cal.set(java.util.Calendar.MINUTE, 0)
+                cal.set(java.util.Calendar.SECOND, 0)
+                cal.set(java.util.Calendar.MILLISECOND, 0)
+                val start = cal.timeInMillis / 1000L
+                cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                val end = cal.timeInMillis / 1000L
+                readableDatabase.rawQuery(
+                    "SELECT song_id, COUNT(*) AS n FROM play_log WHERE ts >= ? AND ts < ? " +
+                        "GROUP BY song_id ORDER BY MAX(ts) DESC LIMIT ?",
+                    arrayOf(start.toString(), end.toString(), limit.toString())
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        result.add(c.getLong(0) to c.getInt(1))
+                    }
+                }
+            }
+            return result
+        }
+
         fun recordSkip(songId: Long) {
             bump(songId, "skips", 1)
         }
@@ -298,4 +325,7 @@ object DjLearn {
 
     fun topSongs(context: Context, days: Int, limit: Int): List<Pair<Long, Int>> =
         learner(context).topSongs(System.currentTimeMillis() / 1000L, days, limit)
+
+    fun playedOnDay(context: Context, dayOffset: Int, limit: Int): List<Pair<Long, Int>> =
+        learner(context).playedOnDay(System.currentTimeMillis() / 1000L, dayOffset, limit)
 }

@@ -67,6 +67,10 @@ object Playback {
         service?.setRepeatOne(value)
     }
 
+    fun setSleepMix(on: Boolean) {
+        service?.setSleepMix(on)
+    }
+
     fun setMicListening(on: Boolean) {
         service?.setMicListening(on)
     }

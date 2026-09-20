@@ -78,8 +78,11 @@ class PlaybackService : Service() {
     private var micDucked = false
     private val mainHandler = Handler(Looper.getMainLooper())
     private val fadeHandler = Handler(Looper.getMainLooper())
+    private val sleepHandler = Handler(Looper.getMainLooper())
     private var fadeOutRunnable: Runnable? = null
     private var fadeInRunnable: Runnable? = null
+    private var sleepMix = false
+    private var sleepFadeRunnable: Runnable? = null
     private var consecutiveErrors = 0
     private var lastResumeSaveMs = 0L
     private val progressTick = object : Runnable {
@@ -303,6 +306,48 @@ class PlaybackService : Service() {
     fun setRepeatOne(value: Boolean) {
         repeatOne = value
         if (value) repeatAll = false
+    }
+
+    /** Liga/desliga o modo dormir (mix CALM): ao fechar o set, fade e pausa no lugar de repetir. */
+    fun setSleepMix(on: Boolean) {
+        if (sleepMix == on) return
+        sleepMix = on
+        if (!on) {
+            removeSleepFade()
+            runCatching { mp?.setVolume(1f, 1f) }
+        }
+    }
+
+    private fun removeSleepFade() {
+        sleepFadeRunnable?.let { sleepHandler.removeCallbacks(it) }
+        sleepFadeRunnable = null
+    }
+
+    /** Diminui o volume lentamente e pausa quando o mix dormir completa o set. */
+    private fun startSleepFade() {
+        removeSleepFade()
+        val player = mp ?: return
+        if (player !== mp) return
+        val stepMs = 900L
+        var step = 0
+        val r = object : Runnable {
+            override fun run() {
+                step++
+                val volume = 1f - step.toFloat() / FADE_STEPS
+                runCatching { player.setVolume(volume.coerceAtLeast(0f), volume.coerceAtLeast(0f)) }
+                if (step >= FADE_STEPS) {
+                    sleepFadeRunnable = null
+                    if (player !== mp) return
+                    sleepMix = false
+                    pause()
+                    runCatching { player.setVolume(1f, 1f) }
+                } else {
+                    sleepHandler.postDelayed(this, stepMs)
+                }
+            }
+        }
+        sleepFadeRunnable = r
+        sleepHandler.post(r)
     }
 
     fun cycleRepeat() {
@@ -590,6 +635,10 @@ class PlaybackService : Service() {
             publishState()
             scheduleTick()
             startEightD()
+            return
+        }
+        if (sleepMix && queue.isNotEmpty() && index >= queue.lastIndex) {
+            startSleepFade()
             return
         }
         if (repeatAll || index < queue.lastIndex) {

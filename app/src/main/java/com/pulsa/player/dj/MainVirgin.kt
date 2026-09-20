@@ -57,6 +57,7 @@ class MainVirgin(
         const val REQ_VIRGIN_MIC = 2001
         const val REQ_VIRGIN_STORAGE = 2002
         private const val RESUME_LISTENER_DELAY_MS = 800L
+        private const val CHAIN_DELAY_MS = 1800L
     }
 
     private val launcher = launchers
@@ -80,6 +81,7 @@ class MainVirgin(
     private var virginSpeechPaused = false
     private var virginScanInFlight = false
     private val virginHandler = Handler(Looper.getMainLooper())
+    private val chainHandler = Handler(Looper.getMainLooper())
     private val resumeListenerRunnable = Runnable { doResumeVirginListener() }
     private var virginLastSpeechEndMs = 0L
 
@@ -251,6 +253,7 @@ class MainVirgin(
 
     fun announceRadioSong(song: Song) {
         if (activity.isFinishing || activity.isDestroyed || !Settings.djRadio(activity) || !Settings.djVoice(activity)) return
+        DjSessionMemory.notePlayed(song.id)
         val newId = song.id
         if (radioLastId == newId) return
         radioLastId = newId
@@ -311,7 +314,8 @@ class MainVirgin(
             val learn = DjLearn.learn(activity.applicationContext)
             val set = DjEngine.build(
                 songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.CALM, learn,
-                maxSize = 8
+                maxSize = 8,
+                exclude = DjSessionMemory.recentIds()
             )
             ThreadPool.onUi {
                 if (set.isEmpty()) {
@@ -321,6 +325,8 @@ class MainVirgin(
                 Telemetry.log(activity, "Virgin sleep n=${set.size}")
                 Playback.setShuffle(false)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(true)
+                DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set, 0)
                 virginSpeak(activity.getString(R.string.dj_voice_sleep, set.size))
             }
@@ -343,6 +349,7 @@ class MainVirgin(
                 Telemetry.log(activity, "Virgin only artist=$artist n=${songs.size}")
                 Playback.setShuffle(true)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
                 Playback.start(songs.shuffled(), 0)
                 virginSpeak(activity.getString(R.string.dj_voice_only, artist, songs.size))
             }
@@ -365,6 +372,7 @@ class MainVirgin(
                     return@onUi
                 }
                 Telemetry.log(activity, "Virgin resume id=$songId pos=${Settings.resumePosition(ctx)}")
+                Playback.setSleepMix(false)
                 Playback.start(listOf(song), 0)
                 virginSpeak(activity.getString(R.string.dj_voice_resume, song.title, song.artist))
             }
@@ -389,7 +397,8 @@ class MainVirgin(
             val learn = DjLearn.learn(activity.applicationContext)
             val set = DjEngine.build(
                 songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.BALANCED, learn,
-                includeArtist = artist
+                includeArtist = artist,
+                exclude = DjSessionMemory.recentIds()
             )
             ThreadPool.onUi {
                 if (set.isEmpty()) {
@@ -399,6 +408,8 @@ class MainVirgin(
                 Telemetry.log(activity, "Virgin mixwith artist=$artist n=${set.size}")
                 Playback.setShuffle(false)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
+                DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set, 0)
                 virginSpeak(activity.getString(R.string.dj_voice_mixwith, artist, set.size))
             }
@@ -418,7 +429,8 @@ class MainVirgin(
             val learn = DjLearn.learn(activity.applicationContext)
             val set = DjEngine.build(
                 songs, favIds, DjEngine.Source.ALL, DjEngine.Intensity.WILD, learn,
-                maxSize = 16
+                maxSize = 16,
+                exclude = DjSessionMemory.recentIds()
             )
             ThreadPool.onUi {
                 if (set.isEmpty()) {
@@ -428,6 +440,8 @@ class MainVirgin(
                 Telemetry.log(activity, "Virgin wild n=${set.size}")
                 Playback.setShuffle(true)
                 Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
+                DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set.shuffled(), 0)
                 virginSpeak(activity.getString(R.string.dj_voice_mood_wild, set.size))
             }
@@ -438,6 +452,33 @@ class MainVirgin(
         DjMemory.WHATSAPP -> activity.getString(R.string.dj_memory_whatsapp)
         DjMemory.BLUETOOTH -> activity.getString(R.string.dj_memory_bluetooth)
         else -> activity.getString(R.string.dj_memory_phone)
+    }
+
+    private fun virginSpeakYesterday() {
+        ThreadPool.post {
+            val ranks = DjLearn.playedOnDay(activity.applicationContext, -1, 8)
+            val songs = Library.allSongs(activity.applicationContext)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (ranks.isEmpty()) {
+                    virginSpeak(activity.getString(R.string.dj_voice_yesterday_none))
+                    return@onUi
+                }
+                val byId = songs.associateBy { it.id }
+                val items = ranks.mapNotNull { (id, _) ->
+                    byId[id]?.let { s ->
+                        activity.getString(R.string.dj_voice_yesterday_item, s.artist, s.title)
+                    }
+                }
+                if (items.isEmpty()) {
+                    virginSpeak(activity.getString(R.string.dj_voice_yesterday_none))
+                } else {
+                    virginSpeak(activity.getString(
+                        R.string.dj_voice_yesterday_all, items.joinToString("; ")
+                    ))
+                }
+            }
+        }
     }
 
     private fun virgMemorySave(norm: String) {
@@ -462,7 +503,20 @@ class MainVirgin(
 
     private fun resolveVirginCommand(text: String) {
         if (activity.isFinishing || activity.isDestroyed) return
+        dispatchVirginCommand(text)
+    }
+
+    private fun dispatchVirginCommand(text: String) {
+        if (activity.isFinishing || activity.isDestroyed) return
         val norm = DjCommander.norm(text)
+        val chainParts = DjCommander.chain(norm)
+        if (chainParts.size == 2) {
+            dispatchVirginCommand(chainParts[0])
+            chainHandler.postDelayed({
+                if (!activity.isFinishing && !activity.isDestroyed) dispatchVirginCommand(chainParts[1])
+            }, CHAIN_DELAY_MS)
+            return
+        }
         val hasWake = DjCommander.hasWake(norm)
         val action = DjCommander.action(norm)
         if (action == null) {
@@ -492,12 +546,12 @@ class MainVirgin(
                 val cur = Playback.currentSong
                 if (action == "dislike" && cur != null) {
                     DjLearn.recordDislike(activity.applicationContext, cur.id)
-                    virginSpeak(activity.getString(R.string.dj_voice_dislike))
+                    virginSpeak(DjReactions.dislike(activity))
                 } else if (action == "skip" && cur != null) {
                     DjLearn.recordSkip(activity.applicationContext, cur.id)
-                    virginSpeak(activity.getString(R.string.dj_voice_skip))
+                    virginSpeak(DjReactions.skip(activity))
                 } else {
-                    virginSpeak(activity.getString(R.string.dj_voice_next))
+                    virginSpeak(DjReactions.next(activity))
                 }
                 if (Playback.queue.isNotEmpty()) Playback.next()
             }
@@ -518,6 +572,7 @@ class MainVirgin(
                 }
             }
             "resume" -> resumeLastSession()
+            "yesterday" -> virginSpeakYesterday()
             "fav" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {
@@ -526,9 +581,7 @@ class MainVirgin(
                     db.setFavorite(cur, nextValue)
                     if (nextValue) DjLearn.recordLiked(activity.applicationContext, cur.id)
                     host.syncMiniPlayer()
-                    virginSpeak(activity.getString(
-                        if (nextValue) R.string.dj_voice_learn_like else R.string.dj_voice_fav
-                    ))
+                    virginSpeak(if (nextValue) DjReactions.like(activity) else DjReactions.unliked(activity))
                 }
             }
             "info" -> {
@@ -950,6 +1003,7 @@ class MainVirgin(
     }
 
     fun destroy() {
+        chainHandler.removeCallbacksAndMessages(null)
         virginListener?.destroy()
         virginListener = null
         welcomeVoice?.shutdown()

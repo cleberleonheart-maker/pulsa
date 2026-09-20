@@ -26,9 +26,16 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.5.0):
+    <string name="changelog">Novidades desta versão (4.6.0):
 
 → NOVIDADES
+• Virgin Reativa: agora ela comemora um like, zoa um skip/dislike e troca o "próxima" — resposta variada em pt/en/es
+• Comando encadeado: "Virgin, toca e depois pausa" — duas ações numa fala só
+• Sem repetir na sessão: músicas já tocadas saem dos próximos mixes enquanto o app está aberto
+• Mix dormir com fade-out: o set CALM toca uma vez e o volume diminui suavemente em vez de repetir ou parar seco
+• "Virgin, o que toquei ontem" — ela lista as faixas do dia anterior pelo histórico
+
+↺ Versão 4.5.0
 • Fusão espacial (quase igual ao Tami): fundo com planeta anelado, lua e nébulas violeta/magenta/ciano em todo o app
 • Mini-player virou cápsula de órbita: anel ao redor da arte e play brilhando como núcleo de energia
 • Tela Agora tocando ganhou anéis de órbita animados em volta do álbum e do play, com scanner holográfico
@@ -325,6 +332,34 @@
     <string name="dj_voice_hello">Bem-vindo ao Pulsa! Eu sou a Virgin, sua DJ virtual.</string>
     <string name="dj_voice_skip">Pulada!</string>
     <string name="dj_voice_dislike">Entendido! Não vou tocar essa por um tempo.</string>
+    <string name="dj_voice_yesterday_none">Ontem você não tocou nada comigo. Que tal começar a sessão de hoje agora?</string>
+    <string name="dj_voice_yesterday_item">%1$s — %2$s</string>
+    <string name="dj_voice_yesterday_all">Ontem você tocou: %1$s.</string>
+    <string-array name="dj_reaction_like">
+        <item>Anotado! Vou trazer mais músicas assim para você.</item>
+        <item>Que bom que gostou! Adicionei à sua vibe.</item>
+        <item>Essa é boa mesmo. Deixei guardada nos seus gostos.</item>
+    </string-array>
+    <string-array name="dj_reaction_unlike">
+        <item>Entendido, tirei dos favoritos.</item>
+        <item>Ok, removida da lista de favoritas.</item>
+        <item>Sem problema, já desmarquei.</item>
+    </string-array>
+    <string-array name="dj_reaction_dislike">
+        <item>Entendi! Não vou repetir essa tão cedo.</item>
+        <item>Registrado — essa fica de fora por um tempo.</item>
+        <item>Ok, da próxima vez escolho com mais cuidado.</item>
+    </string-array>
+    <string-array name="dj_reaction_skip">
+        <item>Já era! Pulando a próxima.</item>
+        <item>Essa não te pegou, né? Trocando já.</item>
+        <item>Blz, vou procurar uma melhor.</item>
+    </string-array>
+    <string-array name="dj_reaction_next">
+        <item>Próxima!</item>
+        <item>Fechou, já vou em frente.</item>
+        <item>Bora pra próxima!</item>
+    </string-array>
     <string name="dj_mic_hint">Ouvindo… fale: Virgin, próxima música.</string>
     <string name="dj_voice_welcome">Bem-vindo(a) ao Pulsa, %1$s! Eu sou a Virgin, sua DJ virtual.</string>
     <string name="dj_scan">Buscar novidades</string>

@@ -27,12 +27,19 @@ object DjEngine {
         intensity: Intensity,
         learn: Learn = Learn(),
         maxSize: Int = Int.MAX_VALUE,
-        includeArtist: String? = null
+        includeArtist: String? = null,
+        exclude: Collection<Long> = emptyList()
     ): List<Song> {
-        val base = when (source) {
+        val baseSource = when (source) {
             Source.FAVORITES -> pool.filter { it.id in favoriteIds }
             Source.ALL -> pool
         }
+        if (baseSource.isEmpty()) return emptyList()
+        if (baseSource.size == 1) return baseSource
+
+        // Evita repetir na sessão, mas garante candidatos em bibliotecas pequenas.
+        val filtered = baseSource.filter { it.id !in exclude }
+        val base = if (filtered.size >= 4) filtered else baseSource
         if (base.isEmpty()) return emptyList()
         if (base.size == 1) return base
 

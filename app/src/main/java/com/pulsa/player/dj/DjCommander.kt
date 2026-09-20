@@ -2,6 +2,26 @@ package com.pulsa.player.dj
 
 object DjCommander {
 
+    // Conectivos de comando encadeado: "toca X e depois pausa", "próxima, entao curti".
+    private val CHAIN_SEPS = arrayOf(
+        " e depois ", " e em seguida ", " e entao ", " e logo ",
+        " depois ", " em seguida ", " entao ", " logo "
+    )
+
+    /** Divide um comando encadeado em até duas partes; vazio quando não há conectivo. */
+    fun chain(norm: String): List<String> {
+        for (sep in CHAIN_SEPS) {
+            val i = norm.indexOf(sep)
+            if (i >= 0) {
+                val before = norm.substring(0, i).trim()
+                val after = norm.substring(i + sep.length).trim()
+                if (before.isEmpty() || after.isEmpty()) continue
+                return listOf(before, after)
+            }
+        }
+        return emptyList()
+    }
+
     fun norm(text: String): String {
         return text.lowercase()
             .replace('á', 'a').replace('à', 'a').replace('â', 'a').replace('ã', 'a').replace('ä', 'a')
@@ -81,6 +101,12 @@ object DjCommander {
             norm.contains("retoma") || norm.contains("retomar") ||
             norm.contains("recomeca") || norm.contains("recomecar")
 
+    private fun playedYesterdayMatch(norm: String): Boolean =
+        norm.contains("que toquei ontem") || norm.contains("toquei ontem") ||
+            norm.contains("cantei ontem") || norm.contains("ouvi ontem") ||
+            (norm.contains("ontem") && (norm.contains("toquei") || norm.contains("mudei"))) ||
+            norm.contains("o que toquei") || norm.contains("o que eu toquei")
+
     private fun memoryKey(norm: String): Boolean =
         listOf("numero", "telefone", "whats", "zap", "watss", "bluetooth", "bitu",
             "fone", "contato", "ligar").any { norm.contains(it) }
@@ -121,6 +147,7 @@ object DjCommander {
             norm.contains("skip") -> "skip"
         norm.contains("proxima") || norm.contains("passa") || norm.contains("avanc") -> "next"
         resumeMatch(norm) -> "resume"
+        playedYesterdayMatch(norm) -> "yesterday"
         norm.contains("anterior") || norm.contains("volta") || norm.contains("voltar") -> "prev"
         norm.contains("pausa") || norm.contains("pausar") || norm.contains("parar") ||
             norm.contains("pare") || norm.contains("stop") ||

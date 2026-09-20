@@ -22,9 +22,16 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.5.0):
+    <string name="changelog">What is new (4.6.0):
 
 ➜ NEW
+• Reacting Virgin: she celebrates a like, teases a skip/dislike and changes up "next" — varied replies in pt/en/es
+• Chained command: "Virgin, play and then pause" — two actions in one phrase
+• No repeats this session: songs already played stay out of the next mixes while the app is open
+• Sleep mix with fade-out: the CALM set plays once and the volume fades gently instead of repeating or stopping dead
+• "Virgin, what did I play yesterday" — she lists the tracks from the day before via history
+
+↺ Version 4.5.0
 • Space fusion (almost like Tami): ringed planet, moon and violet/magenta/cyan nebulae in the background across the whole app
 • Mini-player became an orbit capsule: ring around the art and the play button glowing as an energy core
 • Now playing screen got animated orbit rings around the album art and the play button, with a holographic scanner bar
@@ -322,6 +329,34 @@
     <string name="dj_voice_hello">Welcome to Pulsa! I\'m Virgin, your virtual DJ.</string>
     <string name="dj_voice_skip">Skipped!</string>
     <string name="dj_voice_dislike">Got it! I\'ll keep that one off the mix for a while.</string>
+    <string name="dj_voice_yesterday_none">You didn\'t play anything with me yesterday. How about we start today\'s session now?</string>
+    <string name="dj_voice_yesterday_item">%1$s — %2$s</string>
+    <string name="dj_voice_yesterday_all">Yesterday you played: %1$s.</string>
+    <string-array name="dj_reaction_like">
+        <item>Noted! I\'ll bring more songs like this your way.</item>
+        <item>Glad you liked it! Added to your vibe.</item>
+        <item>That\'s a good one. Saved to your tastes.</item>
+    </string-array>
+    <string-array name="dj_reaction_unlike">
+        <item>Understood, removed from your favorites.</item>
+        <item>Okay, it\'s off the favorites list.</item>
+        <item>No problem, already unchecked.</item>
+    </string-array>
+    <string-array name="dj_reaction_dislike">
+        <item>Got it! I won\'t replay that one anytime soon.</item>
+        <item>Logged — that one stays out for a while.</item>
+        <item>Okay, I\'ll pick more carefully next time.</item>
+    </string-array>
+    <string-array name="dj_reaction_skip">
+        <item>Done! Moving to the next one.</item>
+        <item>Not your jam, huh? Switching already.</item>
+        <item>Alright, let me find something better.</item>
+    </string-array>
+    <string-array name="dj_reaction_next">
+        <item>Next!</item>
+        <item>Sure, moving on.</item>
+        <item>Let\'s go to the next one!</item>
+    </string-array>
     <string name="dj_mic_hint">Listening… say: Virgin, next song.</string>
     <string name="dj_voice_welcome">Welcome to Pulsa, %1$s! I\'m Virgin, your virtual DJ.</string>
     <string name="dj_scan">Find new music</string>
