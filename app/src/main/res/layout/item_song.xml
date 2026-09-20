@@ -6,6 +6,7 @@
     android:background="?attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:orientation="horizontal"
+    android:layout_marginHorizontal="6dp"
     android:paddingHorizontal="14dp"
     android:paddingVertical="9dp">
 
@@ -17,7 +18,7 @@
         android:contentDescription="@null"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_music_note"
-        android:tint="#668A7CFB"
+        android:tint="@color/ic_placeholder"
         app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium" />
 
     <LinearLayout

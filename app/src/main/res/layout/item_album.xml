@@ -9,7 +9,7 @@
     app:cardBackgroundColor="@color/glass_fill"
     app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
-    app:rippleColor="#408A7CFB"
+    app:rippleColor="#402E9FF5"
     app:strokeColor="@color/neon_border_soft"
     app:strokeWidth="1dp">
 
@@ -25,7 +25,7 @@
             android:contentDescription="@null"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_music_note"
-            android:tint="#66C77DFF"
+            android:tint="@color/ic_placeholder"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

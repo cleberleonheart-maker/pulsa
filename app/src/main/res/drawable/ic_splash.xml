@@ -6,19 +6,19 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Glow violeta -->
+    <!-- Glow magenta -->
     <path
-        android:fillColor="#26C77DFF"
+        android:fillColor="#26FF2E9E"
         android:pathData="M54,14a42,42 0 1 1 0,84a42,42 0 1 1 0,-84Z" />
 
-    <!-- Anel neon duplo (aurora) -->
+    <!-- Anel neon duplo (holográfico) -->
     <path
         android:pathData="M54,20a34,34 0 1 1 0,68a34,34 0 1 1 0,-68Z"
-        android:strokeColor="#668A7CFB"
+        android:strokeColor="#668A5CFF"
         android:strokeWidth="2" />
     <path
         android:pathData="M54,15a38,38 0 1 1 0,76a38,38 0 1 1 0,-76Z"
-        android:strokeColor="#332FD8E8"
+        android:strokeColor="#333CE4FF"
         android:strokeWidth="1.4" />
 
     <!-- Avatar da Virgin: esfera rosada estilo TAMI -->

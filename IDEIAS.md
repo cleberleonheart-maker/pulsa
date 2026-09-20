@@ -29,6 +29,7 @@
 - [x] **Assinatura via GitHub Actions** (4.3.0): keystore/senhas fora do código, via secrets `KEYSTORE_BASE64/PASSWORD/ALIAS` com fallback local (`app/build.gradle.kts` + `.github/workflows/build.yml`)
 - [x] **Status SMTP verificado** (4.3.0): envio parseia resposta do `/sendmail` (distingue falha de SMTP 535/536) e a tela de login consulta `/smtp/status` mostrando online/offline/não verificado (`ConfirmMail` + `LoginActivity`)
 - [x] **Ouvir juntos** (4.3.2): sessão entre dois aparelhos Pulsa via servidor (`/session` — criar/entrar/sair com código de 5 letras); o convidado espelha faixa (match por id → título+artista), posição (seek quando drift > 6s) e play/pause (`MirrorSync` + `SettingsActivity`). **Servidor configurável** em Configurações (LAN/túnel/VPS) — dá pra entrar de outro estado pela internet (cloudflared/ngrok -> opção "Servidor")
+- [x] **Redesign Holográfico** (4.4.0): nova identidade visual futurista em toda a UI — fundo violeta profundo com brilhos magenta/ciano (`colors.xml`/`bg_aurora`), magenta elétrico como cor principal (harmonizado com a Virgínia), nav inferior flutuante em pílula (`bg_bottomnav` + `BottomNav`), mini-player holográfico (`bg_mini_player`), headers com base arredondada (`bg_header_rounded`), linhas de música em cartão (`bg_song_normal/selected`), orbes/login/DJ repaginados; avatar, Configurações e funções mantidos intactos
 
 ## Web player (pulsaweb) — remote/sync via telemetria
 - [x] **Espelho da biblioteca**: o app manda a lista de músicas pro servidor (/songs, hash p/ reenviar só quando muda); o web mostra "Músicas do celular"
@@ -53,3 +54,43 @@
 ## Engenharia
 - [x] **Assinatura via GitHub Actions** (4.3.0): publica sem depender do PC (secrets)
 - [x] **Verificar status SMTP** (4.3.0): senha de app testada no servidor; app mostra o status na tela de login
+
+## A fazer (propostas)
+
+> Ordenadas por prioridade (mais alta primeiro).
+
+### DJ Virgin / voz
+- [ ] **Retomar de onde parou**: "virgi, volta pra música" continua a faixa/posição da última sessão — `Library` + `Playback`
+- [ ] **"O que toquei ontem"**: histórico re-tocável por voz — "virgi, toca o que tocou ontem" (usa o `play_log`) — `DjMemory` + `DjCommander`
+- [ ] **Despertador da Virgínia**: "virgi, me acorda às 7h com chuva" — alarme toca som ambiente + uma faixa escolhida na hora definida; também sleep-timer falado ("para em 20 min") — `DjCommander` + `AlarmManager`
+- [ ] **Comando encadeado**: "virgi, toca X e depois me fala o resumo de hoje" — duas ações numa fala — `DjCommander`
+- [ ] **Virgin bilíngue**: responde na língua da pergunta (pt/en/es), não só no idioma do app — `DjVoice` + strings
+- [ ] **Resumo semanal falado**: Virgin resume o `play_log` ("você ouviu 4h de Rock, 12x essa música") com voz, em vez de só dashboard web — `DjVoice` + `DjActivity`
+- [ ] **Trivia "quanto você conhece a Virgínia"**: quiz usando `DjMemory`/`DjLearn` — "qual minha música favorita?", reconhecimento por trecho de faixa
+
+### Áudio / UX
+- [ ] **Fade-out no "mix dormir"**: em vez de parar seco, diminui o volume gradualmente por N minutos — `Playback` + `DjCommander`
+- [ ] **Mistura ambiente + música**: "virgi, toca chuva com a música" — som ambiente e faixa somando no mesmo fone (ganho misturado) — `Ambient` + `Playback` + `DjCommander`
+- [ ] **Karaokê sincronizado de verdade**: letras com highlight palavra-a-palavra (falta o sync temporal ao `Lyrics.kt`) na tela da dança — `DancingVirginView` + `Lyrics`
+- [ ] **Fila por energia**: "virgi, toca pra malhar/dirigir" monta fila pelo BPM/gênero detectado da faixa — `Library` + `DjCommander`
+- [ ] **Notificação com seek + letra**: mini-player na notificação com barra de progresso arrastável e letra da faixa — service + `NotificationCompat`
+- [ ] **Importar/exportar playlist M3U**: compartilha/recebe listas de outros players — `Library`
+- [ ] **Crossfade/fade sem gaps**: detectar BPM por DSP e transicionar em batida entre faixas (sem silêncio) — modo festa contínuo — `Playback` + `AudioFx`
+
+### Conexão / sincronia
+- [ ] **Convidado pede música na sessão**: dentro do "Ouvir juntos", o convidado manda faixa por voz e o host toca — `MirrorSync` + `DjCommander`
+- [ ] **QR code pra sessão**: host mostra QR, convidado escaneia em vez de digitar o código — `MirrorSync` + `SettingsActivity`
+- [ ] **Scrobble Last.fm**: envia plays se o usuário tiver conta, usando a infra de `/state` que já empurra faixa/posição — `RemoteSync`
+
+### Dados / memória
+- [ ] **Sem repetir na sessão**: Virgin evita repetir músicas tocadas recentemente a menos que peça — `DjLearn` + fila
+- [ ] **Backup/restaurar preferências**: exporta/importa `DjLearn` + `DjMemory` + presets de EQ num arquivo (ou no servidor) — `SettingsActivity`
+- [ ] **Reação da Virgínia**: comemora um like, zoa um skip ("essa você não curtiu"), conforme o `DjLearn` — `DjVoice`
+- [ ] **Limpeza guiada por voz**: lista músicas nunca tocadas/duplicadas e apaga com confirmação — `DjMemory` + `DjCommander`
+
+### Polimento
+- [ ] **Widget de tela inicial**: mini-player da Virgin com play/pause/próxima sem abrir o app — `AppWidgetProvider`
+
+## Web player (pulsaweb) — a fazer (app separado da web)
+- [ ] **Controle do "Ouvir juntos" pelo PC**: o web player entra na sessão com o código de 5 letras e espelha/controla sem celular — `MirrorSync` + pulsaweb
+- [ ] **Pulsa Rewind / resumo do ano**: replay das músicas mais tocadas + gráfico, gerado da telemetria (`/stats` já agrega) — dashboard web

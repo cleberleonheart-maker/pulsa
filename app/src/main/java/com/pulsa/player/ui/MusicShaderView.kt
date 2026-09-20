@@ -61,11 +61,11 @@ class MusicShaderView @JvmOverloads constructor(
                 vy = (random.nextFloat() - 0.5f) * density * 0.6f
                 r = (1.5f + random.nextFloat() * 2.5f) * density
                 alpha = 0.3f + random.nextFloat() * 0.5f
-                color = Color.rgb(
-                    150 + random.nextInt(106),
-                    120 + random.nextInt(120),
-                    255 - random.nextInt(120)
-                )
+                color = if (random.nextBoolean()) {
+                    Color.rgb(255, 60 + random.nextInt(80), 140 + random.nextInt(115))
+                } else {
+                    Color.rgb(30 + random.nextInt(70), 200 + random.nextInt(55), 255)
+                }
             }
         }
     }

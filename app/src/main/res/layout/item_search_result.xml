@@ -16,7 +16,7 @@
         android:contentDescription="@null"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_music_note"
-        android:tint="#66C77DFF" />
+        android:tint="@color/ic_placeholder" />
 
     <LinearLayout
         android:layout_width="0dp"

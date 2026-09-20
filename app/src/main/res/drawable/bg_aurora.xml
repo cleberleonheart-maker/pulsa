@@ -8,36 +8,36 @@
     <item>
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#598A7CFB"
-                android:centerX="0.08"
-                android:centerY="0.05"
-                android:endColor="#008A7CFB"
+                android:centerColor="#28FF2E9E"
+                android:centerX="0.92"
+                android:centerY="0.04"
+                android:endColor="#00FF2E9E"
                 android:gradientRadius="0.75"
-                android:startColor="#33C77DFF"
+                android:startColor="#1AFF2E9E"
                 android:type="radial" />
         </shape>
     </item>
     <item>
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#552FD8E8"
-                android:centerX="0.95"
-                android:centerY="0.98"
-                android:endColor="#002FD8E8"
-                android:gradientRadius="0.8"
-                android:startColor="#1A3EC6F5"
+                android:centerColor="#1E8A5CFF"
+                android:centerX="0.05"
+                android:centerY="0.95"
+                android:endColor="#008A5CFF"
+                android:gradientRadius="0.85"
+                android:startColor="#148A5CFF"
                 android:type="radial" />
         </shape>
     </item>
     <item>
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#3DE86FD8"
-                android:centerX="0.94"
-                android:centerY="0.06"
-                android:endColor="#00E86FD8"
-                android:gradientRadius="0.42"
-                android:startColor="#1AE86FD8"
+                android:centerColor="#143CE4FF"
+                android:centerX="0.7"
+                android:centerY="0.88"
+                android:endColor="#003CE4FF"
+                android:gradientRadius="0.45"
+                android:startColor="#0E3CE4FF"
                 android:type="radial" />
         </shape>
     </item>

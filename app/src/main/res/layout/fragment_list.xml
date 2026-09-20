@@ -9,7 +9,7 @@
         android:id="@+id/header_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_header_grad"
+        android:background="@drawable/bg_header_rounded"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="16dp"
@@ -23,7 +23,7 @@
             android:background="@drawable/bg_album_art"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_music_note"
-            android:tint="#668A7CFB"
+            android:tint="@color/ic_placeholder"
             app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium" />
 
         <LinearLayout

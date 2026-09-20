@@ -52,7 +52,7 @@
                     android:contentDescription="@null"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_music_note"
-                    android:tint="#66C77DFF" />
+                    android:tint="@color/ic_placeholder" />
             </com.google.android.material.card.MaterialCardView>
 
             <com.pulsa.player.ui.DancingVirginView

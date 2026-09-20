@@ -26,21 +26,13 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.3.3):
+    <string name="changelog">Novidades desta versão (4.4.0):
 
 ➜ NOVO
-• Servidor configurável: mude o endereço do servidor (LAN/túnel/VPS) em Configurações → Ouvir juntos; o convidado de outro estado pode entrar pela internet
-• Ouvir juntos: crie uma sessão e sincronize a mesma música com outra pessoa (código compartilhado, posição e play/pause espelhados)
-• Redesenho completo: visual "Aurora Índigo" moderno e futurista (fundo deep-space com gradientes violeta/ciano, cartões em vidro, botões neon)
-• Tipografia nova: Space Grotesk nos títulos + Outfit no texto
-• Animações de transição entre todas as telas
-• Equalizador com as bandas REAIS do aparelho + presets novos (Acústico, Clássico, Sonoridade)
-• A Virgínia agora aprende entre dispositivos: os gostos (skips/likes) são espelhados na nuvem
-• Builds assinados via GitHub Actions (keystore por secrets)
-• Verificação do status do servidor de e-mail na tela de login
-
-➜ CORREÇÃO
-• Som ambiente corrigido: oceano com ondas longas e chuva com chiar/gotas (antes soavam trocados: oceano era um ronco pulsante e a chuva era um chiado constante)</string>
+• Redesign "Holográfico": nova identidade visual futurista — fundo em violeta profundo com brilhos magenta/ciano, menu inferior flutuante, mini-player holográfico, listas com cantos arredondados
+• Nova paleta: magenta elétrico como cor principal (combina com a Virgínia), violeta e ciano neon
+• Detalhes repaginados: headers em gradiente, brilhos e orbes, botões, cartões, login e tela do DJ
+• Avatar da Virgínia, Configurações e todas as funções mantidas intactas</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>

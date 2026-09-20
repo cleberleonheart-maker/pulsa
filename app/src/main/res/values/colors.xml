@@ -1,52 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Aurora Índigo · deep space -->
-    <color name="bg">#06091A</color>
-    <color name="bg_elev">#0A0E24</color>
-    <color name="surface">#0C1126</color>
-    <color name="surface_variant">#151C3B</color>
-    <color name="glass_fill">#111838</color>
-    <color name="glass_fill_strong">#161F44</color>
-    <color name="neon_border">#3A4180</color>
-    <color name="neon_border_soft">#408E9BE8</color>
+    <!-- Espaço Profundo · noite violeta -->
+    <color name="bg">#0A0612</color>
+    <color name="bg_elev">#120C20</color>
+    <color name="surface">#160E28</color>
+    <color name="surface_variant">#201438</color>
+    <color name="glass_fill">#180F2E</color>
+    <color name="glass_fill_strong">#221540</color>
+    <color name="neon_border">#3A2C66</color>
+    <color name="neon_border_soft">#59479E</color>
 
-    <!-- Brasa aurora -->
-    <color name="aurora_violet">#6A5CFF</color>
-    <color name="aurora_mid">#8E6FE0</color>
-    <color name="aurora_cyan">#2FD8E8</color>
-    <color name="aurora_pink">#E86FD8</color>
-    <color name="glow_start">#668A7CFF</color>
-    <color name="glow_cyan">#552FD8E8</color>
-    <color name="glow_pink">#55E86FD8</color>
+    <!-- Brilho holográfico -->
+    <color name="aurora_violet">#8A5CFF</color>
+    <color name="aurora_mid">#A98AFF</color>
+    <color name="aurora_cyan">#3CE4FF</color>
+    <color name="aurora_pink">#FF2E9E</color>
+    <color name="glow_start">#668A5CFF</color>
+    <color name="glow_cyan">#553CE4FF</color>
+    <color name="glow_pink">#55FF2E9E</color>
 
-    <!-- Primário (indigo-violeta) -->
-    <color name="primary">#8A7CFB</color>
-    <color name="primary_light">#A79CFF</color>
-    <color name="primary_dark">#6B5CF0</color>
-    <color name="on_primary">#0C0D22</color>
+    <!-- Primário (magenta elétrico) -->
+    <color name="primary">#FF2E9E</color>
+    <color name="primary_light">#FF85C6</color>
+    <color name="primary_dark">#D81E84</color>
+    <color name="on_primary">#28001A</color>
 
-    <!-- Acentos (harmonizados com a aurora) -->
-    <color name="primary_blue">#3EC6F5</color>
-    <color name="primary_blue_dark">#2AA0E8</color>
-    <color name="primary_green">#30E0A6</color>
-    <color name="primary_green_dark">#1FC98C</color>
-    <color name="primary_amber">#FFCE6B</color>
-    <color name="primary_amber_dark">#FFB703</color>
-    <color name="primary_red">#FF5E7E</color>
-    <color name="primary_red_dark">#E63946</color>
-    <color name="primary_pink">#FF6EB4</color>
-    <color name="primary_pink_dark">#E0489C</color>
-    <color name="primary_teal">#35E8D8</color>
-    <color name="primary_teal_dark">#18C5BE</color>
+    <!-- Acentos (harmonizados com o holográfico) -->
+    <color name="primary_blue">#46D6FF</color>
+    <color name="primary_blue_dark">#1FA6E8</color>
+    <color name="primary_green">#3DF5AC</color>
+    <color name="primary_green_dark">#26D08A</color>
+    <color name="primary_amber">#FFC65C</color>
+    <color name="primary_amber_dark">#F2A426</color>
+    <color name="primary_red">#FF5A6E</color>
+    <color name="primary_red_dark">#E23A52</color>
+    <color name="primary_pink">#FF7AC0</color>
+    <color name="primary_pink_dark">#E04995</color>
+    <color name="primary_teal">#4DF0DD</color>
+    <color name="primary_teal_dark">#2BCFBE</color>
 
     <!-- Texto -->
-    <color name="text_primary">#F2F4FF</color>
-    <color name="text_secondary">#97A0D0</color>
-    <color name="text_tertiary">#69739F</color>
-    <color name="divider">#242C55</color>
+    <color name="text_primary">#F6F1FF</color>
+    <color name="text_secondary">#A79BC7</color>
+    <color name="text_tertiary">#6F5F94</color>
+    <color name="divider">#261C42</color>
     <color name="white">#FFFFFF</color>
     <color name="yellow">#FFEB3B</color>
     <color name="yellow_dark">#F9A825</color>
+
+    <!-- Placeholder de capa (tint sobre ic_music_note) -->
+    <color name="ic_placeholder">#66FF2E9E</color>
 
     <!-- Vídeo -->
     <color name="video_bg">#F5F5F5</color>
