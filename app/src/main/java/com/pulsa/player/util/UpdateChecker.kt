@@ -1,4 +1,5 @@
 package com.pulsa.player.util
+import com.pulsa.player.core.Blacklist
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.Telemetry
@@ -72,8 +73,17 @@ object UpdateChecker {
     fun downloadFromSite(context: Context) {
         if (context !is android.app.Activity) return
         ThreadPool.post {
+            Blacklist.refresh(context)
+            if (Blacklist.isBanned(context)) {
+                ThreadPool.onUi { showBanDialog(context) }
+                return@post
+            }
             val latest = queryLatest(context)
             ThreadPool.onUi {
+                if (Blacklist.isBanned(context)) {
+                    showBanDialog(context)
+                    return@onUi
+                }
                 val code = latest?.code
                 if (code != null && code <= BuildConfig.VERSION_CODE.toLong()) {
                     MaterialAlertDialogBuilder(context)
@@ -154,8 +164,21 @@ object UpdateChecker {
 
     fun check(context: Context) {
         ThreadPool.post {
+            Blacklist.refresh(context)
+            if (Blacklist.isBanned(context)) return@post
             val latest = queryLatest(context)
             if (latest != null) handle(context, "${latest.code}|${latest.name}|${latest.apkUrl}")
+        }
+    }
+
+    private fun showBanDialog(context: Context) {
+        try {
+            MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.blacklist_title)
+                .setMessage(R.string.blacklist_message)
+                .setPositiveButton(R.string.close, null)
+                .show()
+        } catch (t: Throwable) {
         }
     }
 

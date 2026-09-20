@@ -5,6 +5,8 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
+import com.pulsa.player.R
+import com.pulsa.player.core.Settings
 import java.util.Locale
 
 class DjVoice(context: Context, languageTag: String? = null) {
@@ -29,7 +31,12 @@ class DjVoice(context: Context, languageTag: String? = null) {
         }
 
     companion object {
-        private val chosenVoices = HashMap<Locale, Voice>()
+        private val chosenVoices = HashMap<String, Voice>()
+    }
+
+    fun currentName(): String {
+        val male = Settings.masculineAvatar(appContext)
+        return appContext.getString(if (male) R.string.dj_voice_name_male else R.string.dj_voice_name)
     }
 
     fun init(onReady: (Boolean) -> Unit) {
@@ -42,13 +49,16 @@ class DjVoice(context: Context, languageTag: String? = null) {
             if (ready) {
                 runCatching {
                     tts?.setSpeechRate(0.9f)
-                    tts?.setPitch(1.25f)
+                    tts?.setPitch(pitch())
                     applyVoice()
                 }
             }
             onReady(ready)
         }
     }
+
+    private fun pitch(): Float =
+        if (Settings.masculineAvatar(appContext)) 0.82f else 1.25f
 
     private fun applyVoice() {
         val voice = resolveVoice()
@@ -60,25 +70,47 @@ class DjVoice(context: Context, languageTag: String? = null) {
     }
 
     private fun resolveVoice(): Voice? {
-        chosenVoices[targetLocale]?.let { return it }
+        val male = Settings.masculineAvatar(appContext)
+        chosenVoices["${targetLocale}|$male"]?.let { return it }
         val voices = tts?.voices ?: return null
         val femaleTokens = listOf(
             "female", "feminina", "femenina", "femenine", "woman", "mulher", "voz feminina"
         )
+        val maleTokens = listOf(
+            "male", "masculina", "masculino", "femenino", "man", "homem", "uno", "voz masculina", "en-male"
+        )
 
-        fun femaleFirst(list: List<Voice>): Voice? {
+        fun genderFirst(list: List<Voice>): Voice? {
             val sorted = list.sortedBy { it.name ?: "" }
+            val tokens = if (male) maleTokens else femaleTokens
+            val wanted = sorted.firstOrNull { v ->
+                v.name?.let { n -> tokens.any { t -> n.contains(t, ignoreCase = true) } } == true
+            }
+            if (wanted != null) return wanted
+            // Caminho alternativo: Google nomeia as vozes por apelido ("pt-br-x-iap") —
+            // sem marcador de gênero, aceita qualquer voz que não contenha o outro gênero.
+            val other = if (male) femaleTokens else maleTokens
             return sorted.firstOrNull { v ->
-                v.name?.let { n -> femaleTokens.any { t -> n.contains(t, ignoreCase = true) } } == true
+                v.name?.let { n -> other.none { t -> n.contains(t, ignoreCase = true) } } == true
             } ?: sorted.firstOrNull()
         }
 
-        // Mesmo idioma do app primeiro (correto), preferindo voz feminina.
+        // Mesmo idioma do app primeiro (correto), preferindo a voz do gênero do avatar.
         // Nunca cai para outro idioma, para a voz ficar sempre no idioma da interface.
         val sameLang = voices.filter { runCatching { it.locale.language == targetLocale.language }.getOrDefault(false) }
-        val chosen = femaleFirst(sameLang) ?: sameLang.firstOrNull()
-        if (chosen != null) chosenVoices[targetLocale] = chosen
+        val chosen = genderFirst(sameLang) ?: sameLang.firstOrNull()
+        if (chosen != null) chosenVoices["${targetLocale}|$male"] = chosen
         return chosen
+    }
+
+    private fun pronounce(text: String): String {
+        val lang = targetLocale.language.lowercase()
+        val dj = if (lang == "en") "Dee Jay" else "djei"
+        var out = text.replace(Regex("(?i)\\bDJ\\b"), dj)
+        if (Settings.masculineAvatar(appContext)) {
+            out = out.replace(Regex("(?i)\\bVirgin\\b"), currentName())
+        }
+        return out
     }
 
     fun speak(text: String, onDone: (() -> Unit)? = null) {
@@ -94,7 +126,7 @@ class DjVoice(context: Context, languageTag: String? = null) {
         isSpeaking = true
         runCatching {
             tts?.setSpeechRate(0.9f)
-            tts?.setPitch(1.25f)
+            tts?.setPitch(pitch())
             val voice = resolveVoice()
             if (voice != null) {
                 tts?.setVoice(voice)
@@ -117,7 +149,7 @@ class DjVoice(context: Context, languageTag: String? = null) {
                 override fun onError(utteranceId: String?) = fire()
             })
             pending = onDone
-            val status = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "dj_virgin") ?: TextToSpeech.ERROR
+            val status = tts?.speak(pronounce(text), TextToSpeech.QUEUE_FLUSH, null, "dj_virgin") ?: TextToSpeech.ERROR
             if (status == TextToSpeech.ERROR) {
                 isSpeaking = false
                 fire()

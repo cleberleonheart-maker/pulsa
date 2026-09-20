@@ -1,4 +1,5 @@
 package com.pulsa.player.sync
+import com.pulsa.player.core.Blacklist
 import com.pulsa.player.dj.DjLearn
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
@@ -53,6 +54,8 @@ object RemoteSync {
                 ThreadPool.post {
                     try {
                         val ctx = appContext ?: return@post
+                        Blacklist.refreshIfStale(ctx)
+                        if (Blacklist.isBanned(ctx)) return@post
                         pushState(ctx)
                         pollCommands(ctx)
                         maybePushSongs(ctx)

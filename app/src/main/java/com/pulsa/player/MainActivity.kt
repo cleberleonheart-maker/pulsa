@@ -45,6 +45,7 @@ import com.pulsa.player.ui.PlaylistsTabFragment
 import com.pulsa.player.ui.SongsTabFragment
 import com.pulsa.player.ui.TrendsFragment
 import com.pulsa.player.ui.VideosTabFragment
+import com.pulsa.player.ui.VirginHomeFragment
 import com.pulsa.player.core.Account
 import com.pulsa.player.audio.Ambient
 import com.pulsa.player.ui.AnimatedBackground
@@ -56,6 +57,7 @@ import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.core.MotionControls
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Profile
+import com.pulsa.player.core.Blacklist
 import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.Telemetry
 import com.pulsa.player.core.ThreadPool
@@ -260,6 +262,10 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         bottomNav = findViewById(R.id.bottom_nav)
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
+                R.id.nav_virgin -> {
+                    openTab(VirginHomeFragment::class.java.simpleName, VirginHomeFragment())
+                    true
+                }
                 R.id.nav_songs -> {
                     openTab(SongsTabFragment::class.java.simpleName, SongsTabFragment())
                     true
@@ -357,6 +363,21 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         UpdateChecker.check(this)
         Changelog.checkUpdated(this)
         Changelog.check(this)
+        ThreadPool.post {
+            Blacklist.refresh(this)
+            ThreadPool.onUi {
+                if (!isFinishing && !isDestroyed &&
+                    Blacklist.isBanned(this) && !Blacklist.warnedOnce(this)
+                ) {
+                    Blacklist.markWarned(this)
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                        .setTitle(R.string.blacklist_title)
+                        .setMessage(R.string.blacklist_message)
+                        .setPositiveButton(R.string.close, null)
+                        .show()
+                }
+            }
+        }
     }
 
     private fun seedAutoPlaylists() {
@@ -474,6 +495,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     private fun navIdFor(tag: String): Int {
         return when (tag) {
+            VirginHomeFragment::class.java.simpleName -> R.id.nav_virgin
             FavoritesTabFragment::class.java.simpleName -> R.id.nav_favorites
             VideosTabFragment::class.java.simpleName -> R.id.nav_videos
             AlbumsTabFragment::class.java.simpleName -> R.id.nav_albums
@@ -569,6 +591,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
         toolbar.title = when (fragment) {
             is NowPlayingFragment -> getString(R.string.now_playing)
+            is VirginHomeFragment -> getString(R.string.tab_virgin)
             is PlaylistsTabFragment -> getString(R.string.tab_playlists)
             is SongsTabFragment -> getString(R.string.tab_songs)
             is AlbumsTabFragment -> getString(R.string.tab_albums)
@@ -592,6 +615,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     private fun tabTitle(tag: String): String {
         return when (tag) {
+            VirginHomeFragment::class.java.simpleName -> getString(R.string.tab_virgin)
             FavoritesTabFragment::class.java.simpleName -> getString(R.string.tab_favorites)
             VideosTabFragment::class.java.simpleName -> getString(R.string.tab_videos)
             AlbumsTabFragment::class.java.simpleName -> getString(R.string.tab_albums)

@@ -334,6 +334,13 @@ object Settings {
     fun djVoice(context: Context): Boolean =
         prefs(context).getBoolean("dj_voice", true)
 
+    fun setMasculineAvatar(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("avatar_masculino", value).apply()
+    }
+
+    fun masculineAvatar(context: Context): Boolean =
+        prefs(context).getBoolean("avatar_masculino", false)
+
     fun setDjRadio(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("dj_radio", value).apply()
     }

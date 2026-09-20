@@ -101,7 +101,8 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         setContentView(R.layout.activity_dj)
 
         val toolbar = findViewById<MaterialToolbar>(R.id.dj_toolbar)
-        toolbar.title = getString(R.string.dj_title) + " — " + getString(R.string.dj_voice_name)
+        toolbar.title = getString(R.string.dj_title) + " — " +
+            getString(if (Settings.masculineAvatar(this)) R.string.dj_voice_name_male else R.string.dj_voice_name)
         toolbar.setNavigationOnClickListener { finish() }
 
         artA = findViewById(R.id.dj_art_a)

@@ -22,10 +22,25 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (4.7.0):
+    <string name="changelog">Novedades de esta versión (4.8.2):
 
 ➜ NUEVO
-• Radio Virgin: nuevo modo radio en el menú (al estilo de TAMI) — mezcla todas tus canciones y suena sin parar, con saludo y la hora en punto a cada cambio de hora
+• Set del día: "Virgin, set del día" arma un set elegido solo para hoy (cambia cada día, prioriza favoritas)
+• Dedicatoria: "Virgin, dedica la próxima a..." — dice la dedicatoria antes de la canción
+• Contar biblioteca: "Virgin, cuántas canciones tengo" — responde el total
+
+↺ Versión 4.8.1
+• Avatar masculino: la Virgínia ahora tiene su par — Victor. Cámbialo en la tarjeta Avatar de la pantalla inicial: el look azul cian y la voz cambian juntos, y cada avatar tiene su propio nombre (Virgin / Victor)
+• El comando "Virgin, quién eres" y los saludos usan el nombre del avatar actual
+
+↺ Versión 4.8.0
+
+➜ NUEVO
+• Home Virgin al estilo de TAMI: primera pestaña con tarjetas de idioma, voz, comando de voz, Radio Virgin FM, sueño, recomendar, estadísticas y escanear dispositivo, más los botones Fiesta/Relajar — todo en el look espacial/futurista (sin tarjeta de curiosidades; esas quedan en la locutora del DJ)
+• Voz corregida: las siglas "DJ" ahora siempre se dicen juntas ("djei"), sin depender de que el teléfono las deletree
+
+↺ Versión 4.7.0
+• Radio Virgin FM: nuevo modo radio en el menú (al estilo de TAMI FM) — mezcla todas tus canciones y suena sin parar, con saludo y la hora en punto a cada cambio de hora
 
 ↺ Versión 4.6.0
 • Virgin reacciona: celebra un like, bromea con un skip/dislike y cambia el "siguiente" — respuesta variada en pt/en/es
@@ -309,6 +324,7 @@
     <string name="dj_empty">No hay canciones para mezclar. Toca Mezclar o marca favoritas.</string>
     <string name="dj_no_permission">Permite el acceso a la música para que el DJ mezcle tu biblioteca.</string>
     <string name="dj_voice_name">Virgin</string>
+    <string name="dj_voice_name_male">Victor</string>
     <string name="dj_voice_on">Voz: Activa</string>
     <string name="dj_voice_off">Voz: Desactivada</string>
     <string name="dj_mic_on">Escuchando…</string>
@@ -335,6 +351,12 @@
     <string name="dj_voice_yesterday_none">Ayer no tocaste nada conmigo. ¿Qué tal si empezamos la sesión de hoy ahora?</string>
     <string name="dj_voice_yesterday_item">%1$s — %2$s</string>
     <string name="dj_voice_yesterday_all">Ayer tocaste: %1$s.</string>
+    <string name="dj_voice_count">Tienes %1$d canciones en tu biblioteca.</string>
+    <string name="dj_voice_count_none">Aún no encontré ninguna canción. Escanea el dispositivo primero.</string>
+    <string name="dj_voice_daily_set">Aquí está el set del día: %1$d canciones elegidas solo para hoy.</string>
+    <string name="dj_voice_dedicate_ok">¡Listo! La próxima va dedicada a %1$s.</string>
+    <string name="dj_voice_dedicate_ask">¿A quién se la dedico? Di: dedica la próxima a...</string>
+    <string name="dj_voice_dedication_lead">¡Esta va para %1$s!</string>
     <string-array name="dj_reaction_like">
         <item>¡Anotado! Traeré más canciones así para ti.</item>
         <item>¡Qué bueno que te gustó! Lo agregué a tu vibra.</item>
@@ -425,6 +447,43 @@
     <string name="tami_clock_start_day">¡Empecemos tu día con esta canción!</string>
     <string name="tami_clock_start_after">¡Empecemos tu tarde con esta canción!</string>
     <string name="tami_clock_start_night">¡Empecemos tu noche con esta canción!</string>
+    <string name="blacklist_title">Acceso bloqueado</string>
+    <string name="blacklist_message">Este dispositivo fue desactivado por el administrador. Se bloquearon las actualizaciones, el envío de datos y las funciones remotas.</string>
+    <string name="tab_virgin">Virgin</string>
+    <string name="virgin_hub_title">VIRGIN</string>
+    <string name="virgin_hub_subtitle">Central de música y modos</string>
+    <string name="virgin_hub_note">Cada tarjeta activa una función. Las curiosidades siguen en la locutora del DJ.</string>
+    <string name="btn_party">Fiesta</string>
+    <string name="btn_relax">Relajar</string>
+    <string name="v_language">Idioma</string>
+    <string name="v_voice">Voz de Virgin</string>
+    <string name="v_avatar">Avatar de la Virgínia</string>
+    <string name="v_mic">Comando de voz</string>
+    <string name="v_radio">Radio Virgin FM</string>
+    <string name="v_sleep">Sueño</string>
+    <string name="v_sleep_sub">Selección calmada</string>
+    <string name="v_rec">Recomendar</string>
+    <string name="v_rec_sub">Gemini</string>
+    <string name="v_stats">Estadísticas</string>
+    <string name="v_stats_sub">Biblioteca</string>
+    <string name="v_scan">Escanear dispositivo</string>
+    <string name="v_scan_status">%1$d canciones</string>
+    <string name="v_scan_done">Biblioteca escaneada: %1$d canciones.</string>
+    <string name="v_voice_on">¡Voz de Virgin activada!</string>
+    <string name="v_voice_off">Voz de Virgin apagada.</string>
+    <string name="v_avatar_switched">Ahora soy %1$s.</string>
+    <string name="v_avatar_speak_male">¿Qué tal, jefe? Ahora soy %1$s, con voz y aspecto masculinos.</string>
+    <string name="v_avatar_speak_female">¡Hola! Soy %1$s otra vez, con voz y aspecto femeninos.</string>
+    <string name="v_relax_msg">Relájate. Yo me encargo del ambiente.</string>
+    <string name="v_rec_off">Activa la IA de Virgin en ajustes para que recomiende.</string>
+    <string name="v_rec_thinking">Déjame pensar una buena recomendación...</string>
+    <string name="v_rec_fail">No pude pensar nada ahora. Inténtalo de nuevo.</string>
+    <string name="v_stats_title">Estadísticas</string>
+    <string name="v_stats_msg">Canciones: %1$d\nFavoritas: %2$d\nListas: %3$d\nCaché: %4$d MB</string>
+    <string name="v_mic_off">Configurar</string>
+    <string name="status_on">Encendido</string>
+    <string name="status_off">Apagado</string>
+    <string name="status_active">Activo</string>
 <string name="smart_new_playlist">Novedades</string>
     <string name="smart_classics_playlist">Clásicos</string>
 

@@ -1,4 +1,5 @@
 package com.pulsa.player.sync
+import com.pulsa.player.core.Blacklist
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 
@@ -76,6 +77,8 @@ object MirrorSync {
             stop()
             return
         }
+        Blacklist.refreshIfStale(ctx)
+        if (Blacklist.isBanned(ctx)) return
         val info = fetch(ctx, code) ?: return
         if (!info.optBoolean("ok", false)) {
             stop()

@@ -257,21 +257,27 @@ class MainVirgin(
         val newId = song.id
         if (radioLastId == newId) return
         radioLastId = newId
+        val deduction = DjDedication.take()
         val track = activity.getString(
             R.string.dj_voice_track, song.artist, song.title
         )
+        val named = if (deduction != null) {
+            activity.getString(R.string.dj_voice_dedication_lead, deduction) + " " + track
+        } else {
+            track
+        }
         val leading = DjFacts.leadIn(Settings.djIntensity(activity))
         if (!DjFacts.curiosityDue()) {
-            virginSpeak(track)
+            virginSpeak(named)
             return
         }
         val fact = DjFacts.curiosityFor(song.artist ?: "")
         if (fact != null) {
             DjFacts.markCuriositySpoken()
-            virginSpeak("$leading $fact $track")
+            virginSpeak("$leading $fact $named")
             return
         }
-        virginSpeak(track)
+        virginSpeak(named)
         val songId = song.id
         DjFacts.fetchRemoteCuriosity(activity, song.artist ?: "") { remote ->
             if (remote == null || Playback.currentSong?.id != songId) return@fetchRemoteCuriosity
@@ -639,10 +645,74 @@ class MainVirgin(
             }
             "thanks" -> virginSpeak(activity.getString(R.string.dj_voice_thanks))
             "hello" -> virginSpeak(activity.getString(R.string.dj_voice_hello))
+            "count" -> virgVoiceLibraryCount()
+            "daily_set" -> virgStartDailySet()
+            "dedicate" -> {
+                val name = DjCommander.dedicatee(norm)
+                if (name.isNullOrBlank()) {
+                    virginSpeak(activity.getString(R.string.dj_voice_dedicate_ask))
+                } else {
+                    DjDedication.pending = name
+                    virginSpeak(activity.getString(R.string.dj_voice_dedicate_ok, name))
+                }
+            }
             "visualizer" -> toggleVisualizer()
             "skin" -> cycleSkin()
             "karaoke" -> toggleKaraoke()
             "stems" -> virginSpeak(activity.getString(R.string.dj_voice_stems_soon))
+        }
+    }
+
+    private fun virgVoiceLibraryCount() {
+        ThreadPool.post {
+            val n = Library.allSongs(activity.applicationContext).size
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (n == 0) {
+                    virginSpeak(activity.getString(R.string.dj_voice_count_none))
+                } else {
+                    virginSpeak(activity.getString(R.string.dj_voice_count, n))
+                }
+            }
+        }
+    }
+
+    private fun virgStartDailySet() {
+        if (!Permissions.hasAccess(activity)) {
+            Toast.makeText(activity, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+            return
+        }
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            val songs = Library.allSongs(ctx)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi {
+                    if (activity.isFinishing || activity.isDestroyed) return@onUi
+                    virginSpeak(activity.getString(R.string.dj_empty))
+                }
+                return@post
+            }
+            val favs = runCatching {
+                PlaylistDb.get(ctx).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val seed = java.time.LocalDate.now().toEpochDay()
+            val rand = java.util.Random(seed)
+            val sorted = songs.sortedBy { it.id }
+            val fanned = sorted.filter { it.id in favs }
+            val base = if (fanned.isNotEmpty()) {
+                (fanned.shuffled(rand) + sorted.shuffled(rand)).distinctBy { it.id }
+            } else {
+                sorted.shuffled(rand)
+            }
+            val set = base.take(16)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                Telemetry.log(ctx, "Virgin set do dia n=${set.size} seed=$seed")
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(true)
+                Playback.start(set, 0)
+                virginSpeak(activity.getString(R.string.dj_voice_daily_set, set.size))
+            }
         }
     }
 

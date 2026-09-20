@@ -231,7 +231,13 @@ class DjSession(
             val base = activity.getString(R.string.dj_voice_track, song?.artist, song?.title)
             announce = curiosityBody(song)?.let { "$it $base" } ?: base
         }
-        if (announce != null) speak(announce)
+        val dedication = if (announce != null) DjDedication.take() else null
+        if (announce != null) {
+            if (dedication != null) {
+                announce = activity.getString(R.string.dj_voice_dedication_lead, dedication) + " " + announce
+            }
+            speak(announce)
+        }
     }
 
     fun onProgress(positionMs: Long, durationMs: Long) {
@@ -841,6 +847,17 @@ class DjSession(
             "identity" -> {
                 speak(DjIdentity.introSpeech())
             }
+            "count" -> voiceLibraryCount()
+            "daily_set" -> startDailySet()
+            "dedicate" -> {
+                val name = DjCommander.dedicatee(norm)
+                if (name.isNullOrBlank()) {
+                    speak(activity.getString(R.string.dj_voice_dedicate_ask))
+                } else {
+                    DjDedication.pending = name
+                    speak(activity.getString(R.string.dj_voice_dedicate_ok, name))
+                }
+            }
             "thanks" -> speak(activity.getString(R.string.dj_voice_thanks))
             "hello" -> speak(activity.getString(R.string.dj_voice_hello))
         }
@@ -850,6 +867,60 @@ class DjSession(
         DjMemory.WHATSAPP -> activity.getString(R.string.dj_memory_whatsapp)
         DjMemory.BLUETOOTH -> activity.getString(R.string.dj_memory_bluetooth)
         else -> activity.getString(R.string.dj_memory_phone)
+    }
+
+    private fun voiceLibraryCount() {
+        ThreadPool.post {
+            val n = Library.allSongs(activity.applicationContext).size
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (n == 0) {
+                    speak(activity.getString(R.string.dj_voice_count_none))
+                } else {
+                    speak(activity.getString(R.string.dj_voice_count, n))
+                }
+            }
+        }
+    }
+
+    private fun startDailySet() {
+        val act = activity
+        if (!Permissions.hasAccess(act)) {
+            Toast.makeText(act, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+            return
+        }
+        val ctx = act.applicationContext
+        ThreadPool.post {
+            val songs = Library.allSongs(ctx)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi {
+                    if (act.isFinishing || act.isDestroyed) return@onUi
+                    speak(activity.getString(R.string.dj_empty))
+                }
+                return@post
+            }
+            val favs = runCatching {
+                PlaylistDb.get(ctx).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val seed = java.time.LocalDate.now().toEpochDay()
+            val rand = java.util.Random(seed)
+            val sorted = songs.sortedBy { it.id }
+            val fanned = sorted.filter { it.id in favs }
+            val base = if (fanned.isNotEmpty()) {
+                (fanned.shuffled(rand) + sorted.shuffled(rand)).distinctBy { it.id }
+            } else {
+                sorted.shuffled(rand)
+            }
+            val set = base.take(16)
+            ThreadPool.onUi {
+                if (act.isFinishing || act.isDestroyed) return@onUi
+                Telemetry.log(ctx, "Virgin set do dia n=${set.size} seed=$seed")
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(true)
+                Playback.start(set, 0)
+                speak(activity.getString(R.string.dj_voice_daily_set, set.size))
+            }
+        }
     }
 
     private fun speakYesterday() {

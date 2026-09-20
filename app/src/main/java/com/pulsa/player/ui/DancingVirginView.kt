@@ -9,11 +9,12 @@ import android.view.View
 import android.view.animation.LinearInterpolator
 import com.pulsa.player.R
 import com.pulsa.player.audio.MusicVisualizer
+import com.pulsa.player.core.Settings
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Pinta o avatar da Virgin e o anima conforme a música:
+ * Pinta o avatar da Virgin (feminino ou masculino) e o anima conforme a música:
  * balança/bob no ritmo (bass dos primeiros bins do [MusicVisualizer])
  * e, sem música, fica numa respiração calma de "idle".
  */
@@ -23,10 +24,18 @@ class DancingVirginView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private val avatar = resources.getDrawable(R.drawable.virgin_avatar_animated, null)
+    private var avatar: AnimatedVectorDrawable? = null
     private var sm = 0f
     private var phase = 0f
     private var animator: ValueAnimator? = null
+
+    companion object {
+        private val views = mutableSetOf<DancingVirginView>()
+
+        fun refreshAll() {
+            views.toList().forEach { it.refreshAvatar() }
+        }
+    }
 
     private val bassEnergy: Float
         get() {
@@ -40,6 +49,17 @@ class DancingVirginView @JvmOverloads constructor(
     private fun computeSm() {
         val target = bassEnergy
         sm += (target - sm) * 0.25f
+    }
+
+    private fun refreshAvatar() {
+        val male = Settings.masculineAvatar(context)
+        val res = if (male) R.drawable.avatar_masculino_animated else R.drawable.virgin_avatar_animated
+        val fresh = resources.getDrawable(res, null) as AnimatedVectorDrawable
+        avatar?.stop()
+        avatar = fresh
+        if (width > 0 && height > 0) fresh.setBounds(0, 0, width, height)
+        if (animator?.isRunning == true) fresh.start()
+        invalidate()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -72,8 +92,9 @@ class DancingVirginView @JvmOverloads constructor(
     }
 
     private fun startLoop() {
+        if (avatar == null) refreshAvatar()
         if (animator?.isRunning == true) return
-        (avatar as? AnimatedVectorDrawable)?.start()
+        avatar?.start()
         animator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 30
             repeatCount = ValueAnimator.INFINITE
@@ -83,7 +104,7 @@ class DancingVirginView @JvmOverloads constructor(
     }
 
     private fun stopLoop() {
-        (avatar as? AnimatedVectorDrawable)?.stop()
+        avatar?.stop()
         animator?.cancel()
         animator = null
         sm = 0f
@@ -91,11 +112,13 @@ class DancingVirginView @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        views.add(this)
         startLoop()
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        views.remove(this)
         stopLoop()
     }
 }

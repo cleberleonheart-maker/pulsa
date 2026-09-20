@@ -1,4 +1,5 @@
 package com.pulsa.player.sync
+import com.pulsa.player.core.Blacklist
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 
@@ -11,6 +12,7 @@ object Telemetry {
 
     fun log(context: Context, msg: String) {
         ThreadPool.post {
+            if (Blacklist.isBanned(context)) return@post
             val payload = URLEncoder.encode(msg, "UTF-8")
             val token = Settings.telemetryToken(context)
             val device = Settings.deviceId(context)

@@ -107,6 +107,46 @@ object DjCommander {
             (norm.contains("ontem") && (norm.contains("toquei") || norm.contains("mudei"))) ||
             norm.contains("o que toquei") || norm.contains("o que eu toquei")
 
+    private fun dailySetMatch(norm: String): Boolean =
+        norm.contains("set do dia") || norm.contains("set de hoje") ||
+            norm.contains("set de hj") || norm.contains("set diario") ||
+            norm.contains("mix do dia") || norm.contains("mix de hoje") ||
+            norm.contains("playlist do dia") || norm.contains("playlist de hoje") ||
+            norm.contains("set of the day") || norm.contains("daily set") ||
+            norm.contains("playlist of the day") || norm.contains("todays set") ||
+            norm.contains("set del dia") || norm.contains("set de hoy") ||
+            norm.contains("playlist del dia") || norm.contains("playlist de hoy")
+
+    private fun countMatch(norm: String): Boolean {
+        val amount = listOf("quantas", "quantos", "quanta", "numero de", "total de",
+            "conta as", "conte as", "conte os", "conte as", "how many", "count my",
+            "count the", "cuantas", "cuantos", "numero de canciones")
+        val musicWord = listOf("musica", "mudica", "faixa", "faixas", "biblioteca",
+            "aparelho", "song", "songs", "track", "tracks", "cancion", "canciones")
+        return amount.any { norm.contains(it) } && musicWord.any { norm.contains(it) }
+    }
+
+    private fun dedicateMatch(norm: String): Boolean = norm.contains("dedic")
+
+    fun dedicatee(norm: String): String? {
+        val markers = listOf(
+            "dedica para ", "dedicar para ", "dedica pra ", "dedicar pra ",
+            "dedico para ", "dedique para ", "dedica a ", "dedique a ",
+            "dedicate to ", "dedica pa ", "dedicada para ", "dedicada a "
+        )
+        for (m in markers) {
+            val i = norm.indexOf(m)
+            if (i >= 0) {
+                val rest = norm.substring(i + m.length)
+                    .replace("uma musica", "").replace("una cancion", "")
+                    .replace("a song", "").replace("a musica", "")
+                    .trim().trim(',', '.', '!', '?', ' ')
+                if (rest.length >= 2) return rest
+            }
+        }
+        return null
+    }
+
     private fun memoryKey(norm: String): Boolean =
         listOf("numero", "telefone", "whats", "zap", "watss", "bluetooth", "bitu",
             "fone", "contato", "ligar").any { norm.contains(it) }
@@ -133,6 +173,8 @@ object DjCommander {
     }
 
     fun action(norm: String): String? = when {
+        countMatch(norm) -> "count"
+        dailySetMatch(norm) -> "daily_set"
         memorySave(norm) -> "memory_save"
         memoryRecall(norm) -> "memory_recall"
         moodWildMatch(norm) -> "mood_wild"
@@ -189,6 +231,7 @@ object DjCommander {
             norm.contains("o que voce faz") || norm.contains("voce e quem") ||
             norm.contains("como voce nasceu") || norm.contains("sua identidade") -> "identity"
         norm.contains("obrigad") || norm.contains("valeu") -> "thanks"
+        dedicateMatch(norm) -> "dedicate"
         norm.contains("oi") || norm.contains("ola") -> "hello"
         else -> null
     }
