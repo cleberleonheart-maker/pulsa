@@ -17,8 +17,8 @@ import com.pulsa.player.data.Library
 import com.pulsa.player.model.Artist
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.util.DjFacts
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.dj.DjFacts
+import com.pulsa.player.core.ThreadPool
 
 class ArtistTimelineFragment : Fragment() {
 

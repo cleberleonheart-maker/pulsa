@@ -13,8 +13,8 @@ import com.pulsa.player.R
 import com.pulsa.player.data.Library
 import com.pulsa.player.model.Album
 import com.pulsa.player.ui.adapter.AlbumGridAdapter
-import com.pulsa.player.util.Permissions
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.core.Permissions
+import com.pulsa.player.core.ThreadPool
 
 class AlbumsTabFragment : Fragment() {
 

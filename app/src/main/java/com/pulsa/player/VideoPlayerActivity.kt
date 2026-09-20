@@ -20,7 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.util.Helper
+import com.pulsa.player.core.Helper
 
 class VideoPlayerActivity : AppCompatActivity() {
 

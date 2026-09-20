@@ -1,4 +1,6 @@
 package com.pulsa.player.util
+import com.pulsa.player.core.CrashLogger
+import com.pulsa.player.core.Settings
 
 import android.app.NotificationChannel
 import android.app.NotificationManager

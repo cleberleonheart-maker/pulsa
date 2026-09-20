@@ -19,12 +19,12 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.pulsa.player.data.Library
-import com.pulsa.player.util.AnimatedBackground
-import com.pulsa.player.util.Changelog
-import com.pulsa.player.util.DjLearn
-import com.pulsa.player.util.Helper
-import com.pulsa.player.util.Profile
-import com.pulsa.player.util.Settings
+import com.pulsa.player.ui.AnimatedBackground
+import com.pulsa.player.core.Changelog
+import com.pulsa.player.dj.DjLearn
+import com.pulsa.player.core.Helper
+import com.pulsa.player.core.Profile
+import com.pulsa.player.core.Settings
 
 class PerfilActivity : AppCompatActivity() {
 

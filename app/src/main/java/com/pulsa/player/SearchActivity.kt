@@ -17,9 +17,9 @@ import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SearchAdapter
 import com.pulsa.player.ui.adapter.SearchResult
-import com.pulsa.player.util.AnimatedBackground
-import com.pulsa.player.util.Settings
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.ui.AnimatedBackground
+import com.pulsa.player.core.Settings
+import com.pulsa.player.core.ThreadPool
 
 class SearchActivity : AppCompatActivity() {
 

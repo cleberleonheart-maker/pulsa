@@ -1,4 +1,5 @@
 package com.pulsa.player.ui
+import com.pulsa.player.core.Helper
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -17,8 +18,8 @@ import com.pulsa.player.model.Artist
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SongListAdapter
-import com.pulsa.player.util.Permissions
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.core.Permissions
+import com.pulsa.player.core.ThreadPool
 
 class LibraryDetailFragment : Fragment() {
 
@@ -73,7 +74,7 @@ class LibraryDetailFragment : Fragment() {
             ArtLoader.load(albumId, "", headerArt ?: return)
         } else {
             val count = arguments?.getInt(ARG_SONG_COUNT, 0) ?: 0
-            headerSubtitle?.text = com.pulsa.player.util.Helper.trackCount(count, requireContext().resources)
+            headerSubtitle?.text = com.pulsa.player.core.Helper.trackCount(count, requireContext().resources)
             headerArt?.setImageResource(R.drawable.ic_person)
         }
     }
@@ -109,7 +110,7 @@ class LibraryDetailFragment : Fragment() {
 
     private fun subtitleFor(songs: List<Song>): String {
         val base = arguments?.getString(ARG_SUBTITLE) ?: ""
-        val count = com.pulsa.player.util.Helper.trackCount(songs.size, requireContext().resources)
+        val count = com.pulsa.player.core.Helper.trackCount(songs.size, requireContext().resources)
         return if (base.isNullOrBlank()) count else "$base · $count"
     }
 

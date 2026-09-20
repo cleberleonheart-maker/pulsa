@@ -8,7 +8,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
 import com.pulsa.player.R
-import com.pulsa.player.util.MusicVisualizer
+import com.pulsa.player.audio.MusicVisualizer
 import kotlin.math.cos
 import kotlin.math.sin
 

@@ -14,9 +14,9 @@ import android.webkit.WebViewClient
 import android.widget.ImageButton
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
-import com.pulsa.player.util.AnimatedBackground
-import com.pulsa.player.util.Settings
-import com.pulsa.player.util.Telemetry
+import com.pulsa.player.ui.AnimatedBackground
+import com.pulsa.player.core.Settings
+import com.pulsa.player.sync.Telemetry
 
 class SdrWebViewActivity : AppCompatActivity() {
 

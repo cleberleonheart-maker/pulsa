@@ -16,8 +16,8 @@ import com.pulsa.player.VideoPlayerActivity
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.model.Video
 import com.pulsa.player.ui.adapter.VideoListAdapter
-import com.pulsa.player.util.Permissions
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.core.Permissions
+import com.pulsa.player.core.ThreadPool
 
 class VideosTabFragment : Fragment() {
 

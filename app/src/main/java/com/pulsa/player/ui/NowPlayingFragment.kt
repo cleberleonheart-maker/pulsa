@@ -19,13 +19,13 @@ import com.pulsa.player.R
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.util.Ambient
-import com.pulsa.player.util.AudioFx
-import com.pulsa.player.util.Helper
-import com.pulsa.player.util.Lyrics
-import com.pulsa.player.util.Settings
-import com.pulsa.player.util.SleepTimer
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.audio.Ambient
+import com.pulsa.player.audio.AudioFx
+import com.pulsa.player.core.Helper
+import com.pulsa.player.sync.Lyrics
+import com.pulsa.player.core.Settings
+import com.pulsa.player.audio.SleepTimer
+import com.pulsa.player.core.ThreadPool
 
 class NowPlayingFragment : Fragment() {
 

@@ -1,4 +1,5 @@
 package com.pulsa.player
+import com.pulsa.player.core.UserStation
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -17,12 +18,11 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.pulsa.player.util.AnimatedBackground
-import com.pulsa.player.util.CrashLogger
-import com.pulsa.player.util.RadioStations
-import com.pulsa.player.util.Settings
-import com.pulsa.player.util.ThreadPool
-import com.pulsa.player.util.UserStation
+import com.pulsa.player.ui.AnimatedBackground
+import com.pulsa.player.core.CrashLogger
+import com.pulsa.player.core.RadioStations
+import com.pulsa.player.core.Settings
+import com.pulsa.player.core.ThreadPool
 import org.json.JSONArray
 import java.io.BufferedReader
 import java.net.HttpURLConnection

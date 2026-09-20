@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.model.Album
-import com.pulsa.player.util.Helper
+import com.pulsa.player.core.Helper
 
 class AlbumGridAdapter(
     private val onClick: (Album) -> Unit

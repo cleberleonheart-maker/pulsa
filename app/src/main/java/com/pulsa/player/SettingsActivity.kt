@@ -1,4 +1,5 @@
 package com.pulsa.player
+import com.pulsa.player.util.UpdateChecker
 
 import android.content.Intent
 import android.os.Bundle
@@ -15,16 +16,15 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.util.Account
-import com.pulsa.player.util.AnimatedBackground
-import com.pulsa.player.util.Changelog
-import com.pulsa.player.util.Helper
-import com.pulsa.player.util.MirrorSync
-import com.pulsa.player.util.MusicDownloader
-import com.pulsa.player.util.Settings
-import com.pulsa.player.util.Telemetry
-import com.pulsa.player.util.ThreadPool
-import com.pulsa.player.util.UpdateChecker
+import com.pulsa.player.core.Account
+import com.pulsa.player.ui.AnimatedBackground
+import com.pulsa.player.core.Changelog
+import com.pulsa.player.core.Helper
+import com.pulsa.player.sync.MirrorSync
+import com.pulsa.player.media.MusicDownloader
+import com.pulsa.player.core.Settings
+import com.pulsa.player.sync.Telemetry
+import com.pulsa.player.core.ThreadPool
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL

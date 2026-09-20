@@ -2,12 +2,12 @@ package com.pulsa.player
 
 import android.app.Application
 import android.content.pm.PackageManager
-import com.pulsa.player.util.CrashLogger
-import com.pulsa.player.util.Migrations
-import com.pulsa.player.util.MirrorSync
-import com.pulsa.player.util.RemoteSync
-import com.pulsa.player.util.Settings
-import com.pulsa.player.util.Telemetry
+import com.pulsa.player.core.CrashLogger
+import com.pulsa.player.core.Migrations
+import com.pulsa.player.sync.MirrorSync
+import com.pulsa.player.sync.RemoteSync
+import com.pulsa.player.core.Settings
+import com.pulsa.player.sync.Telemetry
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat

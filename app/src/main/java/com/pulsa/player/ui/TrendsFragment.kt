@@ -12,8 +12,8 @@ import com.pulsa.player.R
 import com.pulsa.player.data.Library
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.util.DjLearn
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.dj.DjLearn
+import com.pulsa.player.core.ThreadPool
 
 class TrendsFragment : Fragment() {
 

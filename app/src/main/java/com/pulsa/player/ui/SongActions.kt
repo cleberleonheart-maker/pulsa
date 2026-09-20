@@ -10,9 +10,9 @@ import com.pulsa.player.R
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.util.MusicDeleter
-import com.pulsa.player.util.MusicEditor
-import com.pulsa.player.util.RingtoneSetter
+import com.pulsa.player.media.MusicDeleter
+import com.pulsa.player.media.MusicEditor
+import com.pulsa.player.audio.RingtoneSetter
 
 object SongActions {
 

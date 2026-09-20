@@ -13,11 +13,11 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
-import com.pulsa.player.util.Account
-import com.pulsa.player.util.AnimatedBackground
-import com.pulsa.player.util.ConfirmMail
-import com.pulsa.player.util.Settings
-import com.pulsa.player.util.Telemetry
+import com.pulsa.player.core.Account
+import com.pulsa.player.ui.AnimatedBackground
+import com.pulsa.player.sync.ConfirmMail
+import com.pulsa.player.core.Settings
+import com.pulsa.player.sync.Telemetry
 
 class LoginActivity : AppCompatActivity() {
 

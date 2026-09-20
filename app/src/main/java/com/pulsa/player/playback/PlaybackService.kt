@@ -28,13 +28,13 @@ import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Song
-import com.pulsa.player.util.AudioFx
-import com.pulsa.player.util.DjFacts
-import com.pulsa.player.util.DjVoice
-import com.pulsa.player.util.LastFm
-import com.pulsa.player.util.MusicVisualizer
-import com.pulsa.player.util.Settings
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.audio.AudioFx
+import com.pulsa.player.dj.DjFacts
+import com.pulsa.player.dj.DjVoice
+import com.pulsa.player.sync.LastFm
+import com.pulsa.player.audio.MusicVisualizer
+import com.pulsa.player.core.Settings
+import com.pulsa.player.core.ThreadPool
 import kotlin.random.Random
 
 class PlaybackService : Service() {

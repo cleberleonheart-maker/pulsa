@@ -11,7 +11,7 @@ import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.model.Album
 import com.pulsa.player.model.Artist
 import com.pulsa.player.model.Song
-import com.pulsa.player.util.Helper
+import com.pulsa.player.core.Helper
 
 sealed class SearchResult {
     data class Header(val label: String) : SearchResult()

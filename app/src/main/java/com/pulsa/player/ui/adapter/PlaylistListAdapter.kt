@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
 import com.pulsa.player.model.Playlist
-import com.pulsa.player.util.Helper
+import com.pulsa.player.core.Helper
 
 class PlaylistListAdapter(
     private val onClick: (Playlist) -> Unit,

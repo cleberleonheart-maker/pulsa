@@ -14,8 +14,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
 import com.pulsa.player.model.Video
-import com.pulsa.player.util.Helper
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.core.Helper
+import com.pulsa.player.core.ThreadPool
 import java.util.LinkedHashMap
 
 class VideoListAdapter(

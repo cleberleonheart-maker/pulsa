@@ -4,8 +4,8 @@ import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
 import com.pulsa.player.model.Video
-import com.pulsa.player.util.Permissions
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.core.Permissions
+import com.pulsa.player.core.ThreadPool
 
 object VideoLibrary {
 

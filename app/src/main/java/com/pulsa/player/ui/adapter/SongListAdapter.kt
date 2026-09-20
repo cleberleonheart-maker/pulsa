@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.model.Song
-import com.pulsa.player.util.Helper
+import com.pulsa.player.core.Helper
 
 class SongListAdapter(
     private val onPlay: (Song, Int) -> Unit,

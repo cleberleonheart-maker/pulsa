@@ -10,8 +10,8 @@ import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
 import com.pulsa.player.R
-import com.pulsa.player.util.MusicVisualizer
-import com.pulsa.player.util.Settings
+import com.pulsa.player.audio.MusicVisualizer
+import com.pulsa.player.core.Settings
 import kotlin.random.Random
 
 class MusicShaderView @JvmOverloads constructor(

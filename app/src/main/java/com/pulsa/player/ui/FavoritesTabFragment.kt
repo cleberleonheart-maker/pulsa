@@ -12,7 +12,7 @@ import com.pulsa.player.R
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SongListAdapter
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.core.ThreadPool
 
 class FavoritesTabFragment : Fragment() {
 

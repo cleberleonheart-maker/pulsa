@@ -9,7 +9,7 @@ import android.net.Uri
 import android.util.LruCache
 import android.widget.ImageView
 import com.pulsa.player.R
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.core.ThreadPool
 import java.io.File
 
 object ArtLoader {

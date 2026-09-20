@@ -13,10 +13,10 @@ import com.pulsa.player.data.Library
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SongListAdapter
-import com.pulsa.player.util.CrashLogger
-import com.pulsa.player.util.Permissions
-import com.pulsa.player.util.Settings
-import com.pulsa.player.util.ThreadPool
+import com.pulsa.player.core.CrashLogger
+import com.pulsa.player.core.Permissions
+import com.pulsa.player.core.Settings
+import com.pulsa.player.core.ThreadPool
 
 class SongsTabFragment : Fragment() {
 
