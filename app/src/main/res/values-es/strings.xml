@@ -22,7 +22,14 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (4.8.3):
+    <string name="changelog">Novedades de esta versión (4.8.4):
+
+➜ VISUAL
+• Tema Cyanwave (estilo de la versión web): fondo navy con nebulosas cian, acento cian eléctrico, tonos magenta/morado y tarjetas de vidrio por toda la app
+• Universo espacial conservado: planeta con anillo, luna, anillos de órbita animados, escáner holográfico y cabina en la barra inferior — ahora con los colores de la web
+• Configuraciones y funciones intactas
+
+↺ Versión 4.8.3
 
 ➜ CORRECCIÓN
 • La pantalla inicial vuelve a abrir: la pestaña Virgin (6ª) reventaba la barra inferior (límite de 5 ítems del BottomNavigation); ahora vive en una tarjeta de la barra superior (icono casa) y la barra funciona en todos los dispositivos

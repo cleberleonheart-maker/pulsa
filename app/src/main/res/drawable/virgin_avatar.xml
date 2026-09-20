@@ -44,7 +44,7 @@
             android:pathData="M87,11L90,12L91,21L88,22Z" />
         <!-- nó -->
         <path
-            android:fillColor="#FF2E9E"
+            android:fillColor="#00E5FF"
             android:pathData="M85,10m-3,0a3,3 0 1 1 6,0a3,3 0 1 1 -6,0Z" />
     </group>
 

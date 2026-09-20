@@ -24,7 +24,7 @@
         android:right="9dp"
         android:top="9dp">
         <shape android:shape="oval">
-            <solid android:color="#26FF2E9E" />
+            <solid android:color="#2600E5FF" />
         </shape>
     </item>
 </layer-list>

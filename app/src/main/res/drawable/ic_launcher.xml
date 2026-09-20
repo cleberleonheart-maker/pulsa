@@ -16,20 +16,20 @@
                 android:startY="0"
                 android:endX="0"
                 android:endY="108"
-                android:startColor="#221540"
-                android:endColor="#0A0612" />
+                android:startColor="#1F2749"
+                android:endColor="#0B0F2A" />
         </aapt:attr>
     </path>
 
     <!-- Aura atrás da avatar: magenta elétrico -->
     <path
-        android:fillColor="#26FF2E9E"
+        android:fillColor="#2600E5FF"
         android:pathData="M54,8a46,46 0 1 1 0,88a46,46 0 1 1 0,-88Z" />
 
     <!-- Anel neon -->
     <path
         android:pathData="M54,20a34,34 0 1 1 0,68a34,34 0 1 1 0,-68Z"
-        android:strokeColor="#663CE4FF"
+        android:strokeColor="#6600E5FF"
         android:strokeWidth="2" />
 
     <!-- Nota musical (âmbar, canto sup. esquerdo) -->
@@ -45,13 +45,13 @@
 
     <!-- Nota musical (ciano neon, canto inf. direito) -->
     <path
-        android:fillColor="#3CE4FF"
+        android:fillColor="#00E5FF"
         android:pathData="M88.3,70h2.3v12h-2.3z" />
     <path
-        android:fillColor="#3CE4FF"
+        android:fillColor="#00E5FF"
         android:pathData="M85,78.2m-3.8,0a3.8,3.8 0 1 1 7.6,0a3.8,3.8 0 1 1 -7.6,0" />
     <path
-        android:fillColor="#3CE4FF"
+        android:fillColor="#00E5FF"
         android:pathData="M90.6,70C94,71.5 96,71 96,68.5C94.2,70.6 92,70.8 90.6,70Z" />
 
     <!-- Avatar da Vaness: esfera rosada estilo TAMI (centrada 54,56 · r32) -->
@@ -87,7 +87,7 @@
             android:fillColor="#FF4D9D"
             android:pathData="M77.5,30.5L79.5,31L80,36.5L77.5,37Z" />
         <path
-            android:fillColor="#FF2E9E"
+            android:fillColor="#00E5FF"
             android:pathData="M76,30m-2,0a2,2 0 1 1 4,0a2,2 0 1 1 -4,0Z" />
     </group>
 

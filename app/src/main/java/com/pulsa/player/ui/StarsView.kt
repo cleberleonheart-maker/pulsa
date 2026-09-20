@@ -25,7 +25,7 @@ class StarsView(context: Context) : View(context) {
         var weight = 1f
     }
 
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFEFE9FF.toInt() }
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFEAF6FF.toInt() }
     private val stars = mutableListOf<Star>()
     private val random = Random(System.nanoTime())
     private var t = 0f

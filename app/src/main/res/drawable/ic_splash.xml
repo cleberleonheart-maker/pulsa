@@ -8,17 +8,17 @@
 
     <!-- Glow magenta -->
     <path
-        android:fillColor="#26FF2E9E"
+        android:fillColor="#2600E5FF"
         android:pathData="M54,14a42,42 0 1 1 0,84a42,42 0 1 1 0,-84Z" />
 
     <!-- Anel neon duplo (holográfico) -->
     <path
         android:pathData="M54,20a34,34 0 1 1 0,68a34,34 0 1 1 0,-68Z"
-        android:strokeColor="#668A5CFF"
+        android:strokeColor="#66B388FF"
         android:strokeWidth="2" />
     <path
         android:pathData="M54,15a38,38 0 1 1 0,76a38,38 0 1 1 0,-76Z"
-        android:strokeColor="#333CE4FF"
+        android:strokeColor="#3300E5FF"
         android:strokeWidth="1.4" />
 
     <!-- Avatar da Virgin: esfera rosada estilo TAMI -->
@@ -54,7 +54,7 @@
             android:fillColor="#FF4D9D"
             android:pathData="M77.5,30.5L79.5,31L80,36.5L77.5,37Z" />
         <path
-            android:fillColor="#FF2E9E"
+            android:fillColor="#00E5FF"
             android:pathData="M76,30m-2,0a2,2 0 1 1 4,0a2,2 0 1 1 -4,0Z" />
     </group>
 
