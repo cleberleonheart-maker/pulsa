@@ -204,10 +204,55 @@ object RemoteSync {
                 "shuffle" -> Playback.setShuffle(toBool(value))
                 "repeat" -> Playback.cycleRepeat()
                 "volume" -> setStreamVolume(ctx, toFloat01(value))
+                "play_song" -> {
+                    val song = resolveSong(ctx, value?.toString() ?: "")
+                    if (song != null) Playback.start(listOf(song), 0)
+                }
+                "play_rewind" -> {
+                    val list = mutableListOf<Song>()
+                    when (value) {
+                        is JSONArray -> for (i in 0 until value.length()) {
+                            resolveSong(ctx, value.optString(i))?.let { list.add(it) }
+                        }
+                        else -> resolveSong(ctx, value?.toString() ?: "")?.let { list.add(it) }
+                    }
+                    if (list.isNotEmpty()) Playback.start(list, 0)
+                }
             }
             Telemetry.log(ctx, "CMD exec=$cmd")
         } catch (t: Throwable) {
         }
+    }
+
+    private fun norm(s: String?): String = s?.let {
+        java.text.Normalizer.normalize(it.lowercase(), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{Mn}+"), "").trim()
+    } ?: ""
+
+    private fun resolveSong(ctx: Context, raw: String): Song? {
+        val songs = Library.allSongs(ctx)
+        if (songs.isEmpty()) return null
+        val q = raw.trim()
+        if (q.isEmpty()) return null
+        val normQ = norm(q)
+        var artistPart = ""
+        var titlePart = normQ
+        if (q.contains(" - ")) {
+            val i = q.lastIndexOf(" - ")
+            artistPart = q.substring(0, i)
+            titlePart = q.substring(i + 3)
+        }
+        val a = norm(artistPart)
+        val t = norm(titlePart)
+        if (a.isNotEmpty()) {
+            songs.firstOrNull { norm(it.artist) == a && norm(it.title) == t }?.let { return it }
+            songs.firstOrNull { norm(it.artist) == a }?.let { return it }
+        }
+        songs.firstOrNull { norm(it.title) == t }?.let { return it }
+        if (t.isNotEmpty()) {
+            songs.firstOrNull { norm(it.title).contains(t) }?.let { return it }
+        }
+        return null
     }
 
     private fun postJson(ctx: Context, path: String, body: String): Boolean {

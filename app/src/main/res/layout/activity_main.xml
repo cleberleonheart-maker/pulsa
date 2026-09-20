@@ -18,7 +18,6 @@
             app:menu="@menu/menu_main" />
 
         <include
-            android:id="@+id/top_tabs"
             layout="@layout/tab_strip"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

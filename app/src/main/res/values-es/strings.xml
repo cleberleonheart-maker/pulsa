@@ -2,6 +2,11 @@
 <resources>
     <string name="app_name">Pulsa</string>
 
+    <string name="widget_pulsa_desc">Reproductor Pulsa: reproducir, pausar y cambiar de tema</string>
+    <string name="widget_art_desc">Portada del tema</string>
+    <string name="action_play_pause">Reproducir/Pausar</string>
+    <string name="widget_idle">Toca para abrir el reproductor</string>
+
     <string name="tab_songs">Canciones</string>
     <string name="tab_albums">Álbumes</string>
     <string name="tab_artists">Artistas</string>
@@ -129,6 +134,7 @@
     <string name="ringtone_alarm">Tono de alarma</string>
     <string name="ringtone_set">%1$s establecido</string>
     <string name="ringtone_failed">No se pudo establecer el tono</string>
+    <string name="ringtone_need_write_settings">Permite que Pulsa modifique la configuración del sistema en Ajustes para establecer el tono</string>
 
     <string name="download">Descargar</string>
     <string name="download_title">Descargar canción</string>

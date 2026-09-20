@@ -2,6 +2,11 @@
 <resources>
     <string name="app_name">Pulsa</string>
 
+    <string name="widget_pulsa_desc">Pulsa player: play, pause and skip tracks</string>
+    <string name="widget_art_desc">Track artwork</string>
+    <string name="action_play_pause">Play/Pause</string>
+    <string name="widget_idle">Tap to open the player</string>
+
     <string name="tab_songs">Songs</string>
     <string name="tab_albums">Albums</string>
     <string name="tab_artists">Artists</string>
@@ -129,6 +134,7 @@
     <string name="ringtone_alarm">Alarm tone</string>
     <string name="ringtone_set">%1$s set</string>
     <string name="ringtone_failed">Could not set the tone</string>
+    <string name="ringtone_need_write_settings">Allow Pulsa to modify system settings in Settings to set the tone</string>
 
     <string name="download">Download</string>
     <string name="download_title">Download song</string>

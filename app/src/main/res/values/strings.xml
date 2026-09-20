@@ -2,6 +2,11 @@
 <resources>
     <string name="app_name">Pulsa</string>
 
+    <string name="widget_pulsa_desc">Player Pulsa: tocar, pausar e trocar de faixa</string>
+    <string name="widget_art_desc">Capa da faixa</string>
+    <string name="action_play_pause">Tocar/Pausar</string>
+    <string name="widget_idle">Toque para abrir o player</string>
+
     <string name="tab_songs">Músicas</string>
     <string name="tab_albums">Álbuns</string>
     <string name="tab_artists">Artistas</string>
@@ -131,6 +136,7 @@
     <string name="ringtone_alarm">Toque de alarme</string>
     <string name="ringtone_set">%1$s definido</string>
     <string name="ringtone_failed">Não foi possível definir o toque</string>
+    <string name="ringtone_need_write_settings">Permita o Pulsa modificar as configurações do sistema nas Configurações para definir o toque</string>
 
     <string name="download">Baixar</string>
     <string name="download_title">Baixar música</string>

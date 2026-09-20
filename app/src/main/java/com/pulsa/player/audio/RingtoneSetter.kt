@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.provider.Settings
 import android.webkit.MimeTypeMap
 import com.pulsa.player.R
 import com.pulsa.player.model.Song
@@ -17,17 +18,29 @@ import java.io.File
 
 object RingtoneSetter {
 
+    fun canWrite(context: Context): Boolean =
+        Build.VERSION.SDK_INT < 23 || Settings.System.canWrite(context)
+
     fun setAs(context: Context, song: Song, type: Int) {
+        if (!canWrite(context)) {
+            android.widget.Toast.makeText(
+                context,
+                context.getString(R.string.ringtone_need_write_settings),
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+            return
+        }
         ThreadPool.post {
-            val uri = try {
-                addToMediaStore(context, song, type)
+            val ok = try {
+                val uri = addToMediaStore(context, song, type)
+                if (uri != null) {
+                    RingtoneManager.setActualDefaultRingtoneUri(context, type, uri)
+                }
+                uri != null
             } catch (t: Throwable) {
-                null
+                false
             }
-            if (uri != null) {
-                RingtoneManager.setActualDefaultRingtoneUri(context, type, uri)
-            }
-            ThreadPool.onUi { notifyResult(context, uri != null, type) }
+            ThreadPool.onUi { notifyResult(context, ok, type) }
         }
     }
 

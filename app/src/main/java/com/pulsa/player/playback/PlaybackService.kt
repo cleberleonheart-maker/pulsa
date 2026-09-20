@@ -32,6 +32,7 @@ import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.dj.DjFacts
 import com.pulsa.player.dj.DjVoice
 import com.pulsa.player.sync.LastFm
+import com.pulsa.player.widget.PulsaWidget
 import com.pulsa.player.audio.MusicVisualizer
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
@@ -669,6 +670,8 @@ class PlaybackService : Service() {
         updateNotification()
     }
 
+    fun currentArt(): android.graphics.Bitmap? = largeIcon
+
     private fun scheduleTick() {
         mainHandler.removeCallbacks(progressTick)
         mainHandler.post(progressTick)
@@ -830,6 +833,7 @@ class PlaybackService : Service() {
     }
 
     private fun updateNotification() {
+        PulsaWidget.refresh(this)
         val song = currentSong ?: return
         try {
             notificationManager.notify(NOTIFICATION_ID, buildNotification(song))
@@ -843,7 +847,10 @@ class PlaybackService : Service() {
             ThreadPool.onUi {
                 if (bmp != null) {
                     largeIcon = bmp
-                    if (currentSong?.id == song.id) updateNotification()
+                    if (currentSong?.id == song.id) {
+                        updateNotification()
+                        PulsaWidget.refresh(applicationContext)
+                    }
                 }
             }
         }
