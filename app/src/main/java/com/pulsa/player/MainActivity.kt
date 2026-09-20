@@ -51,6 +51,7 @@ import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.core.Changelog
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.dj.MainVirgin
+import com.pulsa.player.dj.TamiRadio
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.core.MotionControls
 import com.pulsa.player.core.Permissions
@@ -194,6 +195,8 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
         AnimatedBackground.apply(this)
 
+        TamiRadio.startup(applicationContext)
+
         avatarView = findViewById(R.id.profile_avatar)
         avatarView?.setOnClickListener {
             startActivity(Intent(this, PerfilActivity::class.java))
@@ -227,6 +230,10 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
                 }
                 R.id.action_radio -> {
                     startActivity(Intent(this, RadioActivity::class.java))
+                    true
+                }
+                R.id.action_tami_radio -> {
+                    startActivity(Intent(this, TamiRadioActivity::class.java))
                     true
                 }
                 R.id.action_dj -> {

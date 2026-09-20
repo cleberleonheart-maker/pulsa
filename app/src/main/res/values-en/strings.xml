@@ -22,9 +22,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.6.0):
+    <string name="changelog">What is new (4.7.0):
 
 ➜ NEW
+• Virgin Radio: new radio mode in the menu (in the Tami style) — shuffles all of your songs and plays non-stop, with a greeting and the top-of-the-hour time like a real radio
+
+↺ Version 4.6.0
 • Reacting Virgin: she celebrates a like, teases a skip/dislike and changes up "next" — varied replies in pt/en/es
 • Chained command: "Virgin, play and then pause" — two actions in one phrase
 • No repeats this session: songs already played stay out of the next mixes while the app is open
@@ -404,6 +407,24 @@
     <string name="skin_particles">Particles theme on.</string>
     <string name="dj_radio">Radio host (fun facts between songs)</string>
     <string name="sect_dj_radio">Radio host</string>
+
+    <string name="tami_radio_title">Virgin Radio</string>
+    <string name="tami_radio_badge">Virgin radio mode — all of your songs, non-stop</string>
+    <string name="tami_radio_start">Turn on Virgin Radio</string>
+    <string name="tami_radio_stop">Turn off Virgin Radio</string>
+    <string name="tami_radio_status_off">Stopped — tap to turn on</string>
+    <string name="tami_radio_status_on">On air — playing all of your songs</string>
+    <string name="tami_radio_welcome">You\'re listening to Virgin F.M. Radio, playing %1$d songs of every style!</string>
+    <string name="tami_radio_off">Radio off.</string>
+    <string name="tami_radio_need">Import some songs so Virgin Radio can play.</string>
+    <string name="tami_clock_greet_day">Good morning!</string>
+    <string name="tami_clock_greet_after">Good afternoon!</string>
+    <string name="tami_clock_greet_night">Good evening!</string>
+    <string name="tami_clock_time_sharp">%1$d o\'clock.</string>
+    <string name="tami_clock_time">It\'s %1$d:%2$02d.</string>
+    <string name="tami_clock_start_day">Let\'s start your day with this song:</string>
+    <string name="tami_clock_start_after">Let\'s start your afternoon with this song:</string>
+    <string name="tami_clock_start_night">Let\'s start your evening with this song:</string>
 <string name="smart_new_playlist">New Releases</string>
     <string name="smart_classics_playlist">Classics</string>
 

@@ -41,4 +41,8 @@
         android:id="@+id/action_trends"
         android:title="@string/trends_title"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_tami_radio"
+        android:title="@string/tami_radio_title"
+        app:showAsAction="never" />
 </menu>

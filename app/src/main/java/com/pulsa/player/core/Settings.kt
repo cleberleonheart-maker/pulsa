@@ -341,6 +341,13 @@ object Settings {
     fun djRadio(context: Context): Boolean =
         prefs(context).getBoolean("dj_radio", true)
 
+    fun setTamiRadio(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("tami_radio", value).apply()
+    }
+
+    fun tamiRadio(context: Context): Boolean =
+        prefs(context).getBoolean("tami_radio", false)
+
     fun setRecToken(context: Context, value: String) {
         prefs(context).edit().putString("rec_token", value.trim()).apply()
     }

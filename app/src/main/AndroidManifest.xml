@@ -62,6 +62,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".TamiRadioActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".SdrWebViewActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false" />

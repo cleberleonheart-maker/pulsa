@@ -26,9 +26,12 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.6.0):
+    <string name="changelog">Novidades desta versão (4.7.0):
 
 → NOVIDADES
+• Rádio Virgin: novo modo rádio no menu (no estilo do Tami) — embaralha todas as suas músicas e toca sem parar, com saudação e hora em ponto a cada virada de hora
+
+↺ Versão 4.6.0
 • Virgin Reativa: agora ela comemora um like, zoa um skip/dislike e troca o "próxima" — resposta variada em pt/en/es
 • Comando encadeado: "Virgin, toca e depois pausa" — duas ações numa fala só
 • Sem repetir na sessão: músicas já tocadas saem dos próximos mixes enquanto o app está aberto
@@ -453,6 +456,24 @@
 
     <string name="dj_radio">Locutora (curiosidades entre as músicas)</string>
     <string name="sect_dj_radio">Locutora de rádio</string>
+
+    <string name="tami_radio_title">Rádio Virgin</string>
+    <string name="tami_radio_badge">Modo rádio da Virgin — todas as suas músicas, sem parar</string>
+    <string name="tami_radio_start">Ligar Rádio Virgin</string>
+    <string name="tami_radio_stop">Desligar Rádio Virgin</string>
+    <string name="tami_radio_status_off">Parada — toque para ligar</string>
+    <string name="tami_radio_status_on">No ar — tocando todas as suas músicas</string>
+    <string name="tami_radio_welcome">Você está ouvindo a Rádio Virgin F.M., tocando %1$d músicas de todos os estilos!</string>
+    <string name="tami_radio_off">Rádio desligada.</string>
+    <string name="tami_radio_need">Importe músicas para a Rádio Virgin tocar.</string>
+    <string name="tami_clock_greet_day">Bom dia!</string>
+    <string name="tami_clock_greet_after">Boa tarde!</string>
+    <string name="tami_clock_greet_night">Boa noite!</string>
+    <string name="tami_clock_time_sharp">Agora são %1$d horas em ponto.</string>
+    <string name="tami_clock_time">Agora são %1$d horas e %2$d minutos.</string>
+    <string name="tami_clock_start_day">Vamos começar o seu dia com essa música:</string>
+    <string name="tami_clock_start_after">Vamos começar a sua tarde com essa música:</string>
+    <string name="tami_clock_start_night">Vamos começar a sua noite com essa música:</string>
     <string name="timeline_title">Linha do Tempo</string>
     <string name="timeline_header">Linha do Tempo do Artista</string>
     <string name="timeline_stats">%1$d álbuns • %2$d músicas</string>
