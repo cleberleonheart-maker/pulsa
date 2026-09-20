@@ -10,8 +10,12 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.view.KeyEvent
+import android.view.Menu
 import android.view.View
+import android.widget.HorizontalScrollView
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,7 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.imageview.ShapeableImageView
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.model.Album
@@ -70,7 +74,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     }
 
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var bottomNav: BottomNavigationView
+    private lateinit var tabStrip: LinearLayout
+    private lateinit var tabScroll: HorizontalScrollView
+    private lateinit var fabSearch: FloatingActionButton
     private lateinit var miniPlayer: View
     private lateinit var miniArt: ImageView
     private lateinit var miniTitle: TextView
@@ -80,14 +86,16 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var miniRepeat: ImageView
     private lateinit var miniLike: ImageView
     private lateinit var miniVirgin: ImageView
-    private var currentTag = SongsTabFragment::class.java.simpleName
+    private val tabViews = mutableMapOf<String, View>()
+    private var currentTag = VirginHomeFragment::class.java.simpleName
     private var bound = false
     private var serviceBound = false
     private var appliedAccent: String = Settings.ACCENT_PURPLE
     private var avatarView: ShapeableImageView? = null
 
     private val mainViewsReady: Boolean
-        get() = ::toolbar.isInitialized && ::bottomNav.isInitialized &&
+        get() = ::toolbar.isInitialized && ::tabStrip.isInitialized &&
+            ::tabScroll.isInitialized && ::fabSearch.isInitialized &&
             ::miniPlayer.isInitialized && ::miniArt.isInitialized &&
             ::miniTitle.isInitialized && ::miniArtist.isInitialized && ::miniPlay.isInitialized &&
             ::miniShuffle.isInitialized && ::miniRepeat.isInitialized && ::miniLike.isInitialized &&
@@ -203,6 +211,10 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         avatarView?.setOnClickListener {
             startActivity(Intent(this, PerfilActivity::class.java))
         }
+        avatarView?.setOnLongClickListener {
+            startActivity(Intent(this, BanActivity::class.java))
+            true
+        }
         renderAvatar()
 
         toolbar = findViewById(R.id.main_toolbar)
@@ -263,31 +275,19 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             }
         }
 
-        bottomNav = findViewById(R.id.bottom_nav)
-        bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_songs -> {
-                    openTab(SongsTabFragment::class.java.simpleName, SongsTabFragment())
-                    true
-                }
-                R.id.nav_albums -> {
-                    openTab(AlbumsTabFragment::class.java.simpleName, AlbumsTabFragment())
-                    true
-                }
-                R.id.nav_artists -> {
-                    openTab(ArtistsTabFragment::class.java.simpleName, ArtistsTabFragment())
-                    true
-                }
-                R.id.nav_favorites -> {
-                    openTab(FavoritesTabFragment::class.java.simpleName, FavoritesTabFragment())
-                    true
-                }
-                R.id.nav_videos -> {
-                    openTab(VideosTabFragment::class.java.simpleName, VideosTabFragment())
-                    true
-                }
-                else -> false
-            }
+        tabStrip = findViewById(R.id.tab_strip)
+        tabScroll = findViewById(R.id.tab_strip_scroll)
+        bindTab(R.id.tab_virgin, VirginHomeFragment::class.java.simpleName) { VirginHomeFragment() }
+        bindTab(R.id.tab_songs, SongsTabFragment::class.java.simpleName) { SongsTabFragment() }
+        bindTab(R.id.tab_albums, AlbumsTabFragment::class.java.simpleName) { AlbumsTabFragment() }
+        bindTab(R.id.tab_artists, ArtistsTabFragment::class.java.simpleName) { ArtistsTabFragment() }
+        bindTab(R.id.tab_favorites, FavoritesTabFragment::class.java.simpleName) { FavoritesTabFragment() }
+        bindTab(R.id.tab_videos, VideosTabFragment::class.java.simpleName) { VideosTabFragment() }
+        bindTab(R.id.tab_playlists, PlaylistsTabFragment::class.java.simpleName) { PlaylistsTabFragment() }
+
+        fabSearch = findViewById(R.id.fab_search)
+        fabSearch.setOnClickListener {
+            startActivity(Intent(this, SearchActivity::class.java))
         }
 
         miniPlayer = findViewById(R.id.mini_player)
@@ -319,10 +319,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         supportFragmentManager.addOnBackStackChangedListener { syncToolbar() }
 
         if (savedInstanceState == null) {
-            showTab(SongsTabFragment::class.java.simpleName, SongsTabFragment())
+            showTab(VirginHomeFragment::class.java.simpleName, VirginHomeFragment())
         } else {
-            currentTag = savedInstanceState.getString(KEY_TAG) ?: SongsTabFragment::class.java.simpleName
-            bottomNav.selectedItemId = navIdFor(currentTag)
+            currentTag = savedInstanceState.getString(KEY_TAG) ?: VirginHomeFragment::class.java.simpleName
             showTab(currentTag, fragmentFor(currentTag))
         }
 
@@ -342,6 +341,13 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         syncToolbar()
         refreshSortIcon()
         Telemetry.log(this, "createMain: fim")
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        val ok = super.onCreateOptionsMenu(menu)
+        menu.findItem(R.id.action_tami_radio)?.title =
+            getString(R.string.radio_title_format, Settings.assistantName(this))
+        return ok
     }
 
     override fun onStart() {
@@ -494,15 +500,10 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         }
     }
 
-    private fun navIdFor(tag: String): Int {
-        return when (tag) {
-            VirginHomeFragment::class.java.simpleName -> R.id.nav_songs
-            FavoritesTabFragment::class.java.simpleName -> R.id.nav_favorites
-            VideosTabFragment::class.java.simpleName -> R.id.nav_videos
-            AlbumsTabFragment::class.java.simpleName -> R.id.nav_albums
-            ArtistsTabFragment::class.java.simpleName -> R.id.nav_artists
-            else -> R.id.nav_songs
-        }
+    private fun bindTab(viewId: Int, tag: String, create: () -> Fragment) {
+        val view = findViewById<View>(viewId)
+        tabViews[tag] = view
+        view.setOnClickListener { openTab(tag, create()) }
     }
 
     private fun openTab(tag: String, fragment: Fragment) {
@@ -572,8 +573,10 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         val fragment = topFragment()
         val showingNow = fragment is NowPlayingFragment
         val hasBackStack = supportFragmentManager.backStackEntryCount > 0
+        val isVirginHome = fragment is VirginHomeFragment
 
-        bottomNav.visibility = if (showingNow) View.GONE else View.VISIBLE
+        tabScroll.visibility = if (showingNow) View.GONE else View.VISIBLE
+        fabSearch.visibility = if (showingNow) View.GONE else View.VISIBLE
         miniPlayer.visibility = if (showingNow) {
             View.GONE
         } else if (Playback.currentSong != null) {
@@ -581,6 +584,10 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         } else {
             View.GONE
         }
+
+        val fabLp = fabSearch.layoutParams as FrameLayout.LayoutParams
+        fabLp.bottomMargin = if (miniPlayer.visibility == View.VISIBLE) dp(92) else dp(20)
+        fabSearch.layoutParams = fabLp
 
         toolbar.navigationIcon = if (hasBackStack) {
             ContextCompat.getDrawable(this, R.drawable.ic_arrow_back)
@@ -590,20 +597,38 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
         toolbar.menu.findItem(R.id.action_add)?.isVisible = fragment is PlaylistsTabFragment
 
-        toolbar.title = when (fragment) {
-            is NowPlayingFragment -> getString(R.string.now_playing)
-            is VirginHomeFragment -> getString(R.string.tab_virgin)
-            is PlaylistsTabFragment -> getString(R.string.tab_playlists)
-            is SongsTabFragment -> getString(R.string.tab_songs)
-            is AlbumsTabFragment -> getString(R.string.tab_albums)
-            is ArtistsTabFragment -> getString(R.string.tab_artists)
-            is FavoritesTabFragment -> getString(R.string.tab_favorites)
-            is VideosTabFragment -> getString(R.string.tab_videos)
-            is LibraryDetailFragment -> fragment.title()
-            is PlaylistDetailFragment -> fragment.title()
-            else -> tabTitle(currentTag)
+        if (isVirginHome && !hasBackStack) {
+            toolbar.title = ""
+            toolbar.background = null
+        } else {
+            toolbar.background = ContextCompat.getDrawable(this, R.drawable.bg_navbar)
+            toolbar.title = when (fragment) {
+                is NowPlayingFragment -> getString(R.string.now_playing)
+                is PlaylistsTabFragment -> getString(R.string.tab_playlists)
+                is SongsTabFragment -> getString(R.string.tab_songs)
+                is AlbumsTabFragment -> getString(R.string.tab_albums)
+                is ArtistsTabFragment -> getString(R.string.tab_artists)
+                is FavoritesTabFragment -> getString(R.string.tab_favorites)
+                is VideosTabFragment -> getString(R.string.tab_videos)
+                is LibraryDetailFragment -> fragment.title()
+                is PlaylistDetailFragment -> fragment.title()
+                else -> tabTitle(currentTag)
+            }
+        }
+        syncTabStrip()
+    }
+
+    private fun syncTabStrip() {
+        if (::tabStrip.isInitialized) {
+            for ((tag, view) in tabViews) {
+                view.isSelected = tag == currentTag
+            }
+            val current = tabViews[currentTag]
+            current?.let { tabScroll.smoothScrollTo(maxOf(0, it.left - it.width / 2), 0) }
         }
     }
+
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     private fun refreshSortIcon() {
         if (!mainViewsReady) return

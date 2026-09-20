@@ -67,7 +67,9 @@ object TamiRadio {
         ThreadPool.post {
             val songs = Library.allSongs(ctx)
             if (songs.isEmpty()) {
-                ThreadPool.onUi { speak(ctx.getString(R.string.tami_radio_need)) }
+                ThreadPool.onUi {
+                    speak(ctx.getString(R.string.radio_need_format, Settings.assistantName(ctx)))
+                }
                 return@post
             }
             val queue = songs.shuffled()
@@ -82,7 +84,13 @@ object TamiRadio {
                 Settings.setTamiRadio(ctx, true)
                 handler.removeCallbacks(tick)
                 handler.postDelayed(tick, POLL_MS)
-                speak(ctx.getString(R.string.tami_radio_welcome, queue.size))
+                speak(
+                    ctx.getString(
+                        R.string.radio_welcome_format,
+                        Settings.assistantName(ctx),
+                        queue.size
+                    )
+                )
                 onChange?.invoke()
             }
         }

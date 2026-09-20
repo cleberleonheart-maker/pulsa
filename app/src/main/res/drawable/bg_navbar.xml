@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Barra estreita translúcida -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#66141A3A" />
+        </shape>
+    </item>
+
+    <!-- Linha néon inferior (holográfico) -->
+    <item
+        android:bottom="0dp"
+        android:left="16dp"
+        android:right="16dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="0"
+                android:centerColor="#B346D6FF"
+                android:endColor="#B300E5FF"
+                android:startColor="#B3B388FF" />
+            <size android:height="2dp" />
+        </shape>
+    </item>
+</layer-list>

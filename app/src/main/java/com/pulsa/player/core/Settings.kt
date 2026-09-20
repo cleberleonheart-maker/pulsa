@@ -341,6 +341,11 @@ object Settings {
     fun masculineAvatar(context: Context): Boolean =
         prefs(context).getBoolean("avatar_masculino", false)
 
+    fun assistantName(context: Context): String =
+        context.getString(
+            if (masculineAvatar(context)) R.string.dj_voice_name_male else R.string.dj_voice_name
+        )
+
     fun setDjRadio(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("dj_radio", value).apply()
     }
@@ -361,6 +366,11 @@ object Settings {
 
     fun recToken(context: Context): String =
         prefs(context).getString("rec_token", "") ?: ""
+
+    fun setAdminToken(context: Context, value: String) = setSecret(context, "admin_token", value)
+
+    fun adminToken(context: Context): String =
+        secret(context, "admin_token")
 
     fun setPendriveTreeUri(context: Context, value: String) {
         prefs(context).edit().putString("pendrive_tree_uri", value).apply()

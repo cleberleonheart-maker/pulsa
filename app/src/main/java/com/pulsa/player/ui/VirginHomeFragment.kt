@@ -91,7 +91,7 @@ class VirginHomeFragment : Fragment() {
             VirginCardData("🎙", getString(R.string.v_mic),
                 { getString(if (Settings.recToken(ctx).isNotBlank()) R.string.status_active else R.string.v_mic_off) },
                 { Settings.recToken(ctx).isNotBlank() }, { showMicDialog() }),
-            VirginCardData("📻", getString(R.string.v_radio),
+            VirginCardData("📻", getString(R.string.v_radio_format, Settings.assistantName(ctx)),
                 { getString(if (Settings.tamiRadio(ctx)) R.string.status_on else R.string.status_off) },
                 { Settings.tamiRadio(ctx) }, { toggleRadio() }),
             VirginCardData("💤", getString(R.string.v_sleep),

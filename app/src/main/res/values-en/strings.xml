@@ -22,7 +22,15 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.8.4):
+    <string name="changelog">What is new (4.9.0):
+
+➜ NEW
+• New hub layout: the app opens on the Virgin home (no title bar) and navigation moves to the top as scrollable web-style tabs (Virgin · Songs · Albums · Artists · Favorites · Videos · Playlists) instead of the bottom bar
+• Floating mini player capsule + floating search button; the planet theme and all features are kept
+• Virgin/Victor Radio: your library radio now uses the current avatar name (Virgin or Victor) on the screen, card and voice lines — the stations radio stays the same
+• Admin panel: ban/unban devices right from the app — hidden, long-press the avatar (token login, device list and Ban/Unban)
+
+↺ Version 4.8.4
 
 ➜ LOOK
 • Cyanwave theme (web version style): navy background with cyan nebulae, electric-cyan highlight, magenta/purple accents and glass cards all over the app
@@ -451,6 +459,13 @@
     <string name="tami_radio_welcome">You\'re listening to Virgin F.M. Radio, playing %1$d songs of every style!</string>
     <string name="tami_radio_off">Radio off.</string>
     <string name="tami_radio_need">Import some songs so Virgin Radio can play.</string>
+    <string name="radio_title_format">Radio %1$s</string>
+    <string name="radio_badge_format">Radio %1$s mode — all of your songs, non-stop</string>
+    <string name="radio_start_format">Turn on %1$s Radio</string>
+    <string name="radio_stop_format">Turn off %1$s Radio</string>
+    <string name="radio_welcome_format">You\'re listening to %1$s F.M. Radio, playing %2$d songs of every style!</string>
+    <string name="radio_need_format">Import some songs so %1$s Radio can play.</string>
+    <string name="v_radio_format">%1$s FM Radio</string>
     <string name="tami_clock_greet_day">Good morning!</string>
     <string name="tami_clock_greet_after">Good afternoon!</string>
     <string name="tami_clock_greet_night">Good evening!</string>
@@ -461,6 +476,27 @@
     <string name="tami_clock_start_night">Let\'s start your evening with this song:</string>
     <string name="blacklist_title">Access blocked</string>
     <string name="blacklist_message">This device was disabled by the administrator. Updates, data reporting and remote features have been blocked.</string>
+    <string name="ban_title">Admin</string>
+    <string name="ban_login_note">Panel restricted to the administrator.</string>
+    <string name="ban_login_hint">Admin token</string>
+    <string name="ban_enter">Enter</string>
+    <string name="ban_refresh">Refresh</string>
+    <string name="ban_exit">Log out</string>
+    <string name="ban_token_empty">Type the token.</string>
+    <string name="ban_login_progress">Signing in…</string>
+    <string name="ban_login_fail">Invalid token or server unreachable.</string>
+    <string name="ban_loading">Loading devices…</string>
+    <string name="ban_summary">%1$d devices · %2$d banned</string>
+    <string name="ban_empty">No devices yet.</string>
+    <string name="ban_error">Could not reach the server.</string>
+    <string name="ban_ban">Ban</string>
+    <string name="ban_unban">Unban</string>
+    <string name="ban_ban_confirm">Ban this device?\n%1$s</string>
+    <string name="ban_unban_confirm">Unban this device?\n%1$s</string>
+    <string name="ban_updated">Done!</string>
+    <string name="ban_events">%1$d events</string>
+    <string name="ban_version">v%1$s</string>
+    <string name="ban_last">last %1$s</string>
     <string name="tab_virgin">Virgin</string>
     <string name="virgin_hub_title">VIRGIN</string>
     <string name="virgin_hub_subtitle">Music and modes hub</string>

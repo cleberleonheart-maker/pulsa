@@ -26,6 +26,14 @@ class TamiRadioActivity : AppCompatActivity() {
         toggleBtn = findViewById(R.id.tami_btn_toggle)
         statusText = findViewById(R.id.tami_status)
 
+        val name = Settings.assistantName(this)
+        findViewById<TextView>(R.id.tami_header_title).text =
+            getString(R.string.radio_title_format, name)
+        findViewById<TextView>(R.id.tami_big_title).text =
+            getString(R.string.radio_title_format, name)
+        findViewById<TextView>(R.id.tami_subtitle).text =
+            getString(R.string.radio_badge_format, name)
+
         toggleBtn.setOnClickListener {
             if (TamiRadio.isActive) TamiRadio.stop(this) else TamiRadio.start(this)
         }
@@ -42,10 +50,11 @@ class TamiRadioActivity : AppCompatActivity() {
 
     private fun render() {
         val on = TamiRadio.isActive
+        val name = Settings.assistantName(this)
         statusText.setText(if (on) R.string.tami_radio_status_on else R.string.tami_radio_status_off)
         toggleBtn.setImageResource(if (on) R.drawable.ic_pause else R.drawable.ic_play)
         toggleBtn.contentDescription = getString(
-            if (on) R.string.tami_radio_stop else R.string.tami_radio_start
+            if (on) R.string.radio_stop_format else R.string.radio_start_format, name
         )
         toggleBtn.setColorFilter(ContextCompat.getColor(this, R.color.text_primary))
     }
