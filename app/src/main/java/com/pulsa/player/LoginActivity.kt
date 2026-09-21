@@ -4,20 +4,37 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.SignInButton
+import com.google.android.gms.common.api.ApiException
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.pulsa.player.core.Account
+import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.sync.ConfirmMail
 import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.Telemetry
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+import java.security.SecureRandom
 
 class LoginActivity : AppCompatActivity() {
 
@@ -34,6 +51,8 @@ class LoginActivity : AppCompatActivity() {
     private var ready = false
     private val orbSets = mutableListOf<AnimatorSet>()
     private var pulseSet: AnimatorSet? = null
+    private var googleClient: GoogleSignInClient? = null
+    private lateinit var googleLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Telemetry.log(this, "LOGIN onCreate")
@@ -42,6 +61,9 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
 
         AnimatedBackground.apply(this)
+
+        registerGoogleLauncher()
+        setupGoogleSignIn()
 
         title = findViewById(R.id.login_title)
         subtitle = findViewById(R.id.login_subtitle)
@@ -162,6 +184,119 @@ class LoginActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         AnimatedBackground.apply(this)
+    }
+
+    private fun registerGoogleLauncher() {
+        googleLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data
+            if (result.resultCode == RESULT_OK && data != null) {
+                handleGoogleResult(data)
+            } else {
+                Telemetry.log(this, "LOGIN google cancelado")
+            }
+        }
+    }
+
+    private fun setupGoogleSignIn() {
+        val btn = findViewById<SignInButton>(R.id.btn_login_google)
+        val divider = findViewById<View>(R.id.login_google_or)
+        val clientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+        val playOk = GoogleApiAvailability.getInstance()
+            .isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS
+        if (clientId.isEmpty() || !playOk) {
+            btn.visibility = View.GONE
+            btn.setOnClickListener(null)
+            divider.visibility = View.GONE
+            return
+        }
+        btn.setSize(SignInButton.SIZE_WIDE)
+        btn.setOnClickListener { startGoogleSignIn() }
+    }
+
+    private fun startGoogleSignIn() {
+        val clientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+        if (clientId.isEmpty()) {
+            Toast.makeText(this, R.string.login_google_not_configured, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestIdToken(clientId)
+            .build()
+        val client = GoogleSignIn.getClient(this, options)
+        googleClient = client
+        client.signOut().addOnCompleteListener {
+            runCatching {
+                googleLauncher.launch(client.signInIntent)
+            }.onFailure { t ->
+                Telemetry.log(this, "LOGIN google launch falhou: ${t.message}")
+                Toast.makeText(this, R.string.login_google_gms, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun handleGoogleResult(data: Intent) {
+        val account = try {
+            GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException::class.java)
+        } catch (e: ApiException) {
+            Telemetry.log(this, "LOGIN google falhou ${e.statusCode}: ${e.message}")
+            showError(getString(R.string.login_google_error))
+            return
+        }
+        val idToken = account.idToken
+        if (idToken.isNullOrEmpty()) {
+            showError(getString(R.string.login_google_error))
+            return
+        }
+        verifyGoogleToken(idToken)
+    }
+
+    private fun verifyGoogleToken(idToken: String) {
+        val clientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+        val main = Handler(Looper.getMainLooper())
+        ThreadPool.post {
+            val email = try {
+                val url = "https://oauth2.googleapis.com/tokeninfo?id_token=" +
+                    URLEncoder.encode(idToken, "UTF-8")
+                val conn = URL(url).openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 8000
+                conn.readTimeout = 8000
+                val text = conn.inputStream.bufferedReader().use { it.readText() }
+                conn.inputStream.close()
+                val json = JSONObject(text)
+                val aud = json.optString("aud", "")
+                val verified = json.optString("email_verified", "false")
+                if (aud != clientId || !verified.equals("true", true)) {
+                    Telemetry.log(this@LoginActivity, "LOGIN google token invalido aud=$aud verified=$verified")
+                    main.post { showError(getString(R.string.login_google_error)) }
+                    return@post
+                }
+                json.optString("email", "")
+            } catch (t: Throwable) {
+                Telemetry.log(this@LoginActivity, "LOGIN google verificacao falhou: ${t.message}")
+                null
+            }
+            if (email.isNullOrEmpty()) {
+                main.post { showError(getString(R.string.login_google_error)) }
+                return@post
+            }
+            main.post { loginWithGoogle(email) }
+        }
+    }
+
+    private fun loginWithGoogle(email: String) {
+        val existing = Account.identifier(this)
+        if (existing == null || !existing.equals(email, ignoreCase = true)) {
+            val randomPw = ByteArray(16).also { SecureRandom().nextBytes(it) }
+                .joinToString("") { "%02x".format(it) }
+            Account.create(this, email, randomPw)
+        }
+        Account.setProvider(this, "google")
+        Account.enterAccount(this)
+        Telemetry.log(this, "LOGIN google sucesso $email")
+        Toast.makeText(this, R.string.login_google_success, Toast.LENGTH_SHORT).show()
+        enterMain()
     }
 
     override fun onStop() {

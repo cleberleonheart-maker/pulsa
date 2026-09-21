@@ -659,6 +659,8 @@ class MainVirgin(
             "visualizer" -> toggleVisualizer()
             "skin" -> cycleSkin()
             "karaoke" -> toggleKaraoke()
+            "suggest" -> virgSuggestSong()
+            "identity" -> virginSpeak(DjIdentity.introSpeech())
             "stems" -> virginSpeak(activity.getString(R.string.dj_voice_stems_soon))
         }
     }
@@ -673,6 +675,29 @@ class MainVirgin(
                 } else {
                     virginSpeak(activity.getString(R.string.dj_voice_count, n))
                 }
+            }
+        }
+    }
+
+    private fun virgSuggestSong() {
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            val songs = Library.allSongs(ctx)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi {
+                    if (activity.isFinishing || activity.isDestroyed) return@onUi
+                    virginSpeak(activity.getString(R.string.dj_empty))
+                }
+                return@post
+            }
+            val suggestion = if (DjSuggest.isReady(ctx)) {
+                DjSuggest.suggest(ctx, songs) ?: DjSuggest.offline(ctx, songs)
+            } else {
+                DjSuggest.offline(ctx, songs)
+            }
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                virginSpeak(DjSuggest.toSpeech(suggestion))
             }
         }
     }

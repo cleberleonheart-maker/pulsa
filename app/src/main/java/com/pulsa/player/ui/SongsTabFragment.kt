@@ -87,9 +87,7 @@ class SongsTabFragment : Fragment() {
                 CrashLogger.writeLog(ctx, "MARK: Songs carregados=" + ordered.size)
                 loading = false
                 if (isAdded) {
-                    headerContainer?.visibility = View.VISIBLE
-                    headerTitle?.text = getString(R.string.tab_songs)
-                    headerSubtitle?.text = getString(R.string.songs_count, ordered.size)
+                    headerContainer?.visibility = View.GONE
                     adapter?.songs = ordered
                     adapter?.highlightId = Playback.currentSong?.id
                     if (ordered.isEmpty()) {

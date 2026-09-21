@@ -34,6 +34,7 @@ import com.pulsa.player.dj.DjVoice
 import com.pulsa.player.sync.LastFm
 import com.pulsa.player.widget.PulsaWidget
 import com.pulsa.player.audio.MusicVisualizer
+import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import kotlin.random.Random
@@ -70,12 +71,17 @@ class PlaybackService : Service() {
     private lateinit var notificationManager: NotificationManager
     private var largeIcon: android.graphics.Bitmap? = null
     private var audioManager: AudioManager? = null
+
+    @Volatile
     private var ducked = false
+
+    @Volatile
     private var pauseOnFocusLoss = false
 
     @Volatile
     private var micListening = false
 
+    @Volatile
     private var micDucked = false
     private val mainHandler = Handler(Looper.getMainLooper())
     private val fadeHandler = Handler(Looper.getMainLooper())
@@ -302,6 +308,7 @@ class PlaybackService : Service() {
 
     fun setRepeatAll(value: Boolean) {
         repeatAll = value
+        if (value) repeatOne = false
     }
 
     fun setRepeatOne(value: Boolean) {
@@ -408,7 +415,7 @@ class PlaybackService : Service() {
         val p = mp ?: return
         if (p.isPlaying) p.pause()
         saveResumeState()
-        abandonAudioFocus()
+        if (!pauseOnFocusLoss) abandonAudioFocus()
         stopEightD()
         mainHandler.removeCallbacks(progressTick)
         publishState()
@@ -625,6 +632,8 @@ class PlaybackService : Service() {
     private fun onTrackEnded() {
         scrobbleCurrentIfNeeded()
         clearResumeState()
+        SleepTimer.onTrackCompleted()
+        if (SleepTimer.isActive() && SleepTimer.isEndOfTrack()) return
         if (repeatOne) {
             try {
                 mp?.seekTo(0)

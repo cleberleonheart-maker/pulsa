@@ -3,7 +3,7 @@
     <!-- Barra estreita translúcida -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#66141A3A" />
+            <solid android:color="#661A0B34" />
         </shape>
     </item>
 
@@ -15,9 +15,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:centerColor="#B346D6FF"
-                android:endColor="#B300E5FF"
-                android:startColor="#B3B388FF" />
+                android:centerColor="#B3FF2E9E"
+                android:endColor="#B325F4EE"
+                android:startColor="#B3FFC84D" />
             <size android:height="2dp" />
         </shape>
     </item>

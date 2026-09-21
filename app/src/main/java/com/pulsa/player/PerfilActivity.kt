@@ -81,6 +81,9 @@ class PerfilActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.stats_row).setOnClickListener { showStats() }
+        findViewById<View>(R.id.rewind_row).setOnClickListener {
+            startActivity(Intent(this, RewindActivity::class.java))
+        }
 
         val cacheValue = findViewById<TextView>(R.id.cache_value)
         updateCacheLabel(cacheValue)

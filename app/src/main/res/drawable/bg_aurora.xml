@@ -1,171 +1,403 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Pulsar Neon · synthwave cinematográfico
+     Poente retrô com luz volumétrica, brilho atmosférico e grid de chão em perspectiva. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Espaço profundo -->
+
+    <!-- 1. Céu profundo (atmosfera: quase-preto no topo -> púrpura -> rosa-cerrado no horizonte) -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/bg" />
-        </shape>
-    </item>
-
-    <!-- Nébula violeta central -->
-    <item>
-        <shape android:shape="oval">
             <gradient
-                android:centerX="0.48"
-                android:centerY="0.42"
-                android:centerColor="#22B388FF"
-                android:endColor="#00B388FF"
-                android:gradientRadius="0.95"
-                android:startColor="#14B388FF"
-                android:type="radial" />
+                android:angle="270"
+                android:centerColor="#22083F"
+                android:endColor="#7A2662"
+                android:startColor="#08011A" />
         </shape>
     </item>
 
-    <!-- Nébula magenta p/ canto superior direito -->
-    <item>
-        <shape android:shape="oval">
-            <gradient
-                android:centerX="0.88"
-                android:centerY="0.04"
-                android:centerColor="#1C00E5FF"
-                android:endColor="#0000E5FF"
-                android:gradientRadius="0.72"
-                android:startColor="#1400E5FF"
-                android:type="radial" />
-        </shape>
-    </item>
-
-    <!-- Nébula ciano p/ canto inferior esquerdo -->
-    <item>
-        <shape android:shape="oval">
-            <gradient
-                android:centerX="0.04"
-                android:centerY="0.96"
-                android:centerColor="#1A00E5FF"
-                android:endColor="#0000E5FF"
-                android:gradientRadius="0.8"
-                android:startColor="#1200E5FF"
-                android:type="radial" />
-        </shape>
-    </item>
-
-    <!-- Núcleo de brilho magenta -->
-    <item>
-        <shape android:shape="oval">
-            <gradient
-                android:centerX="0.94"
-                android:centerY="0.14"
-                android:centerColor="#2600E5FF"
-                android:endColor="#0000E5FF"
-                android:gradientRadius="0.3"
-                android:startColor="#1A00E5FF"
-                android:type="radial" />
-        </shape>
-    </item>
-
-    <!-- Anel do planeta (Saturno) — atrás do corpo -->
+    <!-- 2. Nébulas suaves do topo (profundidade) -->
     <item
-        android:bottom="78dp"
-        android:gravity="bottom|right"
-        android:right="2dp">
+        android:gravity="left|top"
+        android:left="-40dp"
+        android:top="-60dp">
         <shape android:shape="oval">
             <gradient
-                android:angle="0"
-                android:centerColor="#4D46D6FF"
-                android:endColor="#1A00E5FF"
-                android:startColor="#20B388FF" />
-            <stroke
-                android:width="1dp"
-                android:color="#8046D6FF" />
-            <size
-                android:width="120dp"
-                android:height="34dp" />
+                android:centerColor="#22C86BFF"
+                android:endColor="#00C86BFF"
+                android:gradientRadius="240dp"
+                android:startColor="#0FC86BFF"
+                android:type="radial" />
+        </shape>
+    </item>
+    <item
+        android:gravity="right|top"
+        android:right="-40dp"
+        android:top="-50dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#2025F4EE"
+                android:endColor="#0025F4EE"
+                android:gradientRadius="230dp"
+                android:startColor="#1025F4EE"
+                android:type="radial" />
         </shape>
     </item>
 
-    <!-- Corpo do planeta na borda inferior direita -->
+    <!-- 3. Brilho volumétrico do sol (bloom) cortando o céu -->
+    <item
+        android:bottom="-80dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#33FF7A3D"
+                android:endColor="#00FF7A3D"
+                android:gradientRadius="300dp"
+                android:startColor="#14FF7A3D"
+                android:type="radial" />
+        </shape>
+    </item>
+
+    <!-- 4. Sol retrô em camadas (silhueta de meia-esfera com scanlines) -->
+    <item
+        android:bottom="140dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <solid android:color="#66FF2E9E" />
+            <size
+                android:width="52dp"
+                android:height="12dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="126dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <solid android:color="#B3FF3D93" />
+            <size
+                android:width="108dp"
+                android:height="12dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="112dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <solid android:color="#B3FF5A5E" />
+            <size
+                android:width="148dp"
+                android:height="12dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="98dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <solid android:color="#B3FF8A45" />
+            <size
+                android:width="175dp"
+                android:height="12dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="84dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <solid android:color="#CCFFB54D" />
+            <size
+                android:width="194dp"
+                android:height="12dp" />
+        </shape>
+    </item>
     <item
         android:bottom="70dp"
-        android:gravity="bottom|right"
-        android:right="10dp">
+        android:gravity="bottom|center_horizontal">
         <shape android:shape="oval">
-            <solid android:color="#FF161E41" />
-            <stroke
-                android:width="1dp"
-                android:color="#4000E5FF" />
+            <solid android:color="#CCFFD05C" />
             <size
-                android:width="82dp"
-                android:height="82dp" />
+                android:width="208dp"
+                android:height="12dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="56dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <solid android:color="#CCFFC84D" />
+            <size
+                android:width="217dp"
+                android:height="12dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="42dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <solid android:color="#CCFF8A45" />
+            <size
+                android:width="222dp"
+                android:height="12dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="28dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <solid android:color="#CCFF5A5E" />
+            <size
+                android:width="224dp"
+                android:height="12dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="14dp"
+        android:gravity="bottom|center_horizontal">
+        <shape android:shape="oval">
+            <solid android:color="#CCFF3D93" />
+            <size
+                android:width="224dp"
+                android:height="12dp" />
         </shape>
     </item>
 
-    <!-- Iluminação de terminador do planeta -->
+    <!-- 5. Névoa atmosférica sobre o horizonte (espalha a luz do poente) -->
     <item
-        android:bottom="71dp"
-        android:gravity="bottom|right"
-        android:right="11dp">
+        android:bottom="0dp"
+        android:gravity="fill_horizontal|bottom"
+        android:left="-40dp"
+        android:right="-40dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="90"
+                android:centerColor="#2E8A2A66"
+                android:endColor="#218A2A66"
+                android:startColor="#3D8A2A66" />
+            <size android:height="88dp" />
+        </shape>
+    </item>
+
+    <!-- 6. Linha de luz do horizonte (reflexo do poente) -->
+    <item
+        android:bottom="16dp"
+        android:gravity="bottom|center_horizontal"
+        android:left="10dp"
+        android:right="10dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="0"
+                android:centerColor="#B3FF6A5A"
+                android:endColor="#5925F4EE"
+                android:startColor="#59FFC84D" />
+            <size android:height="2dp" />
+        </shape>
+    </item>
+
+    <!-- 7. Chão: gradiente do asfalto noturno (fundo do grid) -->
+    <item
+        android:bottom="0dp"
+        android:gravity="fill_horizontal|bottom">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="90"
+                android:centerColor="#2A0B29"
+                android:endColor="#1B0631"
+                android:startColor="#3A0E2E" />
+            <size android:height="34dp" />
+        </shape>
+    </item>
+
+    <!-- 8. Grid de chão em perspectiva (scanlines) -->
+    <item
+        android:bottom="16dp"
+        android:left="0dp"
+        android:right="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#1FFF5A9E" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="34dp"
+        android:left="18dp"
+        android:right="18dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#22FF5A9E" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="60dp"
+        android:left="48dp"
+        android:right="48dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#24FF5A9E" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="96dp"
+        android:left="90dp"
+        android:right="90dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#22FF5A9E" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="142dp"
+        android:left="142dp"
+        android:right="142dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#1EFF5A9E" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="200dp"
+        android:left="204dp"
+        android:right="204dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#1AFF5A9E" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="272dp"
+        android:left="278dp"
+        android:right="278dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#16FF5A9E" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="358dp"
+        android:left="364dp"
+        android:right="364dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#12FF5A9E" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="460dp"
+        android:left="466dp"
+        android:right="466dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#0EFF5A9E" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+
+    <!-- 9. Estrelas com brilho (atmosfera do céu) -->
+    <item
+        android:gravity="left|top"
+        android:left="42dp"
+        android:top="52dp">
         <shape android:shape="oval">
             <gradient
-                android:centerX="0.28"
-                android:centerY="0.2"
-                android:centerColor="#662C4978"
-                android:endColor="#000F1632"
-                android:gradientRadius="41dp"
-                android:startColor="#99425C88"
+                android:centerColor="#99FFFFFF"
+                android:endColor="#00FFFFFF"
+                android:gradientRadius="6dp"
+                android:startColor="#4DFFFFFF"
                 android:type="radial" />
             <size
-                android:width="80dp"
-                android:height="80dp" />
+                android:width="14dp"
+                android:height="14dp" />
         </shape>
     </item>
-
-    <!-- Reflexo specular no planeta -->
     <item
-        android:bottom="124dp"
-        android:gravity="bottom|right"
-        android:right="24dp">
+        android:gravity="right|top"
+        android:right="54dp"
+        android:top="34dp">
         <shape android:shape="oval">
-            <solid android:color="#3DFFF0DF" />
+            <gradient
+                android:centerColor="#8025F4EE"
+                android:endColor="#0025F4EE"
+                android:gradientRadius="5dp"
+                android:startColor="#3325F4EE"
+                android:type="radial" />
             <size
-                android:width="16dp"
-                android:height="7dp" />
+                android:width="12dp"
+                android:height="12dp" />
         </shape>
     </item>
-
-    <!-- Lua pequena no canto superior esquerdo -->
-    <item
-        android:gravity="left|top"
-        android:left="16dp"
-        android:top="14dp">
-        <shape android:shape="oval">
-            <solid android:color="#22FFF0DF" />
-            <size
-                android:width="36dp"
-                android:height="36dp" />
-        </shape>
-    </item>
-
     <item
         android:gravity="left|top"
-        android:left="20dp"
-        android:top="19dp">
+        android:left="120dp"
+        android:top="22dp">
         <shape android:shape="oval">
-            <solid android:color="#B3FFF0DF" />
+            <gradient
+                android:centerColor="#66FF6BC4"
+                android:endColor="#00FF6BC4"
+                android:gradientRadius="5dp"
+                android:startColor="#26FF6BC4"
+                android:type="radial" />
             <size
-                android:width="24dp"
-                android:height="24dp" />
+                android:width="12dp"
+                android:height="12dp" />
         </shape>
     </item>
-
+    <item
+        android:gravity="right|top"
+        android:right="140dp"
+        android:top="88dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#66FFFFFF"
+                android:endColor="#00FFFFFF"
+                android:gradientRadius="4dp"
+                android:startColor="#2EFFFFFF"
+                android:type="radial" />
+            <size
+                android:width="10dp"
+                android:height="10dp" />
+        </shape>
+    </item>
     <item
         android:gravity="left|top"
-        android:left="29dp"
-        android:top="23dp">
+        android:left="204dp"
+        android:top="96dp">
         <shape android:shape="oval">
-            <solid android:color="#79CFB8D2" />
+            <gradient
+                android:centerColor="#59FFD05C"
+                android:endColor="#00FFD05C"
+                android:gradientRadius="4dp"
+                android:startColor="#24FFD05C"
+                android:type="radial" />
             <size
-                android:width="9dp"
-                android:height="9dp" />
+                android:width="10dp"
+                android:height="10dp" />
+        </shape>
+    </item>
+    <item
+        android:gravity="right|top"
+        android:right="232dp"
+        android:top="150dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#59FFFFFF"
+                android:endColor="#00FFFFFF"
+                android:gradientRadius="3dp"
+                android:startColor="#22FFFFFF"
+                android:type="radial" />
+            <size
+                android:width="8dp"
+                android:height="8dp" />
+        </shape>
+    </item>
+    <item
+        android:gravity="left|top"
+        android:left="300dp"
+        android:top="48dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerColor="#59FFFFFF"
+                android:endColor="#00FFFFFF"
+                android:gradientRadius="3dp"
+                android:startColor="#22FFFFFF"
+                android:type="radial" />
+            <size
+                android:width="8dp"
+                android:height="8dp" />
         </shape>
     </item>
 </layer-list>

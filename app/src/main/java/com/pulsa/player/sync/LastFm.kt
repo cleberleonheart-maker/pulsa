@@ -113,7 +113,7 @@ object LastFm {
 
     private fun md5(input: String): String {
         val digest = MessageDigest.getInstance("MD5").digest(input.toByteArray())
-        return digest.joinToString("") { "%02x".format(it) }
+        return digest.joinToString("") { "%02x".format(it.toInt() and 0xff) }
     }
 
     private fun post(params: Map<String, String>): String? {

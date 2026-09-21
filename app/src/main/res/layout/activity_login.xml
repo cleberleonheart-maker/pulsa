@@ -28,7 +28,7 @@
         android:layout_width="240dp"
         android:layout_height="240dp"
         android:layout_gravity="center"
-        android:layout_marginTop="260dp"
+        android:layout_marginTop="440dp"
         android:layout_marginStart="-20dp"
         android:background="@drawable/bg_orb_pink" />
 
@@ -41,64 +41,89 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:paddingHorizontal="22dp"
-            android:paddingTop="44dp"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="28dp"
             android:paddingBottom="24dp">
 
-            <FrameLayout
-                android:id="@+id/login_logo"
-                android:layout_width="112dp"
-                android:layout_height="112dp">
-
-                <View
-                    android:id="@+id/login_logo_glow"
-                    android:layout_width="150dp"
-                    android:layout_height="150dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/bg_glow" />
-
-                <View
-                    android:layout_width="76dp"
-                    android:layout_height="76dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/bg_logo_circle" />
-
-                <ImageView
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@string/app_name"
-                    android:src="@drawable/ic_splash" />
-            </FrameLayout>
-
-            <TextView
-                android:id="@+id/login_brand"
-                style="@style/TextAppearance.Pulsa.Display"
-                android:layout_width="wrap_content"
+            <!-- Barra de identidade: logo + marca + versão -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:letterSpacing="0.18"
-                android:text="@string/app_name"
-                android:textSize="34sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/login_tagline"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="sans-serif"
-                android:text="@string/login_tagline"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+                <FrameLayout
+                    android:id="@+id/login_logo"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp">
 
+                    <View
+                        android:id="@+id/login_logo_glow"
+                        android:layout_width="78dp"
+                        android:layout_height="78dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_glow" />
+
+                    <View
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_logo_circle" />
+
+                    <ImageView
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/app_name"
+                        android:src="@drawable/ic_splash" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/login_brand"
+                        style="@style/TextAppearance.Pulsa.Display"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.18"
+                        android:text="@string/app_name"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/login_tagline"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif"
+                        android:text="@string/login_tagline"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/login_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_status_chip"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- Seletor Entrar / Criar -->
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/login_tabs"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:layout_marginTop="28dp"
+                android:layout_marginTop="26dp"
                 android:background="@drawable/bg_segment"
                 android:paddingHorizontal="4dp"
                 android:paddingVertical="4dp"
@@ -125,11 +150,12 @@
                     android:text="@string/login_tab_create" />
             </com.google.android.material.tabs.TabLayout>
 
+            <!-- Cartão de credenciais -->
             <LinearLayout
                 android:id="@+id/login_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_card_login_modern"
                 android:elevation="10dp"
                 android:orientation="vertical"
@@ -254,6 +280,24 @@
                     android:textSize="13sp"
                     android:visibility="gone" />
 
+                <TextView
+                    android:id="@+id/login_google_or"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:text="@string/login_google_or"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <com.google.android.gms.common.SignInButton
+                    android:id="@+id/btn_login_google"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone" />
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_login_primary"
                     style="@style/Widget.Pulsa.NeonButton"
@@ -295,18 +339,11 @@
             </LinearLayout>
 
             <TextView
-                android:id="@+id/login_version"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
-
-            <TextView
                 android:id="@+id/login_smtp_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
                 android:textColor="@color/text_tertiary"
                 android:textSize="12sp"
                 android:visibility="gone" />

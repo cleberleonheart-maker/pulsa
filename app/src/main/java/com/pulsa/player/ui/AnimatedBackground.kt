@@ -10,10 +10,10 @@ import android.view.View
 object AnimatedBackground {
 
     private val paletteA = intArrayOf(
-        0xFF0B0F2A.toInt(), 0xFF141A3A.toInt(), 0xFF1C234A.toInt()
+        0xFF2A0F5E.toInt(), 0xFF1B0B3E.toInt(), 0xFF0E0226.toInt()
     )
     private val paletteB = intArrayOf(
-        0xFF101640.toInt(), 0xFF1A2148.toInt(), 0xFF242E58.toInt()
+        0xFF3A1152.toInt(), 0xFF241045.toInt(), 0xFF16062E.toInt()
     )
 
     private var target: View? = null

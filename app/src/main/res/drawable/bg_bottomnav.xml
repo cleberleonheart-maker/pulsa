@@ -4,7 +4,7 @@
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="30dp" />
-            <solid android:color="#E6141A3A" />
+            <solid android:color="#EE120529" />
         </shape>
     </item>
 
@@ -14,7 +14,7 @@
             <corners android:radius="30dp" />
             <stroke
                 android:width="1dp"
-                android:color="#4600E5FF" />
+                android:color="#4625F4EE" />
         </shape>
     </item>
 
@@ -26,9 +26,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:centerColor="#8046D6FF"
-                android:endColor="#2000E5FF"
-                android:startColor="#20B388FF" />
+                android:centerColor="#66FF6BC4"
+                android:endColor="#2625F4EE"
+                android:startColor="#26FF2E9E" />
             <size android:height="2dp" />
         </shape>
     </item>
@@ -41,10 +41,10 @@
         android:top="26dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#AA46D6FF"
-                android:endColor="#0046D6FF"
+                android:centerColor="#AA25F4EE"
+                android:endColor="#0025F4EE"
                 android:gradientRadius="12dp"
-                android:startColor="#FF46D6FF"
+                android:startColor="#FF25F4EE"
                 android:type="radial" />
             <size
                 android:width="24dp"
@@ -60,10 +60,10 @@
         android:top="26dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#AA00E5FF"
-                android:endColor="#0000E5FF"
+                android:centerColor="#AAFF2E9E"
+                android:endColor="#00FF2E9E"
                 android:gradientRadius="12dp"
-                android:startColor="#FF00E5FF"
+                android:startColor="#FFFF6BC4"
                 android:type="radial" />
             <size
                 android:width="24dp"

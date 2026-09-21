@@ -1,5 +1,7 @@
 package com.pulsa.player.playback
 
+import android.os.Handler
+import android.os.Looper
 import com.pulsa.player.model.Song
 
 object Playback {
@@ -9,8 +11,12 @@ object Playback {
         fun onProgress(positionMs: Long, durationMs: Long)
     }
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+
     @Volatile
     var service: PlaybackService? = null
+
+    @Volatile
     var listener: Listener? = null
 
     val currentSong: Song? get() = service?.currentSong
@@ -79,15 +85,26 @@ object Playback {
         service?.cycleRepeat()
     }
 
+    private fun onMain(block: () -> Unit) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            block()
+        } else {
+            mainHandler.post(block)
+        }
+    }
+
     fun notifySong(song: Song?, index: Int) {
-        listener?.onSongChanged(song, index)
+        val l = listener ?: return
+        onMain { l.onSongChanged(song, index) }
     }
 
     fun notifyPlayState(isPlaying: Boolean) {
-        listener?.onPlayStateChanged(isPlaying)
+        val l = listener ?: return
+        onMain { l.onPlayStateChanged(isPlaying) }
     }
 
     fun notifyProgress(positionMs: Long, durationMs: Long) {
-        listener?.onProgress(positionMs, durationMs)
+        val l = listener ?: return
+        onMain { l.onProgress(positionMs, durationMs) }
     }
 }

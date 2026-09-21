@@ -24,6 +24,19 @@ object DjLearn {
         val liked: Int
     )
 
+    data class RewindResult(
+        val plays: Int,
+        val top: List<Pair<Long, Int>>,
+        val unique: Int,
+        val firstTs: Long?,
+        val firstSongId: Long,
+        val months: List<Pair<String, Int>>, // "mm/aaaa" → toques, dos 12 últimos meses
+        val week: IntArray,                  // 7, dom..sáb
+        val hours: IntArray,                 // 24
+        val bestDay: Pair<String, Int>?,     // "dd/mm" → toques
+        val nightOwl: Pair<Long, Int>?       // faixa com ≥50% dos toques entre 0h-6h
+    )
+
     class Learner(context: Context) :
         SQLiteOpenHelper(context.applicationContext, "dj_learn.db", null, 3) {
 
@@ -92,6 +105,70 @@ object DjLearn {
                 }
             }
             return out
+        }
+
+        /** Agregados do "Pulsa Rewind" para um período (days=Int.MAX_VALUE = de sempre). */
+        fun rewind(nowSec: Long, days: Int, limit: Int): RewindResult {
+            val from = if (days == Int.MAX_VALUE) 0L else nowSec - days * 86400L
+            val count = mutableMapOf<Long, Int>()
+            val hourOf = IntArray(24)
+            val weekOf = IntArray(7)
+            val dayOf = mutableMapOf<String, Int>()
+            val monthOf = mutableMapOf<String, Int>()
+            var firstTs: Long? = null
+            var firstSongId = -1L
+            var total = 0
+            runCatching {
+                val cal = java.util.Calendar.getInstance()
+                readableDatabase.rawQuery(
+                    "SELECT song_id, ts FROM play_log WHERE ts >= ?",
+                    arrayOf(from.toString())
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        val id = c.getLong(0)
+                        val ts = c.getLong(1)
+                        count[id] = (count[id] ?: 0) + 1
+                        total++
+                        if (firstTs == null || ts < firstTs!!) {
+                            firstTs = ts
+                            firstSongId = id
+                        }
+                        cal.timeInMillis = ts * 1000L
+                        hourOf[cal.get(java.util.Calendar.HOUR_OF_DAY)]++
+                        weekOf[(cal.get(java.util.Calendar.DAY_OF_WEEK) + 6) % 7]++
+                        val dd = cal.get(java.util.Calendar.DAY_OF_MONTH)
+                        val mm = cal.get(java.util.Calendar.MONTH) + 1
+                        dayOf["%02d/%02d".format(dd, mm)] = (dayOf["%02d/%02d".format(dd, mm)] ?: 0) + 1
+                        monthOf["%02d/%04d".format(mm, cal.get(java.util.Calendar.YEAR))] =
+                            (monthOf["%02d/%04d".format(mm, cal.get(java.util.Calendar.YEAR))] ?: 0) + 1
+                    }
+                }
+            }
+            val top = count.toList().sortedByDescending { it.second }.take(limit)
+            val bestDay = dayOf.maxByOrNull { it.value }?.toPair()
+            var nightOwl: Pair<Long, Int>? = null
+            runCatching {
+                for ((id, plays) in top) {
+                    var night = 0
+                    readableDatabase.rawQuery(
+                        "SELECT ts FROM play_log WHERE song_id = ? AND ts >= ?",
+                        arrayOf(id.toString(), from.toString())
+                    ).use { c ->
+                        val cal = java.util.Calendar.getInstance()
+                        while (c.moveToNext()) {
+                            cal.timeInMillis = c.getLong(0) * 1000L
+                            val h = cal.get(java.util.Calendar.HOUR_OF_DAY)
+                            if (h < 6) night++
+                        }
+                    }
+                    if (plays > 0 && night.toDouble() / plays >= 0.5) {
+                        val cur = nightOwl
+                        if (cur == null || plays > cur.second) nightOwl = id to plays
+                    }
+                }
+            }
+            val months = monthOf.toList().sortedBy { it.first }.takeLast(12)
+            return RewindResult(total, top, count.size, firstTs, firstSongId, months, weekOf, hourOf, bestDay, nightOwl)
         }
 
         fun topSongs(nowSec: Long, days: Int, limit: Int): List<Pair<Long, Int>> {
@@ -328,4 +405,7 @@ object DjLearn {
 
     fun playedOnDay(context: Context, dayOffset: Int, limit: Int): List<Pair<Long, Int>> =
         learner(context).playedOnDay(System.currentTimeMillis() / 1000L, dayOffset, limit)
+
+    fun rewind(context: Context, days: Int, limit: Int): RewindResult =
+        learner(context).rewind(System.currentTimeMillis() / 1000L, days, limit)
 }

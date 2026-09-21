@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Deck holo: vidro profundo + borda triádica + linha de energia -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Base esmaltada -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="26dp" />
+            <gradient
+                android:angle="270"
+                android:centerColor="#F11B0B34"
+                android:endColor="#D910062A"
+                android:startColor="#FF241145" />
+        </shape>
+    </item>
+
+    <!-- Contorno néon ciano -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="26dp" />
+            <stroke
+                android:width="1dp"
+                android:color="#3D25F4EE" />
+        </shape>
+    </item>
+
+    <!-- Contorno interno ouro (rim light) -->
+    <item
+        android:bottom="5dp"
+        android:left="5dp"
+        android:right="5dp"
+        android:top="5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="21dp" />
+            <stroke
+                android:width="1dp"
+                android:color="#26FFC84D" />
+        </shape>
+    </item>
+
+    <!-- Linha de energia superior -->
+    <item
+        android:gravity="top"
+        android:left="20dp"
+        android:right="20dp"
+        android:top="3dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="0"
+                android:centerColor="#66FF6BC4"
+                android:endColor="#1F25F4EE"
+                android:startColor="#2FFF2E9E" />
+            <size android:height="2dp" />
+        </shape>
+    </item>
+
+    <!-- Traços HUD inferiores -->
+    <item
+        android:bottom="10dp"
+        android:gravity="bottom|left"
+        android:left="24dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hud_tick" />
+            <size
+                android:width="26dp"
+                android:height="4dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="10dp"
+        android:gravity="bottom|right"
+        android:right="24dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/hud_tick" />
+            <size
+                android:width="26dp"
+                android:height="4dp" />
+        </shape>
+    </item>
+</layer-list>

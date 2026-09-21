@@ -324,6 +324,6 @@ object RemoteSync {
         val sb = StringBuilder(songs.size * 12)
         for (s in songs) sb.append(s.id).append(':').append(s.durationMs).append(';')
         val bytes = MessageDigest.getInstance("MD5").digest(sb.toString().toByteArray())
-        return bytes.joinToString("") { "%02x".format(it) }
+        return bytes.joinToString("") { "%02x".format(it.toInt() and 0xff) }
     }
 }

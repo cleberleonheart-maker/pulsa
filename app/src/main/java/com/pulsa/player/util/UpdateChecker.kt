@@ -73,11 +73,15 @@ object UpdateChecker {
         ThreadPool.post {
             Blacklist.refresh(context)
             if (Blacklist.isBanned(context)) {
-                ThreadPool.onUi { showBanDialog(context) }
+                ThreadPool.onUi {
+                    if (context.isFinishing || context.isDestroyed) return@onUi
+                    showBanDialog(context)
+                }
                 return@post
             }
             val latest = queryLatest(context)
             ThreadPool.onUi {
+                if (context.isFinishing || context.isDestroyed) return@onUi
                 if (Blacklist.isBanned(context)) {
                     showBanDialog(context)
                     return@onUi
@@ -107,6 +111,7 @@ object UpdateChecker {
     private fun downloadFromSiteNow(context: Context, latestName: String, versionUrl: String) {
         if (context !is android.app.Activity) return
         if (!ensureInstallPermission(context)) return
+        if (context.isFinishing || context.isDestroyed) return
         val pd = android.app.ProgressDialog(context)
         pd.setTitle(context.getString(R.string.update_title))
         pd.setMessage(context.getString(R.string.update_downloading, 0))

@@ -245,7 +245,7 @@ class NowPlayingFragment : Fragment() {
             .setPositiveButton(android.R.string.ok) { d, _ ->
                 d.dismiss()
                 when {
-                    checked == 0 || (checked == 5 && !SleepTimer.isActive()) -> if (SleepTimer.isActive()) SleepTimer.cancel() else Unit
+                    checked == 0 -> if (SleepTimer.isActive()) SleepTimer.cancel() else Unit
                     checked == 5 -> SleepTimer.scheduleEndOfTrack()
                     else -> SleepTimer.schedule(minutes[checked])
                 }

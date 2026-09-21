@@ -27,7 +27,25 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (4.11.1):
+    <string name="changelog">Novedades de esta versión (4.12.0):
+
+➜ REDISEÑO
+• Tema Pulsar Neon: synthwave cinematográfico — noche púrpura con atardecer en rejilla de perspectiva, rosa eléctrico como color principal y cian de acento, nebulosas y brillos neón renovados en toda la app (entrada, inicio, listas, mini reproductor y fondos animados)
+
+➜ REWIND
+• Pulsa Rewind: resumen de tu música (Perfil → Pulsa Rewind) con Top 10, reproducciones/tiempo/canciones, primera canción del período, gráficos por mes/día de la semana/hora y datos curiosos (mejor día, hora pico y búho nocturno) — filtros Siempre / 30 días / 7 días; tocar un ítem reproduce el podio en orden
+
+➜ ENTRAR
+• Inicio de sesión con Google: botón "Iniciar sesión con Google" en la pantalla de entrada — cuenta creada con tu correo de Google de forma segura (token verificado)
+• Virgin sugiere música: "Virgin, sugiere una canción" — ella recomienda según tu gusto; "Virgin, quién eres" presenta su identidad
+
+➜ CORRECCIONES
+• Sonido ambiente: corregido el fade de entrada del sonido de la naturaleza (antes saltaba un tramo); el DJ reconociendo con micrófono limitado ya no desborda el buffer
+• Corregido MD5 en Last.fm/letras/telemetría (bytes negativos daban hex erróneo — scrobble/letra/hash rotos)
+• Dormir: "al final de la canción" ahora para de verdad cuando termina; activar Repetir todo apaga Repetir una; una pausa que no era por foco de audio ya no suelta el sonido en modo radio
+• Mini reproductor/flujos sincronizan en la pantalla principal (sin carreras de hilos) y los avisos de actualización/baneo ya no se abren sobre una pantalla cerrada
+
+↺ Versión 4.11.1
 
 ➜ VISUAL
 • Virgin vive de verdad: el avatar flota subiendo y bajando (estilo TAMI) con el parpadeo de los ojos, siempre — y baila más fuerte al ritmo de la música
@@ -241,6 +259,42 @@
     <string name="login_forgot">Olvidé mi acceso</string>
     <string name="login_forgot_confirm">¿Borrar el acceso actual? Podrás crear una cuenta nueva.</string>
     <string name="login_guest">Entrar como invitado</string>
+    <string name="login_google_or">o continúa con</string>
+    <string name="login_google_success">Sesión iniciada con Google</string>
+    <string name="login_google_error">No se pudo iniciar sesión con Google</string>
+    <string name="login_google_gms">Google no está disponible en este dispositivo</string>
+    <string name="login_google_not_configured">El inicio de sesión con Google aún no está configurado</string>
+    <string name="rw_title">Pulsa Rewind</string>
+    <string name="rw_tab_all">Siempre</string>
+    <string name="rw_tab_30">30 días</string>
+    <string name="rw_tab_7">7 días</string>
+    <string name="rw_loading">Calculando tu música…</string>
+    <string name="rw_empty">Aún nada. ¡Escucha más para generar tu Rewind!</string>
+    <string name="rw_plays">Reproducciones</string>
+    <string name="rw_hours">Tiempo</string>
+    <string name="rw_uniq">Canciones</string>
+    <string name="rw_first">Primera</string>
+    <string name="rw_first_sub">pista más antigua del período</string>
+    <string name="rw_na">—</string>
+    <string name="rw_top">Top %1$d</string>
+    <string name="rw_when">Cuándo escuchas</string>
+    <string name="rw_month">Por mes</string>
+    <string name="rw_week">Por día de la semana</string>
+    <string name="rw_wd_axis">D,L,M,X,J,V,S</string>
+    <string name="rw_hour">Por hora</string>
+    <string name="rw_facts">Datos</string>
+    <string name="rw_fact_day">Mejor día</string>
+    <string name="rw_fact_hour">Hora pico</string>
+    <string name="rw_fact_night">Noctámbulo</string>
+    <string name="rw_hour_suffix">h</string>
+    <string name="rw_toques">%1$s reproducciones</string>
+    <string name="rw_none">ninguna</string>
+    <string name="rw_night_owl">escuchaste después de medianoche</string>
+    <string name="rw_play_top">reproducir %1$d</string>
+    <string name="rw_playing">Reproduciendo Top %1$d</string>
+    <string name="rw_months">ene,feb,mar,abr,may,jun,jul,ago,sep,oct,nov,dic</string>
+    <string name="rw_menu_title">Pulsa Rewind</string>
+    <string name="rw_menu_subtitle">resumen de las más escuchadas</string>
     <string name="show_password">Mostrar contraseña</string>
     <string name="hide_password">Ocultar contraseña</string>
     <string name="app_version">Pulsa v%1$s</string>

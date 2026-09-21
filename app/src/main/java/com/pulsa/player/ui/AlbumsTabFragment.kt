@@ -70,9 +70,7 @@ class AlbumsTabFragment : Fragment() {
                 ThreadPool.onUi {
                     loading = false
                     if (isAdded) {
-                        headerContainer?.visibility = View.VISIBLE
-                        headerTitle?.text = getString(R.string.tab_albums)
-                        headerSubtitle?.text = if (albums.isEmpty()) "" else getString(R.string.albums_count, albums.size)
+                        headerContainer?.visibility = View.GONE
                         adapter?.albums = albums
                     if (albums.isEmpty()) {
                         showEmpty(getString(R.string.empty_no_music), false)

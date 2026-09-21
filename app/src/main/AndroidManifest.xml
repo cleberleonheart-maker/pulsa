@@ -81,6 +81,10 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".RewindActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".VideoPlayerActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false" />

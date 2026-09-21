@@ -31,7 +31,25 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.11.1):
+    <string name="changelog">Novidades desta versão (4.12.0):
+
+→ REDESIGN
+• Tema Pulsar Neon: synthwave cinematográfico — noite púrpura com poente em grade de perspectiva, rosa elétrico como cor principal e ciano como acento, nébulas e brilhos neon renovados em todo o app (login, home, listas, mini player e fundos animados)
+
+→ REWIND
+• Pulsa Rewind: resumo da sua música (Perfil → Pulsa Rewind) com Top 10, toques/tempo/músicas, primeira faixa do período, gráficos por mês/dia da semana/hora e fatos (melhor dia, hora de pico e coruja da noite) — filtros de Sempre / 30 dias / 7 dias; tocar um item reproduz o pódio em ordem
+
+→ ENTRAR
+• Login com Google: botão \"Entrar com Google\" na tela de entrada — conta criada com o seu e-mail do Google de forma segura (token verificado)
+• Virgínia sugere música: \"Virgin, sugere uma música\" — ela recomenda do seu gosto; \"Virgin, quem é você\" apresenta a identidade
+
+→ CORREÇÕES
+• Som ambiente: fade de entrada do som da natureza corrigido (antes pulava trecho); DJ reconhecer com microfone limitado não estoura mais o buffer
+• MD5 corrigido em Last.fm/letras/telemetria (bytes negativos viravam hex errado — scrobble/letra/hash quebrados)
+• Sono: \"no fim da faixa\" agora para de verdade ao terminar a música; ativar Repetir tudo desliga Repetir uma; pausa que não era por foco de áudio não solta mais o som no modo rádio
+• Mini player/fluxos sincronizam na tela principal (sem correria de threads) e avisos de atualização/ban não abrem mais por cima de tela fechada
+
+↺ Versão 4.11.1
 
 → VISUAL
 • Virgínia vive mesmo: o avatar flutua subindo e descendo (estilo TAMI) com a piscada dos olhos, sempre — e dança mais forte no ritmo da música
@@ -242,6 +260,42 @@
     <string name="login_forgot">Esqueci meu acesso</string>
     <string name="login_forgot_confirm">Apagar o acesso atual? Você poderá criar uma nova conta.</string>
     <string name="login_guest">Entrar como visitante</string>
+    <string name="login_google_or">ou continue com</string>
+    <string name="login_google_success">Entrou com o Google</string>
+    <string name="login_google_error">Não foi possível entrar com o Google</string>
+    <string name="login_google_gms">O Google não está disponível neste aparelho</string>
+    <string name="login_google_not_configured">Login com Google ainda não configurado</string>
+    <string name="rw_title">Pulsa Rewind</string>
+    <string name="rw_tab_all">Sempre</string>
+    <string name="rw_tab_30">30 dias</string>
+    <string name="rw_tab_7">7 dias</string>
+    <string name="rw_loading">Calculando sua música…</string>
+    <string name="rw_empty">Nada ainda. Toque mais para gerar seu Rewind!</string>
+    <string name="rw_plays">Toques</string>
+    <string name="rw_hours">Tempo</string>
+    <string name="rw_uniq">Músicas</string>
+    <string name="rw_first">Primeira</string>
+    <string name="rw_first_sub">faixa mais antiga do período</string>
+    <string name="rw_na">—</string>
+    <string name="rw_top">Top %1$d</string>
+    <string name="rw_when">Quando você ouve</string>
+    <string name="rw_month">Por mês</string>
+    <string name="rw_week">Por dia da semana</string>
+    <string name="rw_wd_axis">D,S,T,Q,Q,S,S</string>
+    <string name="rw_hour">Por hora</string>
+    <string name="rw_facts">Fatos</string>
+    <string name="rw_fact_day">Melhor dia</string>
+    <string name="rw_fact_hour">Hora de pico</string>
+    <string name="rw_fact_night">Coruja</string>
+    <string name="rw_hour_suffix">h</string>
+    <string name="rw_toques">%1$s toques</string>
+    <string name="rw_none">nenhuma</string>
+    <string name="rw_night_owl">você ouviu depois da meia-noite</string>
+    <string name="rw_play_top">tocar %1$d</string>
+    <string name="rw_playing">Tocando o Top %1$d</string>
+    <string name="rw_months">jan,fev,mar,abr,mai,jun,jul,ago,set,out,nov,dez</string>
+    <string name="rw_menu_title">Pulsa Rewind</string>
+    <string name="rw_menu_subtitle">resumo das mais tocadas</string>
     <string name="show_password">Mostrar senha</string>
     <string name="hide_password">Ocultar senha</string>
     <string name="app_version">Pulsa v%1$s</string>

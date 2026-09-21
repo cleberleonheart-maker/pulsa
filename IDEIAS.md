@@ -4,6 +4,8 @@
 
 ## ✓ Feito (2026)
 
+- [x] **Pulsa Rewind** (4.12.0): resumo local no app (`Perfil → Pulsa Rewind`) — Top 10, tempo/tocadas, gráficos por mês/dia/hora e fatos, com filtros Sempre/30d/7d (`RewindActivity` + `DjLearn.rewind`); replay/ano no dashboard web fica em aberto
+
 - [x] **Delete por voz com confirmação**: a Virgínia pergunta "quer apagar?" e aceita "sim", "sim.", ", sim", "pode apagar"/"pode excluir" diretamente (ignora pontuação/enj do reconhecedor — `DjCommander.affirm`, via `DjVoice.kt`)
 - [x] **Som ambiente audível**: geradores (noite/chuva/oceano/via) com ganho de saída (`OUTPUT_GAIN` em `Ambient.kt`) + volume padrão maior
 - [x] **Botões físicos de volume controlam o som ambiente** quando ele está ativo, com indicação de % (`MainActivity` + `DjActivity` → `onKeyDown` → `Ambient.setVolume`)
@@ -93,4 +95,4 @@
 
 ## Web player (pulsaweb) — a fazer (app separado da web)
 - [ ] **Controle do "Ouvir juntos" pelo PC**: o web player entra na sessão com o código de 5 letras e espelha/controla sem celular — `MirrorSync` + pulsaweb
-- [ ] **Pulsa Rewind / resumo do ano**: replay das músicas mais tocadas + gráfico, gerado da telemetria (`/stats` já agrega) — dashboard web
+- [ ] **Pulsa Rewind / replay do ano na web**: replay das músicas mais tocadas + gráfico de ano completo no dashboard web, gerado da telemetria (`/stats` já agrega) — o resumo já existe no app (4.12.0)

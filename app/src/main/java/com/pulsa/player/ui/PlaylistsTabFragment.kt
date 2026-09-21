@@ -68,9 +68,7 @@ class PlaylistsTabFragment : Fragment() {
             ThreadPool.onUi {
                 loading = false
                 if (isAdded) {
-                    headerContainer?.visibility = View.VISIBLE
-                    headerTitle?.text = getString(R.string.tab_playlists)
-                    headerSubtitle?.text = if (playlists.isEmpty()) "" else getString(R.string.playlists_count, playlists.size)
+                    headerContainer?.visibility = View.GONE
                     adapter?.playlists = playlists
                     if (playlists.isEmpty()) {
                         showEmpty(getString(R.string.empty_playlist), false)

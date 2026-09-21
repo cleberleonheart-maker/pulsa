@@ -11,72 +11,114 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Herói "avatar no meio" estilo TAMI -->
-        <LinearLayout
+        <!-- Deck holo: avatar flutuando sobre a borda e status em raio -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_header_grad"
-            android:gravity="center_horizontal"
-            android:orientation="vertical"
-            android:paddingTop="22dp"
-            android:paddingBottom="16dp">
+            android:background="@drawable/bg_deck"
+            android:layout_marginTop="46dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingTop="64dp"
+                android:paddingBottom="20dp">
+
+                <!-- Sobretítulo do deck -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="7dp"
+                        android:layout_height="7dp"
+                        android:background="@drawable/bg_nucleus" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="8dp"
+                        android:fontFamily="@font/outfit_semibold"
+                        android:letterSpacing="0.32"
+                        android:text="@string/app_name"
+                        android:textColor="@color/primary_light"
+                        android:textSize="11sp" />
+
+                    <View
+                        android:layout_width="7dp"
+                        android:layout_height="7dp"
+                        android:background="@drawable/bg_nucleus" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/hero_name"
+                    style="@style/TextAppearance.Pulsa.Title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:text="@string/dj_voice_name"
+                    android:textColor="@color/text_primary"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <!-- Raio de status (chip) -->
+                <TextView
+                    android:id="@+id/hero_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_status_chip"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="5dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Avatar flutuante: metade fora do deck -->
             <com.pulsa.player.ui.DancingVirginView
                 android:id="@+id/hero_avatar"
-                android:layout_width="112dp"
-                android:layout_height="112dp"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_marginTop="-46dp"
                 android:background="@drawable/bg_avatar"
                 android:contentDescription="@string/dj_voice_name"
-                android:elevation="8dp" />
+                android:elevation="10dp" />
+        </FrameLayout>
 
-            <TextView
-                android:id="@+id/hero_name"
-                style="@style/TextAppearance.Pulsa.Title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center"
-                android:text="@string/dj_voice_name"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/hero_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <!-- Bombar / Relaxar -->
+        <!-- Console segmentado Bombar / Relaxar -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_height="54dp"
+            android:layout_marginTop="16dp"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/btn_party"
                 android:layout_width="0dp"
-                android:layout_height="54dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/bg_btn_glow"
+                android:background="@drawable/seg_glow_l"
                 android:gravity="center"
                 android:text="@string/btn_party"
-                android:textColor="#052630"
+                android:textColor="#1E0433"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/btn_relax"
                 android:layout_width="0dp"
-                android:layout_height="54dp"
-                android:layout_marginStart="12dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/bg_btn_calm"
+                android:background="@drawable/seg_glow_r"
                 android:gravity="center"
                 android:text="@string/btn_relax"
-                android:textColor="#052630"
+                android:textColor="#04262E"
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -86,7 +128,7 @@
             android:id="@+id/cards_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="16dp"
             android:orientation="vertical" />
 
         <TextView
@@ -94,6 +136,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
+            android:gravity="center"
             android:text="@string/virgin_hub_note"
             android:textColor="@color/text_tertiary"
             android:textSize="12sp" />

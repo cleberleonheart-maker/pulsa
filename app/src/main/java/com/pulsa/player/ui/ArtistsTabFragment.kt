@@ -66,9 +66,7 @@ class ArtistsTabFragment : Fragment() {
             ThreadPool.onUi {
                 loading = false
                 if (isAdded) {
-                    headerContainer?.visibility = View.VISIBLE
-                    headerTitle?.text = getString(R.string.tab_artists)
-                    headerSubtitle?.text = if (artists.isEmpty()) "" else getString(R.string.artists_count, artists.size)
+                    headerContainer?.visibility = View.GONE
                     adapter?.artists = artists
                     if (artists.isEmpty()) {
                         showEmpty(getString(R.string.empty_no_music), false)

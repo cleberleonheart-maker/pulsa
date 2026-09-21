@@ -73,9 +73,7 @@ class FavoritesTabFragment : Fragment() {
             ThreadPool.onUi {
                 loading = false
                 if (isAdded) {
-                    headerContainer?.visibility = View.VISIBLE
-                    headerTitle?.text = getString(R.string.tab_favorites)
-                    headerSubtitle?.text = if (songs.isEmpty()) "" else getString(R.string.favorites_count, songs.size)
+                    headerContainer?.visibility = View.GONE
                     adapter?.songs = songs
                     adapter?.highlightId = Playback.currentSong?.id
                     val empty = songs.isEmpty()

@@ -136,7 +136,8 @@ object DjRecognizer {
                 val n = record.read(buf, 0, buf.size, AudioRecord.READ_BLOCKING)
                 if (n < 0) throw IllegalStateException("mic read failed ($n)")
                 if (n == 0) continue
-                buf.copyInto(samples, framesRead, 0, n)
+                val room = totalFrames - framesRead
+                buf.copyInto(samples, framesRead, 0, n.coerceAtMost(room))
                 framesRead += n
             }
         } catch (t: Throwable) {

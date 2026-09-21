@@ -76,6 +76,15 @@ object Account {
         return identifier.matches(Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"))
     }
 
+    fun setProvider(context: Context, provider: String) {
+        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString("provider", provider).apply()
+    }
+
+    fun provider(context: Context): String =
+        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString("provider", "") ?: ""
+
     fun looksLikePhone(identifier: String): Boolean {
         return identifier.length in 7..15 && identifier.all { it.isDigit() }
     }

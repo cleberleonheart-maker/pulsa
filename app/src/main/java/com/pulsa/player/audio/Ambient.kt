@@ -127,10 +127,13 @@ object Ambient {
             while (running) {
                 gen.invoke(buf, buf.size)
                 if (written < fade.size) {
-                    val f = fade[written].coerceAtMost(1f)
-                    for (i in buf.indices) buf[i] = (buf[i] * f).toInt().toShort()
-                    written += buf.size
+                for (i in buf.indices) {
+                    val idx = written + i
+                    if (idx >= fade.size) break
+                    buf[i] = (buf[i] * fade[idx]).toInt().toShort()
                 }
+                written += buf.size
+            }
                 t.write(buf, 0, buf.size)
             }
             for (i in 0 until buf.size.coerceAtMost(SAMPLE_RATE / 10)) buf[i] = 0

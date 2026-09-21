@@ -3,6 +3,14 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// "Login com Google" — Web client ID (do Google Cloud Console).
+// Configure em gradle.properties (googleWebClientId=...) ou na env GOOGLE_WEB_CLIENT_ID.
+val googleWebClientId: String = (
+    (project.findProperty("googleWebClientId") as String?)
+        ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
+        ?: ""
+)
+
 android {
     namespace = "com.pulsa.player"
     compileSdk = 34
@@ -11,8 +19,9 @@ android {
         applicationId = "com.pulsa.player"
         minSdk = 23
 targetSdk = 34
-        versionCode = 100
-        versionName = "4.11.1"
+        versionCode = 101
+        versionName = "4.12.0"
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
     buildFeatures {
@@ -61,5 +70,6 @@ dependencies {
     implementation("androidx.media3:media3-common:1.3.1")
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
     testImplementation("junit:junit:4.13.2")
 }
