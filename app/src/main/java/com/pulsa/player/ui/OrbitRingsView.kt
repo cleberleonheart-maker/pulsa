@@ -36,22 +36,22 @@ class OrbitRingsView @JvmOverloads constructor(
     private val ringOuter = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2f * density
-        color = 0x8846D6FF.toInt()
+        color = 0x8825F4EE.toInt()
     }
     private val ringInner = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1.3f * density
-        color = 0x5900E5FF.toInt()
+        color = 0x5925F4EE.toInt()
     }
     private val ringDash = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1f * density
-        color = 0x40FF2FD6.toInt()
+        color = 0x40FF2E9E.toInt()
     }
-    private val particleMagenta = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFF9BEA.toInt() }
-    private val particleMagentaGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66FF2FD6.toInt() }
-    private val particleCyan = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF46D6FF.toInt() }
-    private val particleCyanGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x6646D6FF.toInt() }
+    private val particleMagenta = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFF6BC4.toInt() }
+    private val particleMagentaGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66FF2E9E.toInt() }
+    private val particleCyan = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF25F4EE.toInt() }
+    private val particleCyanGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x6625F4EE.toInt() }
 
     private var animator: ValueAnimator? = null
     private var animated = true
