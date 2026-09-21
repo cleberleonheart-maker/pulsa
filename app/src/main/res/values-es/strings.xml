@@ -27,7 +27,12 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (4.12.0):
+    <string name="changelog">Novedades de esta versión (4.12.1):
+
+➜ ENTRAR
+• Inicio de sesión con Google activado: el botón "Iniciar sesión con Google" ahora aparece en el APK publicado (client ID configurado en gradle.properties)
+
+↺ Versión 4.12.0
 
 ➜ REDISEÑO
 • Tema Pulsar Neon: synthwave cinematográfico — noche púrpura con atardecer en rejilla de perspectiva, rosa eléctrico como color principal y cian de acento, nebulosas y brillos neón renovados en toda la app (entrada, inicio, listas, mini reproductor y fondos animados)
