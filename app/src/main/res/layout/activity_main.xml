@@ -27,25 +27,24 @@
             android:id="@+id/fragment_container"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1">
-
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/profile_avatar"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_gravity="top|end"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="14dp"
-                android:background="@drawable/bg_avatar"
-                android:contentDescription="@string/profile_title"
-                android:elevation="10dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_person"
-                app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full"
-                app:strokeColor="@color/neon_border_soft"
-                app:strokeWidth="1dp" />
-        </FrameLayout>
+            android:layout_weight="1" />
     </LinearLayout>
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/profile_avatar"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="66dp"
+        android:layout_marginEnd="14dp"
+        android:background="@drawable/bg_avatar"
+        android:contentDescription="@string/profile_title"
+        android:elevation="12dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_person"
+        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full"
+        app:strokeColor="@color/neon_border_soft"
+        app:strokeWidth="1dp" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_search"

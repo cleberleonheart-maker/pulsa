@@ -31,7 +31,14 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.9.0):
+    <string name="changelog">Novidades desta versão (4.11.0):
+
+→ NOVIDADES
+• Hero "avatar no meio" estilo TAMI: a Home da Virgínia agora abre com o avatar grande no centro (Virgin/Victor animada, piscando e balançando), com nome e status embaixo (● Tocando / ○ Pronto)
+• Toque no avatar do meio: ela cumprimenta; toque longo: abre a central de ban do administrador (banir/desbanir aparelhos)
+• Correção: o toque longo no avatar do topo às vezes não registrava (a tela ficava por cima dele) — agora o avatar responde em qualquer aba, e a central de ban funciona pelos dois lugares
+
+↺ Versão 4.9.0
 
 → NOVIDADES
 • Nova estrutura hub: o app abre na Home da Virgínia (sem barra de título) e a navegação sobe para o topo, em abas roláveis estilo web (Virgin · Músicas · Álbuns · Artistas · Favoritas · Vídeos · Playlists) no lugar da barra inferior
@@ -553,6 +560,10 @@
     <string name="tab_virgin">Virgin</string>
     <string name="virgin_hub_title">VIRGIN</string>
     <string name="virgin_hub_subtitle">Central de músicas e modos</string>
+    <string name="hero_status_playing">● Tocando</string>
+    <string name="hero_status_ready_m">○ Pronto</string>
+    <string name="hero_status_ready_f">○ Pronta</string>
+    <string name="hero_status_no_songs">○ Sem músicas ainda</string>
     <string name="virgin_hub_note">Cada card ativa uma função. As curiosidades da música continuam na locutora do DJ.</string>
     <string name="btn_party">Bombar</string>
     <string name="btn_relax">Relaxar</string>

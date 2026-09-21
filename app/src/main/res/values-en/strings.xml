@@ -27,7 +27,14 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.9.0):
+    <string name="changelog">What is new (4.11.0):
+
+➜ NEW
+• "Avatar in the middle" hero, TAMI style: the Virgin home now opens with the big avatar centered (animated Virgin/Victor, blinking and swaying), with name and status below (● Playing / ○ Ready)
+• Tap the middle avatar: she greets you; long-press: opens the admin ban panel (ban/unban devices)
+• Fix: long-press on the top avatar sometimes didn't register (screen content covered it) — now the avatar responds on any tab, and the ban panel works from both places
+
+↺ Version 4.9.0
 
 ➜ NEW
 • New hub layout: the app opens on the Virgin home (no title bar) and navigation moves to the top as scrollable web-style tabs (Virgin · Songs · Albums · Artists · Favorites · Videos · Playlists) instead of the bottom bar
@@ -506,6 +513,10 @@
     <string name="tab_virgin">Virgin</string>
     <string name="virgin_hub_title">VIRGIN</string>
     <string name="virgin_hub_subtitle">Music and modes hub</string>
+    <string name="hero_status_playing">● Playing</string>
+    <string name="hero_status_ready_m">○ Ready</string>
+    <string name="hero_status_ready_f">○ Ready</string>
+    <string name="hero_status_no_songs">○ No songs yet</string>
     <string name="virgin_hub_note">Each card activates a function. Music facts stay with the DJ host.</string>
     <string name="btn_party">Party</string>
     <string name="btn_relax">Relax</string>

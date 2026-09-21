@@ -1,5 +1,6 @@
 package com.pulsa.player.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -11,6 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.pulsa.player.BanActivity
 import com.pulsa.player.R
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Settings
@@ -54,14 +56,22 @@ class VirginHomeFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_virgin_home, container, false)
         view.findViewById<View>(R.id.btn_party).setOnClickListener { party() }
         view.findViewById<View>(R.id.btn_relax).setOnClickListener { relax() }
+        val hero = view.findViewById<View>(R.id.hero_avatar)
+        hero.setOnClickListener { speak(getString(R.string.dj_voice_greeting)) }
+        hero.setOnLongClickListener {
+            startActivity(Intent(requireContext(), BanActivity::class.java))
+            true
+        }
         buildCards(view.findViewById(R.id.cards_container))
         refresh()
+        renderHero(view)
         return view
     }
 
     override fun onResume() {
         super.onResume()
         refresh()
+        renderHero()
     }
 
     override fun onDestroyView() {
@@ -406,6 +416,29 @@ class VirginHomeFragment : Fragment() {
     }
 
     private fun settingsSongs(): Int = runCatching { Library.allSongs(requireContext()).size }.getOrDefault(0)
+
+    private fun renderHero() {
+        val v = view ?: return
+        renderHero(v)
+    }
+
+    private fun renderHero(view: View) {
+        val ctx = requireContext()
+        view.findViewById<TextView>(R.id.hero_name)?.text = Settings.assistantName(ctx)
+        view.findViewById<TextView>(R.id.hero_status)?.let { st ->
+            st.text = if (Playback.isPlaying) {
+                getString(R.string.hero_status_playing)
+            } else {
+                val n = settingsSongs()
+                when {
+                    n > 0 -> getString(
+                        if (Settings.masculineAvatar(ctx)) R.string.hero_status_ready_m else R.string.hero_status_ready_f
+                    )
+                    else -> getString(R.string.hero_status_no_songs)
+                }
+            }
+        }
+    }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 }

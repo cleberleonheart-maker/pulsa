@@ -27,7 +27,14 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (4.9.0):
+    <string name="changelog">Novedades de esta versión (4.11.0):
+
+➜ NOVEDADES
+• Hero "avatar en el centro" estilo TAMI: el inicio de Virgin ahora abre con el avatar grande en el centro (Virgin/Victor animada, parpadeando y meciéndose), con nombre y estado debajo (● Sonando / ○ Listo)
+• Toca el avatar del centro: ella saluda; toque prolongado: abre el panel de administrador (banear/desbanear equipos)
+• Corrección: el toque prolongado en el avatar de arriba a veces no registraba (la pantalla lo cubría) — ahora el avatar responde en cualquier pestaña, y el panel funciona desde los dos sitios
+
+↺ Versión 4.9.0
 
 ➜ NOVEDADES
 • Nueva estructura hub: la app abre en el inicio de Virgin (sin barra de título) y la navegación pasa arriba, con pestañas desplazables estilo web (Virgin · Canciones · Álbumes · Artistas · Favoritas · Vídeos · Playlists) en lugar de la barra inferior
@@ -506,6 +513,10 @@
     <string name="tab_virgin">Virgin</string>
     <string name="virgin_hub_title">VIRGIN</string>
     <string name="virgin_hub_subtitle">Central de música y modos</string>
+    <string name="hero_status_playing">● Sonando</string>
+    <string name="hero_status_ready_m">○ Listo</string>
+    <string name="hero_status_ready_f">○ Lista</string>
+    <string name="hero_status_no_songs">○ Aún sin canciones</string>
     <string name="virgin_hub_note">Cada tarjeta activa una función. Las curiosidades siguen en la locutora del DJ.</string>
     <string name="btn_party">Fiesta</string>
     <string name="btn_relax">Relajar</string>
