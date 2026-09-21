@@ -74,11 +74,13 @@ class DancingVirginView @JvmOverloads constructor(
         val cy = height * 0.52f
         computeSm()
 
-        val breathe = 0.5f + 0.5f * kotlin.math.sin(phase * 0.06f)
-        val bob = sm * (height * 0.06f) + breathe * height * 0.035f
-        val scale = 1f + sm * 0.07f
-        val rot = sin(phase) * 5f * (0.12f + sm)
-        val sway = cos(phase * 0.35f) * (2f + sm * 4f)
+        // Sem música: flutua suavemente subindo/descendo ~5dp a cada ~3s (estilo TAMI),
+        // com o blink do vector. Com música: a fase acelera e o corpo dança mais forte.
+        val float = 0.5f + 0.5f * sin(phase)
+        val bob = sm * (height * 0.09f) + float * height * 0.05f
+        val scale = 1f + sm * 0.06f
+        val rot = sin(phase) * (1f + sm * 4f)
+        val sway = cos(phase * 0.5f) * (2f + sm * 4f)
 
         canvas.save()
         canvas.translate(cw + sway, cy - bob)

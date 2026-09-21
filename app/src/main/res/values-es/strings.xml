@@ -27,7 +27,12 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (4.11.0):
+    <string name="changelog">Novedades de esta versión (4.11.1):
+
+➜ VISUAL
+• Virgin vive de verdad: el avatar flota subiendo y bajando (estilo TAMI) con el parpadeo de los ojos, siempre — y baila más fuerte al ritmo de la música
+
+↺ Versión 4.11.0
 
 ➜ NOVEDADES
 • Hero "avatar en el centro" estilo TAMI: el inicio de Virgin ahora abre con el avatar grande en el centro (Virgin/Victor animada, parpadeando y meciéndose), con nombre y estado debajo (● Sonando / ○ Listo)

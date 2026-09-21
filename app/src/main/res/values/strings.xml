@@ -31,7 +31,12 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.11.0):
+    <string name="changelog">Novidades desta versão (4.11.1):
+
+→ VISUAL
+• Virgínia vive mesmo: o avatar flutua subindo e descendo (estilo TAMI) com a piscada dos olhos, sempre — e dança mais forte no ritmo da música
+
+↺ Versão 4.11.0
 
 → NOVIDADES
 • Hero "avatar no meio" estilo TAMI: a Home da Virgínia agora abre com o avatar grande no centro (Virgin/Victor animada, piscando e balançando), com nome e status embaixo (● Tocando / ○ Pronto)

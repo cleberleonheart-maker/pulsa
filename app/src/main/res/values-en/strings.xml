@@ -27,7 +27,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.11.0):
+    <string name="changelog">What is new (4.11.1):
+
+➜ LOOK
+• Virgin feels alive: the avatar floats up and down (TAMI style) with blinking eyes, always — and dances harder in the rhythm of the music
+
+↺ Version 4.11.0
 
 ➜ NEW
 • "Avatar in the middle" hero, TAMI style: the Virgin home now opens with the big avatar centered (animated Virgin/Victor, blinking and swaying), with name and status below (● Playing / ○ Ready)
