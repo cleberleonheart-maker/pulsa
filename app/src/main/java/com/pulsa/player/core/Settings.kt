@@ -63,7 +63,8 @@ object Settings {
     const val SKIN_NEON = "neon"
     const val SKIN_AURORA = "aurora"
     const val SKIN_PARTICLES = "particles"
-    val SKIN_ORDER = arrayOf(SKIN_OFF, SKIN_NEON, SKIN_AURORA, SKIN_PARTICLES)
+    const val SKIN_NEBULA = "nebula"
+    val SKIN_ORDER = arrayOf(SKIN_OFF, SKIN_NEON, SKIN_AURORA, SKIN_PARTICLES, SKIN_NEBULA)
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)

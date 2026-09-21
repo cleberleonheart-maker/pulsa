@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.RadialGradient
 import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
@@ -77,6 +78,7 @@ class MusicShaderView @JvmOverloads constructor(
         when (Settings.skin(context)) {
             Settings.SKIN_AURORA -> drawAurora(canvas)
             Settings.SKIN_PARTICLES -> drawParticles(canvas)
+            Settings.SKIN_NEBULA -> drawNebula(canvas)
             else -> if (Settings.skin(context) != Settings.SKIN_OFF) drawNeon(canvas)
         }
     }
@@ -141,6 +143,53 @@ class MusicShaderView @JvmOverloads constructor(
     }
 
     private fun accentColor(): Int = androidx.core.content.ContextCompat.getColor(context, R.color.primary)
+
+    // Nebulosas: nuvens radiais coloridas em precessão (matiz gira com o tempo) que
+    // pulsam com o nível da música — "viagem pelas nebulosas" estilo Nebula.
+    private val nebulaPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val nebulaCenters = arrayOf(
+        floatArrayOf(0.20f, 0.32f, 0.42f),
+        floatArrayOf(0.82f, 0.42f, 0.34f),
+        floatArrayOf(0.55f, 0.16f, 0.38f),
+        floatArrayOf(0.34f, 0.78f, 0.30f),
+        floatArrayOf(0.76f, 0.82f, 0.27f)
+    )
+
+    private fun drawNebula(canvas: Canvas) {
+        val pulse = level.coerceIn(0f, 1f)
+        val wMul = (1 + 0.55f * pulse)
+        for (i in nebulaCenters.indices) {
+            val c = nebulaCenters[i]
+            val sign = if (i % 2 == 0) 1f else -1f
+            val cx = c[0] * w + t * w * 0.05f * sign
+            val cy = c[1] * h + t * h * 0.03f * sign
+            val r = c[2] * w * wMul
+            val hue = (i * 137.508f + t * 55f + pulse * 25f) % 360f
+            val alpha = (20 + 90 * pulse * (0.35f + 0.65f * (i % 3) / 2f)).toInt().coerceIn(16, 110)
+            nebulaPaint.shader = RadialGradient(
+                cx, cy, r,
+                intArrayOf(
+                    Color.HSVToColor(alpha, floatArrayOf(hue, 0.8f, 0.95f)),
+                    Color.HSVToColor(6, floatArrayOf((hue + 40f) % 360f, 0.7f, 0.55f))
+                ),
+                null,
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawOval(cx - r, cy - r, cx + r, cy + r, nebulaPaint)
+        }
+        // Núcleo brilhante no centro, cresce com a batida
+        val coreHue = (t * 55f + 200f) % 360f
+        val cr = (w * 0.16f) * (1f + pulse)
+        nebulaPaint.shader = RadialGradient(
+            w * 0.5f, h * 0.42f, cr,
+            intArrayOf(
+                Color.HSVToColor((40 + 110 * pulse).toInt().coerceIn(20, 140), floatArrayOf(coreHue, 0.9f, 1f)),
+                Color.HSVToColor(0, floatArrayOf(coreHue, 0.8f, 0.5f))
+            ),
+            null, Shader.TileMode.CLAMP
+        )
+        canvas.drawOval(w * 0.5f - cr, h * 0.42f - cr * 0.75f, w * 0.5f + cr, h * 0.42f + cr * 0.75f, nebulaPaint)
+    }
 
     fun startTween() {
         if (animator?.isRunning == true) return

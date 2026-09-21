@@ -27,7 +27,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.12.1):
+    <string name="changelog">What is new (4.13.0):
+
+➜ LOOK
+• Nebula theme: new visual for the sound effects — "Virgin, change the look" now includes the nebula: 5 colorful clouds spinning in precession that pulse with the beat and a bright core that grows with the music, a trip through the nebulae in the style of Nebula Music Visualizer
+
+↺ Version 4.12.1
 
 ➜ SIGN IN
 • Google sign-in enabled: the "Sign in with Google" button now shows in the published APK (client ID configured in gradle.properties)
@@ -524,6 +529,7 @@
     <string name="skin_neon">Neon theme on.</string>
     <string name="skin_aurora">Aurora theme on.</string>
     <string name="skin_particles">Particles theme on.</string>
+    <string name="skin_nebula">Nebula theme on.</string>
     <string name="dj_radio">Radio host (fun facts between songs)</string>
     <string name="sect_dj_radio">Radio host</string>
 

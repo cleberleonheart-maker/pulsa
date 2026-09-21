@@ -771,6 +771,7 @@ class MainVirgin(
         Settings.SKIN_NEON -> R.string.skin_neon
         Settings.SKIN_AURORA -> R.string.skin_aurora
         Settings.SKIN_PARTICLES -> R.string.skin_particles
+        Settings.SKIN_NEBULA -> R.string.skin_nebula
         else -> R.string.skin_off
     })
 
