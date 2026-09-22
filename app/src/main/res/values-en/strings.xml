@@ -30,7 +30,14 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.0.2):
+    <string name="changelog">What is new (5.0.3):
+
+→ AVATAR ICON
+• App icon and splash now have the same cute face (round eyes + wide smile) as the avatars
+
+↺ Version 5.0.2
+
+What is new (5.0.2):
 
 → TAMI AVATAR
 • Both avatars (Virgin and Victor), the icon and the splash are now fully aurora violet like the radio — no blue/green left
