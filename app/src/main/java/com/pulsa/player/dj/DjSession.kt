@@ -67,6 +67,7 @@ class DjSession(
         const val REQ_STORAGE = 1002
         private const val RESUME_LISTENER_DELAY_MS = 800L
         private const val CHAIN_DELAY_MS = 1800L
+        private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
     }
 
     private val launcher = launchers
@@ -98,6 +99,7 @@ class DjSession(
     private var pendingRecognize = false
     private var resumeAfterRecognize = false
     private var lastSpeechEndMs = 0L
+    private var activeLang = ""
     private val resumeListenerRunnable = Runnable { resumeListener() }
     private val uiHandler = Handler(Looper.getMainLooper())
     private val chainHandler = Handler(Looper.getMainLooper())
@@ -320,6 +322,60 @@ class DjSession(
                 host.resetCrossfader()
                 host.render()
                 speak(activity.getString(R.string.dj_voice_start, set.size))
+            }
+        }
+    }
+
+    fun startMonthMix() {
+        if (!Permissions.hasAccess(activity)) {
+            Toast.makeText(activity, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+            return
+        }
+        val activeIntensity = intensity
+        host.setMixBusy(true)
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val songs = Library.allSongs(ctx)
+            val favIds = runCatching {
+                PlaylistDb.get(ctx).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val monthFavs = runCatching {
+                PlaylistDb.get(ctx).favoritesLikedSince(System.currentTimeMillis() - MONTH_MS)
+            }.getOrDefault(emptyList())
+            val pool = if (monthFavs.size >= 3) monthFavs else songs.filter { it.id in favIds }
+            val learn = DjLearn.learn(ctx)
+            val set = DjEngine.build(
+                pool, favIds, DjEngine.Source.FAVORITES,
+                when (activeIntensity) {
+                    Settings.DJ_CALM -> DjEngine.Intensity.CALM
+                    Settings.DJ_WILD -> DjEngine.Intensity.WILD
+                    else -> DjEngine.Intensity.BALANCED
+                },
+                learn,
+                exclude = DjSessionMemory.recentIds()
+            )
+            ThreadPool.onUi {
+                host.setMixBusy(false)
+                if (set.isEmpty()) {
+                    Toast.makeText(activity, R.string.dj_empty, Toast.LENGTH_LONG).show()
+                    return@onUi
+                }
+                Telemetry.log(activity, "DJ Virgin mix month-favs n=${set.size}")
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
+                djActive = true
+                DjSessionMemory.notePlayed(set.map { it.id })
+                learnId = -1L
+                lastCompleted = false
+                suppressNextLearnSkip = false
+                Playback.start(set, 0)
+                host.resetCrossfader()
+                host.render()
+                speak(
+                    if (pool === monthFavs) say(R.string.dj_voice_month_favs, set.size)
+                    else say(R.string.dj_voice_month_favs_fallback, set.size)
+                )
             }
         }
     }
@@ -628,7 +684,7 @@ class DjSession(
         if (activity.isFinishing || activity.isDestroyed) return
         if (Settings.djVoice(activity)) {
             pauseListener()
-            djVoice?.speak(text) {
+            djVoice?.speak(text, activeLang.takeIf { it in arrayOf("en", "es") }) {
                 lastSpeechEndMs = SystemClock.elapsedRealtime()
                 ThreadPool.onUi {
                     if (!holdEnabled) uiHandler.postDelayed(resumeListenerRunnable, RESUME_LISTENER_DELAY_MS)
@@ -639,6 +695,22 @@ class DjSession(
             resumeListener()
             onDone?.invoke()
         }
+    }
+
+    /** String de voz no idioma da pergunta; cai para o idioma do app se faltar. */
+    private fun say(resId: Int, vararg args: Any?): String {
+        if (activeLang !in arrayOf("en", "es")) return activity.getString(resId, *args)
+        val ctx = reactCtx()
+        return runCatching { ctx.getString(resId, *args) }.getOrElse { activity.getString(resId, *args) }
+    }
+
+    private fun reactCtx(): android.content.Context {
+        if (activeLang !in arrayOf("en", "es")) return activity
+        return runCatching {
+            val conf = android.content.res.Configuration(activity.resources.configuration)
+            conf.setLocale(java.util.Locale.forLanguageTag(activeLang))
+            activity.createConfigurationContext(conf)
+        }.getOrNull() ?: activity
     }
 
     private fun pauseListener() {
@@ -696,6 +768,7 @@ class DjSession(
 
     private fun dispatchVoiceCommand(text: String) {
         if (activity.isFinishing || activity.isDestroyed) return
+        activeLang = DjCommander.languageOf(text)
         val norm = DjCommander.norm(text)
         val chainParts = DjCommander.chain(norm)
         if (chainParts.size == 2) {
@@ -708,7 +781,7 @@ class DjSession(
         val hasWake = DjCommander.hasWake(norm)
         val action = DjCommander.action(norm)
         if (action == null) {
-            if (hasWake) speak(activity.getString(R.string.dj_voice_unknown))
+            if (hasWake) speak(say(R.string.dj_voice_unknown))
             return
         }
         if (action !in setOf("confirm", "cancel", "delete")) {
@@ -717,9 +790,10 @@ class DjSession(
         }
         when (action) {
             "mix" -> {
-                speak(activity.getString(R.string.dj_voice_mix))
+                speak(say(R.string.dj_voice_mix))
                 startMix()
             }
+            "month_favs" -> startMonthMix()
             "memory_save" -> voiceMemorySave(norm)
             "memory_recall" -> voiceMemoryRecall(norm)
             "mood_wild" -> startWildMix()
@@ -727,7 +801,7 @@ class DjSession(
             "repeat" -> {
                 val on = !Playback.repeatOne
                 Playback.setRepeatOne(on)
-                speak(activity.getString(
+                speak(say(
                     if (on) R.string.dj_voice_repeat_on else R.string.dj_voice_repeat_off
                 ))
             }
@@ -743,7 +817,7 @@ class DjSession(
                     DjLearn.recordSkip(activity.applicationContext, cur.id)
                     suppressNextLearnSkip = true
                 }
-                speak(DjReactions.skip(activity))
+                speak(DjReactions.skip(reactCtx()))
                 if (Playback.queue.isNotEmpty()) Playback.next() else startMix()
             }
             "dislike" -> {
@@ -752,29 +826,29 @@ class DjSession(
                     DjLearn.recordDislike(activity.applicationContext, cur.id)
                     suppressNextLearnSkip = true
                 }
-                speak(DjReactions.dislike(activity))
+                speak(DjReactions.dislike(reactCtx()))
                 if (Playback.queue.isNotEmpty()) Playback.next() else startMix()
             }
             "next" -> {
-                speak(DjReactions.next(activity))
+                speak(DjReactions.next(reactCtx()))
                 if (Playback.queue.isNotEmpty()) Playback.next() else startMix()
             }
             "prev" -> {
-                speak(activity.getString(R.string.dj_voice_prev))
+                speak(say(R.string.dj_voice_prev))
                 Playback.prev()
             }
             "pause" -> {
                 djVoice?.stop()
                 if (Playback.isPlaying) {
                     Playback.toggle()
-                    speak(activity.getString(R.string.dj_voice_pause))
+                    speak(say(R.string.dj_voice_pause))
                 }
             }
             "play" -> {
                 djVoice?.stop()
                 if (!Playback.isPlaying && Playback.queue.isNotEmpty()) {
                     Playback.toggle()
-                    speak(activity.getString(R.string.dj_voice_play))
+                    speak(say(R.string.dj_voice_play))
                 }
             }
             "resume" -> resumeLastSession()
@@ -787,15 +861,15 @@ class DjSession(
                     db.setFavorite(cur, nextValue)
                     if (nextValue) DjLearn.recordLiked(activity.applicationContext, cur.id)
                     Toast.makeText(activity, R.string.dj_voice_fav, Toast.LENGTH_SHORT).show()
-                    speak(if (nextValue) DjReactions.like(activity) else DjReactions.unliked(activity))
+                    speak(if (nextValue) DjReactions.like(reactCtx()) else DjReactions.unliked(reactCtx()))
                 }
             }
             "info" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {
-                    speak(activity.getString(R.string.dj_voice_track, cur.artist, cur.title))
+                    speak(say(R.string.dj_voice_track, cur.artist, cur.title))
                 } else {
-                    speak(activity.getString(R.string.dj_voice_unknown))
+                    speak(say(R.string.dj_voice_unknown))
                 }
             }
             "scan" -> scanLibrary()
@@ -809,7 +883,7 @@ class DjSession(
                 if (cur == null) {
                     pendingDelete = null
                     uiHandler.removeCallbacksAndMessages(null)
-                    speak(activity.getString(R.string.dj_voice_delete_no_song))
+                    speak(say(R.string.dj_voice_delete_no_song))
                 } else if (pendingDelete?.id == cur.id) {
                     pendingDelete = null
                     uiHandler.removeCallbacksAndMessages(null)
@@ -818,7 +892,7 @@ class DjSession(
                     pendingDelete = cur
                     uiHandler.removeCallbacksAndMessages(null)
                     uiHandler.postDelayed({ pendingDelete = null }, 15000)
-                    speak(activity.getString(R.string.dj_voice_delete_confirm, cur.title))
+                    speak(say(R.string.dj_voice_delete_confirm, cur.title))
                 }
             }
             "confirm" -> {
@@ -836,11 +910,11 @@ class DjSession(
                 if (pendingPendriveFiles != null) {
                     pendingPendriveFiles = null
                     uiHandler.removeCallbacksAndMessages(null)
-                    speak(activity.getString(R.string.dj_voice_pen_cancel))
+                    speak(say(R.string.dj_voice_pen_cancel))
                 } else {
                     pendingDelete = null
                     uiHandler.removeCallbacksAndMessages(null)
-                    speak(activity.getString(R.string.dj_voice_delete_cancel))
+                    speak(say(R.string.dj_voice_delete_cancel))
                 }
             }
             "suggest" -> suggestSong()
@@ -852,10 +926,10 @@ class DjSession(
             "dedicate" -> {
                 val name = DjCommander.dedicatee(norm)
                 if (name.isNullOrBlank()) {
-                    speak(activity.getString(R.string.dj_voice_dedicate_ask))
+                    speak(say(R.string.dj_voice_dedicate_ask))
                 } else {
                     DjDedication.pending = name
-                    speak(activity.getString(R.string.dj_voice_dedicate_ok, name))
+                    speak(say(R.string.dj_voice_dedicate_ok, name))
                 }
             }
             "thanks" -> speak(activity.getString(R.string.dj_voice_thanks))

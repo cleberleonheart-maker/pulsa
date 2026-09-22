@@ -9,7 +9,7 @@ import com.pulsa.player.model.Song
 import com.pulsa.player.model.SongMeta
 
 class PlaylistDb private constructor(context: Context) :
-    SQLiteOpenHelper(context.applicationContext, "pulsa.db", null, 5) {
+    SQLiteOpenHelper(context.applicationContext, "pulsa.db", null, 6) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -40,7 +40,8 @@ class PlaylistDb private constructor(context: Context) :
                 "artist TEXT, " +
                 "album TEXT, " +
                 "album_id INTEGER, " +
-                "duration INTEGER)"
+                "duration INTEGER, " +
+                "liked_at INTEGER NOT NULL DEFAULT 0)"
         )
         db.execSQL(
             "CREATE TABLE song_meta (" +
@@ -78,6 +79,9 @@ class PlaylistDb private constructor(context: Context) :
                     "artist TEXT, " +
                     "album TEXT)"
             )
+        }
+        if (oldVersion < 6) {
+            db.execSQL("ALTER TABLE favorites ADD COLUMN liked_at INTEGER NOT NULL DEFAULT 0")
         }
     }
 
@@ -265,11 +269,38 @@ class PlaylistDb private constructor(context: Context) :
                 put("album", song.album)
                 put("album_id", song.albumId)
                 put("duration", song.durationMs)
+                put("liked_at", System.currentTimeMillis())
             }
             db.insertWithOnConflict("favorites", null, values, SQLiteDatabase.CONFLICT_REPLACE)
         } else {
             db.delete("favorites", "song_id = ?", arrayOf(song.id.toString()))
         }
+    }
+
+    fun favoritesLikedSince(sinceMs: Long): List<Song> {
+        val out = mutableListOf<Song>()
+        val db = readableDatabase
+        db.query(
+            "favorites",
+            arrayOf("song_id", "path", "title", "artist", "album", "album_id", "duration"),
+            "liked_at >= ?",
+            arrayOf(sinceMs.toString()),
+            null, null, "liked_at DESC"
+        ).use { c ->
+            while (c.moveToNext()) {
+                out += Song(
+                    id = c.getLong(0),
+                    title = c.getString(2) ?: "",
+                    artist = c.getString(3) ?: "Artista desconhecido",
+                    album = c.getString(4) ?: "Desconhecido",
+                    albumId = c.getLong(5),
+                    durationMs = c.getLong(6),
+                    path = c.getString(1) ?: "",
+                    year = 0
+                )
+            }
+        }
+        return out
     }
 
     fun favorites(): List<Song> {

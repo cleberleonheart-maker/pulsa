@@ -137,6 +137,30 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Seção: efeitos visuais (skin rápida) -->
+        <TextView
+            android:id="@+id/home_section_skin"
+            style="@style/TextAppearance.Pulsa.TitleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/home_skin_title"
+            android:textColor="@color/primary_light" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/skin_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
         <!-- Card "Tocando agora" / continuar de onde parou -->
         <LinearLayout
             android:id="@+id/resume_card"
@@ -205,6 +229,33 @@
                 android:src="@drawable/ic_arrow_forward"
                 android:tint="@color/text_tertiary" />
         </LinearLayout>
+
+        <!-- Seção: adicionadas recentemente -->
+        <TextView
+            android:id="@+id/home_section_recent"
+            style="@style/TextAppearance.Pulsa.TitleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/home_recent_title"
+            android:textColor="@color/primary_light"
+            android:visibility="gone" />
+
+        <HorizontalScrollView
+            android:id="@+id/recents_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/recents_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
 
         <!-- Seção: sua biblioteca (atalhos) -->
         <TextView

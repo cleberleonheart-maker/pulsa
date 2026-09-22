@@ -32,150 +32,28 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.0.3):
+    <string name="changelog">Novidades desta versão (5.4.0):
 
-→ ÍCONE DO AVATAR
-• Ícone do app e splash ganharam o mesmo rosto fofo (olhos redondos + sorriso largo) dos avatares
+→ VIRGIN ENTENDE SEU IDIOMA
+• Ela responde na língua que você falar (português, inglês ou espanhol)
 
-↺ Versão 5.0.2
+→ CURTIDAS DO MÊS
+• "Virgin, favoritas do mês" — mix com o que você curtiu nos últimos 30 dias
 
-Novidades desta versão (5.0.2):
+→ LETRAS EM TEMPO REAL
+• Na tela Agora tocando, as letras acompanham a música enquanto toca (toque para ver todas)
 
-→ AVATAR TAMI
-• Os dois avatares (Virgin e Victor), o ícone e o splash ficaram na cor do Rádio: violeta aurora por inteiro (cabeça e corpo), sem azul/verde
-• Rosto novo: olhos redondos com brilho e sorriso largo e curvo — mais fofo
+→ RECENTES NA HOME
+• Seção "Adicionadas recentemente" com as suas músicas mais novas
 
-↺ Versão 5.0.1
+→ SKINS NA HOME
+• Troque o visual do player direto na home: Neon, Aurora, Partículas, Nebulosa ou sem efeito
 
-Novidades desta versão (5.0.1):
+→ BARRAS SEMPRE ATIVAS
+• O mini visualizador da tela de reprodução fica sempre visível
 
-→ VISUAL DO AVATAR
-• Home sem painel: o avatar agora fica livre e inteiro, sem a bandeja atrás (não corta mais a figura)
-• Nova cor: o avatar trocou o verde-limão pela violeta aurora, combinando com o tema — também no ícone e no splash
-
-↺ Versão 5.0.0
-
-Novidades desta versão (5.0.0):
-
-→ ESQUELETO NOVO
-• Navegação por barra inferior: Virgin, Músicas, Biblioteca, Buscar e Perfil — sem mais a tira de abas no topo
-• Biblioteca como hub: álbuns, artistas, favoritos, playlists e vídeos num só lugar com chips de seção
-• Tocando agora em tela própria: player abre por cima da navegação, com toolbar e voltar próprios
-• Home nova: botão de saudação do avatar (👋 Bom dia/Boa tarde/Boa noite — o avatar fala com você) e atalhos rápidos para Biblioteca, Mix virgem, Sono, Rádio Virgin FM, Estatísticas e Mais
-• Rádio Virgin FM: abre tocando primeiro a música favorita do avatar (a mais tocada por você) e anuncia — a favorita também aparece no deck
-• DJ e Rádio saíram da toolbar e entraram na Home; Playlists virou seção da Biblioteca
-
-↺ Versão 4.14.0
-
-Novidades desta versão (4.14.0):
-
-→ NOVA CARA
-• Terminal Radar: repaginação completa — a Pulsa deixou o synthwave. Identidade de terminal: lima fosforescente + rubi de alerta sobre preto-esverdeado (sem mais rosa, roxo ou ciano)
-• Chassi chanfrado: painéis e cards com canto cortado a 45° (chanfro terminal) por toda a interface — álbuns, músicas, listas, mini player em pod, nav, deck, telas do DJ, perfil e timeline; inputs e rows chanfrados
-• Céu de varredura: fundo com retículo de travação, blips de alvo e horizonte em grid de perspectiva; sweep de radar animado girando nos anéis da tela de reprodução
-• Avatares novos: Victor com cabelo verde-radar e mecha lima, Virgínia com visor lima — ícones de launcher e splash na nova identidade
-• HUD de terminal: rótulo monoespaçado na Home da Virgínia
-
-↺ Versão 4.13.1
-
-Novidades desta versão (4.13.1):
-
-→ VISUAL
-• Diálogo de atualização no tema Neon: ao baixar uma nova versão, o progresso agora aparece numa barra customizada arredondada do visual Pulsar Neon (roxo/rosa) em vez do diálogo padrão do Android, bem no clima do app
-
-↺ Versão 4.13.0
-
-→ VISUAL
-• Tema Nebulosa:  novo visual do efeito sonoro — \"Virgin, troca o visual\" agora inclui a nebulosa: 5 nuvens coloridas girando em precessão que pulsam com a batida e um núcleo brilhante que cresce na música, viagem pelas nebulosas estilo Nebula Music Visualizer
-
-↺ Versão 4.12.1
-
-→ ENTRAR
-• Login com Google ativado: o botão \"Entrar com Google\" agora aparece no APK publicado (client ID configurado em gradle.properties)
-
-↺ Versão 4.12.0
-
-→ REDESIGN
-• Tema Pulsar Neon: synthwave cinematográfico — noite púrpura com poente em grade de perspectiva, rosa elétrico como cor principal e ciano como acento, nébulas e brilhos neon renovados em todo o app (login, home, listas, mini player e fundos animados)
-
-→ REWIND
-• Pulsa Rewind: resumo da sua música (Perfil → Pulsa Rewind) com Top 10, toques/tempo/músicas, primeira faixa do período, gráficos por mês/dia da semana/hora e fatos (melhor dia, hora de pico e coruja da noite) — filtros de Sempre / 30 dias / 7 dias; tocar um item reproduz o pódio em ordem
-
-→ ENTRAR
-• Login com Google: botão \"Entrar com Google\" na tela de entrada — conta criada com o seu e-mail do Google de forma segura (token verificado)
-• Virgínia sugere música: \"Virgin, sugere uma música\" — ela recomenda do seu gosto; \"Virgin, quem é você\" apresenta a identidade
-
-→ CORREÇÕES
-• Som ambiente: fade de entrada do som da natureza corrigido (antes pulava trecho); DJ reconhecer com microfone limitado não estoura mais o buffer
-• MD5 corrigido em Last.fm/letras/telemetria (bytes negativos viravam hex errado — scrobble/letra/hash quebrados)
-• Sono: \"no fim da faixa\" agora para de verdade ao terminar a música; ativar Repetir tudo desliga Repetir uma; pausa que não era por foco de áudio não solta mais o som no modo rádio
-• Mini player/fluxos sincronizam na tela principal (sem correria de threads) e avisos de atualização/ban não abrem mais por cima de tela fechada
-
-↺ Versão 4.11.1
-
-→ VISUAL
-• Virgínia vive mesmo: o avatar flutua subindo e descendo (estilo TAMI) com a piscada dos olhos, sempre — e dança mais forte no ritmo da música
-
-↺ Versão 4.11.0
-
-→ NOVIDADES
-• Hero "avatar no meio" estilo TAMI: a Home da Virgínia agora abre com o avatar grande no centro (Virgin/Victor animada, piscando e balançando), com nome e status embaixo (● Tocando / ○ Pronto)
-• Toque no avatar do meio: ela cumprimenta; toque longo: abre a central de ban do administrador (banir/desbanir aparelhos)
-• Correção: o toque longo no avatar do topo às vezes não registrava (a tela ficava por cima dele) — agora o avatar responde em qualquer aba, e a central de ban funciona pelos dois lugares
-
-↺ Versão 4.9.0
-
-→ NOVIDADES
-• Nova estrutura hub: o app abre na Home da Virgínia (sem barra de título) e a navegação sobe para o topo, em abas roláveis estilo web (Virgin · Músicas · Álbuns · Artistas · Favoritas · Vídeos · Playlists) no lugar da barra inferior
-• Mini player flutuante em cápsula + botão de busca flutuante; tema planetário e funções mantidos
-• Rádio Virgin/Victor: o rádio da sua biblioteca agora usa o nome do avatar atual (Virgin ou Victor) na tela, no card e nas falas — o rádio de estações continua igual
-• Painel do administrador: banir/desbanir dispositivos direto do app — escondido, toque longo no avatar (login por token, lista de aparelhos e Banir/Desbanir)
-
-↺ Versão 4.8.4
-
-→ VISUAL
-• Tema Cyanwave (estilo da versão web): fundo navy com nébulas ciano, destaque ciano elétrico, acentos magenta/roxo e cartões de vidro em todo o app
-• Universo espacial mantido: planeta com anel, lua, órbitas animadas, scanner holográfico e cockpit na barra inferior — agora nas cores da web
-• Configurações e funções intactas
-
-↺ Versão 4.8.3
-
-→ CORREÇÃO
-• Tela inicial voltou a abrir: a aba Virgin (6ª) estourava a barra inferior (limite de 5 itens do BottomNavigation); agora ela fica num card na toolbar (ícone casa) e a barra voltou para todos
-
-↺ Versão 4.8.2
-
-→ NOVIDADES
-• Set do dia: "Virgin, set do dia" monta um set escolhido só para hoje (muda a cada dia, prioriza favoritas)
-• Dedicação: "Virgin, dedica a próxima pra..." — ela fala a dedicatória antes da faixa
-• Contagem da biblioteca: "Virgin, quantas músicas eu tenho" — ela responde o total
-
-↺ Versão 4.8.1
-• Avatar masculino: a Virgin agora tem um par — Victor. Troque no card Avatar da tela inicial: o visual blue ciano e a voz mudam juntos, e cada avatar tem seu próprio nome (Virgin / Victor)
-• Comando "Virgin, quem é você" e as saudações usam o nome do avatar atual
-
-↺ Versão 4.8.0
-• Home Virgin no modelo do Tami: primeira aba com cards de idioma, voz, comando de voz, Rádio Virgin FM, sono, recomendar, estatísticas e escaneia aparelho, além dos botões Bombar/Relaxar — tudo no visual espacial/futurista (sem card de curiosidade, que já fica na locutora)
-• Voz corrigida: a sigla "DJ" agora é sempre falada junto ("djei"), sem depender do aparelho soletrar
-
-↺ Versão 4.7.0
-• Rádio Virgin FM: novo modo rádio no menu (no estilo do Tami FM) — embaralha todas as suas músicas e toca sem parar, com saudação e hora em ponto a cada virada de hora
-
-↺ Versão 4.6.0
-• Virgin Reativa: agora ela comemora um like, zoa um skip/dislike e troca o "próxima" — resposta variada em pt/en/es
-• Comando encadeado: "Virgin, toca e depois pausa" — duas ações numa fala só
-• Sem repetir na sessão: músicas já tocadas saem dos próximos mixes enquanto o app está aberto
-• Mix dormir com fade-out: o set CALM toca uma vez e o volume diminui suavemente em vez de repetir ou parar seco
-• "Virgin, o que toquei ontem" — ela lista as faixas do dia anterior pelo histórico
-
-↺ Versão 4.5.0
-• Fusão espacial (quase igual ao Tami): fundo com planeta anelado, lua e nébulas violeta/magenta/ciano em todo o app
-• Mini-player virou cápsula de órbita: anel ao redor da arte e play brilhando como núcleo de energia
-• Tela Agora tocando ganhou anéis de órbita animados em volta do álbum e do play, com scanner holográfico
-• Nav inferior estilo cockpit: faróis ciano/magenta e linha de energia no topo
-• Abas e cabeçalhos esquadriados com grid holográfico e cartões de vidro flutuantes nas listas
-• Títulos com espaçamento futurista e indicador de aba em cápsula
-• Configurações, avatar da Virgínia e todas as funções mantidas intactas</string>
+→ BACKUP DAS CONFIGURAÇÕES
+• Nas Configurações, salve e restaure aprendizado, memórias e equalizador</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
@@ -497,6 +375,8 @@ Novidades desta versão (4.13.1):
     <string name="dj_voice_resume_none">Não encontrei quando você parou da última vez. Me peça para tocar uma música e eu começo agora!</string>
     <string name="dj_voice_mix">Claro! Preparando um mix novo para você.</string>
     <string name="dj_voice_fav">Marcada como favorita!</string>
+    <string name="dj_voice_month_favs">Bora! Tocando %d favoritas desse mês.</string>
+    <string name="dj_voice_month_favs_fallback">Juntei %d das suas favoritas.</string>
     <string name="dj_voice_thanks">Por nada! A gente se vê na próxima.</string>
     <string name="dj_voice_goodbye">Até mais! Qualquer coisa é só chamar.</string>
     <string name="dj_voice_unknown">Desculpa, não entendi. Tente dizer: Virgin, próxima música.</string>
@@ -693,6 +573,13 @@ Novidades desta versão (4.13.1):
     <string name="virgin_hub_note">Cada card ativa uma função. As curiosidades da música continuam na locutora do DJ.</string>
     <string name="home_library_title">Sua biblioteca</string>
     <string name="home_assistant_title">Assistente</string>
+    <string name="home_recent_title">Adicionadas recentemente</string>
+    <string name="home_skin_title">Efeitos visuais</string>
+    <string name="skin_short_off">Off</string>
+    <string name="skin_short_neon">Neon</string>
+    <string name="skin_short_aurora">Aurora</string>
+    <string name="skin_short_particles">Partículas</string>
+    <string name="skin_short_nebula">Nebulosa</string>
     <string name="btn_party">Bombar</string>
     <string name="btn_relax">Relaxar</string>
     <string name="v_language">Idioma</string>
@@ -826,6 +713,14 @@ Novidades desta versão (4.13.1):
     <string name="mirror_left">Saiu da sessão</string>
     <string name="mirror_error">Não foi possível falar com o servidor</string>
     <string name="mirror_not_found">Esta música não está na sua biblioteca: %1$s</string>
+    <string name="backup_title">Fazer backup</string>
+    <string name="backup_subtitle">Guarda o aprendizado, memórias e equalizador em um arquivo</string>
+    <string name="restore_title">Restaurar backup</string>
+    <string name="restore_subtitle">Aplica um arquivo de backup salvo antes</string>
+    <string name="backup_done">Backup salvo!</string>
+    <string name="backup_failed">Não foi possível salvar o backup</string>
+    <string name="restore_done">Backup restaurado!</string>
+    <string name="restore_failed">Arquivo inválido ou sem dados do PULSA</string>
     <string name="server_title">Servidor</string>
     <string name="server_default">Automático (rede local / padrão)</string>
     <string name="server_hint">https://seu-servidor:8081</string>

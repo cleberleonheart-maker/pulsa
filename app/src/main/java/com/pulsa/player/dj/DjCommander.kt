@@ -33,6 +33,44 @@ object DjCommander {
             .trim()
     }
 
+    // ----- Detecção de idioma da pergunta (pt/en/es) -----
+
+    private val EN_MARKERS = listOf(
+        "the ", " and ", " you", " your", " i ", " me ", " my ", " with ", " please",
+        " thank", " thanks", " what", " who", " how", " which", " welcome",
+        " can you", " could you", " would you", " are you", " do you", " is this",
+        " play it", " play the", " next song", " wake up", " good morning",
+        " good afternoon", " good evening", " good night", " louder", " quieter",
+        " really", " just ", " yeah", " let's", " let me", " don't", " didn't"
+    )
+
+    private val ES_MARKERS = listOf(
+        " por favor", " gracias", " hola", " buenos", " buenas", " qué", " cómo",
+        " cuál", " quién", " dónde", " cuando", " puedes", " puede poner",
+        " quiero", " necesito", " canción", " canciones", " siguiente",
+        " anterior", " favorita", " favorito", " álbum", " artista",
+        " volumen", " más fuerte", " más alto", " dime", " eres", " tú ",
+        " tu nombre", " habla", " despierta", " cuántas", " cuántos",
+        " una canción", " la música", " el volumen", " es tu"
+    )
+
+    /**
+     * Heurística simples: conta marcadores de inglês e espanhol no texto cru.
+     * Sem marcadores claros, assume português (padrão da Virgin).
+     */
+    fun languageOf(text: String): String {
+        val t = " " + text.lowercase() + " "
+        val en = EN_MARKERS.count { t.contains(it) }
+        val es = ES_MARKERS.count { t.contains(it) }
+        return when {
+            en >= 2 && en > es && es == 0 -> "en"
+            es >= 2 && es > en && en == 0 -> "es"
+            en >= 1 && es == 0 -> "en"
+            es >= 1 && en == 0 -> "es"
+            else -> "pt"
+        }
+    }
+
     // Lê a intenção do usuário contornando a pontuacao/enj of the recognizer
     // (ex: "sim.", "Sim!", "sim, pode" -> afirmacao; "nao.", "nao!" -> negacao).
     private fun affirm(norm: String): Boolean =
@@ -84,6 +122,14 @@ object DjCommander {
     private fun sleepMatch(norm: String): Boolean =
         listOf("dormir", "dorme", "dormi", "sono", "relaxar", "relaxa", "calma", "calmo",
             "descansar", "acalma", "tranquila", "tranquilo", "modo sono").any { norm.contains(it) }
+
+    private fun monthFavsMatch(norm: String): Boolean {
+        val ptEsPeriod = norm.contains("do mes") || norm.contains("desse mes") ||
+            norm.contains("deste mes") || norm.contains("este mes") || norm.contains("del mes")
+        val likedWord = norm.contains("favorit") || norm.contains("curtid") ||
+            norm.contains("gost") || norm.contains("lik") || norm.contains("amei")
+        return (ptEsPeriod || norm.contains("month")) && likedWord
+    }
 
     private fun moodWildMatch(norm: String): Boolean =
         listOf("bombar", "bombra", "anima", "animar", "acelera", "acelerar",
@@ -179,6 +225,7 @@ object DjCommander {
         memoryRecall(norm) -> "memory_recall"
         moodWildMatch(norm) -> "mood_wild"
         sleepMatch(norm) -> "sleep"
+        monthFavsMatch(norm) -> "month_favs"
         norm.contains("repete essa") || norm.contains("repete a musica") ||
             norm.contains("repetir essa") || norm.contains("repita essa") -> "repeat"
         onlyArtist(norm) != null -> "only"

@@ -61,7 +61,7 @@ class DjVoice(context: Context, languageTag: String? = null) {
         if (Settings.masculineAvatar(appContext)) 0.82f else 1.25f
 
     private fun applyVoice() {
-        val voice = resolveVoice()
+        val voice = resolveVoice(targetLocale)
         if (voice != null) {
             runCatching { tts?.setVoice(voice) }
         } else {
@@ -69,9 +69,9 @@ class DjVoice(context: Context, languageTag: String? = null) {
         }
     }
 
-    private fun resolveVoice(): Voice? {
+    private fun resolveVoice(locale: Locale): Voice? {
         val male = Settings.masculineAvatar(appContext)
-        chosenVoices["${targetLocale}|$male"]?.let { return it }
+        chosenVoices["${locale}|$male"]?.let { return it }
         val voices = tts?.voices ?: return null
         val femaleTokens = listOf(
             "female", "feminina", "femenina", "femenine", "woman", "mulher", "voz feminina"
@@ -95,17 +95,17 @@ class DjVoice(context: Context, languageTag: String? = null) {
             } ?: sorted.firstOrNull()
         }
 
-        // Mesmo idioma do app primeiro (correto), preferindo a voz do gênero do avatar.
-        // Nunca cai para outro idioma, para a voz ficar sempre no idioma da interface.
-        val sameLang = voices.filter { runCatching { it.locale.language == targetLocale.language }.getOrDefault(false) }
+        // Mesmo idioma pedido primeiro (correto), preferindo a voz do gênero do avatar.
+        // Nunca cai para outro idioma, para a voz ficar sempre no idioma pedido.
+        val sameLang = voices.filter { runCatching { it.locale.language == locale.language }.getOrDefault(false) }
         val chosen = genderFirst(sameLang) ?: sameLang.firstOrNull()
-        if (chosen != null) chosenVoices["${targetLocale}|$male"] = chosen
+        if (chosen != null) chosenVoices["${locale}|$male"] = chosen
         return chosen
     }
 
-    private fun pronounce(text: String): String {
-        val lang = targetLocale.language.lowercase()
-        val dj = if (lang == "en") "Dee Jay" else "djei"
+    private fun pronounce(text: String, locale: Locale): String {
+        val lang = locale.language.lowercase()
+        val dj = if (lang == "en" || lang == "es") "Yei" else "djei"
         var out = text.replace(Regex("(?i)\\bDJ\\b"), dj)
         if (Settings.masculineAvatar(appContext)) {
             out = out.replace(Regex("(?i)\\bVirgin\\b"), currentName())
@@ -113,10 +113,15 @@ class DjVoice(context: Context, languageTag: String? = null) {
         return out
     }
 
-    fun speak(text: String, onDone: (() -> Unit)? = null) {
+    fun speak(text: String, languageTag: String? = null, onDone: (() -> Unit)? = null) {
         if (!ready || text.isBlank()) {
             ThreadPool.onUi { onDone?.invoke() }
             return
+        }
+        val locale: Locale = if (!languageTag.isNullOrBlank()) {
+            runCatching { Locale.forLanguageTag(languageTag) }.getOrNull() ?: targetLocale
+        } else {
+            targetLocale
         }
         val previous = pending
         if (previous != null) {
@@ -127,12 +132,12 @@ class DjVoice(context: Context, languageTag: String? = null) {
         runCatching {
             tts?.setSpeechRate(0.9f)
             tts?.setPitch(pitch())
-            val voice = resolveVoice()
+            val voice = resolveVoice(locale)
             if (voice != null) {
                 tts?.setVoice(voice)
                 tts?.language = voice.locale
             } else {
-                tts?.language = targetLocale
+                tts?.language = locale
             }
             var fired = false
             fun fire() {
@@ -149,7 +154,7 @@ class DjVoice(context: Context, languageTag: String? = null) {
                 override fun onError(utteranceId: String?) = fire()
             })
             pending = onDone
-            val status = tts?.speak(pronounce(text), TextToSpeech.QUEUE_FLUSH, null, "dj_virgin") ?: TextToSpeech.ERROR
+            val status = tts?.speak(pronounce(text, locale), TextToSpeech.QUEUE_FLUSH, null, "dj_virgin") ?: TextToSpeech.ERROR
             if (status == TextToSpeech.ERROR) {
                 isSpeaking = false
                 fire()

@@ -18,11 +18,20 @@ object Library {
         MediaStore.Audio.Media.ALBUM_ID,
         MediaStore.Audio.Media.DURATION,
         MediaStore.Audio.Media.DATA,
-        MediaStore.Audio.Media.YEAR
+        MediaStore.Audio.Media.YEAR,
+        MediaStore.Audio.Media.DATE_ADDED
     )
 
     fun allSongs(context: Context): List<Song> {
         return querySongs(context, null, null)
+    }
+
+    /** Músicas adicionadas mais recentemente ao dispositivo, em ordem (recente → antiga). */
+    fun recentSongs(context: Context, limit: Int = 12): List<Song> {
+        val out = allSongs(context)
+            .filter { it.dateAdded > 0L }
+            .sortedByDescending { it.dateAdded }
+        return if (out.size > limit) out.take(limit).toList() else out
     }
 
     fun songsById(context: Context, id: Long): List<Song> {
@@ -207,6 +216,7 @@ object Library {
             val iDuration = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
             val iData = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
             val iYear = c.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
+            val iDateAdded = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
             while (c.moveToNext()) {
                 val title = c.getString(iTitle) ?: continue
                 if (title.isBlank()) continue
@@ -218,7 +228,8 @@ object Library {
                     albumId = c.getLong(iAlbumId),
                     durationMs = c.getLong(iDuration),
                     path = c.getString(iData) ?: "",
-                    year = c.getInt(iYear)
+                    year = c.getInt(iYear),
+                    dateAdded = c.getLong(iDateAdded) * 1000L
                 )
             }
         }

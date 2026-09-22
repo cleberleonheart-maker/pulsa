@@ -134,4 +134,18 @@ object DjMemory {
     private fun persistFacts(p: android.content.SharedPreferences) {
         p.edit().putString(KEY_FACTS, factsToJson()).apply()
     }
+
+    /** Fatos no formato JSON de backup (["k","v"],...). */
+    fun exportFacts(context: Context): String {
+        load(context)
+        return factsToJson()
+    }
+
+    /** Restaura fatos a partir de um JSON de backup. Valida antes de gravar. */
+    fun importFacts(context: Context, json: String): Boolean = runCatching {
+        JSONArray(json)
+        prefs(context).edit().putString(KEY_FACTS, json).apply()
+        load(context)
+        true
+    }.getOrDefault(false)
 }

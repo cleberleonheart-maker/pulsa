@@ -2,6 +2,7 @@ package com.pulsa.player
 import com.pulsa.player.util.UpdateChecker
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -11,10 +12,13 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.pulsa.player.dj.DjLearn
+import com.pulsa.player.dj.DjMemory
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.core.Account
 import com.pulsa.player.ui.AnimatedBackground
@@ -30,6 +34,35 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class SettingsActivity : AppCompatActivity() {
+
+    private val backupLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri == null) return@registerForActivityResult
+            runCatching {
+                contentResolver.openOutputStream(uri)?.use { it.write(buildBackup().toByteArray()) }
+                Toast.makeText(this, R.string.backup_done, Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(this, R.string.backup_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private val restoreLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri == null) return@registerForActivityResult
+            runCatching {
+                val text = contentResolver.openInputStream(uri)?.use {
+                    it.readBytes().toString(Charsets.UTF_8)
+                } ?: return@registerForActivityResult
+                val applied = applyRestore(text)
+                Toast.makeText(
+                    this,
+                    if (applied) R.string.restore_done else R.string.restore_failed,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }.onFailure {
+                Toast.makeText(this, R.string.restore_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Settings.accentStyle(this))
@@ -67,6 +100,12 @@ class SettingsActivity : AppCompatActivity() {
         refreshMirrorLabel()
         findViewById<View>(R.id.server_row).setOnClickListener { serverDialog() }
         refreshServerLabel()
+        findViewById<View>(R.id.backup_row).setOnClickListener {
+            backupLauncher.launch("pulsa-backup.json")
+        }
+        findViewById<View>(R.id.restore_row).setOnClickListener {
+            restoreLauncher.launch(arrayOf("application/json"))
+        }
 
         findViewById<TextView>(R.id.crossfade_value).text = crossfadeLabel()
         findViewById<View>(R.id.crossfade_row).setOnClickListener { pickCrossfade() }
@@ -563,5 +602,45 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun buildBackup(): String {
+        val learn = DjLearn.snapshot(applicationContext)
+        val memoryFacts = DjMemory.exportFacts(applicationContext)
+        val p = Settings.dataPrefs(applicationContext)
+        val eq = JSONObject().apply {
+            put("equalizer_on", p.getBoolean("equalizer_on", false))
+            put("custom_eq_on", p.getBoolean("custom_eq_on", false))
+            put("custom_eq_bands", p.getString("custom_eq_bands", "0,0,0,0,0"))
+        }
+        return JSONObject().apply {
+            put("app", "pulsa")
+            put("backupVersion", 1)
+            put("learn", learn)
+            put("memoryFacts", memoryFacts)
+            put("eq", eq)
+        }.toString()
+    }
+
+    private fun applyRestore(text: String): Boolean {
+        val root = runCatching { JSONObject(text) }.getOrNull() ?: return false
+        if (root.optString("app") != "pulsa") return false
+        var changed = false
+        root.optJSONObject("learn")?.let {
+            changed = DjLearn.mergeRemote(applicationContext, it) || changed
+        }
+        val facts = root.optString("memoryFacts", "")
+        if (facts.isNotBlank()) {
+            changed = DjMemory.importFacts(applicationContext, facts) || changed
+        }
+        root.optJSONObject("eq")?.let { eq ->
+            Settings.dataPrefs(applicationContext).edit()
+                .putBoolean("equalizer_on", eq.optBoolean("equalizer_on", false))
+                .putBoolean("custom_eq_on", eq.optBoolean("custom_eq_on", false))
+                .putString("custom_eq_bands", eq.optString("custom_eq_bands", "0,0,0,0,0"))
+                .apply()
+            changed = true
+        }
+        return changed
     }
 }

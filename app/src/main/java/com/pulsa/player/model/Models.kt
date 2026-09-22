@@ -8,7 +8,8 @@ data class Song(
     val albumId: Long,
     val durationMs: Long,
     val path: String,
-    val year: Int
+    val year: Int,
+    val dateAdded: Long = 0L
 )
 
 data class Album(

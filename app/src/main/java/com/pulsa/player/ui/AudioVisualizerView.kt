@@ -11,7 +11,6 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import com.pulsa.player.R
 import com.pulsa.player.audio.MusicVisualizer
-import com.pulsa.player.core.Settings
 
 class AudioVisualizerView @JvmOverloads constructor(
     context: Context,
@@ -46,7 +45,7 @@ class AudioVisualizerView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (!MusicVisualizer.on || !Settings.visualizerOn(context)) return
+        if (!MusicVisualizer.on) return
         val peak = MusicVisualizer.peak()
         val target = if (peak > lastPeak) peak else peak * 0.72f + lastPeak * 0.28f
         lastPeak = target
@@ -102,13 +101,8 @@ class AudioVisualizerView @JvmOverloads constructor(
     }
 
     fun refresh(skin: String) {
-        if (Settings.visualizerOn(context)) {
-            visibility = View.VISIBLE
-            startTween()
-        } else {
-            visibility = View.GONE
-            stopTween()
-        }
+        visibility = View.VISIBLE
+        startTween()
     }
 
     override fun onDetachedFromWindow() {

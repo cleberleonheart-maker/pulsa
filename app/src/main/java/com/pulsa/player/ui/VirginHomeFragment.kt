@@ -1,5 +1,6 @@
 package com.pulsa.player.ui
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
@@ -10,12 +11,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.BanActivity
 import com.pulsa.player.DjActivity
 import com.pulsa.player.MainActivity
+import com.pulsa.player.NowPlayingActivity
 import com.pulsa.player.R
 import com.pulsa.player.RadioActivity
 import com.pulsa.player.core.Permissions
@@ -75,6 +78,8 @@ class VirginHomeFragment : Fragment() {
         bindResumeCard(view)
         buildShortcuts(view.findViewById(R.id.shortcuts_row))
         buildAssistantRows(view.findViewById(R.id.assistant_list))
+        buildSkinRow(view.findViewById(R.id.skin_row))
+        loadRecents(view)
         refresh()
         refreshResume()
         renderHero(view)
@@ -86,6 +91,8 @@ class VirginHomeFragment : Fragment() {
         refresh()
         refreshResume()
         renderHero()
+        loadRecents(view)
+        view?.findViewById<ViewGroup>(R.id.skin_row)?.let { buildSkinRow(it) }
     }
 
     override fun onDestroyView() {
@@ -103,6 +110,153 @@ class VirginHomeFragment : Fragment() {
             Playback.toggle()
             refreshResume()
         }
+    }
+
+    /** Sessão "Adicionadas recentemente": capas horizontais; toque inicia a partir da faixa. */
+    private fun loadRecents(view: View?) {
+        val v = view ?: return
+        if (!isAdded) return
+        val title = v.findViewById<TextView>(R.id.home_section_recent)
+        val scroll = v.findViewById<View>(R.id.recents_scroll)
+        val act = activity ?: return
+        val ctx = act.applicationContext
+        ThreadPool.post {
+            val recents = Library.recentSongs(ctx)
+            ThreadPool.onUi {
+                if (!isAdded || view != this.view) return@onUi
+                if (recents.isEmpty()) {
+                    title?.visibility = View.GONE
+                    scroll?.visibility = View.GONE
+                    return@onUi
+                }
+                val row = v.findViewById<ViewGroup>(R.id.recents_row)
+                row.visibility = View.VISIBLE
+                row.removeAllViews()
+                recents.forEachIndexed { i, song ->
+                    val item = makeRecentCover(ctx, song)
+                    val startIndex = i
+                    item.setOnClickListener {
+                        val all = Library.recentSongs(ctx)
+                        if (all.isNotEmpty()) {
+                            Playback.setShuffle(false)
+                            Playback.setRepeatAll(true)
+                            Playback.start(all, startIndex.coerceIn(0, all.lastIndex))
+                        }
+                    }
+                    val lp = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                    if (i > 0) lp.marginStart = dp(10)
+                    row.addView(item, lp)
+                }
+                title?.visibility = View.VISIBLE
+                scroll?.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    private fun makeRecentCover(ctx: Context, song: com.pulsa.player.model.Song): View {
+        val item = LinearLayout(ctx)
+        item.orientation = LinearLayout.VERTICAL
+        item.gravity = Gravity.CENTER_HORIZONTAL
+        val cover = com.google.android.material.imageview.ShapeableImageView(ctx)
+        cover.layoutParams = LinearLayout.LayoutParams(dp(64), dp(64))
+        cover.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+        cover.setImageResource(R.drawable.ic_music_note)
+        cover.imageTintList = androidx.core.content.res.ResourcesCompat.getColorStateList(
+            ctx.resources, R.color.ic_placeholder, ctx.theme
+        )
+        cover.background = ContextCompat.getDrawable(ctx, R.drawable.bg_album_art)
+        cover.shapeAppearanceModel = cover.shapeAppearanceModel
+            .toBuilder()
+            .setAllCorners(com.google.android.material.shape.CornerFamily.ROUNDED, dp(14).toFloat())
+            .build()
+        val label = TextView(ctx)
+        label.text = song.title
+        label.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary))
+        label.textSize = 10f
+        label.maxLines = 1
+        label.ellipsize = android.text.TextUtils.TruncateAt.END
+        val labelLp = LinearLayout.LayoutParams(dp(64), ViewGroup.LayoutParams.WRAP_CONTENT)
+        labelLp.topMargin = dp(4)
+        item.addView(cover)
+        item.addView(label, labelLp)
+        ArtLoader.load(song.albumId, song.path, cover)
+        return item
+    }
+
+    /** Seletor rápido de efeitos visuais (skin) direto na home. */
+    private fun buildSkinRow(container: ViewGroup) {
+        val ctx = requireContext()
+        container.removeAllViews()
+        val current = Settings.skin(ctx)
+        Settings.SKIN_ORDER.forEachIndexed { i, key ->
+            val selected = key == current
+            val item = LinearLayout(ctx)
+            item.orientation = LinearLayout.VERTICAL
+            item.gravity = Gravity.CENTER_HORIZONTAL
+            item.setPadding(dp(2), dp(4), dp(2), dp(2))
+
+            val dot = View(ctx)
+            val size = dp(if (selected) 40 else 34)
+            val shape = android.graphics.drawable.GradientDrawable()
+            shape.shape = android.graphics.drawable.GradientDrawable.OVAL
+            shape.setColor(skinColor(key))
+            shape.setStroke(
+                dp(if (selected) 3 else 0),
+                android.graphics.Color.WHITE
+            )
+            dot.background = shape
+            dot.contentDescription = getString(skinLabelRes(key))
+
+            val label = TextView(ctx)
+            label.text = getString(skinLabelRes(key))
+            label.setTextColor(
+                ContextCompat.getColor(
+                    ctx,
+                    if (selected) R.color.primary_light else R.color.text_secondary
+                )
+            )
+            label.textSize = 10f
+            label.maxLines = 1
+
+            item.addView(dot, LinearLayout.LayoutParams(size, size))
+            val labelLp = LinearLayout.LayoutParams(dp(56), ViewGroup.LayoutParams.WRAP_CONTENT)
+            labelLp.topMargin = dp(3)
+            labelLp.marginStart = dp(-11)
+            item.addView(label, labelLp)
+            item.setOnClickListener {
+                Settings.setSkin(ctx, key)
+                NowPlayingActivity.current?.refreshVisuals()
+                Telemetry.log(ctx, "home skin=$key")
+                view?.findViewById<ViewGroup>(R.id.skin_row)?.let { buildSkinRow(it) }
+            }
+            val lp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            if (i > 0) lp.marginStart = dp(4)
+            container.addView(item, lp)
+        }
+    }
+
+    private fun skinColor(skin: String): Int = android.graphics.Color.parseColor(
+        when (skin) {
+            Settings.SKIN_NEON -> "#FF2B72"
+            Settings.SKIN_AURORA -> "#A78BFA"
+            Settings.SKIN_PARTICLES -> "#34D399"
+            Settings.SKIN_NEBULA -> "#22D3EE"
+            else -> "#475569"
+        }
+    )
+
+    private fun skinLabelRes(skin: String): Int = when (skin) {
+        Settings.SKIN_NEON -> R.string.skin_short_neon
+        Settings.SKIN_AURORA -> R.string.skin_short_aurora
+        Settings.SKIN_PARTICLES -> R.string.skin_short_particles
+        Settings.SKIN_NEBULA -> R.string.skin_short_nebula
+        else -> R.string.skin_short_off
     }
 
     private fun buildShortcuts(container: ViewGroup) {
@@ -519,7 +673,7 @@ class VirginHomeFragment : Fragment() {
             if (voice == null) {
                 voice = DjVoice(ctx, Settings.languageTag(Settings.language(ctx)))
             }
-            voice!!.init { ready -> if (ready) voice!!.speak(text, onDone) }
+            voice!!.init { ready -> if (ready) voice!!.speak(text, null, onDone) }
         }
     }
 

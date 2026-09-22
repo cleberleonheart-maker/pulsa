@@ -51,6 +51,12 @@ class NowPlayingFragment : Fragment() {
     private var visualizerView: AudioVisualizerView? = null
     private var shaderView: MusicShaderView? = null
     private var userSeeking = false
+    private var lyricsPanel: View? = null
+    private var lyricsCur: TextView? = null
+    private var lyricsNext: TextView? = null
+    private var lyricsForSong = -1L
+    private var lyricsLines: List<Lyrics.Line> = emptyList()
+    private var lyricsLoading = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_now_playing, container, false)
@@ -96,6 +102,10 @@ class NowPlayingFragment : Fragment() {
         }
         view.findViewById<View>(R.id.np_eq).setOnClickListener { showEqDialog() }
         view.findViewById<View>(R.id.np_lyrics).setOnClickListener { showLyricsDialog() }
+        lyricsPanel = view.findViewById(R.id.np_lyrics_panel)
+        lyricsCur = view.findViewById(R.id.np_lyrics_cur)
+        lyricsNext = view.findViewById(R.id.np_lyrics_next)
+        lyricsPanel?.setOnClickListener { showLyricsDialog() }
         visualizerView = view.findViewById(R.id.np_visualizer)
         shaderView = view.findViewById(R.id.np_shader)
 
@@ -148,6 +158,7 @@ class NowPlayingFragment : Fragment() {
         updateModeIcons()
         updateLikeIcon()
         refreshProgress(Playback.position, song.durationMs)
+        syncLyricsFor(song)
         refreshModButtons()
         refreshAbButtons()
         refreshDreamTeam(song.id)
@@ -197,6 +208,61 @@ class NowPlayingFragment : Fragment() {
         seekBar?.progress = ((positionMs.coerceIn(0, dur)) * 1000 / dur).toInt()
         currentView?.text = Helper.formatDuration(positionMs)
         durationView?.text = Helper.formatDuration(dur)
+        updateLyricsKaraoke(positionMs)
+    }
+
+    /** Carrega as letras da música atual (uma vez por troca) e mostra o painel. */
+    private fun syncLyricsFor(song: com.pulsa.player.model.Song) {
+        if (song.id == lyricsForSong || lyricsLoading) return
+        lyricsLoading = true
+        lyricsForSong = song.id
+        lyricsLines = emptyList()
+        lyricsPanel?.visibility = View.GONE
+        ThreadPool.post {
+            val result = Lyrics.resolve(song, requireActivity().applicationContext)
+            ThreadPool.onUi {
+                if (!isAdded || Playback.currentSong?.id != song.id) {
+                    lyricsLoading = false
+                    lyricsForSong = -1L
+                    return@onUi
+                }
+                lyricsLoading = false
+                lyricsLines = result?.lines.orEmpty()
+                if (lyricsLines.isEmpty()) {
+                    lyricsPanel?.visibility = View.GONE
+                } else {
+                    lyricsPanel?.visibility = View.VISIBLE
+                    updateLyricsKaraoke(Playback.position)
+                }
+            }
+        }
+    }
+
+    /** Destaque karaokê: linha atual em destaque + as próximas embaixo, roladas no tempo. */
+    private fun updateLyricsKaraoke(positionMs: Long) {
+        val lines = lyricsLines
+        val cur = lyricsCur ?: return
+        if (lines.isEmpty()) return
+        val idx = Lyrics.lineAt(lines, positionMs)
+        val currentText = lines[idx].text.ifBlank { "\u266A" }
+        if (cur.text != currentText) cur.text = currentText
+        val next = buildString {
+            var shown = 0
+            for (i in idx + 1 until lines.size) {
+                if (shown >= 3) break
+                val t = lines[i].text
+                if (t.isBlank()) continue
+                if (shown > 0) append('\n')
+                append(t)
+                shown++
+            }
+        }
+        lyricsNext?.apply {
+            setText(if (next.isEmpty()) "" else next)
+        }
+        lyricsPanel?.apply {
+            if (visibility != View.VISIBLE) visibility = View.VISIBLE
+        }
     }
 
     private fun updatePlayIcon() {

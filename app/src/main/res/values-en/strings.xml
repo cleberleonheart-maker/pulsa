@@ -30,152 +30,28 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.0.3):
+    <string name="changelog">What is new (5.4.0):
 
-→ AVATAR ICON
-• App icon and splash now have the same cute face (round eyes + wide smile) as the avatars
+→ VIRGIN SPEAKS YOUR LANGUAGE
+• She replies in the language you speak (Portuguese, English or Spanish)
 
-↺ Version 5.0.2
+→ MONTHLY FAVORITES
+• "Virgin, monthly favorites" — a mix with what you liked in the last 30 days
 
-What is new (5.0.2):
+→ LIVE LYRICS
+• On the Now Playing screen, lyrics follow the music as it plays (tap to see them all)
 
-→ TAMI AVATAR
-• Both avatars (Virgin and Victor), the icon and the splash are now fully aurora violet like the radio — no blue/green left
-• New face: round shiny eyes and a wide curved smile — cuter
+→ RECENTLY ADDED
+• "Recently added" section on the home with your newest songs
 
-↺ Version 5.0.1
+→ SKINS ON THE HOME
+• Switch the player look right from the home: Neon, Aurora, Particles, Nebula or no effect
 
-What is new (5.0.1):
+→ ALWAYS-ON BARS
+• The mini visualizer on the Now Playing screen is always visible
 
-→ AVATAR LOOK
-• Home without the panel: the avatar now stands free and full, no tray behind
-• New color: avatar swapped neon lime for aurora violet, matching the theme — also on the launcher icon and splash
-
-↺ Version 5.0.0
-
-What is new (5.0.0):
-
-→ NEW SKELETON
-• Bottom navigation bar: Virgin, Songs, Library, Search and Profile — no more tab strip on top
-• Library as a hub: albums, artists, favorites, playlists and videos in one place with section chips
-• Now Playing on its own screen: the player opens above navigation with its own toolbar and back
-• New home: avatar greeting button (the avatar says good morning/afternoon/night and talks to you) and quick shortcuts for Library, Virgin mix, Sleep, Virgin FM Radio, Stats and More
-• Virgin FM Radio: opens playing the avatar\'s favorite song first (the one you play the most) and announces it — the favorite also shows on the deck
-• DJ and Radio left the toolbar and moved to the Home; Playlists is now a Library section
-
-↺ Version 4.14.0
-
-What is new (4.14.0):
-
-➜ NEW LOOK
-• Terminal Radar: full overhaul — Pulsa left the synthwave behind. Terminal identity: phosphorescent lime + alert ruby over charcoal-green (no more pink, purple or cyan)
-• Chamfered chassis: panels and cards with 45° cut corners (terminal chamfer) across the whole interface — albums, songs, lists, mini-player pod, nav and deck, DJ screens, profile and timeline; chamfered inputs and rows
-• Sweep sky: background with target-lock reticle, blips and a perspective grid horizon; an animated radar sweep spinning on the now-playing rings
-• New avatars: Victor with radar-green hair and a lime streak, Virgínia with lime visor — launcher and splash icons in the new identity
-• Terminal HUD: monospace label on Virgínia\'s Home
-
-↺ Versão 4.13.1
-
-What is new (4.13.1):
-
-➜ LOOK
-• Update dialog redesigned in the Neon theme: when downloading a new version, the progress now shows on a custom rounded neon bar (purple/cyan) instead of the default Android dialog, right in the app\'s vibe
-
-↺ Version 4.13.0
-
-➜ LOOK
-• Nebula theme:  new visual for the sound effects — "Virgin, change the look" now includes the nebula: 5 colorful clouds spinning in precession that pulse with the beat and a bright core that grows with the music, a trip through the nebulae in the style of Nebula Music Visualizer
-
-↺ Version 4.12.1
-
-➜ SIGN IN
-• Google sign-in enabled: the "Sign in with Google" button now shows in the published APK (client ID configured in gradle.properties)
-
-↺ Version 4.12.0
-
-➜ REDESIGN
-• Pulsar Neon theme: cinematic synthwave — deep purple night with a perspective sunset grid, electric pink as the main color and cyan accents, renewed nebulas and neon glows across the whole app (login, home, lists, mini player and animated backgrounds)
-
-➜ REWIND
-• Pulsa Rewind: your music summary (Profile → Pulsa Rewind) with Top 10, plays/time/songs, first track of the period, charts by month/day of week/hour and facts (best day, peak hour and night owl) — filters: All time / 30 days / 7 days; tapping an item plays the podium in order
-
-➜ SIGN IN
-• Google sign-in: "Sign in with Google" button on the login screen — account created with your Google e-mail, securely (verified token)
-• Virgin suggests a song: "Virgin, suggest a song" — she recommends from your taste; "Virgin, who are you" presents her identity
-
-➜ FIXES
-• Ambient sound: nature sound entrance fade fixed (used to skip a chunk); DJ recognition with a limited mic no longer overflows the buffer
-• Fixed MD5 in Last.fm/lyrics/telemetry (negative bytes made wrong hex — broken scrobble/lyrics/hash)
-• Sleep timer: "at end of track" now really stops when the track ends; turning on Repeat all turns off Repeat one; a pause that was not caused by audio focus no longer releases sound in radio mode
-• Mini player/flows sync on the main thread (no thread races) and update/ban dialogs no longer pop over a closed screen
-
-↺ Version 4.11.1
-
-➜ LOOK
-• Virgin feels alive: the avatar floats up and down (TAMI style) with blinking eyes, always — and dances harder in the rhythm of the music
-
-↺ Version 4.11.0
-
-➜ NEW
-• "Avatar in the middle" hero, TAMI style: the Virgin home now opens with the big avatar centered (animated Virgin/Victor, blinking and swaying), with name and status below (● Playing / ○ Ready)
-• Tap the middle avatar: she greets you; long-press: opens the admin ban panel (ban/unban devices)
-• Fix: long-press on the top avatar sometimes didn\'t register (screen content covered it) — now the avatar responds on any tab, and the ban panel works from both places
-
-↺ Version 4.9.0
-
-➜ NEW
-• New hub layout: the app opens on the Virgin home (no title bar) and navigation moves to the top as scrollable web-style tabs (Virgin · Songs · Albums · Artists · Favorites · Videos · Playlists) instead of the bottom bar
-• Floating mini player capsule + floating search button; the planet theme and all features are kept
-• Virgin/Victor Radio: your library radio now uses the current avatar name (Virgin or Victor) on the screen, card and voice lines — the stations radio stays the same
-• Admin panel: ban/unban devices right from the app — hidden, long-press the avatar (token login, device list and Ban/Unban)
-
-↺ Version 4.8.4
-
-➜ LOOK
-• Cyanwave theme (web version style): navy background with cyan nebulae, electric-cyan highlight, magenta/purple accents and glass cards all over the app
-• Space universe kept: ringed planet, moon, animated orbit rings, holographic scanner and cockpit bottom bar — now in the web colors
-• Settings and features untouched
-
-↺ Version 4.8.3
-
-➜ FIX
-• Home screen opens again: the Virgin tab (6th) broke the bottom bar (BottomNavigation\'s 5-item limit); now it lives in a toolbar card (home icon) and the bar works everywhere
-
-↺ Version 4.8.2
-
-➜ NEW
-• Set of the day: "Virgin, set of the day" builds a set picked just for today (changes daily, favorites first)
-• Dedication: "Virgin, dedicate the next one to..." — she says the dedication before the track
-• Library count: "Virgin, how many songs do I have" — she answers the total
-
-↺ Version 4.8.1
-• Male avatar: Virgin now has a counterpart — Victor. Switch it on the Avatar card from the home screen: the cyan-blue look and the voice change together, and each avatar has its own name (Virgin / Victor)
-• The "Virgin, who are you" command and the greetings now use the current avatar\'s name
-
-↺ Version 4.8.0
-
-➜ NEW
-• Virgin home in the Tami model: first tab with cards for language, voice, voice command, Virgin FM Radio, sleep, recommend, statistics and scan device, plus Party/Relax buttons — all in the spatial/futuristic look (no trivia card; that stays with the DJ host)
-• Voice fix: the "DJ" initials are now always spoken as a word ("djei"), without the device spelling them out
-
-↺ Version 4.7.0
-• Virgin FM Radio: new radio mode in the menu (in the Tami FM style) — shuffles all of your songs and plays non-stop, with a greeting and the top-of-the-hour time like a real radio
-
-↺ Version 4.6.0
-• Reacting Virgin: she celebrates a like, teases a skip/dislike and changes up "next" — varied replies in pt/en/es
-• Chained command: "Virgin, play and then pause" — two actions in one phrase
-• No repeats this session: songs already played stay out of the next mixes while the app is open
-• Sleep mix with fade-out: the CALM set plays once and the volume fades gently instead of repeating or stopping dead
-• "Virgin, what did I play yesterday" — she lists the tracks from the day before via history
-
-↺ Version 4.5.0
-• Space fusion (almost like Tami): ringed planet, moon and violet/magenta/cyan nebulae in the background across the whole app
-• Mini-player became an orbit capsule: ring around the art and the play button glowing as an energy core
-• Now playing screen got animated orbit rings around the album art and the play button, with a holographic scanner bar
-• Bottom nav in cockpit style: cyan/magenta beacons and an energy line on top
-• Squared-off tabs and headers with holographic grid and floating glass cards in the lists
-• Titles with futuristic letter spacing and capsule active tab indicator
-• Settings, Virginia\'s avatar and every feature kept untouched</string>
+→ SETTINGS BACKUP
+• In Settings, save and restore learning, memories and the equalizer</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -498,6 +374,8 @@ What is new (4.13.1):
     <string name="dj_voice_resume_none">I couldn\'t find where you stopped last time. Ask me to play a song and I\'ll start right now!</string>
     <string name="dj_voice_mix">Sure! Preparing a new mix for you.</string>
     <string name="dj_voice_fav">Marked as favorite!</string>
+    <string name="dj_voice_month_favs">Let\'s go! Playing %d of this month\'s favorites.</string>
+    <string name="dj_voice_month_favs_fallback">I put together %d of your favorites.</string>
     <string name="dj_voice_thanks">You\'re welcome! See you at the next one.</string>
     <string name="dj_voice_goodbye">See you! Just call me whenever you need.</string>
     <string name="dj_voice_unknown">Sorry, I didn\'t catch that. Try: Virgin, next song.</string>
@@ -648,6 +526,13 @@ What is new (4.13.1):
     <string name="virgin_hub_note">Each card activates a function. Music facts stay with the DJ host.</string>
     <string name="home_library_title">Your library</string>
     <string name="home_assistant_title">Assistant</string>
+    <string name="home_recent_title">Recently added</string>
+    <string name="home_skin_title">Visual effects</string>
+    <string name="skin_short_off">Off</string>
+    <string name="skin_short_neon">Neon</string>
+    <string name="skin_short_aurora">Aurora</string>
+    <string name="skin_short_particles">Particles</string>
+    <string name="skin_short_nebula">Nebula</string>
     <string name="btn_party">Party</string>
     <string name="btn_relax">Relax</string>
     <string name="v_language">Language</string>
@@ -722,6 +607,14 @@ What is new (4.13.1):
     <string name="mirror_left">Left the session</string>
     <string name="mirror_error">Could not reach the server</string>
     <string name="mirror_not_found">This track is not in your library: %1$s</string>
+    <string name="backup_title">Back up</string>
+    <string name="backup_subtitle">Saves learning, memories and equalizer to a file</string>
+    <string name="restore_title">Restore backup</string>
+    <string name="restore_subtitle">Applies a previously saved backup file</string>
+    <string name="backup_done">Backup saved!</string>
+    <string name="backup_failed">Could not save the backup</string>
+    <string name="restore_done">Backup restored!</string>
+    <string name="restore_failed">Invalid file or no PULSA data</string>
     <string name="server_title">Server</string>
     <string name="server_default">Automatic (local network / default)</string>
     <string name="server_hint">https://your-server:8081</string>
