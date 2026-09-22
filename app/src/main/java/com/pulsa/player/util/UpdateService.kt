@@ -97,8 +97,10 @@ class UpdateService : Service() {
         if (target != null) {
             nm.cancel(NOTIF_PROGRESS)
             CrashLogger.writeLog(this, "UPDATE: servico baixou ${target.absolutePath}")
+            UpdateChecker.markAttempted(this, name)
             UpdateChecker.installApk(applicationContext, target)
         } else {
+            UpdateChecker.clearAttempted(this)
             val pi = PendingIntent.getService(
                 this, 1,
                 Intent(this, UpdateService::class.java)

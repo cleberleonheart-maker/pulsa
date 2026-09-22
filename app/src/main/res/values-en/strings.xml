@@ -30,7 +30,15 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.0.0):
+    <string name="changelog">What is new (5.0.1):
+
+→ AVATAR LOOK
+• Home without the panel: the avatar now stands free and full, no tray behind
+• New color: avatar swapped neon lime for aurora violet, matching the theme — also on the launcher icon and splash
+
+↺ Version 5.0.0
+
+What is new (5.0.0):
 
 → NEW SKELETON
 • Bottom navigation bar: Virgin, Songs, Library, Search and Profile — no more tab strip on top

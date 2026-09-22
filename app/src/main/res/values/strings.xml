@@ -32,7 +32,15 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.0.0):
+    <string name="changelog">Novidades desta versão (5.0.1):
+
+→ VISUAL DO AVATAR
+• Home sem painel: o avatar agora fica livre e inteiro, sem a bandeja atrás (não corta mais a figura)
+• Nova cor: o avatar trocou o verde-limão pela violeta aurora, combinando com o tema — também no ícone e no splash
+
+↺ Versão 5.0.0
+
+Novidades desta versão (5.0.0):
 
 → ESQUELETO NOVO
 • Navegação por barra inferior: Virgin, Músicas, Biblioteca, Buscar e Perfil — sem mais a tira de abas no topo

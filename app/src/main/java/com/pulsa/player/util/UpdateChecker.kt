@@ -87,18 +87,18 @@ object UpdateChecker {
                     return@onUi
                 }
                 val code = latest?.code
-                if (code != null && code <= BuildConfig.VERSION_CODE.toLong()) {
-                    MaterialAlertDialogBuilder(context)
-                        .setTitle(R.string.update_title)
-                        .setMessage(R.string.update_uptodate)
-                        .setPositiveButton(R.string.close, null)
-                        .show()
-                    return@onUi
-                }
                 if (code == null) {
                     MaterialAlertDialogBuilder(context)
                         .setTitle(R.string.update_title)
                         .setMessage(R.string.update_error)
+                        .setPositiveButton(R.string.close, null)
+                        .show()
+                    return@onUi
+                }
+                if (code <= BuildConfig.VERSION_CODE.toLong()) {
+                    MaterialAlertDialogBuilder(context)
+                        .setTitle(R.string.update_title)
+                        .setMessage(R.string.update_uptodate)
                         .setPositiveButton(R.string.close, null)
                         .show()
                     return@onUi
@@ -133,8 +133,10 @@ object UpdateChecker {
             ThreadPool.onUi {
                 runCatching { dialog.dismiss() }
                 if (target != null) {
+                    markAttempted(context, latestName)
                     installApk(context.applicationContext, target)
                 } else {
+                    clearAttempted(context)
                     CrashLogger.writeLog(context, "UPDATE MANUAL: download nao concluido")
                     android.widget.Toast.makeText(
                         context,
@@ -147,18 +149,44 @@ object UpdateChecker {
     }
 
     private fun fetchVersion(host: String): String? {
-        return try {
-            val conn = URL(host).openConnection() as HttpURLConnection
-            conn.connectTimeout = 3000
-            conn.readTimeout = 3000
-            conn.instanceFollowRedirects = true
-            val text = conn.inputStream.bufferedReader().use { it.readText() }
-                .replace("\uFEFF", "")
-                .trim()
-            conn.disconnect()
-            text
+        for (attempt in 1..2) {
+            try {
+                val conn = URL(host).openConnection() as HttpURLConnection
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
+                conn.instanceFollowRedirects = true
+                val text = conn.inputStream.bufferedReader().use { it.readText() }
+                    .replace("\uFEFF", "")
+                    .trim()
+                conn.disconnect()
+                return text
+            } catch (t: Throwable) {
+                if (attempt == 2) return null
+                try {
+                    Thread.sleep(600)
+                } catch (t2: Throwable) {
+                }
+            }
+        }
+        return null
+    }
+
+    private fun prefs(context: Context) =
+        context.getSharedPreferences("pulsa_update", Context.MODE_PRIVATE)
+
+    /** Guarda que o usuário já baixou/instalou esta versão, pra não re-oferecer. */
+    fun markAttempted(context: Context, latestName: String) {
+        try {
+            prefs(context).edit().putString("attempted_name", latestName).apply()
         } catch (t: Throwable) {
-            null
+        }
+    }
+
+    /** Download abortou: zera pra que a próxima checagem automática possa re-oferecer. */
+    fun clearAttempted(context: Context) {
+        try {
+            prefs(context).edit().remove("attempted_name").apply()
+        } catch (t: Throwable) {
         }
     }
 
@@ -195,12 +223,7 @@ object UpdateChecker {
         }
         if (lastShownCode == latestCode) return
         lastShownCode = latestCode
-        try {
-            val prefs = context.getSharedPreferences("pulsa_update", Context.MODE_PRIVATE)
-            if (prefs.getLong("attempted_code", 0L) >= latestCode) return
-            prefs.edit().putLong("attempted_code", latestCode).apply()
-        } catch (t: Throwable) {
-        }
+        if (prefs(context).getString("attempted_name", null) == latestName) return
         ThreadPool.onUi {
             if (context !is android.app.Activity) return@onUi
             if (context.isFinishing) return@onUi
@@ -394,6 +417,9 @@ object UpdateChecker {
         // os servidores privados ficam de fallback.
         val urls = buildList {
             if (versionApkUrl.startsWith("http://") || versionApkUrl.startsWith("https://")) {
+                add(versionApkUrl)
+                // Primeira tentativa fria (rede/TLS acabando de iniciar) costuma abortar:
+                // dá uma segunda chance à fonte oficial antes dos fallbacks.
                 add(versionApkUrl)
             }
             addAll(fallbackApkHosts)
