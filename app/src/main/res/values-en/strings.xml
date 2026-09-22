@@ -30,28 +30,19 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.4.0):
+    <string name="changelog">What is new (5.4.1):
 
-→ VIRGIN SPEAKS YOUR LANGUAGE
-• She replies in the language you speak (Portuguese, English or Spanish)
+→ RECOMMEND WITHOUT A KEY
+• The "Recommend" button now always works: without a key, it uses your history and favorites (offline)
 
-→ MONTHLY FAVORITES
-• "Virgin, monthly favorites" — a mix with what you liked in the last 30 days
+→ AI KEY IN SETTINGS
+• New "AI key (Gemini)" field in Settings — free at aistudio.google.com/apikey
 
-→ LIVE LYRICS
-• On the Now Playing screen, lyrics follow the music as it plays (tap to see them all)
+→ VIRGIN SPEAKS THE APP LANGUAGE
+• Fixed: after switching the language, the voice now follows (English/Spanish)
 
-→ RECENTLY ADDED
-• "Recently added" section on the home with your newest songs
-
-→ SKINS ON THE HOME
-• Switch the player look right from the home: Neon, Aurora, Particles, Nebula or no effect
-
-→ ALWAYS-ON BARS
-• The mini visualizer on the Now Playing screen is always visible
-
-→ SETTINGS BACKUP
-• In Settings, save and restore learning, memories and the equalizer</string>
+→ GREETING WITHOUT REPEATING
+• Fixed: the avatar greeting no longer says "good morning/afternoon/night" twice</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -453,6 +444,11 @@
     <string name="rec_token_hint">Paste your AudD token here</string>
     <string name="rec_token_saved">Token saved!</string>
     <string name="rec_token_missing">Not configured</string>
+    <string name="gemini_key_row">AI key (Gemini)</string>
+    <string name="gemini_key_subtitle">Free at aistudio.google.com/apikey — AI recommendations. Without a key, I fall back to offline mode.</string>
+    <string name="gemini_key_hint">Paste the key here (AIza...)</string>
+    <string name="gemini_key_saved">Key saved!</string>
+    <string name="gemini_key_missing">Not configured</string>
     <string name="dj_voice_learn_like">Noted! You like it — I\'ll play more songs like this.</string>
     <string name="dj_voice_mix_main">To make a mix with me, open DJ Virgin from the top menu.</string>
     <string name="dj_voice_visualizer_on">Visualizer on!</string>

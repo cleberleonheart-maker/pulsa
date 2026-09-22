@@ -492,6 +492,10 @@ class VirginHomeFragment : Fragment() {
             else -> Settings.LANG_PT
         }
         Settings.setLanguage(ctx, next)
+        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+            androidx.core.os.LocaleListCompat.forLanguageTags(Settings.languageTag(next))
+        )
+        voice = null
         requireActivity().recreate()
     }
 
@@ -542,30 +546,42 @@ class VirginHomeFragment : Fragment() {
             Toast.makeText(requireActivity(), R.string.dj_empty, Toast.LENGTH_LONG).show()
             return
         }
-        if (!DjSuggest.isReady(ctx)) {
-            speak(getString(R.string.v_rec_off))
-            return
-        }
-        speak(getString(R.string.v_rec_thinking))
-        ThreadPool.post {
-            val suggestion = DjSuggest.suggest(ctx, Library.allSongs(ctx))
-            ThreadPool.onUi {
-                if (suggestion == null) {
-                    speak(getString(R.string.v_rec_fail))
-                    return@onUi
-                }
-                val all = Library.allSongs(ctx)
-                val found = all.firstOrNull {
-                    it.title.equals(suggestion.title, ignoreCase = true)
-                }
-                Telemetry.log(ctx, "Virgin AI sugeriu: ${suggestion.title}")
-                speak(DjSuggest.toSpeech(suggestion), onDone = {
-                    if (found != null) {
-                        Playback.start(listOf(found) + all.filter { it.id != found.id }, 0)
+        if (DjSuggest.isReady(ctx)) {
+            speak(getString(R.string.v_rec_thinking))
+            ThreadPool.post {
+                val suggestion = DjSuggest.suggest(ctx, Library.allSongs(ctx))
+                ThreadPool.onUi {
+                    if (suggestion == null) {
+                        speak(getString(R.string.v_rec_fail))
+                        return@onUi
                     }
-                })
+                    playSuggestion(ctx, suggestion)
+                }
+            }
+        } else {
+            val suggestion = DjSuggest.offline(ctx, songs)
+            if (suggestion.title.isBlank()) {
+                speak(getString(R.string.v_rec_fail))
+                return
+            }
+            speak(getString(R.string.v_rec_thinking))
+            ThreadPool.post {
+                ThreadPool.onUi { playSuggestion(ctx, suggestion) }
             }
         }
+    }
+
+    private fun playSuggestion(ctx: Context, suggestion: DjSuggest.Suggestion) {
+        val all = Library.allSongs(ctx)
+        val found = all.firstOrNull {
+            it.title.equals(suggestion.title, ignoreCase = true)
+        }
+        Telemetry.log(ctx, "Virgin AI sugeriu: ${suggestion.title}")
+        speak(DjSuggest.toSpeech(suggestion), onDone = {
+            if (found != null) {
+                Playback.start(listOf(found) + all.filter { it.id != found.id }, 0)
+            }
+        })
     }
 
     private fun showStats() {
@@ -663,7 +679,7 @@ class VirginHomeFragment : Fragment() {
             if (Settings.masculineAvatar(ctx)) R.string.dj_voice_name_male else R.string.dj_voice_name
         )
         view?.findViewById<TextView>(R.id.btn_greet)?.text = "👋 " + getString(greetRes)
-        speak("$name, ${getString(greetRes)} ${getString(lineRes)}")
+        speak("$name, ${getString(lineRes)}")
     }
 
     private fun speak(text: String, force: Boolean = false, onDone: (() -> Unit)? = null) {

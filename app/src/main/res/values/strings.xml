@@ -32,28 +32,19 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.4.0):
+    <string name="changelog">Novidades desta versão (5.4.1):
 
-→ VIRGIN ENTENDE SEU IDIOMA
-• Ela responde na língua que você falar (português, inglês ou espanhol)
+→ RECOMENDAR SEM CHAVE
+• O botão "Recomendar" agora funciona sempre: sem chave, usa seu histórico e favoritas (offline)
 
-→ CURTIDAS DO MÊS
-• "Virgin, favoritas do mês" — mix com o que você curtiu nos últimos 30 dias
+→ CHAVE DE IA NAS CONFIGURAÇÕES
+• Novo campo "Chave da IA (Gemini)" na tela de Configurações — grátis em aistudio.google.com/apikey
 
-→ LETRAS EM TEMPO REAL
-• Na tela Agora tocando, as letras acompanham a música enquanto toca (toque para ver todas)
+→ VIRGIN FALA NO IDIOMA DO APP
+• Corrigido: ao trocar o idioma, a voz agora acompanha (inglês/espanhol)
 
-→ RECENTES NA HOME
-• Seção "Adicionadas recentemente" com as suas músicas mais novas
-
-→ SKINS NA HOME
-• Troque o visual do player direto na home: Neon, Aurora, Partículas, Nebulosa ou sem efeito
-
-→ BARRAS SEMPRE ATIVAS
-• O mini visualizador da tela de reprodução fica sempre visível
-
-→ BACKUP DAS CONFIGURAÇÕES
-• Nas Configurações, salve e restaure aprendizado, memórias e equalizador</string>
+→ SAUDAÇÃO SEM REPETIR
+• Corrigido: o cumprimento do avatar não fala duas vezes o "bom dia/boa tarde/boa noite"</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
@@ -499,6 +490,11 @@
     <string name="rec_token_hint">Cole aqui o seu token da AudD</string>
     <string name="rec_token_saved">Token salvo!</string>
     <string name="rec_token_missing">Não configurado</string>
+    <string name="gemini_key_row">Chave da IA (Gemini)</string>
+    <string name="gemini_key_subtitle">Grátis em aistudio.google.com/apikey — recomendações por IA. Sem chave, uso o modo offline.</string>
+    <string name="gemini_key_hint">Cole aqui a chave (AIza...)</string>
+    <string name="gemini_key_saved">Chave salva!</string>
+    <string name="gemini_key_missing">Não configurada</string>
     <string name="dj_voice_learn_like">Anotei! Você gosta dessa — vou tocar mais músicas assim.</string>
     <string name="dj_voice_mix_main">Para fazer um mix comigo, abra o DJ Virgin no menu do topo.</string>
     <string name="dj_voice_visualizer_on">Visualizador ligado!</string>

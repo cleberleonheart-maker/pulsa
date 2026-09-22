@@ -135,6 +135,8 @@ class SettingsActivity : AppCompatActivity() {
 
         refreshRecToken()
         findViewById<View>(R.id.rec_token_row).setOnClickListener { promptRecToken() }
+        findViewById<View>(R.id.gemini_row).setOnClickListener { promptGeminiKey() }
+        refreshGeminiKey()
 
         findViewById<MaterialButton>(R.id.btn_download).setOnClickListener { startDownload() }
 
@@ -549,6 +551,38 @@ class SettingsActivity : AppCompatActivity() {
             path.startsWith("playlist") || path.startsWith("shorts") || path.startsWith("embed")
         ) return true
         return false
+    }
+
+    private fun refreshGeminiKey() {
+        val key = Settings.geminiKey(this)
+        findViewById<TextView>(R.id.gemini_key_value).text =
+            if (key.isBlank()) getString(R.string.gemini_key_missing)
+            else getString(R.string.gemini_key_saved)
+    }
+
+    private fun promptGeminiKey() {
+        val input = EditText(this).apply {
+            setText(Settings.geminiKey(this@SettingsActivity))
+            hint = getString(R.string.gemini_key_hint)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            maxLines = 1
+            isSingleLine = true
+            setPadding(48, 16, 48, 16)
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.gemini_key_row)
+            .setMessage(R.string.gemini_key_subtitle)
+            .setView(input)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val key = input.text.toString().trim()
+                Settings.setGeminiKey(this, key)
+                Settings.setGeminiOn(this, key.isNotBlank())
+                refreshGeminiKey()
+                Toast.makeText(this, R.string.gemini_key_saved, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun refreshRecToken() {
