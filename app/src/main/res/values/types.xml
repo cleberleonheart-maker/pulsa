@@ -54,4 +54,13 @@
         <item name="android:textAllCaps">true</item>
         <item name="android:textColor">@color/text_tertiary</item>
     </style>
+
+    <!-- Rótulo HUD de terminal (monoespaçado, maiúsculas, espaçado) -->
+    <style name="TextAppearance.Pulsa.Hud" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.16</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">11sp</item>
+    </style>
 </resources>

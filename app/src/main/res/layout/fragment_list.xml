@@ -24,7 +24,7 @@
             android:scaleType="centerCrop"
             android:src="@drawable/ic_music_note"
             android:tint="@color/ic_placeholder"
-            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium" />
+            app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar" />
 
         <LinearLayout
             android:layout_width="0dp"

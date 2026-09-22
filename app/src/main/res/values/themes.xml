@@ -29,6 +29,15 @@
         <item name="android:fontFamily">@font/outfit_regular</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:seekBarStyle">@style/Widget.Pulsa.SeekBar</item>
+        <!-- Chassis Radar · chanfro 45° global (todas as superfícies Material tornam-se terminais cortadas) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.Pulsa.Radar</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.Pulsa.Radar</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Pulsa.Radar</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.Pulsa.Radar</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Pulsa.Radar</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.Pulsa.Radar</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Pulsa.Radar</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Pulsa.Radar</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Pulsa.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Pulsa.BottomSheet</item>
 <item name="android:windowAnimationStyle">@style/WindowTransitionsPulsa</item>
@@ -91,6 +100,12 @@
         <item name="colorPrimary">@color/primary_teal</item>
         <item name="colorSecondary">@color/primary_teal_dark</item>
         <item name="colorOnPrimary">@color/bg</item>
+    </style>
+
+        <!-- Chassis Radar: esqueleto chanfrado 45° (canto terminal cortado) — infra do tema -->
+    <style name="ShapeAppearance.Pulsa.Radar" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">cut</item>
+        <item name="cornerSize">10dp</item>
     </style>
 
     <style name="ThemeOverlay.Pulsa.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -165,7 +180,7 @@
     </style>
 
     <style name="Widget.Pulsa.NeonButton" parent="Widget.Material3.Button">
-        <item name="cornerRadius">18dp</item>
+        <item name="cornerRadius">10dp</item>
         <item name="android:minHeight">50dp</item>
         <item name="android:textAllCaps">false</item>
         <item name="backgroundTint">@color/primary</item>

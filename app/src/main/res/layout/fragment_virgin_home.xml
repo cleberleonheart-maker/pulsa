@@ -39,14 +39,13 @@
                         android:background="@drawable/bg_nucleus" />
 
                     <TextView
+                        style="@style/TextAppearance.Pulsa.Hud"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="8dp"
-                        android:fontFamily="@font/outfit_semibold"
-                        android:letterSpacing="0.32"
                         android:text="@string/app_name"
-                        android:textColor="@color/primary_light"
-                        android:textSize="11sp" />
+                        android:textColor="@color/primary"
+                        android:textSize="12sp" />
 
                     <View
                         android:layout_width="7dp"
@@ -106,7 +105,7 @@
                 android:background="@drawable/seg_glow_l"
                 android:gravity="center"
                 android:text="@string/btn_party"
-                android:textColor="#1E0433"
+                android:textColor="#04140A"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -118,7 +117,7 @@
                 android:background="@drawable/seg_glow_r"
                 android:gravity="center"
                 android:text="@string/btn_relax"
-                android:textColor="#04262E"
+                android:textColor="#04140A"
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>

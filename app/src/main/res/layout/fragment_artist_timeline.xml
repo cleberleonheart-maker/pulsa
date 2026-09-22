@@ -20,8 +20,8 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="24dp"
                 app:cardElevation="6dp"
+                app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar"
                 app:strokeColor="@color/neon_border_soft"
                 app:strokeWidth="1dp">
 
@@ -78,7 +78,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:cardBackgroundColor="#1FFFFFFF"
-            app:cardCornerRadius="20dp"
+            app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar"
             app:strokeColor="@color/neon_border_soft"
             app:strokeWidth="1dp">
 

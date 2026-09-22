@@ -31,7 +31,18 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.13.1):
+    <string name="changelog">Novidades desta versão (4.14.0):
+
+→ NOVA CARA
+• Terminal Radar: repaginação completa — a Pulsa deixou o synthwave. Identidade de terminal: lima fosforescente + rubi de alerta sobre preto-esverdeado (sem mais rosa, roxo ou ciano)
+• Chassi chanfrado: painéis e cards com canto cortado a 45° (chanfro terminal) por toda a interface — álbuns, músicas, listas, mini player em pod, nav, deck, telas do DJ, perfil e timeline; inputs e rows chanfrados
+• Céu de varredura: fundo com retículo de travação, blips de alvo e horizonte em grid de perspectiva; sweep de radar animado girando nos anéis da tela de reprodução
+• Avatares novos: Victor com cabelo verde-radar e mecha lima, Virgínia com visor lima — ícones de launcher e splash na nova identidade
+• HUD de terminal: rótulo monoespaçado na Home da Virgínia
+
+↺ Versão 4.13.1
+
+Novidades desta versão (4.13.1):
 
 → VISUAL
 • Diálogo de atualização no tema Neon: ao baixar uma nova versão, o progresso agora aparece numa barra customizada arredondada do visual Pulsar Neon (roxo/rosa) em vez do diálogo padrão do Android, bem no clima do app

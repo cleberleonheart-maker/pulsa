@@ -7,9 +7,9 @@
     android:clickable="true"
     android:focusable="true"
     app:cardBackgroundColor="@color/glass_fill"
-    app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
-    app:rippleColor="#4025F4EE"
+    app:rippleColor="#40B6FF2E"
+    app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar"
     app:strokeColor="@color/neon_border_soft"
     app:strokeWidth="1dp">
 

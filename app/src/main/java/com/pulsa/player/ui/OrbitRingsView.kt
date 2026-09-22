@@ -6,6 +6,7 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
@@ -36,22 +37,36 @@ class OrbitRingsView @JvmOverloads constructor(
     private val ringOuter = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2f * density
-        color = 0x8825F4EE.toInt()
+        color = 0x88B6FF2E.toInt()
     }
     private val ringInner = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1.3f * density
-        color = 0x5925F4EE.toInt()
+        color = 0x59B6FF2E.toInt()
     }
     private val ringDash = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1f * density
-        color = 0x40FF2E9E.toInt()
+        color = 0x40FF2E4D.toInt()
     }
-    private val particleMagenta = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFF6BC4.toInt() }
-    private val particleMagentaGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66FF2E9E.toInt() }
-    private val particleCyan = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF25F4EE.toInt() }
-    private val particleCyanGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x6625F4EE.toInt() }
+    private val particleMagenta = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFF6A7A.toInt() }
+    private val particleMagentaGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66FF2E4D.toInt() }
+    private val particleCyan = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFB6FF2E.toInt() }
+    private val particleCyanGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66B6FF2E.toInt() }
+
+    // Sweep de radar: varredura lima girando com rastro decaído + alvo rubi na borda
+    private val sweepFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0x1CB6FF2E.toInt()
+    }
+    private val sweepLine = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.6f * density
+        color = 0x99B6FF2E.toInt()
+    }
+    private val blip = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFFFF2E4D.toInt()
+    }
+    private val sweepRect = RectF()
 
     private var animator: ValueAnimator? = null
     private var animated = true
@@ -152,6 +167,22 @@ class OrbitRingsView @JvmOverloads constructor(
         canvas.restore()
     }
 
+    private fun drawSweep(canvas: Canvas) {
+        if (!animated) return
+        val r = radius * 0.92f
+        sweepRect.set(centerX - r, centerY - r, centerX + r, centerY + r)
+        val trail = 42f
+        val path = Path().apply {
+            moveTo(centerX, centerY)
+            arcTo(sweepRect, angle - trail, trail)
+            close()
+        }
+        canvas.drawPath(path, sweepFill)
+        val rad = angle * (PI.toFloat() / 180f)
+        canvas.drawLine(centerX, centerY, centerX + cos(rad) * r, centerY + sin(rad) * r, sweepLine)
+        canvas.drawCircle(centerX + cos(rad) * r, centerY + sin(rad) * r, 1.8f * density, blip)
+    }
+
     private fun drawParticle(
         canvas: Canvas,
         x: Float,
@@ -171,6 +202,8 @@ class OrbitRingsView @JvmOverloads constructor(
         val ryO = rxO * 0.32f
         val rxI = rxO * 0.62f
         val ryI = rxI * 0.30f
+
+        drawSweep(canvas)
 
         drawRing(canvas, rxO, ryO, 18f, ringOuter)
         drawRing(canvas, rxI, ryI, -10f, ringInner)

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Chassis Radar · painel chanfrado (canto terminal) -->
+    <declare-styleable name="RadarPanel">
+        <attr name="panelColor" format="color" />
+        <attr name="panelStroke" format="color" />
+        <attr name="panelStrokeWidth" format="dimension" />
+        <attr name="panelCut" format="dimension" />
+    </declare-styleable>
+</resources>

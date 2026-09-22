@@ -3,10 +3,10 @@
     <item>
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#59FFC84D"
-                android:endColor="#00FFC84D"
+                android:centerColor="#59B6FF2E"
+                android:endColor="#00B6FF2E"
                 android:gradientRadius="120dp"
-                android:startColor="#99FFC84D"
+                android:startColor="#99B6FF2E"
                 android:type="radial" />
         </shape>
     </item>
@@ -17,10 +17,10 @@
         android:top="20dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#59C86BFF"
-                android:endColor="#0025F4EE"
+                android:centerColor="#59A8E62A"
+                android:endColor="#00B6FF2E"
                 android:gradientRadius="60dp"
-                android:startColor="#2E25F4EE"
+                android:startColor="#2EB6FF2E"
                 android:type="radial" />
         </shape>
     </item>

@@ -1,21 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Corpo da pílula (vidro escuro) -->
-    <item>
-        <shape android:shape="rectangle">
-            <corners android:radius="30dp" />
-            <solid android:color="#EE120529" />
-        </shape>
-    </item>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- Contorno néon -->
+    <!-- Corpo chanfrado (chassis radar) -->
     <item>
-        <shape android:shape="rectangle">
-            <corners android:radius="30dp" />
-            <stroke
-                android:width="1dp"
-                android:color="#4625F4EE" />
-        </shape>
+        <com.pulsa.player.ui.RadarPanelDrawable
+            app:panelColor="#F008150E"
+            app:panelCut="14dp"
+            app:panelStroke="#46B6FF2E"
+            app:panelStrokeWidth="1dp" />
     </item>
 
     <!-- Linha superior holográfica -->
@@ -26,14 +19,14 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:centerColor="#66FF6BC4"
-                android:endColor="#2625F4EE"
-                android:startColor="#26FF2E9E" />
+                android:centerColor="#66FF6A7A"
+                android:endColor="#26B6FF2E"
+                android:startColor="#26FF2E4D" />
             <size android:height="2dp" />
         </shape>
     </item>
 
-    <!-- Farol esquerdo (ciano) -->
+    <!-- Farol esquerdo (lima) -->
     <item
         android:bottom="26dp"
         android:gravity="left|center_vertical"
@@ -41,10 +34,10 @@
         android:top="26dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#AA25F4EE"
-                android:endColor="#0025F4EE"
+                android:centerColor="#AAB6FF2E"
+                android:endColor="#00B6FF2E"
                 android:gradientRadius="12dp"
-                android:startColor="#FF25F4EE"
+                android:startColor="#FFB6FF2E"
                 android:type="radial" />
             <size
                 android:width="24dp"
@@ -52,7 +45,7 @@
         </shape>
     </item>
 
-    <!-- Farol direito (magenta) -->
+    <!-- Farol direito (rubi) -->
     <item
         android:bottom="26dp"
         android:gravity="right|center_vertical"
@@ -60,10 +53,10 @@
         android:top="26dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#AAFF2E9E"
-                android:endColor="#00FF2E9E"
+                android:centerColor="#AAFF2E4D"
+                android:endColor="#00FF2E4D"
                 android:gradientRadius="12dp"
-                android:startColor="#FFFF6BC4"
+                android:startColor="#FFFF6A7A"
                 android:type="radial" />
             <size
                 android:width="24dp"

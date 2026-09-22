@@ -1,21 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Corpo da cápsula -->
-    <item>
-        <shape android:shape="rectangle">
-            <corners android:radius="26dp" />
-            <solid android:color="#F01B0B34" />
-        </shape>
-    </item>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- Contorno néon -->
+    <!-- Pod chanfrado (chassis radar) -->
     <item>
-        <shape android:shape="rectangle">
-            <corners android:radius="26dp" />
-            <stroke
-                android:width="1dp"
-                android:color="#5925F4EE" />
-        </shape>
+        <com.pulsa.player.ui.RadarPanelDrawable
+            app:panelColor="#F00C1C13"
+            app:panelCut="12dp"
+            app:panelStroke="#59B6FF2E"
+            app:panelStrokeWidth="1dp" />
     </item>
 
     <!-- Linha de energia superior -->
@@ -26,8 +19,8 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:endColor="#CCFF2E9E"
-                android:startColor="#99FF6BC4" />
+                android:endColor="#CCFF2E4D"
+                android:startColor="#99FF6A7A" />
             <size android:height="2dp" />
         </shape>
     </item>
@@ -39,7 +32,7 @@
         android:left="6dp"
         android:top="24dp">
         <shape android:shape="oval">
-            <solid android:color="#B325F4EE" />
+            <solid android:color="#B3B6FF2E" />
             <size
                 android:width="4dp"
                 android:height="4dp" />
@@ -53,7 +46,7 @@
         android:right="6dp"
         android:top="24dp">
         <shape android:shape="oval">
-            <solid android:color="#B325F4EE" />
+            <solid android:color="#B3B6FF2E" />
             <size
                 android:width="4dp"
                 android:height="4dp" />

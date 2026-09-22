@@ -1,70 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Pulsar Neon · synthwave (noite púrpura + rosa elétrico + ciano néon) -->
-    <color name="bg">#0E0226</color>
-    <color name="bg_elev">#1B0B34</color>
-    <color name="surface">#190A33</color>
-    <color name="surface_variant">#261142</color>
-    <color name="glass_fill">#170A2F</color>
-    <color name="glass_fill_strong">#24123F</color>
-    <color name="neon_border">#4A2B70</color>
-    <color name="neon_border_soft">#7A48AD</color>
+    <!-- Terminal Radar · preto-esverdeado + lima fosforescente + rubi (sem rosa/roxo/ciano/âmbara-neon) -->
+    <color name="bg">#06100B</color>
+    <color name="bg_elev">#0C1C13</color>
+    <color name="surface">#08150E</color>
+    <color name="surface_variant">#11291B</color>
+    <color name="glass_fill">#08150E</color>
+    <color name="glass_fill_strong">#102317</color>
+    <color name="neon_border">#1D3A26</color>
+    <color name="neon_border_soft">#2C5A3A</color>
 
-    <!-- Brilho neon (rosa / ouro / ciano) -->
-    <color name="aurora_violet">#C86BFF</color>
-    <color name="aurora_mid">#9D6BFF</color>
-    <color name="aurora_cyan">#25F4EE</color>
-    <color name="aurora_pink">#FF2E9E</color>
-    <color name="glow_start">#66FF2E9E</color>
-    <color name="glow_cyan">#5525F4EE</color>
-    <color name="glow_pink">#66FF2E9E</color>
+    <!-- Brilho radar (lima fosforescente heroico + rubi de alerta) -->
+    <color name="aurora_violet">#B6FF2E</color>
+    <color name="aurora_mid">#8CE820</color>
+    <color name="aurora_cyan">#FF2E4D</color>
+    <color name="aurora_pink">#FF6A7A</color>
+    <color name="glow_start">#66B6FF2E</color>
+    <color name="glow_cyan">#55FF2E4D</color>
+    <color name="glow_pink">#66B6FF2E</color>
 
-    <!-- Primário (rosa elétrico — herói do synthwave) -->
-    <color name="primary">#FF2E9E</color>
-    <color name="primary_light">#FF6BC4</color>
-    <color name="primary_dark">#C41278</color>
-    <color name="on_primary">#1E0433</color>
+    <!-- Primário (lima fosforescente — herói do radar) -->
+    <color name="primary">#B6FF2E</color>
+    <color name="primary_light">#DBFF7D</color>
+    <color name="primary_dark">#6FA81C</color>
+    <color name="on_primary">#04140A</color>
 
-    <!-- Acentos (harmonizados com o synthwave) -->
-    <color name="primary_blue">#25F4EE</color>
-    <color name="primary_blue_dark">#0FA8C8</color>
-    <color name="primary_green">#4DF59A</color>
-    <color name="primary_green_dark">#25C57A</color>
-    <color name="primary_amber">#FFC84D</color>
-    <color name="primary_amber_dark">#F2A31A</color>
-    <color name="primary_red">#FF5A6E</color>
-    <color name="primary_red_dark">#E2364F</color>
-    <color name="primary_pink">#FF7AC0</color>
-    <color name="primary_pink_dark">#E04896</color>
-    <color name="primary_teal">#3DF7CB</color>
-    <color name="primary_teal_dark">#26C7AE</color>
+    <!-- Acentos (rubi de alerta + lima de varredura) -->
+    <color name="primary_blue">#FF2E4D</color>
+    <color name="primary_blue_dark">#C91F36</color>
+    <color name="primary_green">#B6FF2E</color>
+    <color name="primary_green_dark">#7BC51F</color>
+    <color name="primary_amber">#FF3A4D</color>
+    <color name="primary_amber_dark">#D92D41</color>
+    <color name="primary_red">#FF2236</color>
+    <color name="primary_red_dark">#CE0F26</color>
+    <color name="primary_pink">#FF6A7A</color>
+    <color name="primary_pink_dark">#E0384C</color>
+    <color name="primary_teal">#B6FF2E</color>
+    <color name="primary_teal_dark">#88D628</color>
 
     <!-- Texto -->
-    <color name="text_primary">#F8EFFF</color>
-    <color name="text_secondary">#BFA9E2</color>
-    <color name="text_tertiary">#8571A8</color>
-    <color name="divider">#352152</color>
+    <color name="text_primary">#E8FFD8</color>
+    <color name="text_secondary">#A9D998</color>
+    <color name="text_tertiary">#6E9E63</color>
+    <color name="divider">#1B3A26</color>
     <color name="white">#FFFFFF</color>
-    <color name="yellow">#FFE94D</color>
-    <color name="yellow_dark">#F9A825</color>
+    <color name="yellow">#FF3A4D</color>
+    <color name="yellow_dark">#D92D41</color>
 
     <!-- Placeholder de capa (tint sobre ic_music_note) -->
-    <color name="ic_placeholder">#6625F4EE</color>
+    <color name="ic_placeholder">#66B6FF2E</color>
 
     <!-- Vídeo -->
     <color name="video_bg">#F5F5F5</color>
     <color name="video_text">#1A1A1A</color>
     <color name="video_text2">#6B6B6B</color>
 
-    <!-- Synthwave · camada técnica -->
-    <color name="panel_glass">#CC190A32</color>
-    <color name="panel_border">#4A2B70</color>
-    <color name="panel_border_cyan">#5925F4EE</color>
-    <color name="hud_grid">#1F25F4EE</color>
-    <color name="hud_tick">#CCFFFFFF</color>
-    <color name="orbit_cyan">#4025F4EE</color>
-    <color name="orbit_magenta">#4DFF2E9E</color>
-    <color name="rw_gold">#FFD54A</color>
+    <!-- Terminal Radar · camada técnica -->
+    <color name="panel_glass">#CC06200E</color>
+    <color name="panel_border">#1D5A33</color>
+    <color name="panel_border_cyan">#59B6FF2E</color>
+    <color name="hud_grid">#1FB6FF2E</color>
+    <color name="hud_tick">#CCE8FFD8</color>
+    <color name="orbit_cyan">#40B6FF2E</color>
+    <color name="orbit_magenta">#4DFF2E4D</color>
+    <color name="rw_gold">#DBFF7D</color>
     <color name="rw_silver">#C9D2DE</color>
     <color name="rw_bronze">#D58A62</color>
 </resources>

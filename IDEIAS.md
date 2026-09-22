@@ -2,6 +2,8 @@
 
 > Lista de melhorias futuras (não implementadas ainda).
 
+- [x] **Redesign Terminal Radar** (4.14.0): repaginação completa da identidade — adeus synthwave (rosa/roxo/ciano). Terminal de varredura: paleta lima `#B6FF2E` + rubi de alerta `#FF2E4D` sobre preto-esverdeado (`#06100B`/`#0C1C13`); painéis e cards com canto cortado a 45° em toda a interface — chassi chanfrado via `ShapeAppearance.Pulsa.Radar` (tema) + `RadarPanelDrawable` (rows/inputs/decks/cápsulas) —; fundo com retículo de travação e blips (`bg_aurora`), sweep de radar animado nos anéis da tela de reprodução (`OrbitRingsView`), HUD monoespaçado (`TextAppearance.Pulsa.Hud`), avatares/ícones com gradientes refinados. Virgínia (locutora) e curiosidades entre as músicas seguem intactas
+
 ## ✓ Feito (2026)
 
 - [x] **Pulsa Rewind** (4.12.0): resumo local no app (`Perfil → Pulsa Rewind`) — Top 10, tempo/tocadas, gráficos por mês/dia/hora e fatos, com filtros Sempre/30d/7d (`RewindActivity` + `DjLearn.rewind`); replay/ano no dashboard web fica em aberto

@@ -82,14 +82,14 @@
             android:layout_marginTop="18dp"
             android:orientation="horizontal">
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
                 app:cardBackgroundColor="@color/glass_fill"
-                app:cardCornerRadius="22dp"
-                app:cardElevation="6dp">
+                app:cardElevation="6dp"
+                app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -105,13 +105,13 @@
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
-                    <androidx.cardview.widget.CardView
+                    <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
                         android:layout_height="128dp"
                         android:layout_marginTop="10dp"
                         app:cardBackgroundColor="@color/surface_variant"
-                        app:cardCornerRadius="14dp"
-                        app:cardElevation="0dp">
+                        app:cardElevation="0dp"
+                        app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar">
 
                         <ImageView
                             android:id="@+id/dj_art_a"
@@ -119,7 +119,7 @@
                             android:layout_height="match_parent"
                             android:scaleType="centerCrop"
                             android:src="@drawable/ic_music_note" />
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
 
                     <TextView
                         android:id="@+id/dj_title_a"
@@ -143,16 +143,16 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:layout_weight="1"
                 app:cardBackgroundColor="@color/glass_fill"
-                app:cardCornerRadius="22dp"
-                app:cardElevation="6dp">
+                app:cardElevation="6dp"
+                app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -168,13 +168,13 @@
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
-                    <androidx.cardview.widget.CardView
+                    <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
                         android:layout_height="128dp"
                         android:layout_marginTop="10dp"
                         app:cardBackgroundColor="@color/surface_variant"
-                        app:cardCornerRadius="14dp"
-                        app:cardElevation="0dp">
+                        app:cardElevation="0dp"
+                        app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar">
 
                         <ImageView
                             android:id="@+id/dj_art_b"
@@ -182,7 +182,7 @@
                             android:layout_height="match_parent"
                             android:scaleType="centerCrop"
                             android:src="@drawable/ic_music_note" />
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
 
                     <TextView
                         android:id="@+id/dj_title_b"
@@ -206,7 +206,7 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
         <!-- Crossfader -->

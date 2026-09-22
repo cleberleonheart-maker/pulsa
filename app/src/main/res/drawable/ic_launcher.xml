@@ -16,46 +16,46 @@
                 android:startY="0"
                 android:endX="0"
                 android:endY="108"
-                android:startColor="#2A0F5E"
-                android:endColor="#0E0226" />
+                android:startColor="#14331E"
+                android:endColor="#06100B" />
         </aapt:attr>
     </path>
 
     <!-- Aurora dourada atrás da avatar -->
     <path
-        android:fillColor="#2EFFC84D"
+        android:fillColor="#2EB6FF2E"
         android:pathData="M54,8a46,46 0 1 1 0,88a46,46 0 1 1 0,-88Z" />
 
     <!-- Anel néon ciano + anel violeta -->
     <path
         android:pathData="M54,20a34,34 0 1 1 0,68a34,34 0 1 1 0,-68Z"
-        android:strokeColor="#8C25F4EE"
+        android:strokeColor="#8CB6FF2E"
         android:strokeWidth="2" />
     <path
         android:pathData="M54,14a38,38 0 1 1 0,76a38,38 0 1 1 0,-76Z"
-        android:strokeColor="#66C86BFF"
+        android:strokeColor="#66A8E62A"
         android:strokeWidth="1.4" />
 
     <!-- Nota musical (ouro, sup. esquerdo) -->
     <path
-        android:fillColor="#FFC84D"
+        android:fillColor="#B6FF2E"
         android:pathData="M32.3,15h2.3v12h-2.3z" />
     <path
-        android:fillColor="#FFC84D"
+        android:fillColor="#B6FF2E"
         android:pathData="M29,23.2m-3.8,0a3.8,3.8 0 1 1 7.6,0a3.8,3.8 0 1 1 -7.6,0" />
     <path
-        android:fillColor="#FFC84D"
+        android:fillColor="#B6FF2E"
         android:pathData="M34.6,15C38,16.5 40,16 40,13.5C38.2,15.6 36,15.8 34.6,15Z" />
 
     <!-- Nota musical (ciano néon, inf. direito) -->
     <path
-        android:fillColor="#25F4EE"
+        android:fillColor="#B6FF2E"
         android:pathData="M88.3,70h2.3v12h-2.3z" />
     <path
-        android:fillColor="#25F4EE"
+        android:fillColor="#B6FF2E"
         android:pathData="M85,78.2m-3.8,0a3.8,3.8 0 1 1 7.6,0a3.8,3.8 0 1 1 -7.6,0" />
     <path
-        android:fillColor="#25F4EE"
+        android:fillColor="#B6FF2E"
         android:pathData="M90.6,70C94,71.5 96,71 96,68.5C94.2,70.6 92,70.8 90.6,70Z" />
 
     <!-- Avatar Sun-Girl: esfera pôr-do-sol (centrada 54,56 · r32) -->
@@ -68,8 +68,8 @@
                 android:centerY="0.32"
                 android:gradientRadius="56"
                 android:startColor="#FFF7CE"
-                android:centerColor="#FFB35C"
-                android:endColor="#D6286F" />
+                android:centerColor="#F1FFB8"
+                android:endColor="#C91F36" />
         </aapt:attr>
     </path>
 
@@ -84,16 +84,16 @@
         android:pivotX="76"
         android:pivotY="30">
         <path
-            android:fillColor="#25F4EE"
+            android:fillColor="#B6FF2E"
             android:pathData="M76,30C72.5,25 67.5,25 66,28.5C67.5,31.5 71.5,32.5 76,31Z" />
         <path
-            android:fillColor="#25F4EE"
+            android:fillColor="#B6FF2E"
             android:pathData="M76,30C79.5,25 84.5,25 86,28.5C84.5,31.5 80.5,32.5 76,31Z" />
         <path
-            android:fillColor="#FFC84D"
+            android:fillColor="#B6FF2E"
             android:pathData="M74,31L77,30.5L74.5,36L72.5,35.5Z" />
         <path
-            android:fillColor="#FFC84D"
+            android:fillColor="#B6FF2E"
             android:pathData="M77.5,30.5L79.5,31L80,36.5L77.5,37Z" />
         <path
             android:fillColor="#FFE9A8"
@@ -102,14 +102,14 @@
 
     <!-- Visor ciano (olhos) -->
     <path
-        android:fillColor="#25F4EE"
+        android:fillColor="#B6FF2E"
         android:pathData="M37,54 H47 a2,2 0 0 1 2,2 V57 a2,2 0 0 1 -2,2 H37 a2,2 0 0 1 -2,-2 V56 a2,2 0 0 1 2,-2 Z" />
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M40.5,55.4m-1,0a1,1 0 1 1 2,0a1,1 0 1 1 -2,0Z" />
 
     <path
-        android:fillColor="#25F4EE"
+        android:fillColor="#B6FF2E"
         android:pathData="M61,54 H71 a2,2 0 0 1 2,2 V57 a2,2 0 0 1 -2,2 H61 a2,2 0 0 1 -2,-2 V56 a2,2 0 0 1 2,-2 Z" />
     <path
         android:fillColor="#FFFFFF"
@@ -117,16 +117,16 @@
 
     <!-- Bochechas -->
     <path
-        android:fillColor="#8CFF5A9E"
+        android:fillColor="#8CFF4A5E"
         android:pathData="M31.5,64.4a5.5,3.1 0 1 0 11,0a5.5,3.1 0 1 0 -11,0Z" />
     <path
-        android:fillColor="#8CFF5A9E"
+        android:fillColor="#8CFF4A5E"
         android:pathData="M65.5,64.4a5.5,3.1 0 1 0 11,0a5.5,3.1 0 1 0 -11,0Z" />
 
     <!-- Sorriso néon -->
     <path
         android:pathData="M47.8,69.6C50.6,73.6 57.4,73.6 60.2,69.6"
-        android:strokeColor="#25F4EE"
+        android:strokeColor="#B6FF2E"
         android:strokeLineCap="round"
         android:strokeWidth="2.2" />
 </vector>
