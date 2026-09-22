@@ -32,7 +32,15 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.0.1):
+    <string name="changelog">Novidades desta versão (5.0.2):
+
+→ AVATAR TAMI
+• Os dois avatares (Virgin e Victor), o ícone e o splash ficaram na cor do Rádio: violeta aurora por inteiro (cabeça e corpo), sem azul/verde
+• Rosto novo: olhos redondos com brilho e sorriso largo e curvo — mais fofo
+
+↺ Versão 5.0.1
+
+Novidades desta versão (5.0.1):
 
 → VISUAL DO AVATAR
 • Home sem painel: o avatar agora fica livre e inteiro, sem a bandeja atrás (não corta mais a figura)

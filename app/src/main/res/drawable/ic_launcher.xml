@@ -67,9 +67,9 @@
                 android:centerX="0.38"
                 android:centerY="0.32"
                 android:gradientRadius="56"
-                android:startColor="#FFF7CE"
-                android:centerColor="#FFD9A8"
-                android:endColor="#C91F36" />
+                android:startColor="#E9D5FF"
+                android:centerColor="#C4B5FD"
+                android:endColor="#7C62E0" />
         </aapt:attr>
     </path>
 
