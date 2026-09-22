@@ -27,10 +27,15 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.13.0):
+    <string name="changelog">What is new (4.13.1):
 
 ➜ LOOK
-• Nebula theme: new visual for the sound effects — "Virgin, change the look" now includes the nebula: 5 colorful clouds spinning in precession that pulse with the beat and a bright core that grows with the music, a trip through the nebulae in the style of Nebula Music Visualizer
+• Update dialog redesigned in the Neon theme: when downloading a new version, the progress now shows on a custom rounded neon bar (purple/cyan) instead of the default Android dialog, right in the app\'s vibe
+
+↺ Version 4.13.0
+
+➜ LOOK
+• Nebula theme:  new visual for the sound effects — "Virgin, change the look" now includes the nebula: 5 colorful clouds spinning in precession that pulse with the beat and a bright core that grows with the music, a trip through the nebulae in the style of Nebula Music Visualizer
 
 ↺ Version 4.12.1
 

@@ -31,10 +31,15 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.13.0):
+    <string name="changelog">Novidades desta versão (4.13.1):
 
 → VISUAL
-• Tema Nebulosa: novo visual do efeito sonoro — \"Virgin, troca o visual\" agora inclui a nebulosa: 5 nuvens coloridas girando em precessão que pulsam com a batida e um núcleo brilhante que cresce na música, viagem pelas nebulosas estilo Nebula Music Visualizer
+• Diálogo de atualização no tema Neon: ao baixar uma nova versão, o progresso agora aparece numa barra customizada arredondada do visual Pulsar Neon (roxo/rosa) em vez do diálogo padrão do Android, bem no clima do app
+
+↺ Versão 4.13.0
+
+→ VISUAL
+• Tema Nebulosa:  novo visual do efeito sonoro — \"Virgin, troca o visual\" agora inclui a nebulosa: 5 nuvens coloridas girando em precessão que pulsam com a batida e um núcleo brilhante que cresce na música, viagem pelas nebulosas estilo Nebula Music Visualizer
 
 ↺ Versão 4.12.1
 

@@ -112,29 +112,26 @@ object UpdateChecker {
         if (context !is android.app.Activity) return
         if (!ensureInstallPermission(context)) return
         if (context.isFinishing || context.isDestroyed) return
-        val pd = android.app.ProgressDialog(context)
-        pd.setTitle(context.getString(R.string.update_title))
-        pd.setMessage(context.getString(R.string.update_downloading, 0))
-        pd.setProgressStyle(android.app.ProgressDialog.STYLE_HORIZONTAL)
-        pd.setMax(100)
-        pd.setProgress(0)
-        pd.setCancelable(false)
-        pd.show()
+        val view = context.layoutInflater.inflate(R.layout.dialog_update_download, null)
+        val bar = view.findViewById<android.widget.ProgressBar>(R.id.ud_bar)
+        val label = view.findViewById<android.widget.TextView>(R.id.ud_label)
+        label.text = context.getString(R.string.update_downloading, 0)
+        val dialog = MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.update_title)
+            .setView(view)
+            .setCancelable(false)
+            .show()
         ThreadPool.post {
             val target = downloadFromServer(context.applicationContext, latestName, versionUrl) { pct ->
                 ThreadPool.onUi {
-                    try {
-                        pd.progress = pct
-                        pd.setMessage(context.getString(R.string.update_downloading, pct))
-                    } catch (t: Throwable) {
+                    runCatching {
+                        bar.progress = pct
+                        label.text = context.getString(R.string.update_downloading, pct)
                     }
                 }
             }
             ThreadPool.onUi {
-                try {
-                    pd.dismiss()
-                } catch (t: Throwable) {
-                }
+                runCatching { dialog.dismiss() }
                 if (target != null) {
                     installApk(context.applicationContext, target)
                 } else {
