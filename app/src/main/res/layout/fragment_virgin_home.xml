@@ -15,8 +15,10 @@
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="46dp"
             android:background="@drawable/bg_deck"
-            android:layout_marginTop="46dp">
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -26,7 +28,6 @@
                 android:paddingTop="64dp"
                 android:paddingBottom="20dp">
 
-                <!-- Sobretítulo do deck -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -65,7 +66,6 @@
                     android:textSize="24sp"
                     android:textStyle="bold" />
 
-                <!-- Raio de status (chip) -->
                 <TextView
                     android:id="@+id/hero_status"
                     android:layout_width="wrap_content"
@@ -76,9 +76,20 @@
                     android:paddingVertical="5dp"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/hero_fav"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
             </LinearLayout>
 
-            <!-- Avatar flutuante: metade fora do deck -->
             <com.pulsa.player.ui.DancingVirginView
                 android:id="@+id/hero_avatar"
                 android:layout_width="104dp"
@@ -89,6 +100,21 @@
                 android:contentDescription="@string/dj_voice_name"
                 android:elevation="10dp" />
         </FrameLayout>
+
+        <!-- Saudação do avatar: fala bom dia/boa tarde/boa noite -->
+        <TextView
+            android:id="@+id/btn_greet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_pill_neon"
+            android:gravity="center"
+            android:paddingHorizontal="22dp"
+            android:paddingVertical="9dp"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
         <!-- Console segmentado Bombar / Relaxar -->
         <LinearLayout
@@ -122,12 +148,115 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Cards de funções -->
+        <!-- Card "Tocando agora" / continuar de onde parou -->
         <LinearLayout
-            android:id="@+id/cards_container"
+            android:id="@+id/resume_card"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_mini_player"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="10dp"
+            android:visibility="gone">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/resume_art"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_album_art"
+                android:contentDescription="@null"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_music_note"
+                android:tint="@color/ic_placeholder"
+                app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/resume_title"
+                    style="@style/TextAppearance.Pulsa.TitleSmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:id="@+id/resume_artist"
+                    style="@style/TextAppearance.Pulsa.BodySecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/resume_play"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_nucleus"
+                android:contentDescription="@null"
+                android:padding="9dp"
+                android:src="@drawable/ic_play"
+                android:tint="@android:color/white" />
+
+            <ImageView
+                android:id="@+id/resume_arrow"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="6dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_arrow_forward"
+                android:tint="@color/text_tertiary" />
+        </LinearLayout>
+
+        <!-- Seção: sua biblioteca (atalhos) -->
+        <TextView
+            android:id="@+id/home_section_library"
+            style="@style/TextAppearance.Pulsa.TitleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/home_library_title"
+            android:textColor="@color/primary_light" />
+
+        <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:scrollbars="none"
+            android:scrollX="0dp">
+
+            <LinearLayout
+                android:id="@+id/shortcuts_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <!-- Seção: assistente -->
+        <TextView
+            android:id="@+id/home_section_assistant"
+            style="@style/TextAppearance.Pulsa.TitleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/home_assistant_title"
+            android:textColor="@color/primary_light" />
+
+        <LinearLayout
+            android:id="@+id/assistant_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:orientation="vertical" />
 
         <TextView

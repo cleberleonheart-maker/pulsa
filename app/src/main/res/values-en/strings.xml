@@ -8,9 +8,12 @@
     <string name="widget_idle">Tap to open the player</string>
 
     <string name="tab_songs">Songs</string>
+    <string name="ab_needs_a">Tap A first to mark the loop start.</string>
+    <string name="ab_clear">Clear</string>
     <string name="tab_albums">Albums</string>
     <string name="tab_artists">Artists</string>
     <string name="tab_playlists">Playlists</string>
+    <string name="tab_biblioteca">Library</string>
 
     <string name="now_playing">Now playing</string>
     <string name="now_playing_subtitle">Now playing</string>
@@ -27,7 +30,19 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (4.14.0):
+    <string name="changelog">What is new (5.0.0):
+
+→ NEW SKELETON
+• Bottom navigation bar: Virgin, Songs, Library, Search and Profile — no more tab strip on top
+• Library as a hub: albums, artists, favorites, playlists and videos in one place with section chips
+• Now Playing on its own screen: the player opens above navigation with its own toolbar and back
+• New home: avatar greeting button (the avatar says good morning/afternoon/night and talks to you) and quick shortcuts for Library, Virgin mix, Sleep, Virgin FM Radio, Stats and More
+• Virgin FM Radio: opens playing the avatar\'s favorite song first (the one you play the most) and announces it — the favorite also shows on the deck
+• DJ and Radio left the toolbar and moved to the Home; Playlists is now a Library section
+
+↺ Version 4.14.0
+
+What is new (4.14.0):
 
 ➜ NEW LOOK
 • Terminal Radar: full overhaul — Pulsa left the synthwave behind. Terminal identity: phosphorescent lime + alert ruby over charcoal-green (no more pink, purple or cyan)
@@ -464,6 +479,9 @@ What is new (4.13.1):
     <string name="dj_voice_goodbye">See you! Just call me whenever you need.</string>
     <string name="dj_voice_unknown">Sorry, I didn\'t catch that. Try: Virgin, next song.</string>
     <string name="dj_voice_hello">Welcome to Pulsa! I\'m Virgin, your virtual DJ.</string>
+    <string name="home_greet_day">Good morning! How about starting the day with good music?</string>
+    <string name="home_greet_after">Good afternoon! Feeling relaxed? I\'ll take care of the soundtrack for you.</string>
+    <string name="home_greet_night">Good night! Let me pick a calm track to close the day.</string>
     <string name="dj_voice_skip">Skipped!</string>
     <string name="dj_voice_dislike">Got it! I\'ll keep that one off the mix for a while.</string>
     <string name="dj_voice_yesterday_none">You didn\'t play anything with me yesterday. How about we start today\'s session now?</string>
@@ -563,6 +581,7 @@ What is new (4.13.1):
     <string name="radio_start_format">Turn on %1$s Radio</string>
     <string name="radio_stop_format">Turn off %1$s Radio</string>
     <string name="radio_welcome_format">You\'re listening to %1$s F.M. Radio, playing %2$d songs of every style!</string>
+    <string name="radio_fav_format">And to open %1$s Radio, here is my favorite song: %2$s, by %3$s.</string>
     <string name="radio_need_format">Import some songs so %1$s Radio can play.</string>
     <string name="v_radio_format">%1$s FM Radio</string>
     <string name="tami_clock_greet_day">Good morning!</string>
@@ -604,6 +623,8 @@ What is new (4.13.1):
     <string name="hero_status_ready_f">○ Ready</string>
     <string name="hero_status_no_songs">○ No songs yet</string>
     <string name="virgin_hub_note">Each card activates a function. Music facts stay with the DJ host.</string>
+    <string name="home_library_title">Your library</string>
+    <string name="home_assistant_title">Assistant</string>
     <string name="btn_party">Party</string>
     <string name="btn_relax">Relax</string>
     <string name="v_language">Language</string>

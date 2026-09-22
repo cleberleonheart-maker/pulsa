@@ -25,6 +25,9 @@ object Playback {
     val shuffle: Boolean get() = service?.shuffle ?: false
     val repeatAll: Boolean get() = service?.repeatAll ?: true
     val repeatOne: Boolean get() = service?.repeatOne ?: false
+    val abActive: Boolean get() = service?.abActive ?: false
+    val markerA: Long get() = service?.abA ?: -1L
+    val markerB: Long get() = service?.abB ?: -1L
     val position: Long get() = service?.positionMs ?: 0L
     val queue: List<Song> get() = service?.queue ?: emptyList()
     val audioSessionId: Int get() = service?.audioSessionId ?: 0
@@ -75,6 +78,18 @@ object Playback {
 
     fun setSleepMix(on: Boolean) {
         service?.setSleepMix(on)
+    }
+
+    fun setMarkerA() {
+        service?.setMarkerA()
+    }
+
+    fun setMarkerB() {
+        service?.setMarkerB()
+    }
+
+    fun clearAbLoop() {
+        service?.clearAbLoop()
     }
 
     fun setMicListening(on: Boolean) {

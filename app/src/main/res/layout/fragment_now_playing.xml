@@ -72,6 +72,17 @@
                 android:layout_marginBottom="-4dp"
                 android:contentDescription="@null"
                 android:elevation="18dp" />
+
+            <com.pulsa.player.ui.DancingVirginView
+                android:id="@+id/np_virgin_dance_b"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="-12dp"
+                android:layout_marginBottom="-4dp"
+                android:contentDescription="@null"
+                android:elevation="18dp"
+                android:visibility="gone" />
         </FrameLayout>
 
         <View
@@ -120,8 +131,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:gravity="center_vertical"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
             android:orientation="horizontal">
 
             <TextView
@@ -315,6 +326,49 @@
                 android:layout_weight="1"
                 android:text="@string/lyrics_button"
                 app:icon="@drawable/ic_queue_music"
+                app:iconTint="?attr/colorPrimary" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/np_ab_a"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="A"
+                app:iconTint="?attr/colorPrimary" />
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/np_ab_b"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="B"
+                app:iconTint="?attr/colorPrimary" />
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/np_ab_clear"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/ab_clear"
                 app:iconTint="?attr/colorPrimary" />
         </LinearLayout>
         </LinearLayout>

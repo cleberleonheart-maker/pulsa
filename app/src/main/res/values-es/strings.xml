@@ -8,9 +8,12 @@
     <string name="widget_idle">Toca para abrir el reproductor</string>
 
     <string name="tab_songs">Canciones</string>
+    <string name="ab_needs_a">Toca primero en A para marcar el inicio del bucle.</string>
+    <string name="ab_clear">Borrar</string>
     <string name="tab_albums">Álbumes</string>
     <string name="tab_artists">Artistas</string>
     <string name="tab_playlists">Listas de reproducción</string>
+    <string name="tab_biblioteca">Biblioteca</string>
 
     <string name="now_playing">Reproduciendo ahora</string>
     <string name="now_playing_subtitle">Reproduciendo ahora</string>
@@ -27,7 +30,19 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (4.14.0):
+    <string name="changelog">Novedades de esta versión (5.0.0):
+
+➜ ESQUELETO NUEVO
+• Barra de navegación inferior: Virgin, Canciones, Biblioteca, Buscar y Perfil — sin tira de pestañas arriba
+• Biblioteca como concentrador: álbumes, artistas, favoritas, playlists y videos en un solo lugar con chips de sección
+• Reproduciendo en pantalla propia: el player se abre sobre la navegación con barra superior y atrás propios
+• Home nueva: botón de saludo del avatar (👋 Buenos días/tardes/noches — el avatar te habla) y accesos rápidos a Biblioteca, mezcla virgen, Dormir, Radio Virgin FM, Estadísticas y Más
+• Radio Virgin FM: abre tocando primero la canción favorita del avatar (la que más escuchas) y la anuncia — la favorita también aparece en el deck
+• DJ y Radio salieron de la barra superior y entraron en la Home; Playlists ahora es una sección de Biblioteca
+
+↺ Versión 4.14.0
+
+Novedades de esta versión (4.14.0):
 
 ➜ CARA NUEVA
 • Terminal Radar: rediseño completo — Pulsa dejó atrás el synthwave. Identidad de terminal: lima fosforescente + rubí de alerta sobre negro-verdoso (sin rosa, morado ni ciano)
@@ -464,6 +479,9 @@ Novedades de esta versión (4.13.1):
     <string name="dj_voice_goodbye">¡Hasta luego! Llámame cuando me necesites.</string>
     <string name="dj_voice_unknown">Perdona, no te entendí. Intenta: Virgin, siguiente canción.</string>
     <string name="dj_voice_hello">¡Bienvenido(a) a Pulsa! Soy Virgin, tu DJ virtual.</string>
+    <string name="home_greet_day">¡Buenos días! ¿Qué tal empezar el día con buena música?</string>
+    <string name="home_greet_after">¡Buenas tardes! ¿Relajado? Yo me encargo de la banda sonora.</string>
+    <string name="home_greet_night">¡Buenas noches! Déjame elegir una canción tranquila para cerrar el día.</string>
     <string name="dj_voice_skip">¡Saltada!</string>
     <string name="dj_voice_dislike">¡Entendido! Esa no la pondré por un tiempo.</string>
     <string name="dj_voice_yesterday_none">Ayer no tocaste nada conmigo. ¿Qué tal si empezamos la sesión de hoy ahora?</string>
@@ -563,6 +581,7 @@ Novedades de esta versión (4.13.1):
     <string name="radio_start_format">Encender Radio %1$s</string>
     <string name="radio_stop_format">Apagar Radio %1$s</string>
     <string name="radio_welcome_format">¡Estás escuchando Radio %1$s F.M., tocando %2$d canciones de todos los estilos!</string>
+    <string name="radio_fav_format">Y para abrir Radio %1$s, mi canción favorita: %2$s, de %3$s.</string>
     <string name="radio_need_format">Importa canciones para que Radio %1$s toque.</string>
     <string name="v_radio_format">Radio %1$s FM</string>
     <string name="tami_clock_greet_day">¡Buenos días!</string>
@@ -604,6 +623,8 @@ Novedades de esta versión (4.13.1):
     <string name="hero_status_ready_f">○ Lista</string>
     <string name="hero_status_no_songs">○ Aún sin canciones</string>
     <string name="virgin_hub_note">Cada tarjeta activa una función. Las curiosidades siguen en la locutora del DJ.</string>
+    <string name="home_library_title">Tu biblioteca</string>
+    <string name="home_assistant_title">Asistente</string>
     <string name="btn_party">Fiesta</string>
     <string name="btn_relax">Relajar</string>
     <string name="v_language">Idioma</string>

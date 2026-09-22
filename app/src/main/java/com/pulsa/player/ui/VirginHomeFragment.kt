@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -13,12 +14,17 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.BanActivity
+import com.pulsa.player.DjActivity
+import com.pulsa.player.MainActivity
 import com.pulsa.player.R
+import com.pulsa.player.RadioActivity
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.dj.AvatarFavorites
 import com.pulsa.player.dj.DjEngine
 import com.pulsa.player.dj.DjLearn
 import com.pulsa.player.dj.DjSessionMemory
@@ -29,15 +35,15 @@ import com.pulsa.player.playback.Playback
 import com.pulsa.player.sync.Telemetry
 
 /**
- * Home "Virgin" no modelo da TAMI: cards de funções (idioma, voz, comando de
- * voz, rádio Virgin FM, sono, recomendar, estatísticas, escanear) chamando as
- * funções que já existem. Sem card de curiosidade (a locutora já faz).
+ * Home "Virgin" no modelo dashboard: deck do avatar, console Bombar/Relaxar,
+ * card "Tocando agora", atalhos da biblioteca (horizontais) e linhas do
+ * Assistente (DJ/Rádio/card funcionalidades) — esqueleto novo, seções.
  */
 class VirginHomeFragment : Fragment() {
 
-    private class CardState(val status: TextView, val statusText: () -> String, val isOn: () -> Boolean)
+    private class RowState(val status: TextView, val statusText: () -> String, val isOn: () -> Boolean)
 
-    data class VirginCardData(
+    data class AssistantData(
         val icon: String,
         val label: String,
         val status: () -> String,
@@ -45,8 +51,10 @@ class VirginHomeFragment : Fragment() {
         val action: () -> Unit
     )
 
+    data class ShortcutData(val icon: String, val label: String, val key: String)
+
     private var voice: DjVoice? = null
-    private val cardRefs = mutableListOf<View>()
+    private val rowRefs = mutableListOf<View>()
 
     override fun onCreateView(
         inflater: android.view.LayoutInflater,
@@ -62,8 +70,13 @@ class VirginHomeFragment : Fragment() {
             startActivity(Intent(requireContext(), BanActivity::class.java))
             true
         }
-        buildCards(view.findViewById(R.id.cards_container))
+        val greet = view.findViewById<TextView>(R.id.btn_greet)
+        greet.setOnClickListener { greet() }
+        bindResumeCard(view)
+        buildShortcuts(view.findViewById(R.id.shortcuts_row))
+        buildAssistantRows(view.findViewById(R.id.assistant_list))
         refresh()
+        refreshResume()
         renderHero(view)
         return view
     }
@@ -71,6 +84,7 @@ class VirginHomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         refresh()
+        refreshResume()
         renderHero()
     }
 
@@ -78,107 +92,164 @@ class VirginHomeFragment : Fragment() {
         voice?.stop()
         voice?.shutdown()
         voice = null
-        cardRefs.clear()
+        rowRefs.clear()
         super.onDestroyView()
     }
 
-    private fun buildCards(container: ViewGroup) {
+    private fun bindResumeCard(view: View) {
+        val card = view.findViewById<View>(R.id.resume_card)
+        card.setOnClickListener { (activity as? MainActivity)?.openNowPlaying() }
+        view.findViewById<View>(R.id.resume_play).setOnClickListener {
+            Playback.toggle()
+            refreshResume()
+        }
+    }
+
+    private fun buildShortcuts(container: ViewGroup) {
+        val ctx = requireContext()
+        val items = listOf(
+            ShortcutData("🎵", getString(R.string.tab_songs), "songs"),
+            ShortcutData("💟", getString(R.string.tab_favorites), BibliotecaFragment.SECTION_FAVORITES),
+            ShortcutData("💿", getString(R.string.tab_albums), BibliotecaFragment.SECTION_ALBUMS),
+            ShortcutData("🧑‍🎤", getString(R.string.tab_artists), BibliotecaFragment.SECTION_ARTISTS),
+            ShortcutData("🎞️", getString(R.string.tab_videos), BibliotecaFragment.SECTION_VIDEOS),
+            ShortcutData("📃", getString(R.string.tab_playlists), BibliotecaFragment.SECTION_PLAYLISTS)
+        )
+        items.forEachIndexed { i, s ->
+            val chip = LinearLayout(ctx)
+            chip.orientation = LinearLayout.VERTICAL
+            chip.gravity = Gravity.CENTER
+            chip.setPadding(dp(10), dp(10), dp(10), dp(10))
+            chip.background = ContextCompat.getDrawable(ctx, R.drawable.bg_vcard)
+            val icon = TextView(ctx)
+            icon.text = s.icon
+            icon.textSize = 22f
+            val label = TextView(ctx)
+            label.text = s.label
+            label.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary))
+            label.textSize = 11f
+            label.maxLines = 2
+            label.gravity = Gravity.CENTER
+            chip.addView(icon, LinearLayout.LayoutParams(dp(72), ViewGroup.LayoutParams.WRAP_CONTENT))
+            chip.addView(label, LinearLayout.LayoutParams(dp(72), ViewGroup.LayoutParams.WRAP_CONTENT))
+            chip.setOnClickListener { (activity as? MainActivity)?.openHomeShortcut(s.key) }
+            val lp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            if (i > 0) lp.marginStart = dp(10)
+            chip.layoutParams = lp
+            container.addView(chip)
+        }
+    }
+
+    private fun buildAssistantRows(container: ViewGroup) {
         val ctx = requireContext()
         val rows = listOf(
-            VirginCardData("🌐", getString(R.string.v_language),
-                { getString(Settings.languageLabelRes(Settings.language(ctx))) },
-                { false }, { cycleLanguage() }),
-            VirginCardData("🗣", getString(R.string.v_voice),
-                { getString(if (Settings.djVoice(ctx)) R.string.status_on else R.string.status_off) },
-                { Settings.djVoice(ctx) }, { toggleVoice() }),
-            VirginCardData("🎭", getString(R.string.v_avatar),
+            AssistantData("🎭", getString(R.string.v_avatar),
                 {
                     getString(
                         if (Settings.masculineAvatar(ctx)) R.string.dj_voice_name_male else R.string.dj_voice_name
                     )
                 },
                 { false }, { toggleAvatar() }),
-            VirginCardData("🎙", getString(R.string.v_mic),
+            AssistantData("🗣", getString(R.string.v_voice),
+                { getString(if (Settings.djVoice(ctx)) R.string.status_on else R.string.status_off) },
+                { Settings.djVoice(ctx) }, { toggleVoice() }),
+            AssistantData("🌐", getString(R.string.v_language),
+                { getString(Settings.languageLabelRes(Settings.language(ctx))) },
+                { false }, { cycleLanguage() }),
+            AssistantData("🎙", getString(R.string.v_mic),
                 { getString(if (Settings.recToken(ctx).isNotBlank()) R.string.status_active else R.string.v_mic_off) },
                 { Settings.recToken(ctx).isNotBlank() }, { showMicDialog() }),
-            VirginCardData("📻", getString(R.string.v_radio_format, Settings.assistantName(ctx)),
+            AssistantData("📻", getString(R.string.v_radio_format, Settings.assistantName(ctx)),
                 { getString(if (Settings.tamiRadio(ctx)) R.string.status_on else R.string.status_off) },
                 { Settings.tamiRadio(ctx) }, { toggleRadio() }),
-            VirginCardData("💤", getString(R.string.v_sleep),
+            AssistantData("📡", getString(R.string.radio),
+                { getString(R.string.v_radio_sub) }, { false }, {
+                    startActivity(Intent(requireContext(), RadioActivity::class.java))
+                }),
+            AssistantData("🎧", getString(R.string.dj_title),
+                { getString(R.string.v_dj_sub) }, { false }, {
+                    startActivity(Intent(requireContext(), DjActivity::class.java))
+                }),
+            AssistantData("💤", getString(R.string.v_sleep),
                 { getString(R.string.v_sleep_sub) }, { false }, { sleep() }),
-            VirginCardData("🎯", getString(R.string.v_rec),
+            AssistantData("🎯", getString(R.string.v_rec),
                 { getString(R.string.v_rec_sub) }, { false }, { recommend() }),
-            VirginCardData("📊", getString(R.string.v_stats),
+            AssistantData("📊", getString(R.string.v_stats),
                 { getString(R.string.v_stats_sub) }, { false }, { showStats() }),
-            VirginCardData("📂", getString(R.string.v_scan),
+            AssistantData("📂", getString(R.string.v_scan),
                 {
                     val n = settingsSongs()
                     getString(R.string.v_scan_status, n)
                 }, { false }, { scanLibrary() })
         )
 
-        rows.chunked(2).forEach { pair ->
-            val row = LinearLayout(ctx)
-            row.orientation = LinearLayout.HORIZONTAL
+        rows.forEach { r ->
+            val row = makeRow(r)
             val lp = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
-            lp.bottomMargin = dp(12)
+            lp.bottomMargin = dp(10)
             row.layoutParams = lp
-            pair.forEachIndexed { i, r ->
-                val card = makeCard(r)
-                val clp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-                if (i > 0) clp.marginStart = dp(12)
-                card.layoutParams = clp
-                cardRefs.add(card)
-                row.addView(card)
-            }
+            rowRefs.add(row)
             container.addView(row)
         }
     }
 
-    private fun makeCard(r: VirginCardData): View {
+    private fun makeRow(r: AssistantData): View {
         val ctx = requireContext()
-        val card = LinearLayout(ctx)
-        card.orientation = LinearLayout.VERTICAL
-        card.gravity = Gravity.CENTER
-        card.setPadding(dp(12), dp(14), dp(12), dp(14))
-        card.background = ContextCompat.getDrawable(ctx, R.drawable.bg_vcard)
+        val row = LinearLayout(ctx)
+        row.orientation = LinearLayout.HORIZONTAL
+        row.gravity = Gravity.CENTER_VERTICAL
+        row.setPadding(dp(12), dp(12), dp(12), dp(12))
+        row.background = ContextCompat.getDrawable(ctx, R.drawable.bg_vcard)
 
         val icon = TextView(ctx)
         icon.text = r.icon
-        icon.textSize = 26f
-        icon.gravity = Gravity.CENTER
+        icon.textSize = 20f
 
         val label = TextView(ctx)
         label.text = r.label
-        label.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary))
-        label.textSize = 13f
-        label.gravity = Gravity.CENTER
-        label.maxLines = 2
+        label.setTextColor(ContextCompat.getColor(ctx, R.color.text_primary))
+        label.textSize = 14f
+        label.maxLines = 1
+        label.ellipsize = android.text.TextUtils.TruncateAt.END
 
         val status = TextView(ctx)
-        status.textSize = 11f
+        status.textSize = 12f
         status.setTextColor(ContextCompat.getColor(ctx, R.color.text_tertiary))
-        status.gravity = Gravity.CENTER
-        status.minHeight = dp(16)
+        status.maxLines = 1
+        status.ellipsize = android.text.TextUtils.TruncateAt.END
 
-        card.addView(icon)
-        card.addView(label)
-        card.addView(status)
-        card.tag = CardState(status, r.status, r.isOn)
-        card.setOnClickListener { r.action() }
-        return card
+        val chevron = ImageView(ctx)
+        chevron.setImageResource(R.drawable.ic_arrow_forward)
+        chevron.setColorFilter(ContextCompat.getColor(ctx, R.color.text_tertiary))
+        chevron.setPadding(dp(4), dp(4), dp(4), dp(4))
+
+        row.addView(icon)
+        row.addView(label, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+            marginStart = dp(10)
+        })
+        row.addView(status)
+        row.addView(chevron, LinearLayout.LayoutParams(dp(24), dp(24)).apply {
+            marginStart = dp(8)
+        })
+        row.tag = RowState(status, r.status, r.isOn)
+        row.setOnClickListener { r.action() }
+        return row
     }
 
     private fun refresh() {
+        if (view == null) return
         val ctx = requireContext()
-        for (view in cardRefs) {
-            val st = view.tag as CardState
+        for (row in rowRefs) {
+            val st = row.tag as RowState
             st.status.text = st.statusText()
             val on = st.isOn()
-            view.background = ContextCompat.getDrawable(
+            row.background = ContextCompat.getDrawable(
                 ctx,
                 if (on) R.drawable.bg_vcard_on else R.drawable.bg_vcard
             )
@@ -189,6 +260,23 @@ class VirginHomeFragment : Fragment() {
                 )
             )
         }
+    }
+
+    private fun refreshResume() {
+        val v = view ?: return
+        val card = v.findViewById<View>(R.id.resume_card) ?: return
+        val song = Playback.currentSong
+        if (song == null) {
+            card.visibility = View.GONE
+            return
+        }
+        card.visibility = View.VISIBLE
+        v.findViewById<TextView>(R.id.resume_title)?.text = song.title
+        v.findViewById<TextView>(R.id.resume_artist)?.text = song.artist + " • " + song.album
+        ArtLoader.load(song.albumId, song.path, v.findViewById(R.id.resume_art))
+        v.findViewById<ImageView>(R.id.resume_play)?.setImageResource(
+            if (Playback.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+        )
     }
 
     // ---------- ações ----------
@@ -404,6 +492,26 @@ class VirginHomeFragment : Fragment() {
 
     // ---------- voz ----------
 
+    private fun greet() {
+        val ctx = requireContext()
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val greetRes = when {
+            hour < 12 -> R.string.tami_clock_greet_day
+            hour < 18 -> R.string.tami_clock_greet_after
+            else -> R.string.tami_clock_greet_night
+        }
+        val lineRes = when (greetRes) {
+            R.string.tami_clock_greet_day -> R.string.home_greet_day
+            R.string.tami_clock_greet_after -> R.string.home_greet_after
+            else -> R.string.home_greet_night
+        }
+        val name = getString(
+            if (Settings.masculineAvatar(ctx)) R.string.dj_voice_name_male else R.string.dj_voice_name
+        )
+        view?.findViewById<TextView>(R.id.btn_greet)?.text = "👋 " + getString(greetRes)
+        speak("$name, ${getString(greetRes)} ${getString(lineRes)}")
+    }
+
     private fun speak(text: String, force: Boolean = false, onDone: (() -> Unit)? = null) {
         val ctx = requireContext()
         if (text.isBlank()) return
@@ -420,6 +528,20 @@ class VirginHomeFragment : Fragment() {
     private fun renderHero() {
         val v = view ?: return
         renderHero(v)
+        val ctx = requireContext()
+        AvatarFavorites.favorite(ctx) { fav ->
+            ThreadPool.onUi {
+                if (!isAdded) return@onUi
+                view?.findViewById<TextView>(R.id.hero_fav)?.apply {
+                    if (fav == null) {
+                        visibility = View.GONE
+                    } else {
+                        text = "♥ " + fav.title + " — " + fav.artist
+                        visibility = View.VISIBLE
+                    }
+                }
+            }
+        }
     }
 
     private fun renderHero(view: View) {

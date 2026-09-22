@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="8dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/bibl_chip_strip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="3dp">
+
+            <TextView
+                android:id="@+id/bibl_chip_albums"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/tab_albums" />
+
+            <TextView
+                android:id="@+id/bibl_chip_artists"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/tab_artists" />
+
+            <TextView
+                android:id="@+id/bibl_chip_favorites"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/tab_favorites" />
+
+            <TextView
+                android:id="@+id/bibl_chip_playlists"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/tab_playlists" />
+
+            <TextView
+                android:id="@+id/bibl_chip_videos"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/tab_videos" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <FrameLayout
+        android:id="@+id/bibl_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

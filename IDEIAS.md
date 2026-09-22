@@ -70,6 +70,21 @@
 
 > Ordenadas por prioridade (mais alta primeiro).
 
+### Esqueleto novo / home dashboard (em andamento 5.0)
+- [x] **Bottom nav + home dashboard**: barra inferior (Virgin/Músicas/Biblioteca/Buscar/Perfil) no lugar das abas de texto; home com seções em vez da grade de cards; Biblioteca como hub com seções Álbuns/Artistas/Favoritas/Playlists/Vídeos; Now Playing virou Activity própria; DJ/Rádio saíram da toolbar para a home
+- [x] **Card "Tocando agora/continuar"** na home: retoma a faixa atual com um toque
+- [x] **Música favorita do avatar**: a faixa mais tocada vira a favorita da Virgin/Victor e aparece no deck da home (`AvatarFavorites` + `DjLearn.topSongs`)
+- [x] **Virgin FM abre pela favorita**: o Rádio Virgin agora anuncia e toca primeiro a música favorita do avatar antes de embaralhar a biblioteca (`TamiRadio.start` + primeira posição da fila)
+- [x] **Botão de saudação do avatar** na home: pílula neon "👋 Bom dia/Boa tarde/Boa noite" que fala a saudação com a voz do avatar e atualiza o texto no botão (`btn_greet` + `home_greet_day/after/night` + a voz)
+- [x] **Casal dançando na favorita**: quando a música favorita do avatar toca, Virgin e Victor aparecem juntos dançando ao lado da capa no Now Playing (`np_virgin_dance_b` + `DancingVirginView.setForceMale` + `AvatarFavorites.favoriteId`)
+- [ ] **Lista da fila (Queue)** no Now Playing: arrastar a capa para cima abre a fila atual com reordenação — `NowPlayingActivity` + `Playback.queue`
+- [ ] **Painel de letras sincronizadas** embutido no Now Playing (hoje é dialog) — `Lyrics` + `NowPlayingActivity`
+- [ ] **Mini visualizador de áudio sempre visível** no Now Playing (sem ter que abrir o EQ) — `AudioVisualizerView` + `MusicShaderView`
+- [ ] **Seletor de skin rápido na home**: troca o tema sem ir para Configurações — `Settings` + `VirginHomeFragment`
+- [ ] **Estatística de reprodução resumida** no card da Virgin (tocadas/tempo) — `DjLearn` + `VirginHomeFragment`
+- [ ] **Favoritas do mês**: atalho que monta mix só com músicas curtidas do mês — `DjEngine` + `PlaylistDb`
+- [ ] **"Adicionadas recentemente"**: sessão horizontal de capas na home — `Library.allSongs` + `RecyclerView`
+
 ### DJ Virgin / voz
 - [ ] **Despertador da Virgínia**: "virgi, me acorda às 7h com chuva" — alarme toca som ambiente + uma faixa escolhida na hora definida; também sleep-timer falado ("para em 20 min") — `DjCommander` + `AlarmManager`
 - [ ] **Virgin bilíngue**: responde na língua da pergunta (pt/en/es), não só no idioma do app — `DjVoice` + strings

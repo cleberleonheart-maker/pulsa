@@ -63,6 +63,12 @@ class PlaybackService : Service() {
     var repeatOne: Boolean = false
         private set
 
+    var abA: Long = -1L
+        private set
+    var abB: Long = -1L
+        private set
+    val abActive: Boolean get() = abA >= 0L && abB > abA
+
     var positionMs: Long = 0L
         private set
 
@@ -326,6 +332,43 @@ class PlaybackService : Service() {
         }
     }
 
+    /** Marca o ponto A (início do loop) na posição atual da faixa. */
+    fun setMarkerA() {
+        val pos = currentPosMs()
+        if (pos <= 0L) return
+        abA = pos
+        abB = -1L
+    }
+
+    /** Marca o ponto B (fim do loop) na posição atual, logo após o A. */
+    fun setMarkerB() {
+        if (abA < 0L) return
+        val pos = currentPosMs()
+        if (pos > abA) abB = pos.coerceAtMost(durationMs())
+    }
+
+    fun clearAbLoop() {
+        abA = -1L
+        abB = -1L
+    }
+
+    private fun resetAbLoop() {
+        abA = -1L
+        abB = -1L
+    }
+
+    private fun currentPosMs(): Long = try {
+        mp?.currentPosition?.toLong() ?: 0L
+    } catch (e: Exception) {
+        0L
+    }
+
+    private fun durationMs(): Long = try {
+        mp?.duration?.toLong() ?: 0L
+    } catch (e: Exception) {
+        0L
+    }
+
     private fun removeSleepFade() {
         sleepFadeRunnable?.let { sleepHandler.removeCallbacks(it) }
         sleepFadeRunnable = null
@@ -459,6 +502,7 @@ class PlaybackService : Service() {
     private fun prepareCurrent() {
         val song = currentSong ?: return
         positionMs = 0L
+        resetAbLoop()
         try {
             val old = mp
             if (old != null) {
@@ -634,6 +678,19 @@ class PlaybackService : Service() {
         clearResumeState()
         SleepTimer.onTrackCompleted()
         if (SleepTimer.isActive() && SleepTimer.isEndOfTrack()) return
+        if (abActive) {
+            try {
+                mp?.seekTo(abA.toInt())
+                mp?.start()
+                positionMs = abA
+                emitProgress()
+            } catch (e: Exception) {
+            }
+            publishState()
+            scheduleTick()
+            startEightD()
+            return
+        }
         if (repeatOne) {
             try {
                 mp?.seekTo(0)
@@ -700,6 +757,10 @@ class PlaybackService : Service() {
         }
         positionMs = pos
         Playback.notifyProgress(pos, dur)
+        if (abActive && isPlaying && dur > 0L && abB <= dur && pos >= abB) {
+            seekTo(abA)
+            return
+        }
         if (Settings.resumeOn(this) && pos - lastResumeSaveMs >= 5000L) {
             saveResumeState()
             lastResumeSaveMs = pos

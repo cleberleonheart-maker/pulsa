@@ -23,6 +23,7 @@ import com.pulsa.player.audio.Ambient
 import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.core.Helper
 import com.pulsa.player.sync.Lyrics
+import com.pulsa.player.dj.AvatarFavorites
 import com.pulsa.player.core.Settings
 import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.ThreadPool
@@ -41,6 +42,12 @@ class NowPlayingFragment : Fragment() {
     private var likeView: ImageView? = null
     private var sleepButton: com.google.android.material.button.MaterialButton? = null
     private var ambientButton: com.google.android.material.button.MaterialButton? = null
+    private var abButtonA: com.google.android.material.button.MaterialButton? = null
+    private var abButtonB: com.google.android.material.button.MaterialButton? = null
+    private var abButtonClear: com.google.android.material.button.MaterialButton? = null
+    private var abAButton: com.google.android.material.button.MaterialButton? = null
+    private var abBButton: com.google.android.material.button.MaterialButton? = null
+    private var abClearButton: com.google.android.material.button.MaterialButton? = null
     private var visualizerView: AudioVisualizerView? = null
     private var shaderView: MusicShaderView? = null
     private var userSeeking = false
@@ -62,8 +69,31 @@ class NowPlayingFragment : Fragment() {
         likeView = view.findViewById(R.id.np_like)
         sleepButton = view.findViewById(R.id.np_sleep)
         ambientButton = view.findViewById(R.id.np_ambient)
+        abButtonA = view.findViewById(R.id.np_ab_a)
+        abButtonB = view.findViewById(R.id.np_ab_b)
+        abButtonClear = view.findViewById(R.id.np_ab_clear)
         sleepButton?.setOnClickListener { showSleepDialog() }
         ambientButton?.setOnClickListener { showAmbientDialog() }
+        abButtonA?.setOnClickListener {
+            Playback.setMarkerA()
+            refreshAbButtons()
+        }
+        abButtonB?.setOnClickListener {
+            if (Playback.markerA < 0L) {
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    getString(R.string.ab_needs_a),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Playback.setMarkerB()
+            }
+            refreshAbButtons()
+        }
+        abButtonClear?.setOnClickListener {
+            Playback.clearAbLoop()
+            refreshAbButtons()
+        }
         view.findViewById<View>(R.id.np_eq).setOnClickListener { showEqDialog() }
         view.findViewById<View>(R.id.np_lyrics).setOnClickListener { showLyricsDialog() }
         visualizerView = view.findViewById(R.id.np_visualizer)
@@ -119,6 +149,34 @@ class NowPlayingFragment : Fragment() {
         updateLikeIcon()
         refreshProgress(Playback.position, song.durationMs)
         refreshModButtons()
+        refreshAbButtons()
+        refreshDreamTeam(song.id)
+    }
+
+    /** Quando a música favorita do avatar toca, o casal dança junto na capa. */
+    private fun refreshDreamTeam(songId: Long) {
+        val partner = view?.findViewById<com.pulsa.player.ui.DancingVirginView>(R.id.np_virgin_dance_b) ?: return
+        val single = view?.findViewById<com.pulsa.player.ui.DancingVirginView>(R.id.np_virgin_dance)
+        val male = Settings.masculineAvatar(requireContext())
+        if (AvatarFavorites.favoriteId(requireContext()) != songId) {
+            single?.forceMale = null
+            partner.visibility = View.GONE
+            return
+        }
+        single?.forceMale = male
+        partner.forceMale = !male
+        partner.visibility = View.VISIBLE
+    }
+
+    fun refreshAbButtons() {
+        val a = abButtonA ?: return
+        val b = abButtonB ?: return
+        val clear = abButtonClear ?: return
+        val onColor = requireContext().getColor(R.color.primary)
+        val offColor = requireContext().getColor(R.color.text_secondary)
+        a.setTextColor(if (Playback.markerA >= 0L) onColor else offColor)
+        b.setTextColor(if (Playback.markerB >= 0L) onColor else offColor)
+        clear.visibility = if (Playback.abActive) View.VISIBLE else View.GONE
     }
 
     fun refreshPlayIcon() {

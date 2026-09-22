@@ -72,9 +72,14 @@ object TamiRadio {
                 }
                 return@post
             }
-            val queue = songs.shuffled()
+            val fav = AvatarFavorites.favorite(ctx)
+            val queue = songs.shuffled().toMutableList()
+            if (fav != null) {
+                queue.remove(fav)
+                queue.add(0, fav)
+            }
             ThreadPool.onUi {
-                Telemetry.log(ctx, "TamiRadio start n=${queue.size}")
+                Telemetry.log(ctx, "TamiRadio start n=${queue.size} fav=${fav?.title}")
                 Playback.setShuffle(true)
                 Playback.setRepeatAll(true)
                 Playback.setSleepMix(false)
@@ -85,11 +90,21 @@ object TamiRadio {
                 handler.removeCallbacks(tick)
                 handler.postDelayed(tick, POLL_MS)
                 speak(
-                    ctx.getString(
-                        R.string.radio_welcome_format,
-                        Settings.assistantName(ctx),
-                        queue.size
-                    )
+                    listOf(
+                        ctx.getString(
+                            R.string.radio_welcome_format,
+                            Settings.assistantName(ctx),
+                            queue.size
+                        ),
+                        fav?.let {
+                            ctx.getString(
+                                R.string.radio_fav_format,
+                                Settings.assistantName(ctx),
+                                it.title,
+                                it.artist
+                            )
+                        } ?: ""
+                    ).filter { it.isNotBlank() }.joinToString(" ")
                 )
                 onChange?.invoke()
             }

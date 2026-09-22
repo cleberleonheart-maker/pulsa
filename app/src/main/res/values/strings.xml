@@ -11,6 +11,7 @@
     <string name="tab_albums">Álbuns</string>
     <string name="tab_artists">Artistas</string>
     <string name="tab_playlists">Playlists</string>
+    <string name="tab_biblioteca">Biblioteca</string>
 
     <string name="now_playing">Agora tocando</string>
     <string name="now_playing_subtitle">Agora tocando</string>
@@ -31,7 +32,19 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (4.14.0):
+    <string name="changelog">Novidades desta versão (5.0.0):
+
+→ ESQUELETO NOVO
+• Navegação por barra inferior: Virgin, Músicas, Biblioteca, Buscar e Perfil — sem mais a tira de abas no topo
+• Biblioteca como hub: álbuns, artistas, favoritos, playlists e vídeos num só lugar com chips de seção
+• Tocando agora em tela própria: player abre por cima da navegação, com toolbar e voltar próprios
+• Home nova: botão de saudação do avatar (👋 Bom dia/Boa tarde/Boa noite — o avatar fala com você) e atalhos rápidos para Biblioteca, Mix virgem, Sono, Rádio Virgin FM, Estatísticas e Mais
+• Rádio Virgin FM: abre tocando primeiro a música favorita do avatar (a mais tocada por você) e anuncia — a favorita também aparece no deck
+• DJ e Rádio saíram da toolbar e entraram na Home; Playlists virou seção da Biblioteca
+
+↺ Versão 4.14.0
+
+Novidades desta versão (4.14.0):
 
 → NOVA CARA
 • Terminal Radar: repaginação completa — a Pulsa deixou o synthwave. Identidade de terminal: lima fosforescente + rubi de alerta sobre preto-esverdeado (sem mais rosa, roxo ou ciano)
@@ -465,6 +478,9 @@ Novidades desta versão (4.13.1):
     <string name="dj_voice_goodbye">Até mais! Qualquer coisa é só chamar.</string>
     <string name="dj_voice_unknown">Desculpa, não entendi. Tente dizer: Virgin, próxima música.</string>
     <string name="dj_voice_hello">Bem-vindo ao Pulsa! Eu sou a Virgin, sua DJ virtual.</string>
+    <string name="home_greet_day">Bom dia! Que tal começar o dia com uma boa música?</string>
+    <string name="home_greet_after">Boa tarde! Está relaxado? Eu cuido da trilha sonora pra você.</string>
+    <string name="home_greet_night">Boa noite! Deixa eu escolher uma faixa calma pra fechar o dia.</string>
     <string name="dj_voice_skip">Pulada!</string>
     <string name="dj_voice_dislike">Entendido! Não vou tocar essa por um tempo.</string>
     <string name="dj_voice_yesterday_none">Ontem você não tocou nada comigo. Que tal começar a sessão de hoje agora?</string>
@@ -610,6 +626,7 @@ Novidades desta versão (4.13.1):
     <string name="radio_start_format">Ligar Rádio %1$s</string>
     <string name="radio_stop_format">Desligar Rádio %1$s</string>
     <string name="radio_welcome_format">Você está ouvindo a Rádio %1$s F.M., tocando %2$d músicas de todos os estilos!</string>
+    <string name="radio_fav_format">E abrindo a Rádio %1$s com a minha música favorita: %2$s, de %3$s.</string>
     <string name="radio_need_format">Importe músicas para a Rádio %1$s tocar.</string>
     <string name="v_radio_format">Rádio %1$s FM</string>
     <string name="tami_clock_greet_day">Bom dia!</string>
@@ -651,6 +668,8 @@ Novidades desta versão (4.13.1):
     <string name="hero_status_ready_f">○ Pronta</string>
     <string name="hero_status_no_songs">○ Sem músicas ainda</string>
     <string name="virgin_hub_note">Cada card ativa uma função. As curiosidades da música continuam na locutora do DJ.</string>
+    <string name="home_library_title">Sua biblioteca</string>
+    <string name="home_assistant_title">Assistente</string>
     <string name="btn_party">Bombar</string>
     <string name="btn_relax">Relaxar</string>
     <string name="v_language">Idioma</string>
@@ -666,6 +685,8 @@ Novidades desta versão (4.13.1):
     <string name="v_stats_sub">Biblioteca</string>
     <string name="v_scan">Escaneia aparelho</string>
     <string name="v_scan_status">%1$d músicas</string>
+    <string name="v_radio_sub">Estações de rádio online</string>
+    <string name="v_dj_sub">Console de DJ com a Virgin</string>
     <string name="v_scan_done">Biblioteca escaneada: %1$d músicas.</string>
     <string name="v_voice_on">Voz da Virgin ligada!</string>
     <string name="v_voice_off">Voz da Virgin desligada.</string>
@@ -711,6 +732,10 @@ Novidades desta versão (4.13.1):
     <string name="sleep_45">45 minutos</string>
     <string name="sleep_60">60 minutos</string>
     <string name="sleep_end_track">Fim da música atual</string>
+    <string name="ab_mark_a">Marcar A</string>
+    <string name="ab_mark_b">Marcar B</string>
+    <string name="ab_clear">Limpar A–B</string>
+    <string name="ab_needs_a">Marque o ponto A primeiro</string>
     <string name="sleep_scheduled">Sono em %1$d min</string>
     <string name="sleep_active">Sono: %1$d min</string>
     <string name="sleep_done">Boa noite! Música pausada.</string>

@@ -12,10 +12,7 @@ import android.os.IBinder
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.View
-import android.widget.HorizontalScrollView
-import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,8 +23,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.imageview.ShapeableImageView
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.model.Album
 import com.pulsa.player.model.Artist
@@ -40,9 +35,9 @@ import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.ui.AlbumsTabFragment
 import com.pulsa.player.ui.ArtistTimelineFragment
 import com.pulsa.player.ui.ArtistsTabFragment
+import com.pulsa.player.ui.BibliotecaFragment
 import com.pulsa.player.ui.FavoritesTabFragment
 import com.pulsa.player.ui.LibraryDetailFragment
-import com.pulsa.player.ui.NowPlayingFragment
 import com.pulsa.player.ui.PlaylistDetailFragment
 import com.pulsa.player.ui.PlaylistDialog
 import com.pulsa.player.ui.PlaylistsTabFragment
@@ -60,7 +55,6 @@ import com.pulsa.player.dj.TamiRadio
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.core.MotionControls
 import com.pulsa.player.core.Permissions
-import com.pulsa.player.core.Profile
 import com.pulsa.player.core.Blacklist
 import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.Telemetry
@@ -74,9 +68,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     }
 
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var tabStrip: LinearLayout
-    private lateinit var tabScroll: HorizontalScrollView
-    private lateinit var fabSearch: FloatingActionButton
+    private lateinit var bottomNav: com.google.android.material.bottomnavigation.BottomNavigationView
     private lateinit var miniPlayer: View
     private lateinit var miniArt: ImageView
     private lateinit var miniTitle: TextView
@@ -86,16 +78,14 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var miniRepeat: ImageView
     private lateinit var miniLike: ImageView
     private lateinit var miniVirgin: ImageView
-    private val tabViews = mutableMapOf<String, View>()
     private var currentTag = VirginHomeFragment::class.java.simpleName
     private var bound = false
     private var serviceBound = false
     private var appliedAccent: String = Settings.ACCENT_PURPLE
-    private var avatarView: ShapeableImageView? = null
+    private var pendingSection: String? = null
 
     private val mainViewsReady: Boolean
-        get() = ::toolbar.isInitialized && ::tabStrip.isInitialized &&
-            ::tabScroll.isInitialized && ::fabSearch.isInitialized &&
+        get() = ::toolbar.isInitialized &&
             ::miniPlayer.isInitialized && ::miniArt.isInitialized &&
             ::miniTitle.isInitialized && ::miniArtist.isInitialized && ::miniPlay.isInitialized &&
             ::miniShuffle.isInitialized && ::miniRepeat.isInitialized && ::miniLike.isInitialized &&
@@ -129,7 +119,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
                 override fun syncVirginIcon() = this@MainActivity.syncVirginIcon()
                 override fun syncMiniPlayer() = this@MainActivity.syncMiniPlayer()
                 override fun refreshPlayerVisuals() {
-                    (topFragment() as? NowPlayingFragment)?.refreshVisuals()
+                    NowPlayingActivity.current?.refreshVisuals()
                 }
             }
         )
@@ -207,27 +197,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
         TamiRadio.startup(applicationContext)
 
-        avatarView = findViewById(R.id.profile_avatar)
-        avatarView?.setOnClickListener {
-            startActivity(Intent(this, PerfilActivity::class.java))
-        }
-        avatarView?.setOnLongClickListener {
-            startActivity(Intent(this, BanActivity::class.java))
-            true
-        }
-        renderAvatar()
-
         toolbar = findViewById(R.id.main_toolbar)
         toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.action_virgin -> {
-                    openTab(VirginHomeFragment::class.java.simpleName, VirginHomeFragment())
-                    true
-                }
-                R.id.action_search -> {
-                    startActivity(Intent(this, SearchActivity::class.java))
-                    true
-                }
                 R.id.action_sort -> {
                     val on = !Settings.sortAlphabetical(this)
                     Settings.setSortAlphabetical(this, on)
@@ -238,24 +210,8 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
                     (topFragment() as? SongsTabFragment)?.load()
                     true
                 }
-                R.id.action_add -> {
-                    PlaylistDialog.promptNew(this) { refreshPlaylists() }
-                    true
-                }
-                R.id.action_playlists -> {
-                    openTab(PlaylistsTabFragment::class.java.simpleName, PlaylistsTabFragment())
-                    true
-                }
-                R.id.action_radio -> {
-                    startActivity(Intent(this, RadioActivity::class.java))
-                    true
-                }
                 R.id.action_tami_radio -> {
                     startActivity(Intent(this, TamiRadioActivity::class.java))
-                    true
-                }
-                R.id.action_dj -> {
-                    startActivity(Intent(this, DjActivity::class.java))
                     true
                 }
                 R.id.action_settings -> {
@@ -275,19 +231,31 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             }
         }
 
-        tabStrip = findViewById(R.id.tab_strip)
-        tabScroll = findViewById(R.id.tab_strip_scroll)
-        bindTab(R.id.tab_virgin, VirginHomeFragment::class.java.simpleName) { VirginHomeFragment() }
-        bindTab(R.id.tab_songs, SongsTabFragment::class.java.simpleName) { SongsTabFragment() }
-        bindTab(R.id.tab_albums, AlbumsTabFragment::class.java.simpleName) { AlbumsTabFragment() }
-        bindTab(R.id.tab_artists, ArtistsTabFragment::class.java.simpleName) { ArtistsTabFragment() }
-        bindTab(R.id.tab_favorites, FavoritesTabFragment::class.java.simpleName) { FavoritesTabFragment() }
-        bindTab(R.id.tab_videos, VideosTabFragment::class.java.simpleName) { VideosTabFragment() }
-        bindTab(R.id.tab_playlists, PlaylistsTabFragment::class.java.simpleName) { PlaylistsTabFragment() }
-
-        fabSearch = findViewById(R.id.fab_search)
-        fabSearch.setOnClickListener {
-            startActivity(Intent(this, SearchActivity::class.java))
+        bottomNav = findViewById(R.id.bottom_nav)
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> {
+                    openTab(VirginHomeFragment::class.java.simpleName, VirginHomeFragment())
+                    true
+                }
+                R.id.nav_songs -> {
+                    openTab(SongsTabFragment::class.java.simpleName, SongsTabFragment())
+                    true
+                }
+                R.id.nav_library -> {
+                    openTab(BibliotecaFragment::class.java.simpleName, BibliotecaFragment())
+                    true
+                }
+                R.id.nav_search -> {
+                    startActivity(Intent(this, SearchActivity::class.java))
+                    false
+                }
+                R.id.nav_profile -> {
+                    startActivity(Intent(this, PerfilActivity::class.java))
+                    false
+                }
+                else -> false
+            }
         }
 
         miniPlayer = findViewById(R.id.mini_player)
@@ -364,7 +332,6 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         Playback.listener = this
         syncMiniPlayer()
         refreshSortIcon()
-        renderAvatar()
         seedAutoPlaylists()
         UpdateChecker.check(this)
         Changelog.checkUpdated(this)
@@ -491,6 +458,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private fun fragmentFor(tag: String): Fragment {
         return when (tag) {
             VirginHomeFragment::class.java.simpleName -> VirginHomeFragment()
+            BibliotecaFragment::class.java.simpleName -> BibliotecaFragment()
             FavoritesTabFragment::class.java.simpleName -> FavoritesTabFragment()
             VideosTabFragment::class.java.simpleName -> VideosTabFragment()
             AlbumsTabFragment::class.java.simpleName -> AlbumsTabFragment()
@@ -500,13 +468,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         }
     }
 
-    private fun bindTab(viewId: Int, tag: String, create: () -> Fragment) {
-        val view = findViewById<View>(viewId)
-        tabViews[tag] = view
-        view.setOnClickListener { openTab(tag, create()) }
-    }
-
-    private fun openTab(tag: String, fragment: Fragment) {
+    fun openTab(tag: String, fragment: Fragment) {
         if (supportFragmentManager.backStackEntryCount > 0) {
             supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
         }
@@ -557,37 +519,40 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         pushDetail(PlaylistDetailFragment.forPlaylist(playlist), "playlist_detail")
     }
 
-    private fun openNowPlaying() {
-        pushDetail(NowPlayingFragment(), NowPlayingFragment::class.java.simpleName)
+    /** Abre a tela de reprodução própria (usado pela home e pelo mini player). */
+    fun openNowPlaying() {
+        startActivity(Intent(this, NowPlayingActivity::class.java))
     }
 
-    private fun refreshPlaylists() {
-        val top = topFragment()
-        if (top is PlaylistsTabFragment) {
-            top.reload()
+    /** Atalho do dashboard da Virgin: troca a bottom nav / seção da Biblioteca. */
+    fun openHomeShortcut(key: String) {
+        when (key) {
+            "songs" -> {
+                bottomNav.selectedItemId = R.id.nav_songs
+                openTab(SongsTabFragment::class.java.simpleName, SongsTabFragment())
+            }
+            else -> {
+                pendingSection = key
+                BibliotecaFragment.pending = key
+                bottomNav.selectedItemId = R.id.nav_library
+            }
         }
+    }
+
+    /** Abre a Biblioteca já numa seção (usado pelos atalhos do dashboard). */
+    fun openLibrarySection(section: String) {
+        pendingSection = section
+        BibliotecaFragment.pending = section
+        bottomNav.selectedItemId = R.id.nav_library
     }
 
     private fun syncToolbar() {
         if (!mainViewsReady) return
         val fragment = topFragment()
-        val showingNow = fragment is NowPlayingFragment
         val hasBackStack = supportFragmentManager.backStackEntryCount > 0
         val isVirginHome = fragment is VirginHomeFragment
 
-        tabScroll.visibility = if (showingNow) View.GONE else View.VISIBLE
-        fabSearch.visibility = if (showingNow) View.GONE else View.VISIBLE
-        miniPlayer.visibility = if (showingNow) {
-            View.GONE
-        } else if (Playback.currentSong != null) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
-
-        val fabLp = fabSearch.layoutParams as FrameLayout.LayoutParams
-        fabLp.bottomMargin = if (miniPlayer.visibility == View.VISIBLE) dp(92) else dp(20)
-        fabSearch.layoutParams = fabLp
+        miniPlayer.visibility = if (Playback.currentSong != null) View.VISIBLE else View.GONE
 
         toolbar.navigationIcon = if (hasBackStack) {
             ContextCompat.getDrawable(this, R.drawable.ic_arrow_back)
@@ -595,15 +560,13 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             null
         }
 
-        toolbar.menu.findItem(R.id.action_add)?.isVisible = fragment is PlaylistsTabFragment
-
         if (isVirginHome && !hasBackStack) {
             toolbar.title = ""
             toolbar.background = null
         } else {
             toolbar.background = ContextCompat.getDrawable(this, R.drawable.bg_navbar)
             toolbar.title = when (fragment) {
-                is NowPlayingFragment -> getString(R.string.now_playing)
+                is BibliotecaFragment -> fragment.title()
                 is PlaylistsTabFragment -> getString(R.string.tab_playlists)
                 is SongsTabFragment -> getString(R.string.tab_songs)
                 is AlbumsTabFragment -> getString(R.string.tab_albums)
@@ -615,20 +578,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
                 else -> tabTitle(currentTag)
             }
         }
-        syncTabStrip()
     }
-
-    private fun syncTabStrip() {
-        if (::tabStrip.isInitialized) {
-            for ((tag, view) in tabViews) {
-                view.isSelected = tag == currentTag
-            }
-            val current = tabViews[currentTag]
-            current?.let { tabScroll.smoothScrollTo(maxOf(0, it.left - it.width / 2), 0) }
-        }
-    }
-
-    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     private fun refreshSortIcon() {
         if (!mainViewsReady) return
@@ -642,6 +592,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private fun tabTitle(tag: String): String {
         return when (tag) {
             VirginHomeFragment::class.java.simpleName -> getString(R.string.tab_virgin)
+            BibliotecaFragment::class.java.simpleName -> getString(R.string.tab_biblioteca)
             FavoritesTabFragment::class.java.simpleName -> getString(R.string.tab_favorites)
             VideosTabFragment::class.java.simpleName -> getString(R.string.tab_videos)
             AlbumsTabFragment::class.java.simpleName -> getString(R.string.tab_albums)
@@ -715,31 +666,13 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             syncToolbar()
             virgin.announceRadioSong(song)
         }
-        (topFragment() as? NowPlayingFragment)?.render()
     }
 
     override fun onPlayStateChanged(isPlaying: Boolean) {
         if (!mainViewsReady) return
         miniPlay.setImageResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play)
-        (topFragment() as? NowPlayingFragment)?.refreshPlayIcon()
     }
 
     override fun onProgress(positionMs: Long, durationMs: Long) {
-        (topFragment() as? NowPlayingFragment)?.refreshProgress(positionMs, durationMs)
-    }
-
-    private fun renderAvatar() {
-        renderPhotoInto(avatarView)
-    }
-
-    private fun renderPhotoInto(target: ShapeableImageView?) {
-        val t = target ?: return
-        val photo = Profile.getPhoto(this)
-        if (photo != null) {
-            t.setImageBitmap(photo)
-            t.clearColorFilter()
-        } else {
-            t.setImageResource(R.drawable.ic_person)
-        }
     }
 }

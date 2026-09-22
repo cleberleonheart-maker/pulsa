@@ -29,6 +29,17 @@ class DancingVirginView @JvmOverloads constructor(
     private var phase = 0f
     private var animator: ValueAnimator? = null
 
+    /** Força um gênero específico; null segue o avatar ativo em [Settings]. */
+    private var requestedMale: Boolean? = null
+
+    var forceMale: Boolean?
+        get() = requestedMale
+        set(value) {
+            if (requestedMale == value) return
+            requestedMale = value
+            if (isAttachedToWindow) refreshAvatar()
+        }
+
     companion object {
         private val views = mutableSetOf<DancingVirginView>()
 
@@ -52,7 +63,7 @@ class DancingVirginView @JvmOverloads constructor(
     }
 
     private fun refreshAvatar() {
-        val male = Settings.masculineAvatar(context)
+        val male = forceMale ?: Settings.masculineAvatar(context)
         val res = if (male) R.drawable.avatar_masculino_animated else R.drawable.virgin_avatar_animated
         val fresh = resources.getDrawable(res, null) as AnimatedVectorDrawable
         avatar?.stop()

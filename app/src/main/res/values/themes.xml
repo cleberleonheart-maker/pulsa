@@ -29,15 +29,15 @@
         <item name="android:fontFamily">@font/outfit_regular</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:seekBarStyle">@style/Widget.Pulsa.SeekBar</item>
-        <!-- Chassis Radar · chanfro 45° global (todas as superfícies Material tornam-se terminais cortadas) -->
-        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.Pulsa.Radar</item>
-        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.Pulsa.Radar</item>
-        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Pulsa.Radar</item>
-        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.Pulsa.Radar</item>
-        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Pulsa.Radar</item>
-        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.Pulsa.Radar</item>
-        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Pulsa.Radar</item>
-        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Pulsa.Radar</item>
+        <!-- Aurora Nébula · cantos totalmente arredondados (fim do chanfro 45° de terminal) -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.Pulsa.Orb</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.Pulsa.Orb</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Pulsa.Orb</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.Pulsa.Orb</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Pulsa.Orb</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.Pulsa.Orb</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Pulsa.Orb</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Pulsa.Orb</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Pulsa.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Pulsa.BottomSheet</item>
 <item name="android:windowAnimationStyle">@style/WindowTransitionsPulsa</item>
@@ -102,11 +102,14 @@
         <item name="colorOnPrimary">@color/bg</item>
     </style>
 
-        <!-- Chassis Radar: esqueleto chanfrado 45° (canto terminal cortado) — infra do tema -->
-    <style name="ShapeAppearance.Pulsa.Radar" parent="ShapeAppearance.Material3.Corner.Medium">
-        <item name="cornerFamily">cut</item>
-        <item name="cornerSize">10dp</item>
+        <!-- Aurora Nébula: esqueleto arredondado suave (orb) — substitui o terminal chanfrado -->
+    <style name="ShapeAppearance.Pulsa.Orb" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
     </style>
+
+    <!-- Mantém o nome Radar como alias arredondado (compatibilidade) -->
+    <style name="ShapeAppearance.Pulsa.Radar" parent="@style/ShapeAppearance.Pulsa.Orb" />
 
     <style name="ThemeOverlay.Pulsa.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorSurface">@color/surface</item>
