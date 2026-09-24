@@ -67,4 +67,26 @@ class DjCommanderTest {
         assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta")))
         assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta a anterior")))
     }
+
+    @Test
+    fun ambient_volume_up() {
+        assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("virgi, chuva mais alta"))?.up)
+        assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("aumenta a chuva"))?.up)
+        assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("virgi, deixa o oceano mais alto"))?.up)
+        assertEquals("ambient_vol", DjCommander.action(DjCommander.norm("virgi, chuva mais alta")))
+    }
+
+    @Test
+    fun ambient_volume_down() {
+        assertEquals(false, DjCommander.ambientVolume(DjCommander.norm("virgi, abaixa o oceano"))?.up)
+        assertEquals(false, DjCommander.ambientVolume(DjCommander.norm("ambiente mais baixo"))?.up)
+        assertEquals("ambient_vol", DjCommander.action(DjCommander.norm("virgi, fogueira mais baixa")))
+    }
+
+    @Test
+    fun ambient_volume_not_triggered() {
+        assertNull(DjCommander.ambientVolume(DjCommander.norm("virgin, aumenta o volume")))
+        assertNull(DjCommander.ambientVolume(DjCommander.norm("virgin, toca chuva")))
+        assertNull(DjCommander.ambientVolume(DjCommander.norm("virgin, tudo mais alto que isso")))
+    }
 }

@@ -30,13 +30,19 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.4.3):
+    <string name="changelog">What is new (5.5.0):
+
+→ 4 NEW AMBIENT SOUNDS
+• Besides Night/Rain/Ocean/Wind/Forest/Noises, now there are: Rain and thunder, Campfire, Stream and Morning birds (12 total)
+
+→ VOICE CONTROL OF AMBIENT VOLUME
+• "Virgin, make the rain louder" or "lower the ocean" adjusts the sound level without the physical keys
+
+→ AMBIENT DUCKS WHEN VIRGIN TALKS
+• Her voice now automatically dips the background sound (20%) and returns to normal after — no more fighting in your earphones
 
 → NO FALSE EMAIL WARNING
-• Removed the "Email server: unverified" warning when the server returns no status — it only appears with a real reading (online/offline)
-
-→ GOOGLE LOGIN VISIBLE
-• Fixed: the "Sign in with Google" button now appears on the login screen when the key is configured (it was previously hidden silently)
+• Removed the "Email server: unverified" warning when the server returns no status
 
 → RECOMMEND WITHOUT A KEY
 • The "Recommend" button now always works: without a key, it uses your history and favorites (offline)
@@ -72,6 +78,26 @@
     <string name="add_songs">Add songs</string>
     <string name="add_songs_title">Add songs to playlist</string>
     <string name="songs_selected">%1$d songs added</string>
+    <string name="ambient_title">Ambient Sounds</string>
+    <string name="ambient_select">Choose a background sound</string>
+    <string name="ambient_off">Off</string>
+    <string name="ambient_night">Night</string>
+    <string name="ambient_rain">Rain</string>
+    <string name="ambient_ocean">Ocean</string>
+    <string name="ambient_wind">Wind</string>
+    <string name="ambient_forest">Forest</string>
+    <string name="ambient_noise">White noise</string>
+    <string name="ambient_pink">Pink noise</string>
+    <string name="ambient_brown">Brown noise</string>
+    <string name="ambient_storm">Rain and thunder</string>
+    <string name="ambient_fire">Campfire</string>
+    <string name="ambient_river">Stream</string>
+    <string name="ambient_birds">Morning birds</string>
+    <string name="ambient_started">Ambient sound: %1$s</string>
+    <string name="ambient_stopped">Ambient sound off</string>
+    <string name="ambient_volume">Volume: %1$d%%</string>
+    <string name="dj_voice_ambient_vol">Ambient sound at %1$d percent.</string>
+    <string name="dj_voice_ambient_off">No ambient sound playing right now.</string>
     <string name="remove_song_confirm">Remove this song from the playlist?</string>
     <string name="prev_action">Previous</string>
     <string name="next_action">Next</string>

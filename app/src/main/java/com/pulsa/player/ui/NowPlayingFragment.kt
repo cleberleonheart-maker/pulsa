@@ -381,7 +381,8 @@ class NowPlayingFragment : Fragment() {
     private fun showAmbientDialog() {
         val modes = listOf(
             Ambient.NIGHT, Ambient.RAIN, Ambient.OCEAN, Ambient.WIND,
-            Ambient.FOREST, Ambient.WHITE, Ambient.PINK, Ambient.BROWN
+            Ambient.FOREST, Ambient.WHITE, Ambient.PINK, Ambient.BROWN,
+            Ambient.STORM, Ambient.FIRE, Ambient.RIVER, Ambient.BIRDS
         )
         val labels = ArrayList<String>()
         labels.add(getString(R.string.ambient_off))
@@ -448,6 +449,10 @@ class NowPlayingFragment : Fragment() {
         Ambient.WHITE -> getString(R.string.ambient_noise)
         Ambient.PINK -> getString(R.string.ambient_pink)
         Ambient.BROWN -> getString(R.string.ambient_brown)
+        Ambient.STORM -> getString(R.string.ambient_storm)
+        Ambient.FIRE -> getString(R.string.ambient_fire)
+        Ambient.RIVER -> getString(R.string.ambient_river)
+        Ambient.BIRDS -> getString(R.string.ambient_birds)
         else -> getString(R.string.ambient_title)
     }
 

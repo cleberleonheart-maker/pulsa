@@ -16,6 +16,10 @@ object Ambient {
     const val WHITE = "white"
     const val PINK = "pink"
     const val BROWN = "brown"
+    const val STORM = "storm"
+    const val FIRE = "fire"
+    const val RIVER = "river"
+    const val BIRDS = "birds"
 
     private const val SAMPLE_RATE = 44100
     private const val FRAME = 4410
@@ -24,6 +28,7 @@ object Ambient {
     @Volatile private var running = false
     @Volatile private var mode: String? = null
     @Volatile private var volume = 0.6f
+    @Volatile private var duckFactor = 1f
 
     private var thread: Thread? = null
     private var track: AudioTrack? = null
@@ -56,8 +61,17 @@ object Ambient {
     @Synchronized
     fun setVolume(vol: Float) {
         volume = vol.coerceIn(0.0f, 1.0f)
-        runCatching { track?.setVolume(volume) }
+        runCatching { track?.setVolume(volume * duckFactor) }
     }
+
+    /** Reduz temporariamente o volume (0..1) sem alterar o volume base do usuário. */
+    @Synchronized
+    fun setDuck(factor: Float) {
+        duckFactor = factor.coerceIn(0.0f, 1.0f)
+        runCatching { track?.setVolume(volume * duckFactor) }
+    }
+
+    fun duckFactor(): Float = duckFactor
 
     fun isOn(): Boolean = running
 
@@ -110,7 +124,7 @@ object Ambient {
                 .setBufferSizeInBytes(FRAME * 4 * 4)
             t = builder.build()
             track = t
-            t.setVolume(volume)
+            t.setVolume(volume * duckFactor)
             t.play()
             val gen = when (ambient) {
                 PINK -> ::genPink
@@ -120,6 +134,10 @@ object Ambient {
                 WIND -> ::genWind
                 FOREST -> ::genForest
                 NIGHT -> ::genNight
+                STORM -> ::genStorm
+                FIRE -> ::genFire
+                RIVER -> ::genRiver
+                BIRDS -> ::genBirds
                 else -> ::genWhite
             }
             val buf = ShortArray(FRAME)
@@ -274,6 +292,117 @@ object Ambient {
             chirp *= 0.985f
             val tone = kotlin.math.sin(phase * 0.35f) * chirp
             (cricketPulse * 0.25f + tone * 0.18f)
+        }
+    }
+
+    @Suppress("LocalVariableName")
+    private fun genStorm(buf: ShortArray, n: Int) {
+        var bed = 0f
+        var tickPhase = 0f
+        var tickStep = 0f
+        var tickAmp = 0f
+        var untilTick = 0f
+        var untilThunder = 40000f
+        var thunder = 0f
+        var rumblePhase = 0f
+        var rumbleStep = 0.05f
+        emit(buf, n) {
+            val w = rand.nextFloat() * 2f - 1f
+            bed += 0.16f * (w - bed)
+            untilTick -= 1f
+            if (untilTick <= 0f) {
+                untilTick = 50f + rand.nextFloat() * 320f
+                tickAmp = 0.6f + rand.nextFloat() * 0.8f
+                tickStep = 0.05f + rand.nextFloat() * 0.22f
+                tickPhase = rand.nextFloat() * 6.283f
+            }
+            val tick: Float = if (tickAmp > 0.01f) {
+                tickPhase += tickStep
+                kotlin.math.sin(tickPhase) * tickAmp
+            } else 0f
+            tickAmp *= 0.94f
+            untilThunder -= 1f
+            if (untilThunder <= 0f) {
+                untilThunder = 70000f + rand.nextFloat() * 140000f
+                thunder = 1f
+                rumbleStep = 0.035f + rand.nextFloat() * 0.05f
+            }
+            thunder *= 0.9998f
+            rumblePhase += rumbleStep
+            val rumble = kotlin.math.sin(rumblePhase) * thunder * 0.8f +
+                kotlin.math.sin(rumblePhase * 0.47f + 1.3f) * thunder * 0.55f
+            val v = bed * 1.1f + tick * 0.42f + rumble * 1.1f
+            if (v > 1f) 1f else if (v < -1f) -1f else v
+        }
+    }
+
+    @Suppress("LocalVariableName")
+    private fun genFire(buf: ShortArray, n: Int) {
+        var bed = 0f
+        var crack = 0f
+        var crackEnv = 0f
+        var untilCrack = 0f
+        emit(buf, n) {
+            val w = rand.nextFloat() * 2f - 1f
+            bed += 0.02f * (w - bed)
+            untilCrack -= 1f
+            if (untilCrack <= 0f) {
+                untilCrack = 220f + rand.nextFloat() * 3600f
+                crackEnv = 0.6f + rand.nextFloat() * 0.9f
+                crack = w
+            }
+            crackEnv *= 0.87f
+            val v = bed * 2.0f + crack * crackEnv * 0.45f + w * 0.10f
+            if (v > 1f) 1f else if (v < -1f) -1f else v
+        }
+    }
+
+    @Suppress("LocalVariableName")
+    private fun genRiver(buf: ShortArray, n: Int) {
+        var flow = 0f
+        var bubble = 0f
+        var bubbleEnv = 0f
+        var bubbleStep = 0f
+        var bubblePhase = 0f
+        var untilBubble = 0f
+        emit(buf, n) {
+            val w = rand.nextFloat() * 2f - 1f
+            flow += 0.035f * (w - flow)
+            untilBubble -= 1f
+            if (untilBubble <= 0f) {
+                untilBubble = 900f + rand.nextFloat() * 2600f
+                bubbleEnv = 0.4f + rand.nextFloat() * 0.6f
+                bubbleStep = 0.10f + rand.nextFloat() * 0.20f
+                bubblePhase = rand.nextFloat() * 6.283f
+            }
+            bubbleEnv *= 0.94f
+            bubblePhase += bubbleStep
+            bubble = kotlin.math.sin(bubblePhase) * bubbleEnv * 0.25f
+            val v = flow * 2.2f + bubble
+            if (v > 1f) 1f else if (v < -1f) -1f else v
+        }
+    }
+
+    @Suppress("LocalVariableName")
+    private fun genBirds(buf: ShortArray, n: Int) {
+        var bed = 0f
+        var chirp = 0f
+        var chirpFreq = 0f
+        var chirpEnv = 0f
+        var untilNext = 3000f
+        emit(buf, n) {
+            val w = rand.nextFloat() * 2f - 1f
+            bed += 0.03f * (w - bed)
+            untilNext -= 1f
+            if (untilNext <= 0f) {
+                untilNext = 500f + rand.nextFloat() * 5200f
+                chirpFreq = 1700f + rand.nextFloat() * 2400f
+                chirpEnv = 0.7f + rand.nextFloat() * 0.9f
+            }
+            chirpEnv *= 0.985f
+            chirp = kotlin.math.sin(chirpFreq * 0.0016f) * chirpEnv
+            val v = bed * 1.3f + chirp * 0.5f
+            if (v > 1f) 1f else if (v < -1f) -1f else v
         }
     }
 }

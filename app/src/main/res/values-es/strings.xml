@@ -30,13 +30,19 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.4.3):
+    <string name="changelog">Novedades de esta versión (5.5.0):
+
+→ 4 SONIDOS AMBIENTALES NUEVOS
+• Además de Noche/Lluvia/Océano/Viento/Bosque/Ruidos, ahora hay: Lluvia y truenos, Fogata, Arroyo y Aves por la mañana (12 en total)
+
+→ VOLUMEN DEL AMBIENTE POR VOZ
+• "Virginia, sube la lluvia" o "baja el océano" ajusta el nivel del sonido sin usar los botones físicos
+
+→ EL AMBIENTE SE AMORTIGUA CUANDO VIRGIN HABLA
+• Su voz ahora baja automáticamente el sonido de fondo (20%) y vuelve a la normalidad después — nada de pelea en tus auriculares
 
 → SIN AVISO FALSO DE CORREO
-• Eliminado el aviso "Servidor de correo: no verificado" cuando el servidor no devuelve estado — solo aparece con lectura real (en línea/fuera de línea)
-
-→ LOGIN CON GOOGLE VISIBLE
-• Corregido: el botón "Iniciar sesión con Google" ahora aparece en la pantalla de login cuando la clave está configurada (antes quedaba oculto sin aviso)
+• Eliminado el aviso "Servidor de correo: no verificado" cuando el servidor no devuelve estado
 
 → RECOMENDAR SIN CLAVE
 • El botón "Recomendar" ahora funciona siempre: sin clave, usa tu historial y favoritas (sin conexión)
@@ -72,6 +78,26 @@
     <string name="add_songs">Añadir canciones</string>
     <string name="add_songs_title">Añadir canciones a la lista</string>
     <string name="songs_selected">%1$d canciones añadidas</string>
+    <string name="ambient_title">Sonidos ambientales</string>
+    <string name="ambient_select">Elige un sonido de fondo</string>
+    <string name="ambient_off">Desactivado</string>
+    <string name="ambient_night">Noche</string>
+    <string name="ambient_rain">Lluvia</string>
+    <string name="ambient_ocean">Océano</string>
+    <string name="ambient_wind">Viento</string>
+    <string name="ambient_forest">Bosque</string>
+    <string name="ambient_noise">Ruido blanco</string>
+    <string name="ambient_pink">Ruido rosa</string>
+    <string name="ambient_brown">Ruido marrón</string>
+    <string name="ambient_storm">Lluvia y truenos</string>
+    <string name="ambient_fire">Fogata</string>
+    <string name="ambient_river">Arroyo</string>
+    <string name="ambient_birds">Aves por la mañana</string>
+    <string name="ambient_started">Sonido ambiental: %1$s</string>
+    <string name="ambient_stopped">Sonido ambiental desactivado</string>
+    <string name="ambient_volume">Volumen: %1$d%%</string>
+    <string name="dj_voice_ambient_vol">Sonido ambiental al %1$d por ciento.</string>
+    <string name="dj_voice_ambient_off">No hay sonido ambiental reproduciéndose.</string>
     <string name="remove_song_confirm">¿Quitar esta canción de la lista?</string>
     <string name="prev_action">Anterior</string>
     <string name="next_action">Siguiente</string>

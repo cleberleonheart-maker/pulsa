@@ -17,6 +17,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
+import com.pulsa.player.audio.Ambient
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Profile
 import com.pulsa.player.core.Settings
@@ -59,6 +60,7 @@ class MainVirgin(
         private const val RESUME_LISTENER_DELAY_MS = 800L
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
+        private const val AMBIENT_DUCK_FACTOR = 0.2f
     }
 
     private val launcher = launchers
@@ -296,13 +298,17 @@ class MainVirgin(
             virginVoice = it
         }
         val lang = virginLang
+        val duckAmbient = Ambient.isOn() && Ambient.duckFactor() >= 1f
+        if (duckAmbient) Ambient.setDuck(AMBIENT_DUCK_FACTOR)
         voice.init { ready ->
             if (!ready || activity.isDestroyed) {
+                if (duckAmbient) Ambient.setDuck(1f)
                 if (!hold) resumeVirginSpeech()
                 return@init
             }
             voice.speak(text, lang) {
                 virginLastSpeechEndMs = SystemClock.elapsedRealtime()
+                if (duckAmbient) Ambient.setDuck(1f)
                 ThreadPool.onUi {
                     if (!hold) resumeVirginSpeech()
                 }
@@ -600,6 +606,19 @@ class MainVirgin(
             "memory_recall" -> virgMemoryRecall(norm)
             "mood_wild" -> virgWildMix()
             "sleep" -> virgSleepMix()
+            "ambient_vol" -> {
+                val vol = DjCommander.ambientVolume(norm)
+                if (vol == null) return
+                if (!Ambient.isOn()) {
+                    virginSpeak(say(R.string.dj_voice_ambient_off))
+                    return
+                }
+                val step = 0.1f
+                val cur = Ambient.state().volume
+                val target = if (vol.up) cur + step else cur - step
+                Ambient.setVolume(target.coerceIn(0.05f, 1f))
+                virginSpeak(say(R.string.dj_voice_ambient_vol, (Ambient.state().volume * 100).toInt()))
+            }
             "repeat" -> {
                 val on = !Playback.repeatOne
                 Playback.setRepeatOne(on)

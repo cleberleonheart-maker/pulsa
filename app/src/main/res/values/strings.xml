@@ -32,13 +32,19 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.4.3):
+    <string name="changelog">Novidades desta versão (5.5.0):
+
+→ 4 SONS AMBIENTES NOVOS
+• Além de Noite/Chuva/Oceano/Vento/Floresta/Ruídos, agora tem: Chuva e trovões, Fogueira, Riacho e Pássaros na manhã (12 no total)
+
+→ VOLUME DO AMBIENTE POR VOZ
+• "virgi, chuva mais alta" ou "abaixa o oceano" regula o ganho do som sem usar os botões físicos
+
+→ AMBIENTE DUCE QUANDO A VIRGIN FALA
+• A voz dela agora dá uma baixada automática no som de fundo (20%) e volta ao normal depois — nada de briga no fone
 
 → SEM AVISO FALSO DE E-MAIL
-• Removido o aviso "Servidor de e-mail: não verificado" quando o servidor não retorna status — só aparece quando há leitura real (online/offline)
-
-→ LOGIN COM GOOGLE VISÍVEL
-• Corrigido: o botão "Entrar com Google" agora aparece na tela de login quando a chave está configurada (antes ficava oculto sem aviso)
+• Removido o aviso "Servidor de e-mail: não verificado" quando o servidor não retorna status
 
 → RECOMENDAR SEM CHAVE
 • O botão "Recomendar" agora funciona sempre: sem chave, usa seu histórico e favoritas (offline)
@@ -662,9 +668,15 @@
     <string name="ambient_noise">Ruído branco</string>
     <string name="ambient_pink">Ruído rosa</string>
     <string name="ambient_brown">Ruído marrom</string>
+    <string name="ambient_storm">Chuva e trovões</string>
+    <string name="ambient_fire">Fogueira</string>
+    <string name="ambient_river">Riacho</string>
+    <string name="ambient_birds">Pássaros na manhã</string>
     <string name="ambient_started">Som ambiente: %1$s</string>
     <string name="ambient_stopped">Som ambiente desligado</string>
     <string name="ambient_volume">Volume: %1$d%%</string>
+    <string name="dj_voice_ambient_vol">Som ambiente em %1$d por cento.</string>
+    <string name="dj_voice_ambient_off">Nenhum som ambiente tocando agora.</string>
 
     <string name="sdr_title">Escuta PX · SDR Online</string>
     <string name="sdr_subtitle">Sintonize em 27.015 MHz (canal 5) para falar e escutar nas estradas</string>

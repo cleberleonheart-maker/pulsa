@@ -218,7 +218,44 @@ object DjCommander {
             norm.contains("lembra")
     }
 
+    // ----- Controle do som ambiente por voz -----
+
+    data class AmbientVol(val up: Boolean)
+
+    private val AMBIENT_WORDS = listOf(
+        "ambiente", "som ambiente",
+        "chuva", "chuvinha", "torocó", "toroco", "ocean", "oceano", "mar",
+        "floresta", "mata", "vento", "noite",
+        "trovoada", "tempestade", "storm", "trovao", "tromba d água", "tromba de agua",
+        "fogueira", "lareira", "fire", "fogao a lenha",
+        "riacho", "rio", "cachoeira", "queda d agua", "river",
+        "passaros", "passarinhos", "manha", "pajaro", "birds",
+        "ruido branco", "ruido branca", "white", "branco",
+        "pink", "rosa", "brown", "marrom"
+    )
+
+    private val VOL_UP_WORDS = listOf(
+        "mais alta", "mais alto", "aumenta", "aumentar", "aumente",
+        "sobe", "subir", "aumenta o", "mais volume", "deixa mais alto", "deixa mais alta"
+    )
+
+    private val VOL_DOWN_WORDS = listOf(
+        "mais baixa", "mais baixo", "diminui", "diminuir", "diminua",
+        "reduz", "reduza", "abaixa", "abaixar", "menos volume",
+        "deixa mais baixo", "deixa mais baixa"
+    )
+
+    /** "virgi, chuva mais alta" → sobe o som ambiente; "abaixa o oceano" → desce. */
+    fun ambientVolume(norm: String): AmbientVol? {
+        if (!AMBIENT_WORDS.any { norm.contains(it) }) return null
+        val up = VOL_UP_WORDS.any { norm.contains(it) }
+        val down = VOL_DOWN_WORDS.any { norm.contains(it) }
+        if (up == down) return null
+        return AmbientVol(up = up)
+    }
+
     fun action(norm: String): String? = when {
+        ambientVolume(norm) != null -> "ambient_vol"
         countMatch(norm) -> "count"
         dailySetMatch(norm) -> "daily_set"
         memorySave(norm) -> "memory_save"
