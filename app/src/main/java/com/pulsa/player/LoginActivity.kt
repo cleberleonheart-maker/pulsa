@@ -201,16 +201,24 @@ class LoginActivity : AppCompatActivity() {
         val btn = findViewById<SignInButton>(R.id.btn_login_google)
         val divider = findViewById<View>(R.id.login_google_or)
         val clientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
-        val playOk = GoogleApiAvailability.getInstance()
-            .isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS
-        if (clientId.isEmpty() || !playOk) {
+        if (clientId.isEmpty()) {
             btn.visibility = View.GONE
             btn.setOnClickListener(null)
             divider.visibility = View.GONE
             return
         }
+        btn.visibility = View.VISIBLE
+        divider.visibility = View.VISIBLE
         btn.setSize(SignInButton.SIZE_WIDE)
-        btn.setOnClickListener { startGoogleSignIn() }
+        btn.setOnClickListener {
+            val playOk = GoogleApiAvailability.getInstance()
+                .isGooglePlayServicesAvailable(this@LoginActivity) == ConnectionResult.SUCCESS
+            if (!playOk) {
+                Toast.makeText(this, R.string.login_google_gms, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            startGoogleSignIn()
+        }
     }
 
     private fun startGoogleSignIn() {

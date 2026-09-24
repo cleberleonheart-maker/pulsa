@@ -30,7 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.4.1):
+    <string name="changelog">What is new (5.4.2):
+
+→ GOOGLE LOGIN VISIBLE
+• Fixed: the "Sign in with Google" button now appears on the login screen when the key is configured (it was previously hidden silently)
 
 → RECOMMEND WITHOUT A KEY
 • The "Recommend" button now always works: without a key, it uses your history and favorites (offline)
