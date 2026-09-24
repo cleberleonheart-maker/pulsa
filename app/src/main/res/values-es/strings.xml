@@ -30,7 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.4.2):
+    <string name="changelog">Novedades de esta versión (5.4.3):
+
+→ SIN AVISO FALSO DE CORREO
+• Eliminado el aviso "Servidor de correo: no verificado" cuando el servidor no devuelve estado — solo aparece con lectura real (en línea/fuera de línea)
 
 → LOGIN CON GOOGLE VISIBLE
 • Corregido: el botón "Iniciar sesión con Google" ahora aparece en la pantalla de login cuando la clave está configurada (antes quedaba oculto sin aviso)

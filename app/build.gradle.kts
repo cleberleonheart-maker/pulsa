@@ -19,8 +19,8 @@ android {
         applicationId = "com.pulsa.player"
         minSdk = 23
 targetSdk = 34
-        versionCode = 112
-        versionName = "5.4.2"
+        versionCode = 113
+        versionName = "5.4.3"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 

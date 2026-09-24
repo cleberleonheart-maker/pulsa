@@ -30,7 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.4.2):
+    <string name="changelog">What is new (5.4.3):
+
+→ NO FALSE EMAIL WARNING
+• Removed the "Email server: unverified" warning when the server returns no status — it only appears with a real reading (online/offline)
 
 → GOOGLE LOGIN VISIBLE
 • Fixed: the "Sign in with Google" button now appears on the login screen when the key is configured (it was previously hidden silently)

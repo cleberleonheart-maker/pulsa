@@ -407,10 +407,14 @@ class LoginActivity : AppCompatActivity() {
         ConfirmMail.smtpStatus(this) { status ->
             if (isFinishing || isDestroyed) return@smtpStatus
             val res = when {
-                status.isBlank() || status == "?" -> R.string.smtp_status_unknown
                 status.startsWith("online", true) || status.startsWith("ok", true) ->
                     R.string.smtp_status_online
+                status.isBlank() || status == "?" || status.startsWith("unknown", true) -> null
                 else -> R.string.smtp_status_offline
+            }
+            if (res == null) {
+                tv.visibility = View.GONE
+                return@smtpStatus
             }
             tv.setText(getString(res, status))
             tv.visibility = View.VISIBLE
