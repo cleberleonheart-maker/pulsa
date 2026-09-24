@@ -110,6 +110,20 @@
 ### Polimento
 - [ ] **Widget de tela inicial**: mini-player da Virgin com play/pause/próxima sem abrir o app — `AppWidgetProvider`
 
+### Nova leva (set/2026)
+- [ ] **Playlist dinâmica por voz com condições**: "virgi, toca rock que não toco há 2 meses" ou "só as que pulei menos de 3 vezes" monta uma fila por regras faladas em tempo real — `DjCommander` + `DjMemory` + `DjEngine`
+- [ ] **Volume do ambiente por voz**: "virgi, chuva mais alta/mais baixa" regula o ganho do som ambiente sem depender do botão físico — `Ambient` + `DjCommander`
+- [ ] **Ducking automático do ambiente**: quando a Virgínia fala (ou a faixa tem vocais), o som ambiente abaixa sozinho e volta ao terminar — `Ambient` + `DjVoice` + `Playback`
+- [ ] **Som ambiente em estéreo 3D**: geradores com panning/dephasing L/R (chuva na esquerda, trovão à direita) pra dar profundidade espacial — `Ambient`
+- [ ] **Avatar aprende o que você evita**: além do skip/dislike, a Virgin evita faixas que você sempre pula nos próximos mixes e explica "deixei essa de fora porque você sempre pula" — `DjLearn` + `DjEngine`
+- [ ] **Hotword mãos-livres**: acionar "virgi" sem abrir o app (reconhecimento contínuo leve em background, opção nas Configurações) — `DjVoice` + `DjActivity`
+- [ ] **Capa sincronizada no Ouvir juntos**: o convidado vê a arte de capa da faixa atual além de faixa/posição/play-pause — `MirrorSync` + pulsaweb
+- [ ] **Nota prévia da faixa**: antes de tocar uma faixa que você costuma pular, a Virgin avisa "essa aí você costuma pular; pulo?" — `DjMemory` + `DjEngine`
+- [ ] **Pulsa Cloud: backup de playlists/favoritas**: espelha as playlists (além do DjLearn) pelo servidor e restaura em outro celular — `PlaylistDb` + `RemoteSync`
+- [ ] **Interval timer vocal**: "virgi, cronometra 3 rounds de 1 min com chuva" — timer de treino com o ambiente de fundo e contagem falada — `DjCommander` + `Ambient`
+- [ ] **Tela de dirigir**: modo fullscreen com capa gigante + botões grandes, tudo controlado por voz (sem ler nada) — `DjActivity` + modo
+- [ ] **Replay do ano falado**: "virgi, qual foi minha música do ano?" — resumo anual narrado com seus tops (o semanal já existe) — `DjLearn.rewind` + `DjVoice`
+
 ## Web player (pulsaweb) — a fazer (app separado da web)
 - [ ] **Controle do "Ouvir juntos" pelo PC**: o web player entra na sessão com o código de 5 letras e espelha/controla sem celular — `MirrorSync` + pulsaweb
 - [ ] **Pulsa Rewind / replay do ano na web**: replay das músicas mais tocadas + gráfico de ano completo no dashboard web, gerado da telemetria (`/stats` já agrega) — o resumo já existe no app (4.12.0)
