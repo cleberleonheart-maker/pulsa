@@ -9,8 +9,10 @@ import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.Menu
+import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -60,6 +62,7 @@ import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.Telemetry
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.util.UpdateChecker
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity(), Playback.Listener {
 
@@ -78,6 +81,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var miniRepeat: ImageView
     private lateinit var miniLike: ImageView
     private lateinit var miniVirgin: ImageView
+    private var miniSwipeDetector: GestureDetector? = null
     private var currentTag = VirginHomeFragment::class.java.simpleName
     private var bound = false
     private var serviceBound = false
@@ -273,6 +277,27 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             true
         }
         miniPlayer.setOnClickListener { openNowPlaying() }
+        miniSwipeDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                val dx = e2.x - (e1?.x ?: e2.x)
+                val dy = e2.y - (e1?.y ?: e2.y)
+                if (abs(dx) > abs(dy) && abs(dx) > 60 && abs(velocityX) > 400) {
+                    if (Playback.queue.isNotEmpty()) {
+                        if (dx < 0) Playback.prev() else Playback.next()
+                    }
+                    return true
+                }
+                return false
+            }
+        })
+        miniPlayer.setOnTouchListener { _, event ->
+            miniSwipeDetector?.onTouchEvent(event) ?: false
+        }
         miniPlay.setOnClickListener { Playback.toggle() }
         miniShuffle.setOnClickListener {
             Playback.setShuffle(!Playback.shuffle)

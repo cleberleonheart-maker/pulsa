@@ -116,7 +116,7 @@
 - [x] **Ducking automático do ambiente** (5.5.0): quando a Virgínia fala, o som ambiente abaixa sozinho (20%) e volta ao terminar — `Ambient.setDuck` + `MainVirgin`
 - [x] **Novos sons ambientes** (5.5.0): +4 geradores — Chuva e trovões, Fogueira, Riacho e Pássaros na manhã (antes eram 8, agora 12) — `Ambient`
 - [x] **Som ambiente em estéreo 3D** (5.5.1): geradores agora saem em estéreo com panning dinâmico por modo — trovoada rola de um lado pro outro, riacho pende à direita, fogueira estala no centro com balanço — `Ambient.panFor` + `CHANNEL_OUT_STEREO`
-- [ ] **Avatar aprende o que você evita**: além do skip/dislike, a Virgin evita faixas que você sempre pula nos próximos mixes e explica "deixei essa de fora porque você sempre pula" — `DjLearn` + `DjEngine`
+- [x] **Avatar aprende o que você evita** (5.7.0): além do dislike, a Virgin deixa de fora dos próximos mixes (wild/sleep/favoritas do mês/dinâmica/década/mix com artista) as faixas que você sempre pula (3+ skips e skips ≥ toques, sem ser dislike) e explica por voz "deixei N de fora porque você sempre pula" — `DjLearn.avoided` + `DjEngine.Learn` + `MainVirgin.avoidNote`
 - [ ] **Hotword mãos-livres**: acionar "virgi" sem abrir o app (reconhecimento contínuo leve em background, opção nas Configurações) — `DjVoice` + `DjActivity`
 - [ ] **Capa sincronizada no Ouvir juntos**: o convidado vê a arte de capa da faixa atual além de faixa/posição/play-pause — `MirrorSync` + pulsaweb
 - [ ] **Nota prévia da faixa**: antes de tocar uma faixa que você costuma pular, a Virgin avisa "essa aí você costuma pular; pulo?" — `DjMemory` + `DjEngine`
@@ -124,6 +124,16 @@
 - [ ] **Interval timer vocal**: "virgi, cronometra 3 rounds de 1 min com chuva" — timer de treino com o ambiente de fundo e contagem falada — `DjCommander` + `Ambient`
 - [ ] **Tela de dirigir**: modo fullscreen com capa gigante + botões grandes, tudo controlado por voz (sem ler nada) — `DjActivity` + modo
 - [ ] **Replay do ano falado**: "virgi, qual foi minha música do ano?" — resumo anual narrado com seus tops (o semanal já existe) — `DjLearn.rewind` + `DjVoice`
+
+### Novas ideias (set/2026)
+- [x] **Túnel do tempo por década** (5.7.0): "virgi, toca anos 80", "anos 2000", "década de 90" — monta fila filtrando por década/faixa de anos da biblioteca (``DjCommander.decadeQuery`` + `MainVirgin.virgDecadeMix`); aceita dígitos ("anos 80"/"anos 2000") e por extenso ("anos oitenta")
+- [ ] **Shazam interno**: "virgi, qual é essa música?" grava um trecho, reconhece e já pergunta se quer tocar — `DjRecognizer` + `DjCommander`
+- [ ] **Cartão de música pra compartilhar**: gera imagem da faixa (capa + arte Pulsa) pra postar, estilo Wrapped pequeno — `AvatarFavorites` + share
+- [ ] **Rádio por cena**: "virgi, toca pra malhar/estudar/viajar/dirigir" — preset de cena juntando BPM + gênero + ambiente de fundo + fila curada — `DjCommander` + `Ambient` + `Library`
+- [x] **Rádio com memória**: quando uma faixa está há dias sem ser tocada, a Virgin anuncia "essa você não ouvia há X dias/semanas/meses" (ou "ainda não ouviu!" na primeira vez) antes do "tocando agora" — `DjSession` + `DjLearn.lastPlayedMap` (5.7.0)
+- [ ] **Resumo do fim de semana**: na segunda, a Virgin narra o que você mais ouviu no sábado/domingo — `DjVoice` + `play_log`
+- [ ] **Despertador progressivo**: variação do alarme — o volume sobe gradual + som ambiente em vez de estourar — `AlarmManager` + `Ambient`
+- [ ] **Karaokê de viagem**: letra sincronizada em landscape fullscreen (pra TV/modo passeio) — `Lyrics` + `DancingVirginView`
 
 ## Web player (pulsaweb) — a fazer (app separado da web)
 - [ ] **Controle do "Ouvir juntos" pelo PC**: o web player entra na sessão com o código de 5 letras e espelha/controla sem celular — `MirrorSync` + pulsaweb

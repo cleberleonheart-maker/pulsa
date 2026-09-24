@@ -278,6 +278,7 @@ object DjLearn {
             val skipCount = mutableMapOf<Long, Int>()
             val plays = mutableMapOf<Long, Int>()
             val liked = mutableMapOf<Long, Int>()
+            val avoided = mutableSetOf<Long>()
             runCatching {
                 val db = readableDatabase
                 db.rawQuery(
@@ -286,14 +287,17 @@ object DjLearn {
                     .use { c ->
                         while (c.moveToNext()) {
                             val id = c.getLong(0)
-                            skipCount[id] = c.getInt(2)
-                            plays[id] = c.getInt(1)
+                            val playsHere = c.getInt(1)
+                            val skipsHere = c.getInt(2)
+                            skipCount[id] = skipsHere
+                            plays[id] = playsHere
                             liked[id] = c.getInt(4)
                             if (c.getInt(3) > 0) disliked.add(id)
+                            else if (skipsHere >= 3 && skipsHere >= playsHere) avoided.add(id)
                         }
                     }
             }
-            return DjEngine.Learn(disliked, skipCount, plays, liked)
+            return DjEngine.Learn(disliked, skipCount, plays, liked, avoided)
         }
 
         /** Snapshot completo dos contadores, para espelhar no servidor. */

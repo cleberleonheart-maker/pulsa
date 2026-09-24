@@ -35,16 +35,9 @@ class RadioActivity : AppCompatActivity() {
         val name: String,
         val genre: String,
         val url: String
-    ) {
-        val sdrUrl: String?
-            get() = if (url.startsWith("sdr://")) url.removePrefix("sdr://") else null
-        val infoOnly: Boolean
-            get() = url == "info://px"
-    }
+    )
 
     private val defaultStations = listOf(
-        Station("Canal dos Caminhoneiros — PX", "PX · 11m · Estradas do Brasil", "sdr://http://websdr.ewi.utwente.nl:8901/"),
-        Station("Canal Viajantes — PX", "PX · 11m · Estradas ao redor do mundo", "sdr://http://websdr.ewi.utwente.nl:8901/"),
         Station("Itaramã FM 97.1", "Hits / Litoral Gaúcho", "https://player.voxhd.com.br/proxy/7716"),
         Station("Rádio Pampa FM 97.5", "Notícias", "http://cast4.audiostream.com.br:8653/aac"),
         Station("Rádio Grenal 95.9", "Esportes", "https://grenal.audiostream.com.br:20000/aac"),
@@ -270,21 +263,6 @@ class RadioActivity : AppCompatActivity() {
 
     private fun toggleStation(idx: Int) {
         val station = stations[idx]
-        val sdr = station.sdrUrl
-        if (sdr != null) {
-            stop()
-            SdrWebViewActivity.open(this, sdr)
-            return
-        }
-        if (station.infoOnly) {
-            stop()
-            AlertDialog.Builder(this, Settings.accentStyle(this))
-                .setTitle(R.string.px_transmit_title)
-                .setMessage(R.string.px_transmit_msg)
-                .setPositiveButton(android.R.string.ok, null)
-                .show()
-            return
-        }
         if (currentUrl == station.url && player != null) {
             stop()
             return

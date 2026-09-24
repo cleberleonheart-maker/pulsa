@@ -354,9 +354,35 @@ object DjCommander {
         return DynQuery(genres, maxAge, playsLess, skipsLess, favoritesOnly)
     }
 
+    // ----- Túnel do tempo por década ("anos 80", "década de 90", "anos 2000") -----
+
+    private val DECADE_WORD_YEARS = mapOf(
+        "cinquenta" to 1950,
+        "sessenta" to 1960,
+        "setenta" to 1970,
+        "oitenta" to 1980,
+        "noventa" to 1990
+    )
+
+    /** "virgi, toca anos 80" → 1980; "década de 90" → 1990; "anos 2000" → 2000. */
+    fun decadeQuery(norm: String): Int? {
+        Regex("(?:anos?|decad[ao]?)\\s+(?:de\\s*)?(\\d{4})").find(norm)?.let {
+            return it.groupValues[1].toIntOrNull()
+        }
+        Regex("(?:anos?|decad[ao]?)\\s+(?:de\\s*)?('?\\d{2})\\s*s?\\b").find(norm)?.let {
+            val n = it.groupValues[1].replace("'", "").toIntOrNull() ?: return null
+            return if (n in 41..99) 1900 + n else 2000 + n
+        }
+        DECADE_WORD_YEARS.forEach { (word, base) ->
+            if (norm.contains("anos $word") || norm.contains("decada de $word")) return base
+        }
+        return null
+    }
+
     fun action(norm: String): String? = when {
         ambientVolume(norm) != null -> "ambient_vol"
         dynamicQuery(norm) != null -> "dynq"
+        decadeQuery(norm) != null -> "decade"
         countMatch(norm) -> "count"
         dailySetMatch(norm) -> "daily_set"
         memorySave(norm) -> "memory_save"

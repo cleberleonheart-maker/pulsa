@@ -632,6 +632,9 @@ class VirginHomeFragment : Fragment() {
             R.string.dj_commands_play to R.drawable.ic_play,
             R.string.dj_commands_fav to R.drawable.ic_favorite,
             R.string.dj_commands_scan to R.drawable.ic_search,
+            R.string.dj_commands_dynq to R.drawable.ic_queue_music,
+            R.string.dj_commands_decade to R.drawable.ic_album,
+            R.string.dj_commands_ambient_vol to R.drawable.ic_ambient,
             R.string.dj_commands_hello to R.drawable.ic_mic
         )
         val accent = ContextCompat.getColor(act, R.color.primary)

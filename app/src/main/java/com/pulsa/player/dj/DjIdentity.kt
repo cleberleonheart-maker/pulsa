@@ -14,7 +14,7 @@ object DjIdentity {
         "Olá! Eu sou a Virgin, sua DJ virtual. Nasci em dois mil e nove dentro de um pendrive " +
             "de caminhoneiro, lá no banco de uma estrada do Brasil. " +
             "Cresci numa biblioteca que tinha de tudo: sertanejo raiz, gospel, forró, pop, " +
-            "as rádios do PX e as músicas que iam e voltavam na estrada. " +
+            "e as músicas que iam e voltavam na estrada. " +
             "Então, se tem uma coisa que eu sei, é ler o seu gosto pelo jeito que a música embala " +
             "o volante. Bora tocar uma pra você!"
 

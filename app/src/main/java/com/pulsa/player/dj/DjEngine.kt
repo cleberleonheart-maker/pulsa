@@ -17,7 +17,8 @@ object DjEngine {
         val disliked: Set<Long> = emptySet(),
         val skipCount: Map<Long, Int> = emptyMap(),
         val plays: Map<Long, Int> = emptyMap(),
-        val liked: Map<Long, Int> = emptyMap()
+        val liked: Map<Long, Int> = emptyMap(),
+        val avoided: Set<Long> = emptySet()
     )
 
     fun build(
@@ -43,7 +44,7 @@ object DjEngine {
         if (base.isEmpty()) return emptyList()
         if (base.size == 1) return base
 
-        val backfill = base.filter { it.id !in learn.disliked }
+        val backfill = base.filter { it.id !in learn.disliked && it.id !in learn.avoided }
         val candidatesPool = if (backfill.isNotEmpty()) backfill else base
         val remaining = candidatesPool.shuffled().toMutableList()
         val used = linkedSetOf<Song>()

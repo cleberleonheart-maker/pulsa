@@ -32,19 +32,22 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.6.0):
+    <string name="changelog">Novidades desta versão (5.7.0):
 
-→ PLAYLIST DINÂMICA POR VOZ
-• Agora dá pra pedir fila por regra: "virgi, toca rock que não ouço há 2 meses", "monta uma fila de pagode que toquei pouco" ou "as que pulei menos de 3 vezes"
-• A Virgin filtra sua biblioteca na hora (gênero, tempo sem ouvir, nº de toques/pulos, só favoritas) e responde quantas montou: "Montei 42 músicas: Rock, que você não ouvia há 60 dias"
-• "toca rock" agora também vira uma fila só de rock — artista e gênero dividem a voz
+→ TÚNEL DO TEMPO POR DÉCADA
+• "virgi, toca anos 80", "anos 2000", "década de 90" (ou "anos oitenta") manda a Virgin montar uma fila só com as músicas daqueles anos
+• Ela filtra sua biblioteca pelo ano da faixa e responde quantas achou: "Bora! Montei 24 músicas dos anos 80!"
 
-→ REGRAS QUE FUNCIONAM
-• "que não toco há 2 meses" (ou semanas/dias/anos)
-• "que toquei menos de N vezes" (ou "toquei pouco")
-• "que pulei menos de N vezes" (ou "pulei pouco")
-• "minhas favoritas de samba"
-• Comandos encadeados continuam valendo: "toca rock que não ouço e depois pausa"</string>
+→ RÁDIO COM MEMÓRIA
+• Quando toca uma faixa que você não ouvia há dias, a Virgin avisa antes do "tocando agora": "essa você não ouvia há X dias/semanas/meses"
+• Na primeira vez que ouve uma música, ela comemora: "ainda não ouviu essa!"
+
+→ MINI PLAYER DESLIZÁVEL
+• Arraste o mini player pro lado: esquerda volta pra música anterior, direita avança pra próxima
+
+→ AJUSTES
+• Rádios PX/SDR removidas (as FMs continuam)
+• Comandos "dinâmica", "volume do ambiente" e "década" entraram na lista de comandos</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
@@ -439,6 +442,9 @@
     <string name="dj_commands_identity">"Virgin, quem é você" — ela se apresenta</string>
     <string name="dj_commands_thanks">"Virgin, obrigada / valeu" — ela agradece</string>
     <string name="dj_commands_hello">"Virgin" ou "Virgin, oi" — ela cumprimenta</string>
+    <string name="dj_commands_dynq">"Virgin, toca rock que não ouço há 2 meses / que toquei pouco / que pulei menos de 3 vezes" — monta uma fila dinâmica com condições</string>
+    <string name="dj_commands_ambient_vol">"Virgin, chuva mais alta / mais baixa" — regula o volume do som ambiente</string>
+    <string name="dj_commands_decade">"Virgin, toca anos 80 / década de 90 / anos 2000" — fila só com músicas daquela década</string>
     <string name="dj_recognizing">Reconhecendo…</string>
     <string name="dj_voice_scan">Vou olhar a sua galeria procurando músicas e vídeos novos.</string>
     <string name="dj_voice_scan_result">Pronto! Encontrei %1$d músicas e %2$d vídeos.</string>
@@ -670,15 +676,16 @@
     <string name="dj_voice_dynq_age">que você não ouvia há %1$d dias</string>
     <string name="dj_voice_dynq_plays">com menos de %1$d toques</string>
     <string name="dj_voice_dynq_skips">que você pulou menos de %1$d vezes</string>
+    <string name="dj_voice_decade_done">Bora! Montei %1$d músicas dos anos %2$s!</string>
+    <string name="dj_voice_decade_none">Não achei músicas desses anos na sua biblioteca.</string>
+    <string name="dj_voice_avoid_note">Deixei %1$d de fora porque você sempre pula.</string>
+    <string name="dj_voice_mem_first">Essa você ainda não ouviu comigo!</string>
+    <string name="dj_voice_mem_days">Essa você não ouvia há %1$d dias!</string>
+    <string name="dj_voice_mem_weeks">Essa você não ouvia há %1$d semanas!</string>
+    <string name="dj_voice_mem_months">Essa você não ouvia há %1$d meses!</string>
     <string name="dj_voice_ambient_off">Nenhum som ambiente tocando agora.</string>
 
-    <string name="sdr_title">Escuta PX · SDR Online</string>
-    <string name="sdr_subtitle">Sintonize em 27.015 MHz (canal 5) para falar e escutar nas estradas</string>
-    <string name="sdr_pause">Pausar escuta</string>
-    <string name="sdr_tip_radio">Selecione banda AM, e ajuste a frequência para 27.015 MHz (canal 5 dos caminhoneiros) ou 27.185 MHz (canal 20). O microfone do SDR transmite de verdade se o site permitir.</string>
-    <string name="px_transmit_title">Como falar no PX (transmitir)</string>
-    <string name="px_transmit_msg">Para transmitir de verdade na faixa do cidadão (27 MHz) o celular não consegue — é preciso um rádio PX físico (ex.: Aquário RP-80, homologado pela Anatel) e antena de 11 m. No rádio: canal 5 = AM, canal principal dos caminhoneiros nas estradas; canal 20 = AM, usado nas regionais. Para só ouvir: o Pulsa abre um SDR online no canal 5 para acompanhar o movimento.</string>
-<string name="smart_new_playlist">Novidades</string>
+    <string name="smart_new_playlist">Novidades</string>
     <string name="smart_classics_playlist">Clássicos</string>
 
     <string name="dj_suggest_button">Sugerir com IA</string>

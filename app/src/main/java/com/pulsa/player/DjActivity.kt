@@ -275,6 +275,9 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
             R.string.dj_commands_visualizer to R.drawable.ic_dj,
             R.string.dj_commands_identity to R.drawable.virgin_avatar,
             R.string.dj_commands_thanks to R.drawable.ic_favorite,
+            R.string.dj_commands_dynq to R.drawable.ic_queue_music,
+            R.string.dj_commands_decade to R.drawable.ic_album,
+            R.string.dj_commands_ambient_vol to R.drawable.ic_ambient,
             R.string.dj_commands_hello to R.drawable.ic_mic
         )
         val accent = ContextCompat.getColor(this, R.color.primary)

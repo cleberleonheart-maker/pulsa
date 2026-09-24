@@ -30,19 +30,22 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.6.0):
+    <string name="changelog">Novedades de esta versión (5.7.0):
 
-→ PLAYLIST DINÁMICA POR VOZ
-• Ahora puedes pedir una cola por regla: "Virginia, pon rock que no escucho desde hace 2 meses", "arma una cola de pagode que toqué poco" o "las que salté menos de 3 veces"
-• La Virginia filtra tu biblioteca al instante (género, tiempo sin escuchar, nº de reproducciones/saltos, solo favoritas) y responde cuántas armó: "Armé 42 canciones: Rock, que no escuchabas desde hace 60 días"
-• "pon rock" ahora también arma una cola solo de rock - artistas y géneros comparten la voz
+→ TUNA DEL TIEMPO POR DÉCADA
+• "Virginia, pon los 80", "los 2000", "los 90" (o "los años ochenta") hace que la Virginia arme una cola solo con canciones de esos años
+• Filtra tu biblioteca por el año de la canción y responde cuántas encontró: "¡Vamos! Armé 24 canciones de los años 80!"
 
-→ REGLAS QUE FUNCIONAN
-• "que no escuché desde hace 2 meses" (o semanas/días/años)
-• "que toqué menos de N veces" (o "toqué poco")
-• "que salté menos de N veces" (o "salté poco")
-• "mis favoritas de samba"
-• Los comandos encadenados siguen funcionando: "pon rock que no escucho y luego pausa"</string>
+→ RADIO CON MEMORIA
+• Cuando suena una canción que no escuchabas desde hace días, la Virginia avisa antes del "sonando ahora": "esta no la escuchabas desde hace X días/semanas/meses"
+• La primera vez que oyes una canción, celebra: "¡aún no habías escuchado esta!"
+
+→ REPRODUCTOR MINI DESLIZABLE
+• Desliza el reproductor mini hacia los lados: izquierda vuelve a la canción anterior, derecha avanza a la siguiente
+
+→ AJUSTES
+• Radios PX/SDR eliminadas (las FM siguen)
+• Los comandos "dinámica", "volumen del ambiente" y "década" entraron en la lista de comandos</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
@@ -91,6 +94,13 @@
     <string name="dj_voice_dynq_age">que no escuchabas desde hace %1$d días</string>
     <string name="dj_voice_dynq_plays">con menos de %1$d reproducciones</string>
     <string name="dj_voice_dynq_skips">que saltaste menos de %1$d veces</string>
+    <string name="dj_voice_decade_done">¡Vamos! Armé %1$d canciones de los años %2$s!</string>
+    <string name="dj_voice_decade_none">No encontré canciones de esos años en tu biblioteca.</string>
+    <string name="dj_voice_avoid_note">Dejé %1$d fuera porque siempre las saltas.</string>
+    <string name="dj_voice_mem_first">¡Esta aún no la has escuchado conmigo!</string>
+    <string name="dj_voice_mem_days">¡Hacía %1$d días que no escuchabas esta!</string>
+    <string name="dj_voice_mem_weeks">¡Hacía %1$d semanas que no escuchabas esta!</string>
+    <string name="dj_voice_mem_months">¡Hacía %1$d meses que no escuchabas esta!</string>
     <string name="dj_voice_ambient_off">No hay sonido ambiental reproduciéndose.</string>
     <string name="remove_song_confirm">¿Quitar esta canción de la lista?</string>
     <string name="prev_action">Anterior</string>
@@ -171,7 +181,6 @@
     <string name="quality_acoustic">Acústico</string>
     <string name="quality_classical">Clásico</string>
     <string name="quality_loudness">Sonoridad</string>
-    <string name="sdr_pause">Pausar escucha</string>
     <string name="equalizer">Ecualizador</string>
     <string name="eq_subtitle">Aplica la calidad de audio elegida</string>
     <string name="audio_8d">Audio 8D</string>

@@ -30,19 +30,22 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.6.0):
+    <string name="changelog">What is new (5.7.0):
 
-→ VOICE DRIVEN DYNAMIC PLAYLIST
-• You can now request a queue by rule: "Virgin, play rock I have not heard in 2 months", "build a queue of pagode I played little" or "the ones I skipped fewer than 3 times"
-• The Virgin filters your library on the fly (genre, time since last heard, play/skip counts, favorites only) and replies how many she built: "Built 42 tracks: Rock, that you have not heard in 60 days"
-• "play rock" now also becomes a rock-only queue - artists and genres share the voice
+→ TIME TUNNEL BY DECADE
+• "Virgin, play the 80s", "the 2000s", "the 90s decade" (or "the eighties") makes the Virgin build a queue with only tracks from those years
+• She filters your library by the track\'s year and replies how many she found: "Let\'s go! I put together 24 tracks from the 80s!"
 
-→ RULES THAT WORK
-• "have not heard in 2 months" (or weeks/days/years)
-• "played fewer than N times" (or "played little")
-• "skipped fewer than N times" (or "skipped little")
-• "my favorite samba"
-• Chained commands still work: "play rock I have not heard and then pause"</string>
+→ RADIO WITH MEMORY
+• When a track you had not heard in days comes up, the Virgin warns before "now playing": "you have not heard this one in X days/weeks/months"
+• On the first time you hear a song, she celebrates: "you have not heard this one before!"
+
+→ SWIPEABLE MINI PLAYER
+• Swipe the mini player sideways: left goes back to the previous track, right goes to the next one
+
+→ TWEAKS
+• PX/SDR radio stations removed (FM stations stay)
+• "dynamic", "ambient volume" and "decade" commands added to the command list</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -91,6 +94,13 @@
     <string name="dj_voice_dynq_age">that you have not heard in %1$d days</string>
     <string name="dj_voice_dynq_plays">with fewer than %1$d plays</string>
     <string name="dj_voice_dynq_skips">that you have skipped fewer than %1$d times</string>
+    <string name="dj_voice_decade_done">Let\'s go! I put together %1$d tracks from the %2$s!</string>
+    <string name="dj_voice_decade_none">I could not find any tracks from those years in your library.</string>
+    <string name="dj_voice_avoid_note">I left %1$d out because you always skip them.</string>
+    <string name="dj_voice_mem_first">You have not listened to this one with me yet!</string>
+    <string name="dj_voice_mem_days">You have not heard this one in %1$d days!</string>
+    <string name="dj_voice_mem_weeks">You have not heard this one in %1$d weeks!</string>
+    <string name="dj_voice_mem_months">You have not heard this one in %1$d months!</string>
     <string name="dj_voice_ambient_off">No ambient sound playing right now.</string>
     <string name="remove_song_confirm">Remove this song from the playlist?</string>
     <string name="prev_action">Previous</string>
@@ -165,7 +175,6 @@
     <string name="quality_voices">Voices</string>
     <string name="quality_treble">Treble</string>
     <string name="quality_rock">Rock</string>
-    <string name="sdr_pause">Pause listening</string>
     <string name="quality_dance">Dance/Electro</string>
     <string name="quality_pop">Pop</string>
     <string name="quality_jazz">Jazz</string>

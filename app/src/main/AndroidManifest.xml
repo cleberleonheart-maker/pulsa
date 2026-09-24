@@ -71,11 +71,6 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".SdrWebViewActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:exported="false" />
-
-        <activity
             android:name=".SearchActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

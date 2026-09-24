@@ -360,7 +360,7 @@ class MainVirgin(
                 Playback.setSleepMix(true)
                 DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set, 0)
-                virginSpeak(activity.getString(R.string.dj_voice_sleep, set.size))
+                virginSpeak(activity.getString(R.string.dj_voice_sleep, set.size) + avoidNote(learn, songs))
             }
         }
     }
@@ -397,8 +397,8 @@ class MainVirgin(
                 DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set, 0)
                 virginSpeak(
-                    if (pool === monthFavs) say(R.string.dj_voice_month_favs, set.size)
-                    else say(R.string.dj_voice_month_favs_fallback, set.size)
+                    (if (pool === monthFavs) say(R.string.dj_voice_month_favs, set.size)
+                    else say(R.string.dj_voice_month_favs_fallback, set.size)) + avoidNote(learn, pool)
                 )
             }
         }
@@ -446,7 +446,7 @@ class MainVirgin(
             val lastPlayed = DjLearn.lastPlayedMap(ctx)
             val nowSec = System.currentTimeMillis() / 1000L
             val recent = DjSessionMemory.recentIds()
-            val pool = songs.filter { s ->
+            val baseFits = songs.filter { s ->
                 if (recent.contains(s.id)) return@filter false
                 if (learn.disliked.contains(s.id)) return@filter false
                 if (query.genres.isNotEmpty() &&
@@ -465,6 +465,8 @@ class MainVirgin(
                 }
                 true
             }
+            val avoidNoteStr = avoidNote(learn, baseFits)
+            val pool = baseFits.filter { it.id !in learn.avoided }
             ThreadPool.onUi {
                 if (pool.isEmpty()) {
                     virginSpeak(say(R.string.dj_voice_dynq_none))
@@ -477,7 +479,7 @@ class MainVirgin(
                 Playback.setSleepMix(false)
                 DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set, 0)
-                virginSpeak(say(R.string.dj_voice_dynq_done, set.size, dynqReason(query)))
+                virginSpeak(say(R.string.dj_voice_dynq_done, set.size, dynqReason(query)) + avoidNoteStr)
             }
         }
     }
@@ -492,6 +494,54 @@ class MainVirgin(
         q.playsLessThan?.let { parts.add(say(R.string.dj_voice_dynq_plays, it)) }
         q.skipsLessThan?.let { parts.add(say(R.string.dj_voice_dynq_skips, it)) }
         return parts.joinToString(", ")
+    }
+
+    /** Túnel do tempo: monta um mix só com músicas de uma década (anos 80, 90, 2000). */
+    private fun virgDecadeMix(decade: Int?) {
+        if (decade == null) {
+            virginSpeak(say(R.string.dj_voice_decade_none))
+            return
+        }
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val songs = Library.allSongs(ctx)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi { virginSpeak(say(R.string.dj_voice_decade_none)) }
+                return@post
+            }
+            val learn = DjLearn.learn(ctx)
+            val recent = DjSessionMemory.recentIds()
+            val from = decade
+            val to = decade + 9
+            val candidates = songs.filter { s ->
+                s.year in from..to && s.id !in recent && s.id !in learn.disliked
+            }
+            val avoidNoteStr = avoidNote(learn, candidates)
+            val pool = candidates.filter { it.id !in learn.avoided }
+            ThreadPool.onUi {
+                if (pool.isEmpty()) {
+                    virginSpeak(say(R.string.dj_voice_decade_none))
+                    return@onUi
+                }
+                val set = pool.shuffled().take(60)
+                Telemetry.log(activity, "Virgin decade=$decade n=${set.size}")
+                Playback.setShuffle(true)
+                Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
+                DjSessionMemory.notePlayed(set.map { it.id })
+                Playback.start(set, 0)
+                virginSpeak(say(R.string.dj_voice_decade_done, set.size, decadeLabel(decade)) + avoidNoteStr)
+            }
+        }
+    }
+
+    private fun decadeLabel(decade: Int): String =
+        if (decade >= 2000) "$decade" else "${decade - 1900}"
+
+    private fun avoidNote(learn: DjEngine.Learn, pool: List<Song>): String {
+        val n = pool.count { it.id in learn.avoided }
+        if (n == 0) return ""
+        return " " + say(R.string.dj_voice_avoid_note, n)
     }
 
     private fun resumeLastSession() {
@@ -549,7 +599,7 @@ class MainVirgin(
                 Playback.setSleepMix(false)
                 DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set, 0)
-                virginSpeak(activity.getString(R.string.dj_voice_mixwith, artist, set.size))
+                virginSpeak(activity.getString(R.string.dj_voice_mixwith, artist, set.size) + avoidNote(learn, songs))
             }
         }
     }
@@ -581,7 +631,7 @@ class MainVirgin(
                 Playback.setSleepMix(false)
                 DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set.shuffled(), 0)
-                virginSpeak(activity.getString(R.string.dj_voice_mood_wild, set.size))
+                virginSpeak(activity.getString(R.string.dj_voice_mood_wild, set.size) + avoidNote(learn, songs))
             }
         }
     }
@@ -695,6 +745,7 @@ class MainVirgin(
             }
             "only" -> virgArtistOnly(DjCommander.onlyArtist(norm))
             "dynq" -> virgDynamicQueue(DjCommander.dynamicQuery(norm))
+            "decade" -> virgDecadeMix(DjCommander.decadeQuery(norm))
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong

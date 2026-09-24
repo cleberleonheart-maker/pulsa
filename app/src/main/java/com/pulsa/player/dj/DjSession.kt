@@ -2,6 +2,7 @@ package com.pulsa.player.dj
 
 import android.Manifest
 import android.content.ContentUris
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -200,6 +201,7 @@ class DjSession(
 
     fun onSongChanged(song: Song?, index: Int) {
         val app = activity.applicationContext
+        val lastPlayedBefore = DjLearn.lastPlayedMap(app)
         var announce: String? = null
         if (djActive) {
             val newId = song?.id ?: -1L
@@ -233,12 +235,31 @@ class DjSession(
             val base = activity.getString(R.string.dj_voice_track, song?.artist, song?.title)
             announce = curiosityBody(song)?.let { "$it $base" } ?: base
         }
+        if (song != null) {
+            val note = lastHeardNote(app, lastPlayedBefore, song.id)
+            if (note != null && announce != null) {
+                announce = "$note $announce"
+            }
+        }
         val dedication = if (announce != null) DjDedication.take() else null
         if (announce != null) {
             if (dedication != null) {
                 announce = activity.getString(R.string.dj_voice_dedication_lead, dedication) + " " + announce
             }
             speak(announce)
+        }
+    }
+
+    /** Rádio com memória: se a faixa está há dias sem ser ouvida, a Virgin avisa. */
+    private fun lastHeardNote(app: Context, lastPlayed: Map<Long, Long>, songId: Long): String? {
+        val last = lastPlayed[songId]
+            ?: return activity.getString(R.string.dj_voice_mem_first)
+        val gapDays = (System.currentTimeMillis() / 1000L - last) / 86400L
+        if (gapDays < 5) return null
+        return when {
+            gapDays < 14 -> activity.getString(R.string.dj_voice_mem_days, gapDays)
+            gapDays < 60 -> activity.getString(R.string.dj_voice_mem_weeks, gapDays / 7)
+            else -> activity.getString(R.string.dj_voice_mem_months, gapDays / 30)
         }
     }
 

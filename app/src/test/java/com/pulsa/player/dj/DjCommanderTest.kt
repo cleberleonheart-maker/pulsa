@@ -59,7 +59,7 @@ class DjCommanderTest {
         assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, volta a tocar")))
         assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, continua de onde parou")))
         assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, retoma a musica")))
-        assertEquals("resume", DjCommander.action(DjCommander.norm("virgi, recomeca a musica")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, recomeca a musica")))
         assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, de onde eu parei")))
     }
 
@@ -71,17 +71,17 @@ class DjCommanderTest {
 
     @Test
     fun ambient_volume_up() {
-        assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("virgi, chuva mais alta"))?.up)
+        assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("virgin, chuva mais alta"))?.up)
         assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("aumenta a chuva"))?.up)
-        assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("virgi, deixa o oceano mais alto"))?.up)
-        assertEquals("ambient_vol", DjCommander.action(DjCommander.norm("virgi, chuva mais alta")))
+        assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("virgin, deixa o oceano mais alto"))?.up)
+        assertEquals("ambient_vol", DjCommander.action(DjCommander.norm("virgin, chuva mais alta")))
     }
 
     @Test
     fun ambient_volume_down() {
-        assertEquals(false, DjCommander.ambientVolume(DjCommander.norm("virgi, abaixa o oceano"))?.up)
+        assertEquals(false, DjCommander.ambientVolume(DjCommander.norm("virgin, abaixa o oceano"))?.up)
         assertEquals(false, DjCommander.ambientVolume(DjCommander.norm("ambiente mais baixo"))?.up)
-        assertEquals("ambient_vol", DjCommander.action(DjCommander.norm("virgi, fogueira mais baixa")))
+        assertEquals("ambient_vol", DjCommander.action(DjCommander.norm("virgin, fogueira mais baixa")))
     }
 
     @Test
@@ -93,7 +93,7 @@ class DjCommanderTest {
 
     @Test
     fun dynq_genre_and_age() {
-        val q = DjCommander.dynamicQuery(DjCommander.norm("virgi, toca rock que nao toco ha 2 meses"))
+        val q = DjCommander.dynamicQuery(DjCommander.norm("virgin, toca rock que nao toco ha 2 meses"))
         assertNotNull(q)
         assertEquals(listOf("rock"), q!!.genres)
         assertEquals(Integer.valueOf(60), q.maxAgeDays)
@@ -108,7 +108,7 @@ class DjCommanderTest {
 
     @Test
     fun dynq_plays_less_than() {
-        val q = DjCommander.dynamicQuery(DjCommander.norm("virgi, monta uma fila de pagode que toquei menos de 5 vezes"))
+        val q = DjCommander.dynamicQuery(DjCommander.norm("virgin, monta uma fila de pagode que toquei menos de 5 vezes"))
         assertNotNull(q)
         assertEquals(listOf("pagode"), q!!.genres)
         assertEquals(Integer.valueOf(5), q.playsLessThan)
@@ -154,7 +154,7 @@ class DjCommanderTest {
     fun dyng_action_beats_mix_and_skip() {
         assertEquals("dynq", DjCommander.action(DjCommander.norm("monta um mix de rock que nao ouco")))
         assertEquals("dynq", DjCommander.action(DjCommander.norm("toca as que pulei menos de 3 vezes")))
-        assertEquals("mix", DjCommander.action(DjCommander.norm("virgi, um mix")))
+        assertEquals("mix", DjCommander.action(DjCommander.norm("virgin, um mix")))
     }
 
     @Test
@@ -164,5 +164,36 @@ class DjCommanderTest {
         assertEquals(true, DjCommander.matchesGenre("Hip-Hop", "hip hop"))
         assertEquals(false, DjCommander.matchesGenre(null, "rock"))
         assertEquals(false, DjCommander.matchesGenre("Jazz", "rock"))
+    }
+
+    @Test
+    fun decade_two_digits() {
+        assertEquals(Integer.valueOf(1980), DjCommander.decadeQuery(DjCommander.norm("virgin, toca anos 80")))
+        assertEquals(Integer.valueOf(1990), DjCommander.decadeQuery(DjCommander.norm("decada de 90")))
+        assertEquals(Integer.valueOf(1970), DjCommander.decadeQuery(DjCommander.norm("anos 70")))
+        assertEquals(Integer.valueOf(1980), DjCommander.decadeQuery(DjCommander.norm("anos 80s")))
+    }
+
+    @Test
+    fun decade_spoken_words() {
+        assertEquals(Integer.valueOf(1980), DjCommander.decadeQuery(DjCommander.norm("virgin, toca anos oitenta")))
+        assertEquals(Integer.valueOf(1990), DjCommander.decadeQuery(DjCommander.norm("toca decada de noventa")))
+    }
+
+    @Test
+    fun decade_four_digits() {
+        assertEquals(Integer.valueOf(2000), DjCommander.decadeQuery(DjCommander.norm("virgin, toca anos 2000")))
+    }
+
+    @Test
+    fun decade_not_triggered_on_unrelated_dates() {
+        assertNull(DjCommander.decadeQuery(DjCommander.norm("virgin, a musica daqueles anos")))
+        assertNull(DjCommander.decadeQuery(DjCommander.norm("virgin, qual musica esta tocando")))
+    }
+
+    @Test
+    fun decade_action() {
+        assertEquals("decade", DjCommander.action(DjCommander.norm("virgin, toca anos 80")))
+        assertEquals("decade", DjCommander.action(DjCommander.norm("virgin, toca decada de 90")))
     }
 }
