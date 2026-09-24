@@ -21,14 +21,15 @@ object Ambient {
     const val RIVER = "river"
     const val BIRDS = "birds"
 
-    private const val SAMPLE_RATE = 44100
-    private const val FRAME = 4410
-    private const val OUTPUT_GAIN = 2.0f
+private const val SAMPLE_RATE = 44100
+private const val FRAME = 4410
+private const val STEP_TWO_PI = 0.00014248f
 
-    @Volatile private var running = false
-    @Volatile private var mode: String? = null
-    @Volatile private var volume = 0.6f
-    @Volatile private var duckFactor = 1f
+@Volatile private var running = false
+@Volatile private var mode: String? = null
+@Volatile private var volume = 0.75f
+@Volatile private var duckFactor = 1f
+@Volatile private var outGain = 1f
 
     private var thread: Thread? = null
     private var track: AudioTrack? = null
@@ -156,6 +157,7 @@ object Ambient {
                 BIRDS -> ::genBirds
                 else -> ::genWhite
             }
+            outGain = gainFor(ambient)
             val pan = panFor(ambient)
             var stPhase = rand.nextFloat() * 6.283f
             val buf = ShortArray(FRAME)
@@ -196,11 +198,26 @@ object Ambient {
     private inline fun emit(buf: ShortArray, n: Int, next: () -> Float) {
         var i = 0
         while (i < n) {
-            val sample = next() * OUTPUT_GAIN
+            val sample = next() * outGain
             val v = (sample * 32767f).toInt()
             buf[i] = if (v > 32767) 32767 else if (v < -32768) -32768 else v.toShort()
             i++
         }
+    }
+
+    private fun gainFor(ambient: String): Float = when (ambient) {
+        PINK, WHITE -> 0.45f
+        BROWN -> 0.40f
+        RAIN -> 0.70f
+        OCEAN -> 0.55f
+        WIND -> 0.30f
+        FOREST -> 0.85f
+        NIGHT -> 1.10f
+        STORM -> 0.45f
+        FIRE -> 0.45f
+        RIVER -> 0.45f
+        BIRDS -> 0.80f
+        else -> 0.60f
     }
 
     private fun genWhite(buf: ShortArray, n: Int) = emit(buf, n) { rand.nextFloat() * 2f - 1f }    @Suppress("LocalVariableName")
@@ -250,7 +267,7 @@ object Ambient {
                 kotlin.math.sin(tickPhase) * tickAmp
             } else 0f
             tickAmp *= 0.94f
-            bed * 1.0f + tick * 0.45f + w * 0.06f
+            bed * 1.0f + tick * 0.45f + w * 0.03f
         }
     }
 
@@ -286,6 +303,7 @@ object Ambient {
         var chirp = 0f
         var chirpFreq = 0f
         var chirpEnv = 0f
+        var chirpPhase = 0f
         var untilNext = 12000f
         var pinkP = 0f
         emit(buf, n) {
@@ -298,10 +316,12 @@ object Ambient {
                     untilNext = 36000f + rand.nextFloat() * 100000f
                     chirpFreq = 2600f + rand.nextFloat() * 1400f
                     chirpEnv = 1f
+                    chirpPhase = 0f
                 }
             }
-            chirp = kotlin.math.sin(chirpFreq * 0.0014f) * chirpEnv
-            val t = pinkP * 1.6f + chirp * 0.35f
+            chirpPhase += chirpFreq * STEP_TWO_PI
+            chirp = kotlin.math.sin(chirpPhase) * chirpEnv
+            val t = pinkP * 1.3f + chirp * 0.5f
             if (t > 1f) 1f else if (t < -1f) -1f else t
         }
     }
@@ -331,10 +351,10 @@ object Ambient {
         var tickStep = 0f
         var tickAmp = 0f
         var untilTick = 0f
-        var untilThunder = 40000f
+        var untilThunder = 25000f
         var thunder = 0f
         var rumblePhase = 0f
-        var rumbleStep = 0.05f
+        var rumbleStep = 0.012f
         emit(buf, n) {
             val w = rand.nextFloat() * 2f - 1f
             bed += 0.16f * (w - bed)
@@ -352,15 +372,15 @@ object Ambient {
             tickAmp *= 0.94f
             untilThunder -= 1f
             if (untilThunder <= 0f) {
-                untilThunder = 70000f + rand.nextFloat() * 140000f
+                untilThunder = 60000f + rand.nextFloat() * 140000f
                 thunder = 1f
-                rumbleStep = 0.035f + rand.nextFloat() * 0.05f
+                rumbleStep = 0.009f + rand.nextFloat() * 0.015f
             }
-            thunder *= 0.9998f
+            thunder *= 0.99996f
             rumblePhase += rumbleStep
-            val rumble = kotlin.math.sin(rumblePhase) * thunder * 0.8f +
-                kotlin.math.sin(rumblePhase * 0.47f + 1.3f) * thunder * 0.55f
-            val v = bed * 1.1f + tick * 0.42f + rumble * 1.1f
+            val rumble = kotlin.math.sin(rumblePhase) * thunder * 1.7f +
+                kotlin.math.sin(rumblePhase * 0.47f + 1.3f) * thunder * 1.2f
+            val v = bed * 0.9f + tick * 0.40f + rumble
             if (v > 1f) 1f else if (v < -1f) -1f else v
         }
     }
@@ -381,7 +401,7 @@ object Ambient {
                 crack = w
             }
             crackEnv *= 0.87f
-            val v = bed * 2.0f + crack * crackEnv * 0.45f + w * 0.10f
+            val v = bed * 2.0f + crack * crackEnv * 0.40f + w * 0.04f
             if (v > 1f) 1f else if (v < -1f) -1f else v
         }
     }
@@ -418,19 +438,22 @@ object Ambient {
         var chirp = 0f
         var chirpFreq = 0f
         var chirpEnv = 0f
+        var chirpPhase = 0f
         var untilNext = 3000f
         emit(buf, n) {
             val w = rand.nextFloat() * 2f - 1f
-            bed += 0.03f * (w - bed)
+            bed += 0.025f * (w - bed)
             untilNext -= 1f
             if (untilNext <= 0f) {
-                untilNext = 500f + rand.nextFloat() * 5200f
-                chirpFreq = 1700f + rand.nextFloat() * 2400f
+                untilNext = 450f + rand.nextFloat() * 4800f
+                chirpFreq = 1800f + rand.nextFloat() * 2500f
                 chirpEnv = 0.7f + rand.nextFloat() * 0.9f
+                chirpPhase = 0f
             }
             chirpEnv *= 0.985f
-            chirp = kotlin.math.sin(chirpFreq * 0.0016f) * chirpEnv
-            val v = bed * 1.3f + chirp * 0.5f
+            chirpPhase += chirpFreq * STEP_TWO_PI
+            chirp = kotlin.math.sin(chirpPhase) * chirpEnv
+            val v = bed * 0.45f + chirp * 0.60f
             if (v > 1f) 1f else if (v < -1f) -1f else v
         }
     }

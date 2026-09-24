@@ -30,22 +30,13 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.7.0):
+    <string name="changelog">Novedades de esta versión (5.7.1):
 
-→ TUNA DEL TIEMPO POR DÉCADA
-• "Virginia, pon los 80", "los 2000", "los 90" (o "los años ochenta") hace que la Virginia arme una cola solo con canciones de esos años
-• Filtra tu biblioteca por el año de la canción y responde cuántas encontró: "¡Vamos! Armé 24 canciones de los años 80!"
-
-→ RADIO CON MEMORIA
-• Cuando suena una canción que no escuchabas desde hace días, la Virginia avisa antes del "sonando ahora": "esta no la escuchabas desde hace X días/semanas/meses"
-• La primera vez que oyes una canción, celebra: "¡aún no habías escuchado esta!"
-
-→ REPRODUCTOR MINI DESLIZABLE
-• Desliza el reproductor mini hacia los lados: izquierda vuelve a la canción anterior, derecha avanza a la siguiente
-
-→ AJUSTES
-• Radios PX/SDR eliminadas (las FM siguen)
-• Los comandos "dinámica", "volumen del ambiente" y "década" entraron en la lista de comandos</string>
+→ SONIDO AMBIENTE CORREGIDO
+• Ganancia ajustada por modo: viento, tormenta y fogata saturaban (chirrido de clipping); ahora cada sonido sale limpio
+• Pájaros y bosque: el canto salía como chirrido — la fase del chirp ahora se calcula bien y el tono sale de verdad
+• El trueno de "Lluvia y truenos" ahora es grave y bien presente (antes casi no se oía)
+• Piso de ruido reducido en lluvia, fogata y pájaros — el chirrido de fondo se cortó</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>

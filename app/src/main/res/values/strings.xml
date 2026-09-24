@@ -32,22 +32,13 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.7.0):
+    <string name="changelog">Novidades desta versão (5.7.1):
 
-→ TÚNEL DO TEMPO POR DÉCADA
-• "virgi, toca anos 80", "anos 2000", "década de 90" (ou "anos oitenta") manda a Virgin montar uma fila só com as músicas daqueles anos
-• Ela filtra sua biblioteca pelo ano da faixa e responde quantas achou: "Bora! Montei 24 músicas dos anos 80!"
-
-→ RÁDIO COM MEMÓRIA
-• Quando toca uma faixa que você não ouvia há dias, a Virgin avisa antes do "tocando agora": "essa você não ouvia há X dias/semanas/meses"
-• Na primeira vez que ouve uma música, ela comemora: "ainda não ouviu essa!"
-
-→ MINI PLAYER DESLIZÁVEL
-• Arraste o mini player pro lado: esquerda volta pra música anterior, direita avança pra próxima
-
-→ AJUSTES
-• Rádios PX/SDR removidas (as FMs continuam)
-• Comandos "dinâmica", "volume do ambiente" e "década" entraram na lista de comandos</string>
+→ SOM AMBIENTE CORRIGIDO
+• Ganho ajustado por modo: vento, trovoada e fogueira estouravam (chiado de clipping); agora cada som sai limpo, sem estourar
+• Passarinho e floresta: o canto saía como chiado — a fase do chirp agora é calculada certo e o tom sai de verdade
+• Trovão da "Chuva e trovões" agora é grave e bem presente (antes quase sumia)
+• Piso de ruído reduzido em chuva, fogueira e passarinho — chiado de fundo cortado</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>

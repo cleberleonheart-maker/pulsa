@@ -30,22 +30,13 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.7.0):
+    <string name="changelog">What is new (5.7.1):
 
-→ TIME TUNNEL BY DECADE
-• "Virgin, play the 80s", "the 2000s", "the 90s decade" (or "the eighties") makes the Virgin build a queue with only tracks from those years
-• She filters your library by the track\'s year and replies how many she found: "Let\'s go! I put together 24 tracks from the 80s!"
-
-→ RADIO WITH MEMORY
-• When a track you had not heard in days comes up, the Virgin warns before "now playing": "you have not heard this one in X days/weeks/months"
-• On the first time you hear a song, she celebrates: "you have not heard this one before!"
-
-→ SWIPEABLE MINI PLAYER
-• Swipe the mini player sideways: left goes back to the previous track, right goes to the next one
-
-→ TWEAKS
-• PX/SDR radio stations removed (FM stations stay)
-• "dynamic", "ambient volume" and "decade" commands added to the command list</string>
+→ AMBIENT SOUND FIXED
+• Gain adjusted per mode: wind, storm and fire were clipping (hissing distortion); now each sound is clean
+• Birds and forest: the chirp used to come out as hiss — the chirp phase is now computed correctly and the tone finally comes through
+• The thunder in "Rain and thunder" is now deep and present (before it barely showed up)
+• Noise floor reduced in rain, fire and birds — background hiss cut down</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
