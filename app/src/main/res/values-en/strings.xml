@@ -30,13 +30,19 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.7.1):
+    <string name="changelog">What is new (5.8.0):
 
-→ AMBIENT SOUND FIXED
-• Gain adjusted per mode: wind, storm and fire were clipping (hissing distortion); now each sound is clean
-• Birds and forest: the chirp used to come out as hiss — the chirp phase is now computed correctly and the tone finally comes through
-• The thunder in "Rain and thunder" is now deep and present (before it barely showed up)
-• Noise floor reduced in rain, fire and birds — background hiss cut down</string>
+→ SCENE RADIO
+• \"Virgi, play something for workout / study / travel / driving\" — builds a curated, shuffled radio by genre and intensity
+
+→ WEEKLY SPOKEN SUMMARY
+• \"Virgi, summary of my week\" — Virginia tells your top played tracks, weekly plays and strongest day
+
+→ VIRGINIA\'S ALARM
+• \"Virgi, wake me up at 7am (with rain)\" — an alarm with a background sound; \"cancel the alarm\" turns it off
+
+→ SPOKEN SLEEP TIMER
+• \"Virgi, stop in 20 minutes\" — the music pauses by itself right on time (up to 12 hours)</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -88,6 +94,22 @@
     <string name="dj_voice_decade_done">Let\'s go! I put together %1$d tracks from the %2$s!</string>
     <string name="dj_voice_decade_none">I could not find any tracks from those years in your library.</string>
     <string name="dj_voice_avoid_note">I left %1$d out because you always skip them.</string>
+    <string name="dj_voice_scene">Let\'s go! %2$s radio set built with %1$d tracks.</string>
+    <string name="dj_scene_malhar">workout</string>
+    <string name="dj_scene_estudar">study</string>
+    <string name="dj_scene_viajar">travel</string>
+    <string name="dj_scene_dirigir">driving</string>
+    <string name="dj_voice_week">This week you listened to %1$d tracks across %2$d plays. The top one was %3$s by %4$s, %5$d times. Your strongest day was %6$s.</string>
+    <string name="dj_voice_week_none">I have not registered any plays this week yet. Let\'s hit play!</string>
+    <string name="dj_voice_week_unknown">a track</string>
+    <string name="dj_voice_alarm_set">Alarm set for %1$s%2$s!</string>
+    <string name="dj_voice_alarm_with">, with %1$s</string>
+    <string name="dj_voice_alarm_hello">Good morning! It\'s %1$s%2$s. Time to wake up!</string>
+    <string name="dj_voice_alarm_canceled">Alarm cancelled.</string>
+    <string name="dj_voice_sleeptimer_ask">In how long? Say something like \"stop in 20 minutes\".</string>
+    <string name="dj_voice_sleeptimer_set">Got it! I\'ll pause the music in %1$d minutes.</string>
+    <string name="dj_voice_sleeptimer_done">Done, paused. Good night!</string>
+    <string name="dj_voice_sleeptimer_none">There is nothing playing right now to pause.</string>
     <string name="dj_voice_mem_first">You have not listened to this one with me yet!</string>
     <string name="dj_voice_mem_days">You have not heard this one in %1$d days!</string>
     <string name="dj_voice_mem_weeks">You have not heard this one in %1$d weeks!</string>

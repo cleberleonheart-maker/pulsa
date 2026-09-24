@@ -15,6 +15,9 @@ object Settings {
     private const val KEY_SERVER = "server_base"
     private const val KEY_TUNNEL_URL = "tunnel_url"
     private const val TUNNEL_INFO_HOST = "https://raw.githubusercontent.com/cleberleonheart-maker/pulsaweb/main/tunnel.txt"
+    private const val KEY_ALARM_HOUR = "alarm_hour"
+    private const val KEY_ALARM_MINUTE = "alarm_minute"
+    private const val KEY_ALARM_AMBIENT = "alarm_ambient"
 
     const val SERVER_LAN = ""
     const val SERVER_ONLINE = "auto"
@@ -298,6 +301,29 @@ object Settings {
         LANG_EN -> "en"
         LANG_ES -> "es"
         else -> "pt"
+    }
+
+    fun alarmHour(context: Context): Int = prefs(context).getInt(KEY_ALARM_HOUR, -1)
+
+    fun alarmMinute(context: Context): Int = prefs(context).getInt(KEY_ALARM_MINUTE, 0)
+
+    fun alarmAmbient(context: Context): String =
+        prefs(context).getString(KEY_ALARM_AMBIENT, "") ?: ""
+
+    fun setAlarm(context: Context, hour: Int, minute: Int, ambient: String?) {
+        prefs(context).edit()
+            .putInt(KEY_ALARM_HOUR, hour)
+            .putInt(KEY_ALARM_MINUTE, minute)
+            .putString(KEY_ALARM_AMBIENT, ambient ?: "")
+            .apply()
+    }
+
+    fun clearAlarm(context: Context) {
+        prefs(context).edit()
+            .putInt(KEY_ALARM_HOUR, -1)
+            .putInt(KEY_ALARM_MINUTE, 0)
+            .putString(KEY_ALARM_AMBIENT, "")
+            .apply()
     }
 
     fun crossfadeMs(value: String): Int = when (value) {

@@ -32,13 +32,19 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.7.1):
+    <string name="changelog">Novidades desta versão (5.8.0):
 
-→ SOM AMBIENTE CORRIGIDO
-• Ganho ajustado por modo: vento, trovoada e fogueira estouravam (chiado de clipping); agora cada som sai limpo, sem estourar
-• Passarinho e floresta: o canto saía como chiado — a fase do chirp agora é calculada certo e o tom sai de verdade
-• Trovão da "Chuva e trovões" agora é grave e bem presente (antes quase sumia)
-• Piso de ruído reduzido em chuva, fogueira e passarinho — chiado de fundo cortado</string>
+→ RÁDIO POR CENA
+• "Virgi, toca pra malhar / estudar / viajar / dirigir" — monta uma rádio curada por gênero e intensidade, embaralhada
+
+→ RESUMO SEMANAL FALADO
+• "Virgi, resumo da minha semana" — a Virgínia conta as mais tocadas, toques da semana e seu dia mais forte
+
+→ DESPERTADOR DA VIRGÍNIA
+• "Virgi, me acorda às 7h (com chuva)" — despertador com som de fundo; "cancela o alarme" desarma
+
+→ SLEEP TIMER FALADO
+• "Virgi, para em 20 minutos" — a música pausa sozinha na hora certa (até 12 horas)</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
@@ -436,6 +442,26 @@
     <string name="dj_commands_dynq">"Virgin, toca rock que não ouço há 2 meses / que toquei pouco / que pulei menos de 3 vezes" — monta uma fila dinâmica com condições</string>
     <string name="dj_commands_ambient_vol">"Virgin, chuva mais alta / mais baixa" — regula o volume do som ambiente</string>
     <string name="dj_commands_decade">"Virgin, toca anos 80 / década de 90 / anos 2000" — fila só com músicas daquela década</string>
+    <string name="dj_commands_scene">"Virgin, toca pra malhar / estudar / viajar / dirigir" — rádio por cena com fila curada</string>
+    <string name="dj_commands_weekly">"Virgin, resumo da minha semana / o que ouvi essa semana" — resumo semanal falado</string>
+    <string name="dj_commands_alarm">"Virgin, me acorda às 7h (com chuva)" — despertador com som de fundo</string>
+    <string name="dj_commands_sleeptimer">"Virgin, para em 20 minutos" — sleep timer falado</string>
+    <string name="dj_scene_malhar">pra malhar</string>
+    <string name="dj_scene_estudar">pra estudar</string>
+    <string name="dj_scene_viajar">pra viajar</string>
+    <string name="dj_scene_dirigir">pra dirigir</string>
+    <string name="dj_voice_scene">Bora! Rádio %2$s montada com %1$d músicas.</string>
+    <string name="dj_voice_week">Resumo da semana: você ouviu %1$d músicas em %2$d toques. A mais tocada foi %3$s de %4$s, %5$d vezes. Seu dia mais forte foi %6$s.</string>
+    <string name="dj_voice_week_none">Essa semana ainda não registrei nenhuma tocada. Bora dar o play!</string>
+    <string name="dj_voice_week_unknown">uma faixa</string>
+    <string name="dj_voice_alarm_set">Alarme marcado para %1$s%2$s!</string>
+    <string name="dj_voice_alarm_with">, com %1$s</string>
+    <string name="dj_voice_alarm_hello">Bom dia! São %1$s%2$s. Hora de acordar!</string>
+    <string name="dj_voice_alarm_canceled">Alarme cancelado.</string>
+    <string name="dj_voice_sleeptimer_ask">Em quanto tempo? Diz algo como "para em 20 minutos".</string>
+    <string name="dj_voice_sleeptimer_set">Tranquilo! Paro a música daqui a %1$d minutos.</string>
+    <string name="dj_voice_sleeptimer_done">Pronto, pausado. Boa noite!</string>
+    <string name="dj_voice_sleeptimer_none">Não tem nada tocando agora pra eu pausar.</string>
     <string name="dj_recognizing">Reconhecendo…</string>
     <string name="dj_voice_scan">Vou olhar a sua galeria procurando músicas e vídeos novos.</string>
     <string name="dj_voice_scan_result">Pronto! Encontrei %1$d músicas e %2$d vídeos.</string>

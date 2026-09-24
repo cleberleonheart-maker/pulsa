@@ -1,6 +1,9 @@
 package com.pulsa.player.dj
 
 import android.Manifest
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -57,6 +60,8 @@ class MainVirgin(
     companion object {
         const val REQ_VIRGIN_MIC = 2001
         const val REQ_VIRGIN_STORAGE = 2002
+        const val ACTION_VIRGIN_ALARM = "com.pulsa.player.action.VIRGIN_ALARM"
+        const val EXTRA_ALARM_AMBIENT = "virgin_alarm_ambient"
         private const val RESUME_LISTENER_DELAY_MS = 800L
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
@@ -746,6 +751,11 @@ class MainVirgin(
             "only" -> virgArtistOnly(DjCommander.onlyArtist(norm))
             "dynq" -> virgDynamicQueue(DjCommander.dynamicQuery(norm))
             "decade" -> virgDecadeMix(DjCommander.decadeQuery(norm))
+            "scene" -> virgScene(DjCommander.sceneQuery(norm))
+            "weekly" -> virgWeekSummary()
+            "sleeptimer" -> virgSleepTimer(DjCommander.sleepTimerQuery(norm))
+            "alarm" -> virgAlarmSet(DjCommander.alarmQuery(norm))
+            "alarm_cancel" -> virgAlarmCancel()
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong
@@ -937,6 +947,245 @@ class MainVirgin(
                 Playback.start(set, 0)
                 virginSpeak(activity.getString(R.string.dj_voice_daily_set, set.size))
             }
+        }
+    }
+
+    private fun virgScene(scene: String?) {
+        if (scene == null) return
+        if (!Permissions.hasAccess(activity)) {
+            Toast.makeText(activity, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+            return
+        }
+        val genres = when (scene) {
+            DjCommander.SCENE_MALHAR -> listOf("eletronica", "dance", "rock", "funk", "pop rock")
+            DjCommander.SCENE_ESTUDAR -> listOf("instrumental", "clasica", "classica", "mpb", "jazz", "bossa nova", "pop")
+            DjCommander.SCENE_VIAJAR -> listOf("pop", "mpb", "samba", "forro", "rock", "axe", "sertanejo")
+            DjCommander.SCENE_DIRIGIR -> listOf("eletronica", "dance", "rock", "pop rock", "pop", "funk")
+            else -> emptyList()
+        }
+        val intensity = when (scene) {
+            DjCommander.SCENE_ESTUDAR -> DjEngine.Intensity.CALM
+            DjCommander.SCENE_MALHAR -> DjEngine.Intensity.WILD
+            DjCommander.SCENE_DIRIGIR -> DjEngine.Intensity.WILD
+            else -> DjEngine.Intensity.BALANCED
+        }
+        val labelRes = when (scene) {
+            DjCommander.SCENE_MALHAR -> R.string.dj_scene_malhar
+            DjCommander.SCENE_ESTUDAR -> R.string.dj_scene_estudar
+            DjCommander.SCENE_VIAJAR -> R.string.dj_scene_viajar
+            else -> R.string.dj_scene_dirigir
+        }
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            val songs = Library.allSongs(ctx)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi { virginSpeak(activity.getString(R.string.dj_empty)) }
+                return@post
+            }
+            val favIds = runCatching { PlaylistDb.get(ctx).favorites().map { it.id }.toSet() }
+                .getOrDefault(emptySet())
+            val learn = DjLearn.learn(ctx)
+            val pref = if (genres.isEmpty()) emptyList() else {
+                songs.filter { s ->
+                    genres.any { g -> DjCommander.matchesGenre(Library.genreOf(ctx, s.id), g) }
+                }
+            }
+            val pool = if (pref.size >= 6) pref else songs
+            val set = DjEngine.build(
+                pool, favIds, DjEngine.Source.ALL, intensity, learn,
+                maxSize = 20, exclude = DjSessionMemory.recentIds()
+            )
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (set.isEmpty()) {
+                    virginSpeak(activity.getString(R.string.dj_empty))
+                    return@onUi
+                }
+                Telemetry.log(ctx, "Virgin cena $scene n=${set.size}")
+                Playback.setShuffle(true)
+                Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
+                Playback.start(set, 0)
+                host.syncMiniPlayer()
+                virginSpeak(say(R.string.dj_voice_scene, activity.getString(labelRes), set.size))
+            }
+        }
+    }
+
+    private fun virgWeekSummary() {
+        ThreadPool.post {
+            val songs = Library.allSongs(activity.applicationContext)
+            val rew = DjLearn.rewind(activity.applicationContext, 7, 10)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (rew.plays == 0) {
+                    virginSpeak(activity.getString(R.string.dj_voice_week_none))
+                    return@onUi
+                }
+                val topId = rew.top.firstOrNull()?.first ?: -1L
+                val top = songs.firstOrNull { it.id == topId }
+                val topCount = rew.top.firstOrNull()?.second ?: 0
+                val title = top?.title ?: activity.getString(R.string.dj_voice_week_unknown)
+                val artist = top?.artist ?: ""
+                virginSpeak(say(
+                    R.string.dj_voice_week, rew.unique, rew.plays, title, artist, topCount, bestWeekday(rew.week)
+                ))
+            }
+        }
+    }
+
+    private fun bestWeekday(week: IntArray): String {
+        var best = 0
+        for (i in week.indices) if (week[i] > week[best]) best = i
+        val locale = when (Settings.language(activity.applicationContext)) {
+            Settings.LANG_EN -> java.util.Locale.ENGLISH
+            Settings.LANG_ES -> java.util.Locale("es")
+            else -> java.util.Locale("pt")
+        }
+        return runCatching { java.text.DateFormatSymbols(locale).weekdays[best + 1] }.getOrElse { "" }
+    }
+
+    private fun virgAlarmSet(spec: DjCommander.AlarmSpec?) {
+        if (spec == null) return
+        if (Permissions.hasAccess(activity).not()) {
+            Toast.makeText(activity, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+            return
+        }
+        val next = nextAlarmMs(spec.hour, spec.minute)
+        val show = PendingIntent.getActivity(
+            activity, 0,
+            Intent(activity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val op = PendingIntent.getActivity(
+            activity, 1,
+            Intent(activity, MainActivity::class.java)
+                .setAction(ACTION_VIRGIN_ALARM)
+                .putExtra(EXTRA_ALARM_AMBIENT, spec.ambient)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        runCatching {
+            (activity.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
+                .setAlarmClock(AlarmManager.AlarmClockInfo(next, show), op)
+        }
+        Settings.setAlarm(activity.applicationContext, spec.hour, spec.minute, spec.ambient)
+        val with = spec.ambient?.let { " " + say(R.string.dj_voice_alarm_with, ambientLabel(it)) } ?: ""
+        virginSpeak(say(R.string.dj_voice_alarm_set, sayClock(spec.hour, spec.minute), with))
+    }
+
+    private fun virgAlarmCancel() {
+        runCatching {
+            val op = PendingIntent.getActivity(
+                activity, 1,
+                Intent(activity, MainActivity::class.java).setAction(ACTION_VIRGIN_ALARM),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            (activity.getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(op)
+        }
+        Settings.clearAlarm(activity.applicationContext)
+        virginSpeak(say(R.string.dj_voice_alarm_canceled))
+    }
+
+    private fun nextAlarmMs(hour: Int, minute: Int): Long {
+        val cal = java.util.Calendar.getInstance()
+        cal.set(java.util.Calendar.HOUR_OF_DAY, hour)
+        cal.set(java.util.Calendar.MINUTE, minute)
+        cal.set(java.util.Calendar.SECOND, 0)
+        cal.set(java.util.Calendar.MILLISECOND, 0)
+        var t = cal.timeInMillis
+        if (t <= System.currentTimeMillis() + 60_000L) {
+            cal.add(java.util.Calendar.DAY_OF_MONTH, 1)
+            t = cal.timeInMillis
+        }
+        return t
+    }
+
+    private fun virgSleepTimer(minutes: Int?) {
+        if (minutes == null) {
+            virginSpeak(say(R.string.dj_voice_sleeptimer_ask))
+            return
+        }
+        if (!Playback.isPlaying) {
+            virginSpeak(say(R.string.dj_voice_sleeptimer_none))
+            return
+        }
+        virginSpeak(say(R.string.dj_voice_sleeptimer_set, minutes))
+        virginHandler.postDelayed({
+            if (activity.isFinishing || activity.isDestroyed) return@postDelayed
+            Playback.toggle()
+            virginSpeak(activity.getString(R.string.dj_voice_sleeptimer_done))
+        }, minutes * 60_000L)
+    }
+
+    /** Despertador disparou: abre a atividade, liga o ambiente e toca uma seleção. */
+    fun onVirginAlarm(intent: Intent?) {
+        if (intent == null || activity.isFinishing || activity.isDestroyed) return
+        val ambient = intent.getStringExtra(EXTRA_ALARM_AMBIENT)
+        if (ambient != null) Ambient.start(ambient, 0.7f)
+        val cal = java.util.Calendar.getInstance()
+        val time = sayClock(
+            cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE)
+        )
+        val with = ambient?.let { " " + say(R.string.dj_voice_alarm_with, ambientLabel(it)) } ?: ""
+        virginSpeak(say(R.string.dj_voice_alarm_hello, time, with))
+        virgAlarmMix()
+    }
+
+    private fun ambientLabel(mode: String): String = activity.getString(when (mode) {
+        Ambient.NIGHT -> R.string.ambient_night
+        Ambient.OCEAN -> R.string.ambient_ocean
+        Ambient.WIND -> R.string.ambient_wind
+        Ambient.FOREST -> R.string.ambient_forest
+        Ambient.WHITE -> R.string.ambient_noise
+        Ambient.PINK -> R.string.ambient_pink
+        Ambient.BROWN -> R.string.ambient_brown
+        Ambient.STORM -> R.string.ambient_storm
+        Ambient.FIRE -> R.string.ambient_fire
+        Ambient.RIVER -> R.string.ambient_river
+        Ambient.BIRDS -> R.string.ambient_birds
+        else -> R.string.ambient_rain
+    })
+
+    /** Hora falada por extenso no idioma da pergunta (melhor pro TTS que "7:00"). */
+    private fun sayClock(hour: Int, minute: Int): String {
+        val mm = "%02d".format(minute)
+        return when (Settings.language(activity.applicationContext)) {
+            "en" -> if (minute == 0) "$hour:00" else "${hour}:$mm"
+            "es" -> if (minute == 0) "${hour}:00" else "${hour}:$mm"
+            else -> if (minute == 0) "$hour horas" else "$hour horas e $minute"
+        }
+    }
+
+    private fun virgAlarmMix() {
+        if (!Permissions.hasAccess(activity)) return
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val songs = Library.allSongs(ctx)
+            if (songs.isEmpty()) return@post
+            val favIds = runCatching { PlaylistDb.get(ctx).favorites().map { it.id }.toSet() }
+                .getOrDefault(emptySet())
+            val learn = DjLearn.learn(ctx)
+            val pool = if (favIds.size >= 3) songs.filter { it.id in favIds } else songs
+            val set = DjEngine.build(
+                pool, favIds, DjEngine.Source.ALL, DjEngine.Intensity.BALANCED, learn,
+                maxSize = 20, exclude = DjSessionMemory.recentIds()
+            )
+            if (set.isEmpty()) return@post
+            ThreadPool.onUi { playWhenBound(set, 0) }
+        }
+    }
+
+    /** Aguarda o PlaybackService ficar disponível (o app acabou de abrir pelo alarme). */
+    private fun playWhenBound(set: List<Song>, tries: Int) {
+        if (activity.isFinishing || activity.isDestroyed) return
+        if (Playback.service != null) {
+            Playback.setShuffle(true)
+            Playback.setRepeatAll(true)
+            Playback.setSleepMix(false)
+            Playback.start(set, 0)
+        } else if (tries < 8) {
+            virginHandler.postDelayed({ playWhenBound(set, tries + 1) }, 250)
         }
     }
 

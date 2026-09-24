@@ -196,4 +196,90 @@ class DjCommanderTest {
         assertEquals("decade", DjCommander.action(DjCommander.norm("virgin, toca anos 80")))
         assertEquals("decade", DjCommander.action(DjCommander.norm("virgin, toca decada de 90")))
     }
+
+    @Test
+    fun scene_query_maps_presets() {
+        assertEquals(DjCommander.SCENE_MALHAR, DjCommander.sceneQuery(DjCommander.norm("virgin, toca pra malhar")))
+        assertEquals(DjCommander.SCENE_MALHAR, DjCommander.sceneQuery(DjCommander.norm("ativa o modo treino")))
+        assertEquals(DjCommander.SCENE_ESTUDAR, DjCommander.sceneQuery(DjCommander.norm("virgin, toca pra estudar")))
+        assertEquals(DjCommander.SCENE_VIAJAR, DjCommander.sceneQuery(DjCommander.norm("radio de estrada para viajar")))
+        assertEquals(DjCommander.SCENE_DIRIGIR, DjCommander.sceneQuery(DjCommander.norm("virgin, toca pra dirigir")))
+        assertEquals(DjCommander.SCENE_DIRIGIR, DjCommander.sceneQuery(DjCommander.norm("modo drive")))
+    }
+
+    @Test
+    fun scene_not_triggered_without_intent() {
+        assertNull(DjCommander.sceneQuery(DjCommander.norm("vou malhar mais tarde")))
+        assertNull(DjCommander.sceneQuery(DjCommander.norm("estudo muito")))
+    }
+
+    @Test
+    fun scene_action_beats_play() {
+        assertEquals("scene", DjCommander.action(DjCommander.norm("virgin, toca pra malhar")))
+        assertEquals("scene", DjCommander.action(DjCommander.norm("virgin, toca pra estudar")))
+        assertEquals("play", DjCommander.action(DjCommander.norm("virgin, toca")))
+    }
+
+    @Test
+    fun weekly_summary_phrases() {
+        assertEquals("weekly", DjCommander.action(DjCommander.norm("virgin, resumo da minha semana")))
+        assertEquals("weekly", DjCommander.action(DjCommander.norm("virgin, o que ouvi essa semana")))
+        assertEquals("weekly", DjCommander.action(DjCommander.norm("o que eu ouvi essa semana")))
+        assertEquals("weekly", DjCommander.action(DjCommander.norm("como foi minha semana")))
+    }
+
+    @Test
+    fun weekly_not_triggered_by_dynq_weeks() {
+        assertEquals("dynq", DjCommander.action(DjCommander.norm("virgin, toca rock que nao toco ha 2 semanas")))
+    }
+
+    @Test
+    fun alarm_query_digits() {
+        val a = DjCommander.alarmQuery(DjCommander.norm("virgin, me acorda as 7h"))
+        assertEquals(7, a!!.hour)
+        assertEquals(0, a.minute)
+        assertNull(a.ambient)
+        val b = DjCommander.alarmQuery(DjCommander.norm("virgin, me acorda as 7:30 com chuva"))
+        assertEquals(7, b!!.hour)
+        assertEquals(30, b.minute)
+        assertEquals("rain", b.ambient)
+        val c = DjCommander.alarmQuery(DjCommander.norm("acorda as 9 horas da noite"))
+        assertEquals(21, c!!.hour)
+    }
+
+    @Test
+    fun alarm_query_spoken_words() {
+        val a = DjCommander.alarmQuery(DjCommander.norm("virgin, acorda as sete e meia com trovoada"))
+        assertEquals(7, a!!.hour)
+        assertEquals(30, a.minute)
+        assertEquals("storm", a.ambient)
+    }
+
+    @Test
+    fun alarm_not_triggered_without_time() {
+        assertNull(DjCommander.alarmQuery(DjCommander.norm("virgin, como foi a noite")))
+        assertNull(DjCommander.alarmQuery(DjCommander.norm("que horas sao")))
+    }
+
+    @Test
+    fun alarm_action() {
+        assertEquals("alarm", DjCommander.action(DjCommander.norm("virgin, me acorda as 6h")))
+        assertEquals("alarm_cancel", DjCommander.action(DjCommander.norm("virgin, cancela o alarme")))
+        assertEquals("alarm_cancel", DjCommander.action(DjCommander.norm("desliga o despertador")))
+    }
+
+    @Test
+    fun sleep_timer_parsing() {
+        assertEquals(20, DjCommander.sleepTimerQuery(DjCommander.norm("virgin, para em 20 min")))
+        assertEquals(45, DjCommander.sleepTimerQuery(DjCommander.norm("para em 45 minutos")))
+        assertEquals(120, DjCommander.sleepTimerQuery(DjCommander.norm("parar em 2 horas")))
+        assertEquals(30, DjCommander.sleepTimerQuery(DjCommander.norm("pausa em meia hora")))
+    }
+
+    @Test
+    fun sleep_timer_not_confused_with_pause() {
+        assertEquals("sleeptimer", DjCommander.action(DjCommander.norm("virgin, para em 20 min")))
+        assertEquals("pause", DjCommander.action(DjCommander.norm("virgin, para a musica")))
+        assertEquals("pause", DjCommander.action(DjCommander.norm("virgin, para")))
+    }
 }

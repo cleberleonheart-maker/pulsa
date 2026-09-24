@@ -169,6 +169,16 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             Telemetry.log(this, "MAIN createMain EXCEPTION: " + t)
             showCrashFallback(t)
         }
+        if (intent?.action == MainVirgin.ACTION_VIRGIN_ALARM) {
+            virgin.onVirginAlarm(intent)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        if (intent?.action == MainVirgin.ACTION_VIRGIN_ALARM) {
+            virgin.onVirginAlarm(intent)
+        }
     }
 
     private fun stackTrace(t: Throwable): String {

@@ -354,6 +354,160 @@ object DjCommander {
         return DynQuery(genres, maxAge, playsLess, skipsLess, favoritesOnly)
     }
 
+    // ----- Som ambiente por palavra falada (modo para o alarme/cenas) -----
+
+    /** "com chuva", "com trovoada", "com oceano" → identifica o modo do ambiente. */
+    fun ambientModeOf(norm: String): String? {
+        if (norm.contains("chuva") || norm.contains("chuvinha") || norm.contains("toroco") ||
+            norm.contains("rain")
+        ) return com.pulsa.player.audio.Ambient.RAIN
+        if (norm.contains("trovoada") || norm.contains("tempestade") || norm.contains("trovao") ||
+            norm.contains("storm")
+        ) return com.pulsa.player.audio.Ambient.STORM
+        if (norm.contains("oceano") || norm.contains("ocean") || norm.contains("mar")) return com.pulsa.player.audio.Ambient.OCEAN
+        if (norm.contains("floresta") || norm.contains("mata") || norm.contains("forest")) return com.pulsa.player.audio.Ambient.FOREST
+        if (norm.contains("vento") || norm.contains("wind")) return com.pulsa.player.audio.Ambient.WIND
+        if (norm.contains("fogueira") || norm.contains("lareira") || norm.contains("fire")) return com.pulsa.player.audio.Ambient.FIRE
+        if (norm.contains("riacho") || norm.contains("cachoeira") || norm.contains("queda d agua") ||
+            norm.contains("river")
+        ) return com.pulsa.player.audio.Ambient.RIVER
+        if (norm.contains("passaro") || norm.contains("passarinho") || norm.contains("pajaro") ||
+            norm.contains("bird")
+        ) return com.pulsa.player.audio.Ambient.BIRDS
+        if (norm.contains("ruido branco") || norm.contains("white") || norm.contains("branco")) return com.pulsa.player.audio.Ambient.WHITE
+        if (norm.contains("pink") || norm.contains("rosa")) return com.pulsa.player.audio.Ambient.PINK
+        if (norm.contains("brown") || norm.contains("marrom")) return com.pulsa.player.audio.Ambient.BROWN
+        if (norm.contains("noite") && !norm.contains("da noite") && !norm.contains("de noite")) return com.pulsa.player.audio.Ambient.NIGHT
+        return null
+    }
+
+    // ----- Rádio por cena ("toca pra malhar/estudar/viajar/dirigir") -----
+
+    const val SCENE_MALHAR = "malhar"
+    const val SCENE_ESTUDAR = "estudar"
+    const val SCENE_VIAJAR = "viajar"
+    const val SCENE_DIRIGIR = "dirigir"
+
+    private val SCENE_WORDS = mapOf(
+        SCENE_MALHAR to listOf("malhar", "malho", "treina", "treino", "academia", "workout", "musculacao", "correr", "corrida"),
+        SCENE_ESTUDAR to listOf("estudar", "estuda", "estudo", "study"),
+        SCENE_VIAJAR to listOf("viajar", "viaja", "estrada", "roadtrip", "road trip", "passeio"),
+        SCENE_DIRIGIR to listOf("dirigir", "dirige", "dirigindo", "volante", "drive")
+    )
+
+    private val SCENE_PLAYLIST_INTENT = listOf(
+        "toca", "toque", "tocar", "monta", "radio", "modo", "ativa", "play", "mixa", "da um"
+    )
+
+    /** "virgi, toca pra malhar" → SCENE_MALHAR; "modo estudo" → SCENE_ESTUDAR. */
+    fun sceneQuery(norm: String): String? {
+        val scene = SCENE_WORDS.entries.firstOrNull { (_, words) -> words.any { norm.contains(it) } }?.key
+            ?: return null
+        val intent = SCENE_PLAYLIST_INTENT.any { norm.contains(it) } || norm.contains("pra ")
+        return if (intent) scene else null
+    }
+
+    // ----- Resumo semanal falado -----
+
+    private fun weekMatch(norm: String): Boolean =
+        (norm.contains("resumo") && norm.contains("semana")) ||
+            norm.contains("o que ouvi essa semana") || norm.contains("o que eu ouvi essa semana") ||
+            norm.contains("o que ouvi esta semana") || norm.contains("o que eu ouvi esta semana") ||
+            norm.contains("como foi minha semana") || norm.contains("como foi a minha semana") ||
+            norm.contains("quais foram as mais tocadas") || norm.contains("minha semana") ||
+            norm.contains("weekly") || norm.contains("this week recap") ||
+            norm.contains("resumen de la semana") || norm.contains("resumen semanal") ||
+            norm.contains("como fue mi semana") || norm.contains("mi semana") ||
+            norm.contains("semana passada")
+
+    // ----- Despertador ("me acorda às 7h") + sleep timer ("para em 20 min") -----
+
+    data class AlarmSpec(val hour: Int, val minute: Int, val ambient: String?)
+
+    private val HOUR_WORDS = mapOf(
+        "uma" to 1, "um" to 1, "duas" to 2, "dois" to 2, "tres" to 3, "quatro" to 4,
+        "cinco" to 5, "seis" to 6, "sete" to 7, "oito" to 8, "nove" to 9, "dez" to 10,
+        "onze" to 11, "doze" to 12
+    )
+
+    private fun ambientAlarmMode(norm: String): String? {
+        if (norm.contains("com chuva") || norm.contains("com a chuva") || norm.contains("com trovoes") ||
+            norm.contains("com trovoada") || norm.contains("de chuva") || norm.contains("com oceano") ||
+            norm.contains("com a floresta") || norm.contains("com passaros") || norm.contains("com noite")
+        ) return ambientModeOf(norm)
+        return null
+    }
+
+    private fun alarmTime(norm: String): Pair<Int, Int>? {
+        // "7:30" / "07h15"
+        Regex("""(\d{1,2})\s*[:h]\s*(\d{1,2})""").find(norm)?.let {
+            val h = it.groupValues[1].toIntOrNull() ?: return null
+            val m = it.groupValues[2].toIntOrNull() ?: return null
+            if (h > 23 || m > 59) return null
+            return Pair(h, m)
+        }
+        // "às 7h", "as 9 horas", "7 horas"
+        Regex("""(\d{1,2})\s*(?:h|hs|hrs|horas)\b""").find(norm)?.let {
+            val h = it.groupValues[1].toIntOrNull() ?: return null
+            if (h > 23) return null
+            return Pair(h, minuteOf(norm))
+        }
+        // por extenso: "sete horas", "acordas às sete e meia"
+        if (norm.contains("horas") || norm.contains("hora") || norm.contains("e meia") ||
+            norm.contains("e quinze") || norm.contains("e quarenta")
+        ) {
+            HOUR_WORDS.forEach { (word, value) ->
+                if (Regex("""\b$word\b""").containsMatchIn(norm)) return Pair(value, minuteOf(norm))
+            }
+        }
+        return null
+    }
+
+    private fun minuteOf(norm: String): Int = when {
+        norm.contains("e meia") -> 30
+        norm.contains("e quinze") -> 15
+        norm.contains("e quarenta") -> 45
+        else -> 0
+    }
+
+    private fun isAfternoonNorm(norm: String): Boolean =
+        norm.contains("da tarde") || norm.contains("de tarde") ||
+            norm.contains("da noite") || norm.contains("de noite")
+
+    /** "virgi, me acorda às 7h com chuva" → AlarmSpec(7, 0, "rain"). */
+    fun alarmQuery(norm: String): AlarmSpec? {
+        val gate = norm.contains("acorda") || norm.contains("acorde") || norm.contains("acordar") ||
+            norm.contains("desperta") || norm.contains("despertad") || norm.contains("alarme") ||
+            norm.contains("me acorde") || norm.contains("wake me") || norm.contains("alarm at") ||
+            norm.contains("despierta") || norm.contains("alarma")
+        if (!gate) return null
+        val t = alarmTime(norm) ?: return null
+        var hour = t.first
+        if (isAfternoonNorm(norm) && hour in 1..11) hour += 12
+        return AlarmSpec(hour, t.second, ambientAlarmMode(norm))
+    }
+
+    /** "para em 20 min", "pausa em meia hora" → minutos (1..720). */
+    fun sleepTimerQuery(norm: String): Int? {
+        if (!(norm.contains("para em") || norm.contains("parar em") || norm.contains("pausa em") ||
+                norm.contains("para daqui a") || norm.contains("parar daqui a"))
+        ) return null
+        Regex("""(?:para|parar|pausa)\s+(?:em\s+|daqui a\s+)?(\d+)\s*(min|minuto|minutos|hora|horas)\b""")
+            .find(norm)?.let {
+                val n = it.groupValues[1].toIntOrNull() ?: return null
+                val minutes = if (it.groupValues[2].startsWith("h")) n * 60 else n
+                return minutes.coerceIn(1, 720)
+            }
+        Regex("""(?:para|parar|pausa)\s+em\s+(meia hora|uma hora|hora e meia)\b""").find(norm)?.let {
+            return when (it.groupValues[1]) {
+                "meia hora" -> 30
+                "uma hora" -> 60
+                else -> 90
+            }
+        }
+        return null
+    }
+
     // ----- Túnel do tempo por década ("anos 80", "década de 90", "anos 2000") -----
 
     private val DECADE_WORD_YEARS = mapOf(
@@ -381,6 +535,13 @@ object DjCommander {
 
     fun action(norm: String): String? = when {
         ambientVolume(norm) != null -> "ambient_vol"
+        sceneQuery(norm) != null -> "scene"
+        weekMatch(norm) -> "weekly"
+        sleepTimerQuery(norm) != null -> "sleeptimer"
+        (norm.contains("cancel") || norm.contains("desliga") || norm.contains("remove") ||
+            norm.contains("apaga") || norm.contains("delete") || norm.contains("clear")) &&
+            (norm.contains("alarme") || norm.contains("alarm") || norm.contains("despertad")) -> "alarm_cancel"
+        alarmQuery(norm) != null -> "alarm"
         dynamicQuery(norm) != null -> "dynq"
         decadeQuery(norm) != null -> "decade"
         countMatch(norm) -> "count"
@@ -404,7 +565,8 @@ object DjCommander {
         norm.contains("anterior") || norm.contains("volta") || norm.contains("voltar") -> "prev"
         norm.contains("pausa") || norm.contains("pausar") || norm.contains("parar") ||
             norm.contains("pare") || norm.contains("stop") ||
-            norm == "para" || norm.contains("para a musica") || norm.contains("para o som") ||
+            norm == "para" || norm.endsWith("para") ||
+            norm.contains("para a musica") || norm.contains("para o som") ||
             norm.contains("para de tocar") || norm.contains("para agora") -> "pause"
         norm.contains("toca") || norm.contains("toque") || norm.contains("continua") -> "play"
         norm.contains("favorit") || norm.contains("curti") || norm.contains("gostei") ||

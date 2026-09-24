@@ -30,13 +30,19 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.7.1):
+    <string name="changelog">Novedades de esta versión (5.8.0):
 
-→ SONIDO AMBIENTE CORREGIDO
-• Ganancia ajustada por modo: viento, tormenta y fogata saturaban (chirrido de clipping); ahora cada sonido sale limpio
-• Pájaros y bosque: el canto salía como chirrido — la fase del chirp ahora se calcula bien y el tono sale de verdad
-• El trueno de "Lluvia y truenos" ahora es grave y bien presente (antes casi no se oía)
-• Piso de ruido reducido en lluvia, fogata y pájaros — el chirrido de fondo se cortó</string>
+→ RADIO POR ESCENA
+• "Virgi, pon para entrenar / estudiar / viajar / conducir" — arma una radio curada por género e intensidad, con barajado
+
+→ RESUMEN SEMANAL HABLADO
+• "Virgi, resumen de mi semana" — Virginia cuenta las más sonadas, reproducciones de la semana y tu día más fuerte
+
+→ DESPERTADOR DE VIRGINIA
+• "Virgi, despiértame a las 7h (con lluvia)" — despertador con sonido de fondo; "cancela la alarma" lo apaga
+
+→ TEMPORIZADOR HABLADO
+• "Virgi, para en 20 minutos" — la música se pausa sola a la hora justa (hasta 12 horas)</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
@@ -88,6 +94,22 @@
     <string name="dj_voice_decade_done">¡Vamos! Armé %1$d canciones de los años %2$s!</string>
     <string name="dj_voice_decade_none">No encontré canciones de esos años en tu biblioteca.</string>
     <string name="dj_voice_avoid_note">Dejé %1$d fuera porque siempre las saltas.</string>
+    <string name="dj_voice_scene">¡Vamos! Radio %2$s preparada con %1$d canciones.</string>
+    <string name="dj_scene_malhar">para entrenar</string>
+    <string name="dj_scene_estudar">para estudiar</string>
+    <string name="dj_scene_viajar">para viajar</string>
+    <string name="dj_scene_dirigir">para conducir</string>
+    <string name="dj_voice_week">Resumen de la semana: escuchaste %1$d canciones en %2$d reproducciones. La más sonada fue %3$s de %4$s, %5$d veces. Tu día más fuerte fue %6$s.</string>
+    <string name="dj_voice_week_none">Esta semana aún no registré ninguna reproducción. ¡Dale play!</string>
+    <string name="dj_voice_week_unknown">una canción</string>
+    <string name="dj_voice_alarm_set">¡Alarma puesta para %1$s%2$s!</string>
+    <string name="dj_voice_alarm_with">, con %1$s</string>
+    <string name="dj_voice_alarm_hello">¡Buenos días! Son %1$s%2$s. ¡Hora de despertar!</string>
+    <string name="dj_voice_alarm_canceled">Alarma cancelada.</string>
+    <string name="dj_voice_sleeptimer_ask">¿En cuánto tiempo? Di algo como \"parar en 20 minutos\".</string>
+    <string name="dj_voice_sleeptimer_set">¡Listo! Pauso la música en %1$d minutos.</string>
+    <string name="dj_voice_sleeptimer_done">Listo, pausado. ¡Buenas noches!</string>
+    <string name="dj_voice_sleeptimer_none">No está sonando nada ahora para pausar.</string>
     <string name="dj_voice_mem_first">¡Esta aún no la has escuchado conmigo!</string>
     <string name="dj_voice_mem_days">¡Hacía %1$d días que no escuchabas esta!</string>
     <string name="dj_voice_mem_weeks">¡Hacía %1$d semanas que no escuchabas esta!</string>
