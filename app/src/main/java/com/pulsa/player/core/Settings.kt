@@ -249,6 +249,13 @@ object Settings {
     fun audio8d(context: Context): Boolean =
         prefs(context).getBoolean("audio_8d", false)
 
+    fun setHotword(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("hotword", value).apply()
+    }
+
+    fun hotword(context: Context): Boolean =
+        prefs(context).getBoolean("hotword", false)
+
     fun setAudioQuality(context: Context, value: String) {
         prefs(context).edit().putString("audio_quality", value).apply()
     }

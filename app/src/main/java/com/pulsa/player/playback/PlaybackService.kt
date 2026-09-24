@@ -732,6 +732,9 @@ class PlaybackService : Service() {
 
     private fun publishState() {
         Playback.notifyPlayState(isPlaying)
+        // Mãos-livres acompanha a reprodução: liga ao tocar, desliga ao pausar.
+        if (isPlaying) com.pulsa.player.dj.Hotword.startIfNeeded(this)
+        else com.pulsa.player.dj.Hotword.stopIfRunning(this)
         updateSessionState()
         updateNotification()
     }

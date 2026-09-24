@@ -30,19 +30,16 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.8.0):
+    <string name="changelog">Novedades de esta versión (5.8.1):
 
-→ RADIO POR ESCENA
-• "Virgi, pon para entrenar / estudiar / viajar / conducir" — arma una radio curada por género e intensidad, con barajado
+→ MANOS LIBRES
+• Nuevo ajuste: con la música sonando, Virginia sigue escuchando comandos de voz incluso con la app en segundo plano (aviso discreto en la barra)
 
-→ RESUMEN SEMANAL HABLADO
-• "Virgi, resumen de mi semana" — Virginia cuenta las más sonadas, reproducciones de la semana y tu día más fuerte
-
-→ DESPERTADOR DE VIRGINIA
-• "Virgi, despiértame a las 7h (con lluvia)" — despertador con sonido de fondo; "cancela la alarma" lo apaga
-
-→ TEMPORIZADOR HABLADO
-• "Virgi, para en 20 minutos" — la música se pausa sola a la hora justa (hasta 12 horas)</string>
+★ DE LA 5.8.0
+→ RADIO POR ESCENA: "Virgi, pon para entrenar / estudiar / viajar / conducir" — radio curada y barajada
+→ RESUMEN SEMANAL HABLADO: "Virgi, resumen de mi semana"
+→ DESPERTADOR DE VIRGINIA: "Virgi, despiértame a las 7h (con lluvia)"; "cancela la alarma" lo apaga
+→ TEMPORIZADOR HABLADO: "Virgi, para en 20 minutos" (hasta 12 horas)</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
@@ -110,6 +107,14 @@
     <string name="dj_voice_sleeptimer_set">¡Listo! Pauso la música en %1$d minutos.</string>
     <string name="dj_voice_sleeptimer_done">Listo, pausado. ¡Buenas noches!</string>
     <string name="dj_voice_sleeptimer_none">No está sonando nada ahora para pausar.</string>
+    <string name="hands_free_label">Manos libres</string>
+    <string name="hands_free_desc">Virginia escucha comandos de voz mientras suena la música, incluso en segundo plano</string>
+    <string name="hands_free_no_mic">Sin acceso al micrófono no hay manos libres.</string>
+    <string name="hotword_notif_title">Pulsa — manos libres activo</string>
+    <string name="hotword_notif_text">Escuchando comandos de voz mientras suena la música</string>
+    <string name="hotword_channel">Manos libres</string>
+    <string name="hotword_channel_desc">Aviso de escucha de comandos en segundo plano</string>
+    <string name="dj_voice_hands_free_ui">Eso solo lo hago con la pantalla abierta. Abre la app y pídemelo otra vez.</string>
     <string name="dj_voice_mem_first">¡Esta aún no la has escuchado conmigo!</string>
     <string name="dj_voice_mem_days">¡Hacía %1$d días que no escuchabas esta!</string>
     <string name="dj_voice_mem_weeks">¡Hacía %1$d semanas que no escuchabas esta!</string>

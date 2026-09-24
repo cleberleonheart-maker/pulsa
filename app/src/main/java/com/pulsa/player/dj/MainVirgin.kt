@@ -66,9 +66,17 @@ class MainVirgin(
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
         private const val AMBIENT_DUCK_FACTOR = 0.2f
+        private val HANDS_FREE_BLOCKED = setOf(
+            "scan", "duplicates", "pendrive", "delete", "confirm", "cancel",
+            "visualizer", "skin", "karaoke"
+        )
     }
 
     private val launcher = launchers
+
+    init {
+        HotwordBridge.bind(this)
+    }
 
     val isActive: Boolean
         get() = virginOn || virginRecognizing
@@ -189,6 +197,36 @@ class MainVirgin(
         ThreadPool.onUi { resolveVirginCommand(text) }
     }
 
+    /** Comando chegando do mãos-livres (serviço em segundo plano, música tocando). */
+    fun onHandsFree(text: String) {
+        if (virginOn) return
+        if (text == "__unsupported__") {
+            Hotword.stopIfRunning(activity.applicationContext)
+            return
+        }
+        if (activity.isFinishing || activity.isDestroyed) {
+            Hotword.stopIfRunning(activity.applicationContext)
+            return
+        }
+        if (SystemClock.elapsedRealtime() - virginLastSpeechEndMs < 1500L) return
+        ThreadPool.onUi { resolveHandsFreeCommand(text) }
+    }
+
+    private fun resolveHandsFreeCommand(text: String) {
+        if (activity.isFinishing || activity.isDestroyed) {
+            Hotword.stopIfRunning(activity.applicationContext)
+            return
+        }
+        val norm = DjCommander.norm(text)
+        val action = DjCommander.action(norm)
+        // Comandos que pedem tela/diálogo não fazem sentido ao fundo — avisa e deixa pra lá.
+        if (action != null && action in HANDS_FREE_BLOCKED) {
+            if (DjCommander.hasWake(norm)) virginSpeak(say(R.string.dj_voice_hands_free_ui))
+            return
+        }
+        dispatchVirginCommand(text)
+    }
+
     fun onMiniVirginLongPress() {
         if (!virginRecognizing) startVirginRecognize()
     }
@@ -211,6 +249,8 @@ class MainVirgin(
     }
 
     private fun startVirgin() {
+        // Mãos-livres em segundo plano sai da frente (um microfone só).
+        Hotword.stopIfRunning(activity)
         virginOn = true
         host.syncVirginIcon()
         Playback.setMicListening(true)
@@ -234,6 +274,7 @@ class MainVirgin(
         host.syncVirginIcon()
         if (!silent) virginSpeak(activity.getString(R.string.dj_voice_goodbye))
         virginVoice?.stop()
+        Hotword.startIfNeeded(activity)
     }
 
     private fun pauseVirginSpeech() {
@@ -1544,9 +1585,11 @@ class MainVirgin(
         Playback.setMicListening(false)
         virginListener?.stop()
         virginVoice?.stop()
+        Hotword.startIfNeeded(activity)
     }
 
     fun destroy() {
+        HotwordBridge.unbind(this)
         chainHandler.removeCallbacksAndMessages(null)
         virginListener?.destroy()
         virginListener = null

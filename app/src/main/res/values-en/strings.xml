@@ -30,19 +30,16 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.8.0):
+    <string name="changelog">What is new (5.8.1):
 
-→ SCENE RADIO
-• \"Virgi, play something for workout / study / travel / driving\" — builds a curated, shuffled radio by genre and intensity
+→ HANDS-FREE
+• New setting: while the music plays, Virginia keeps listening for voice commands even with the app in the background (quiet status bar notice)
 
-→ WEEKLY SPOKEN SUMMARY
-• \"Virgi, summary of my week\" — Virginia tells your top played tracks, weekly plays and strongest day
-
-→ VIRGINIA\'S ALARM
-• \"Virgi, wake me up at 7am (with rain)\" — an alarm with a background sound; \"cancel the alarm\" turns it off
-
-→ SPOKEN SLEEP TIMER
-• \"Virgi, stop in 20 minutes\" — the music pauses by itself right on time (up to 12 hours)</string>
+★ FROM 5.8.0
+→ SCENE RADIO: "Virgi, play something for workout / study / travel / driving" — curated shuffled radio
+→ WEEKLY SPOKEN SUMMARY: "Virgi, summary of my week"
+→ VIRGINIA\'S ALARM: "Virgi, wake me up at 7am (with rain)"; "cancel the alarm" turns it off
+→ SPOKEN SLEEP TIMER: "Virgi, stop in 20 minutes" (up to 12 hours)</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
@@ -110,6 +107,14 @@
     <string name="dj_voice_sleeptimer_set">Got it! I\'ll pause the music in %1$d minutes.</string>
     <string name="dj_voice_sleeptimer_done">Done, paused. Good night!</string>
     <string name="dj_voice_sleeptimer_none">There is nothing playing right now to pause.</string>
+    <string name="hands_free_label">Hands-free</string>
+    <string name="hands_free_desc">Virginia listens for voice commands while the music plays, even in the background</string>
+    <string name="hands_free_no_mic">Without microphone access there is no hands-free.</string>
+    <string name="hotword_notif_title">Pulsa — hands-free active</string>
+    <string name="hotword_notif_text">Listening to voice commands while the music plays</string>
+    <string name="hotword_channel">Hands-free</string>
+    <string name="hotword_channel_desc">Background voice listening notice</string>
+    <string name="dj_voice_hands_free_ui">I can only do that with the app open. Open Pulsa and ask me again.</string>
     <string name="dj_voice_mem_first">You have not listened to this one with me yet!</string>
     <string name="dj_voice_mem_days">You have not heard this one in %1$d days!</string>
     <string name="dj_voice_mem_weeks">You have not heard this one in %1$d weeks!</string>

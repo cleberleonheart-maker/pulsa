@@ -1,7 +1,9 @@
 package com.pulsa.player
 import com.pulsa.player.util.UpdateChecker
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -14,11 +16,13 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.pulsa.player.dj.DjLearn
 import com.pulsa.player.dj.DjMemory
+import com.pulsa.player.dj.Hotword
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.core.Account
 import com.pulsa.player.ui.AnimatedBackground
@@ -61,6 +65,18 @@ class SettingsActivity : AppCompatActivity() {
                 ).show()
             }.onFailure {
                 Toast.makeText(this, R.string.restore_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    // Mãos-livres precisa do microfone; se negado, o switch volta desligado.
+    private val hotwordLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            val sw = findViewById<MaterialSwitch>(R.id.hotword_switch)
+            sw.isChecked = granted
+            Settings.setHotword(this, granted)
+            if (granted) Hotword.startIfNeeded(this) else Hotword.stopIfRunning(this)
+            if (!granted) {
+                Toast.makeText(this, R.string.hands_free_no_mic, Toast.LENGTH_LONG).show()
             }
         }
 
@@ -130,6 +146,26 @@ class SettingsActivity : AppCompatActivity() {
             isChecked = Settings.djRadio(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setDjRadio(this@SettingsActivity, checked)
+            }
+        }
+
+        findViewById<MaterialSwitch>(R.id.hotword_switch).apply {
+            isChecked = Settings.hotword(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                if (checked) {
+                    val granted = ContextCompat.checkSelfPermission(
+                        this@SettingsActivity, Manifest.permission.RECORD_AUDIO
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (!granted) {
+                        hotwordLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    } else {
+                        Settings.setHotword(this@SettingsActivity, true)
+                        Hotword.startIfNeeded(this@SettingsActivity)
+                    }
+                } else {
+                    Settings.setHotword(this@SettingsActivity, false)
+                    Hotword.stopIfRunning(this@SettingsActivity)
+                }
             }
         }
 
