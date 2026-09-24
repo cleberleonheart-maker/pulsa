@@ -115,7 +115,7 @@
 - [x] **Volume do ambiente por voz** (5.5.0): "virgi, chuva mais alta/mais baixa" regula o ganho do som ambiente sem depender do botão físico — `Ambient` + `DjCommander`
 - [x] **Ducking automático do ambiente** (5.5.0): quando a Virgínia fala, o som ambiente abaixa sozinho (20%) e volta ao terminar — `Ambient.setDuck` + `MainVirgin`
 - [x] **Novos sons ambientes** (5.5.0): +4 geradores — Chuva e trovões, Fogueira, Riacho e Pássaros na manhã (antes eram 8, agora 12) — `Ambient`
-- [ ] **Som ambiente em estéreo 3D**: geradores com panning/dephasing L/R (chuva na esquerda, trovão à direita) pra dar profundidade espacial — `Ambient`
+- [x] **Som ambiente em estéreo 3D** (5.5.1): geradores agora saem em estéreo com panning dinâmico por modo — trovoada rola de um lado pro outro, riacho pende à direita, fogueira estala no centro com balanço — `Ambient.panFor` + `CHANNEL_OUT_STEREO`
 - [ ] **Avatar aprende o que você evita**: além do skip/dislike, a Virgin evita faixas que você sempre pula nos próximos mixes e explica "deixei essa de fora porque você sempre pula" — `DjLearn` + `DjEngine`
 - [ ] **Hotword mãos-livres**: acionar "virgi" sem abrir o app (reconhecimento contínuo leve em background, opção nas Configurações) — `DjVoice` + `DjActivity`
 - [ ] **Capa sincronizada no Ouvir juntos**: o convidado vê a arte de capa da faixa atual além de faixa/posição/play-pause — `MirrorSync` + pulsaweb

@@ -30,31 +30,13 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.5.0):
+    <string name="changelog">What is new (5.5.1):
+
+→ REAL STEREO AMBIENT SOUND
+• Background sounds now play in stereo with spatial shaping per type: the thunder rolls from side to side, the stream leans right, the campfire crackles at center with a sway, rain and birds fill the room
 
 → 4 NEW AMBIENT SOUNDS
-• Besides Night/Rain/Ocean/Wind/Forest/Noises, now there are: Rain and thunder, Campfire, Stream and Morning birds (12 total)
-
-→ VOICE CONTROL OF AMBIENT VOLUME
-• "Virgin, make the rain louder" or "lower the ocean" adjusts the sound level without the physical keys
-
-→ AMBIENT DUCKS WHEN VIRGIN TALKS
-• Her voice now automatically dips the background sound (20%) and returns to normal after — no more fighting in your earphones
-
-→ NO FALSE EMAIL WARNING
-• Removed the "Email server: unverified" warning when the server returns no status
-
-→ RECOMMEND WITHOUT A KEY
-• The "Recommend" button now always works: without a key, it uses your history and favorites (offline)
-
-→ AI KEY IN SETTINGS
-• New "AI key (Gemini)" field in Settings — free at aistudio.google.com/apikey
-
-→ VIRGIN SPEAKS THE APP LANGUAGE
-• Fixed: after switching the language, the voice now follows (English/Spanish)
-
-→ GREETING WITHOUT REPEATING
-• Fixed: the avatar greeting no longer says "good morning/afternoon/night" twice</string>
+• Besides Night/Rain/Ocean/Wind/Forest/Noises, now there are: Rain and thunder, Campfire, Stream and Morning birds (12 total)</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>

@@ -36,6 +36,22 @@ object Ambient {
 
     data class State(val modeName: String?, val volume: Float)
 
+    /** Perfil estéreo: deslocamento base (-1..1), oscilação (0..1) e velocidade do LFO de pan. */
+    private data class PanProfile(val offset: Float, val sway: Float, val speed: Float)
+
+    private fun panFor(ambient: String): PanProfile = when (ambient) {
+        STORM -> PanProfile(0.12f, 0.90f, 0.0007f)
+        RAIN -> PanProfile(0f, 0.35f, 0.0002f)
+        OCEAN -> PanProfile(0f, 0.85f, 0.00006f)
+        FIRE -> PanProfile(0f, 0.35f, 0.0005f)
+        RIVER -> PanProfile(0.28f, 0.55f, 0.0002f)
+        BIRDS -> PanProfile(-0.10f, 0.40f, 0.00012f)
+        NIGHT -> PanProfile(0.15f, 0.50f, 0.0004f)
+        WIND -> PanProfile(0f, 0.40f, 0.0003f)
+        FOREST -> PanProfile(0f, 0.50f, 0.00015f)
+        else -> PanProfile(0f, 0f, 0f)
+    }
+
     @Synchronized
     fun start(ambient: String, vol: Float) {
         if (running && mode == ambient) {
@@ -117,11 +133,11 @@ object Ambient {
                     AudioFormat.Builder()
                         .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                         .setSampleRate(SAMPLE_RATE)
-                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
                         .build()
                 )
                 .setTransferMode(AudioTrack.MODE_STREAM)
-                .setBufferSizeInBytes(FRAME * 4 * 4)
+                .setBufferSizeInBytes(FRAME * 8 * 4)
             t = builder.build()
             track = t
             t.setVolume(volume * duckFactor)
@@ -140,22 +156,35 @@ object Ambient {
                 BIRDS -> ::genBirds
                 else -> ::genWhite
             }
+            val pan = panFor(ambient)
+            var stPhase = rand.nextFloat() * 6.283f
             val buf = ShortArray(FRAME)
+            val sbuf = ShortArray(FRAME * 2)
             var written = 0
             while (running) {
                 gen.invoke(buf, buf.size)
                 if (written < fade.size) {
-                for (i in buf.indices) {
-                    val idx = written + i
-                    if (idx >= fade.size) break
-                    buf[i] = (buf[i] * fade[idx]).toInt().toShort()
+                    for (i in buf.indices) {
+                        val idx = written + i
+                        if (idx >= fade.size) break
+                        buf[i] = (buf[i] * fade[idx]).toInt().toShort()
+                    }
+                    written += buf.size
                 }
-                written += buf.size
+                var j = 0
+                for (s in buf) {
+                    stPhase += pan.speed
+                    val osc = pan.offset + pan.sway * kotlin.math.sin(stPhase)
+                    val spread = ((osc + 1f) / 2f).coerceIn(0f, 1f)
+                    val gL = 0.65f + 0.35f * (1f - spread)
+                    val gR = 0.65f + 0.35f * spread
+                    sbuf[j++] = (s * gL).toInt().coerceIn(-32768, 32767).toShort()
+                    sbuf[j++] = (s * gR).toInt().coerceIn(-32768, 32767).toShort()
+                }
+                t.write(sbuf, 0, sbuf.size)
             }
-                t.write(buf, 0, buf.size)
-            }
-            for (i in 0 until buf.size.coerceAtMost(SAMPLE_RATE / 10)) buf[i] = 0
-            runCatching { t.write(buf, 0, buf.size) }
+            for (i in sbuf.indices) sbuf[i] = 0
+            runCatching { t.write(sbuf, 0, sbuf.size) }
         } catch (_: Exception) {
             // silencioso — encerra junto com o app
         } finally {

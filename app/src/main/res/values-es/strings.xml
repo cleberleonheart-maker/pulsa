@@ -30,31 +30,13 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.5.0):
+    <string name="changelog">Novedades de esta versión (5.5.1):
+
+→ SONIDO AMBIENTAL EN ESTÉREO REAL
+• Los sonidos de fondo ahora suenan en estéreo con imagen espacial por tipo: los truenos ruedan de un lado al otro, el arroyo se inclina a la derecha, la fogata crepita al centro con balanceo, lluvia y aves llenan la sala
 
 → 4 SONIDOS AMBIENTALES NUEVOS
-• Además de Noche/Lluvia/Océano/Viento/Bosque/Ruidos, ahora hay: Lluvia y truenos, Fogata, Arroyo y Aves por la mañana (12 en total)
-
-→ VOLUMEN DEL AMBIENTE POR VOZ
-• "Virginia, sube la lluvia" o "baja el océano" ajusta el nivel del sonido sin usar los botones físicos
-
-→ EL AMBIENTE SE AMORTIGUA CUANDO VIRGIN HABLA
-• Su voz ahora baja automáticamente el sonido de fondo (20%) y vuelve a la normalidad después — nada de pelea en tus auriculares
-
-→ SIN AVISO FALSO DE CORREO
-• Eliminado el aviso "Servidor de correo: no verificado" cuando el servidor no devuelve estado
-
-→ RECOMENDAR SIN CLAVE
-• El botón "Recomendar" ahora funciona siempre: sin clave, usa tu historial y favoritas (sin conexión)
-
-→ CLAVE DE IA EN AJUSTES
-• Nuevo campo "Clave de IA (Gemini)" en Ajustes — gratis en aistudio.google.com/apikey
-
-→ VIRGIN HABLA EL IDIOMA DE LA APP
-• Corregido: al cambiar el idioma, la voz ahora lo sigue (inglés/español)
-
-→ SALUDO SIN REPETIR
-• Corregido: el saludo del avatar ya no dice "buenos días/buenas tardes/buenas noches" dos veces</string>
+• Además de Noche/Lluvia/Océano/Viento/Bosque/Ruidos, ahora hay: Lluvia y truenos, Fogata, Arroyo y Aves por la mañana (12 en total)</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>

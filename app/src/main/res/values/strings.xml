@@ -32,31 +32,13 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.5.0):
+    <string name="changelog">Novidades desta versão (5.5.1):
+
+→ SOM AMBIENTE EM ESTÉREO REAL
+• Os sons de fundo agora saem em estéreo com imagem espacial por tipo: a trovoada rola de um lado pro outro, o riacho pende pra direita, a fogueira estala no centro com balanço, chuva e pássaros preenchem a sala
 
 → 4 SONS AMBIENTES NOVOS
-• Além de Noite/Chuva/Oceano/Vento/Floresta/Ruídos, agora tem: Chuva e trovões, Fogueira, Riacho e Pássaros na manhã (12 no total)
-
-→ VOLUME DO AMBIENTE POR VOZ
-• "virgi, chuva mais alta" ou "abaixa o oceano" regula o ganho do som sem usar os botões físicos
-
-→ AMBIENTE DUCE QUANDO A VIRGIN FALA
-• A voz dela agora dá uma baixada automática no som de fundo (20%) e volta ao normal depois — nada de briga no fone
-
-→ SEM AVISO FALSO DE E-MAIL
-• Removido o aviso "Servidor de e-mail: não verificado" quando o servidor não retorna status
-
-→ RECOMENDAR SEM CHAVE
-• O botão "Recomendar" agora funciona sempre: sem chave, usa seu histórico e favoritas (offline)
-
-→ CHAVE DE IA NAS CONFIGURAÇÕES
-• Novo campo "Chave da IA (Gemini)" na tela de Configurações — grátis em aistudio.google.com/apikey
-
-→ VIRGIN FALA NO IDIOMA DO APP
-• Corrigido: ao trocar o idioma, a voz agora acompanha (inglês/espanhol)
-
-→ SAUDAÇÃO SEM REPETIR
-• Corrigido: o cumprimento do avatar não fala duas vezes o "bom dia/boa tarde/boa noite"</string>
+• Além de Noite/Chuva/Oceano/Vento/Floresta/Ruídos, agora tem: Chuva e trovões, Fogueira, Riacho e Pássaros na manhã (12 no total)</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
