@@ -32,13 +32,19 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.5.1):
+    <string name="changelog">Novidades desta versão (5.6.0):
 
-→ SOM AMBIENTE EM ESTÉREO REAL
-• Os sons de fundo agora saem em estéreo com imagem espacial por tipo: a trovoada rola de um lado pro outro, o riacho pende pra direita, a fogueira estala no centro com balanço, chuva e pássaros preenchem a sala
+→ PLAYLIST DINÂMICA POR VOZ
+• Agora dá pra pedir fila por regra: "virgi, toca rock que não ouço há 2 meses", "monta uma fila de pagode que toquei pouco" ou "as que pulei menos de 3 vezes"
+• A Virgin filtra sua biblioteca na hora (gênero, tempo sem ouvir, nº de toques/pulos, só favoritas) e responde quantas montou: "Montei 42 músicas: Rock, que você não ouvia há 60 dias"
+• "toca rock" agora também vira uma fila só de rock — artista e gênero dividem a voz
 
-→ 4 SONS AMBIENTES NOVOS
-• Além de Noite/Chuva/Oceano/Vento/Floresta/Ruídos, agora tem: Chuva e trovões, Fogueira, Riacho e Pássaros na manhã (12 no total)</string>
+→ REGRAS QUE FUNCIONAM
+• "que não toco há 2 meses" (ou semanas/dias/anos)
+• "que toquei menos de N vezes" (ou "toquei pouco")
+• "que pulei menos de N vezes" (ou "pulei pouco")
+• "minhas favoritas de samba"
+• Comandos encadeados continuam valendo: "toca rock que não ouço e depois pausa"</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
@@ -658,6 +664,12 @@
     <string name="ambient_stopped">Som ambiente desligado</string>
     <string name="ambient_volume">Volume: %1$d%%</string>
     <string name="dj_voice_ambient_vol">Som ambiente em %1$d por cento.</string>
+    <string name="dj_voice_dynq_done">Montei %1$d músicas: %2$s.</string>
+    <string name="dj_voice_dynq_none">Não achei músicas com esse filtro. Tenta algo como \"toca rock que não ouço há 2 meses\".</string>
+    <string name="dj_voice_dynq_fav">favoritas</string>
+    <string name="dj_voice_dynq_age">que você não ouvia há %1$d dias</string>
+    <string name="dj_voice_dynq_plays">com menos de %1$d toques</string>
+    <string name="dj_voice_dynq_skips">que você pulou menos de %1$d vezes</string>
     <string name="dj_voice_ambient_off">Nenhum som ambiente tocando agora.</string>
 
     <string name="sdr_title">Escuta PX · SDR Online</string>

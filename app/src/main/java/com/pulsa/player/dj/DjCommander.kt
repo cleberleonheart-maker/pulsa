@@ -254,8 +254,109 @@ object DjCommander {
         return AmbientVol(up = up)
     }
 
+    // ----- Playlist dinâmica com regras faladas ("rock que nao toco ha 2 meses") -----
+
+    data class DynQuery(
+        val genres: List<String>,
+        val maxAgeDays: Int?,
+        val playsLessThan: Int?,
+        val skipsLessThan: Int?,
+        val favoritesOnly: Boolean
+    ) {
+        val hasRule: Boolean
+            get() = maxAgeDays != null || playsLessThan != null || skipsLessThan != null || favoritesOnly
+    }
+
+    private const val DEFAULT_AGE_DAYS = 30
+    private const val DEFAULT_LOW_COUNT = 4
+
+    private val GENRES = listOf(
+        "sertanejo", "pagode", "samba", "choro", "funk", "rock", "pop rock", "metal",
+        "punk", "pop", "mpb", "forro", "axe", "folk", "indie", "jazz", "blues", "rap",
+        "hip hop", "trap", "reggae", "eletronica", "clasica", "classica", "kpop",
+        "instrumental", "country", "gospel", "bossa nova", "soul", "rnb", "disco", "dance"
+    )
+
+    private val PLAYLIST_INTENT = listOf(
+        "toca", "toque", "tocar", "monta", "montar", "cria", "criar", "fila", "play",
+        "mixa", "mix de", "mistura", "sobe", "so ", "somente", "apenas"
+    )
+
+    private val NUM_WORD = "(?:\\d+|uma|um|duas|dois|tres|quatro|cinco|seis|sete|oito|nove|dez)"
+
+    private fun numOf(s: String): Int = when (s) {
+        "um", "uma" -> 1
+        "dois", "duas" -> 2
+        "tres" -> 3
+        "quatro" -> 4
+        "cinco" -> 5
+        "seis" -> 6
+        "sete" -> 7
+        "oito" -> 8
+        "nove" -> 9
+        "dez" -> 10
+        else -> s.toIntOrNull() ?: 1
+    }
+
+    private fun daysOf(unit: String, n: Int): Int = when (unit) {
+        "mes", "meses" -> n * 30
+        "semana", "semanas" -> n * 7
+        "ano", "anos" -> n * 365
+        else -> n
+    }
+
+    /** Tokens de gênero presentes (deduplica: "pop" sai quando "pop rock" já casou). */
+    private fun genresOf(norm: String): List<String> {
+        val found = GENRES.filter { it.length >= 3 && norm.contains(it) }
+        return found.filterNot { a -> found.any { b -> b != a && a in b } }
+    }
+
+    /** Gênero falado vs. tag do MediaStore: compara sem acentos/espaços/hífens. */
+    fun matchesGenre(tag: String?, keyword: String): Boolean {
+        if (tag == null) return false
+        val t = norm(tag).replace(Regex("[^a-z0-9]"), "")
+        val k = norm(keyword).replace(Regex("[^a-z0-9]"), "")
+        return t.isEmpty() || k.isEmpty() || t.contains(k) || k.contains(t)
+    }
+
+    fun dynamicQuery(norm: String): DynQuery? {
+        val genres = genresOf(norm)
+
+        var maxAge: Int? = null
+        val dur = Regex("(ha|faz)\\s+($NUM_WORD)\\s+(meses|mes|semanas|semana|dias|dia|anos|ano)").find(norm)
+        if (dur != null) {
+            maxAge = daysOf(dur.groupValues[3], numOf(dur.groupValues[2]))
+        } else if (Regex("nao\\s+(toco|toquei|ouvi|ouco|cantei|escutei|tenho tocado|ouca)").containsMatchIn(norm)) {
+            maxAge = DEFAULT_AGE_DAYS
+        }
+
+        var playsLess: Int? = null
+        Regex("(?:toquei|tocou|ouvi|ouco|cantei|escutei)\\s+menos de\\s*($NUM_WORD)\\s*vezes?").find(norm)
+            ?.let { playsLess = numOf(it.groupValues[1]) }
+        if (playsLess == null &&
+            Regex("(?:toquei|tocou|ouvi|ouco|cantei|escutei)\\s+pouco").containsMatchIn(norm)
+        ) playsLess = DEFAULT_LOW_COUNT
+
+        var skipsLess: Int? = null
+        Regex("(?:pulei|pulou|pulava)\\s+menos de\\s*($NUM_WORD)\\s*vezes?").find(norm)
+            ?.let { skipsLess = numOf(it.groupValues[1]) }
+        if (skipsLess == null && Regex("(?:pulei|pulou)\\s+pouco").containsMatchIn(norm)
+        ) skipsLess = DEFAULT_LOW_COUNT
+
+        val favoritesOnly = norm.contains("favorit")
+
+        if (genres.isEmpty() && maxAge == null && playsLess == null && skipsLess == null && !favoritesOnly) {
+            return null
+        }
+        val rule = maxAge != null || playsLess != null || skipsLess != null || favoritesOnly
+        val intent = rule || PLAYLIST_INTENT.any { norm.contains(it) } || norm.trim() in genres
+        if (!intent) return null
+        return DynQuery(genres, maxAge, playsLess, skipsLess, favoritesOnly)
+    }
+
     fun action(norm: String): String? = when {
         ambientVolume(norm) != null -> "ambient_vol"
+        dynamicQuery(norm) != null -> "dynq"
         countMatch(norm) -> "count"
         dailySetMatch(norm) -> "daily_set"
         memorySave(norm) -> "memory_save"

@@ -1,6 +1,7 @@
 package com.pulsa.player.dj
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -88,5 +89,80 @@ class DjCommanderTest {
         assertNull(DjCommander.ambientVolume(DjCommander.norm("virgin, aumenta o volume")))
         assertNull(DjCommander.ambientVolume(DjCommander.norm("virgin, toca chuva")))
         assertNull(DjCommander.ambientVolume(DjCommander.norm("virgin, tudo mais alto que isso")))
+    }
+
+    @Test
+    fun dynq_genre_and_age() {
+        val q = DjCommander.dynamicQuery(DjCommander.norm("virgi, toca rock que nao toco ha 2 meses"))
+        assertNotNull(q)
+        assertEquals(listOf("rock"), q!!.genres)
+        assertEquals(Integer.valueOf(60), q.maxAgeDays)
+    }
+
+    @Test
+    fun dynq_default_age_when_nao_toco() {
+        val q = DjCommander.dynamicQuery(DjCommander.norm("toca sertanejo que nao toco"))
+        assertNotNull(q)
+        assertEquals(Integer.valueOf(30), q!!.maxAgeDays)
+    }
+
+    @Test
+    fun dynq_plays_less_than() {
+        val q = DjCommander.dynamicQuery(DjCommander.norm("virgi, monta uma fila de pagode que toquei menos de 5 vezes"))
+        assertNotNull(q)
+        assertEquals(listOf("pagode"), q!!.genres)
+        assertEquals(Integer.valueOf(5), q.playsLessThan)
+    }
+
+    @Test
+    fun dynq_skips_less_than() {
+        val q = DjCommander.dynamicQuery(DjCommander.norm("toca as que pulei menos de 3 vezes"))
+        assertNotNull(q)
+        assertEquals(Integer.valueOf(3), q!!.skipsLessThan)
+    }
+
+    @Test
+    fun dynq_favorites_only() {
+        val q = DjCommander.dynamicQuery(DjCommander.norm("minhas favoritas de samba"))
+        assertNotNull(q)
+        assertEquals(true, q!!.favoritesOnly)
+        assertEquals(listOf("samba"), q.genres)
+    }
+
+    @Test
+    fun dynq_single_genre_word() {
+        val q = DjCommander.dynamicQuery(DjCommander.norm("rock"))
+        assertNotNull(q)
+        assertEquals(listOf("rock"), q!!.genres)
+    }
+
+    @Test
+    fun dynq_pop_rock_dedupes_pop() {
+        val q = DjCommander.dynamicQuery(DjCommander.norm("toca pop rock"))
+        assertNotNull(q)
+        assertEquals(listOf("pop rock"), q!!.genres)
+    }
+
+    @Test
+    fun dynq_not_triggered_without_intent() {
+        assertNull(DjCommander.dynamicQuery(DjCommander.norm("virgin bomba rock na festa")))
+        assertNull(DjCommander.dynamicQuery(DjCommander.norm("qual musica esta tocando")))
+        assertNull(DjCommander.dynamicQuery(DjCommander.norm("curti essa")))
+    }
+
+    @Test
+    fun dyng_action_beats_mix_and_skip() {
+        assertEquals("dynq", DjCommander.action(DjCommander.norm("monta um mix de rock que nao ouco")))
+        assertEquals("dynq", DjCommander.action(DjCommander.norm("toca as que pulei menos de 3 vezes")))
+        assertEquals("mix", DjCommander.action(DjCommander.norm("virgi, um mix")))
+    }
+
+    @Test
+    fun dynq_genre_match() {
+        assertEquals(true, DjCommander.matchesGenre("Rock", "rock"))
+        assertEquals(true, DjCommander.matchesGenre("Pop Rock", "rock"))
+        assertEquals(true, DjCommander.matchesGenre("Hip-Hop", "hip hop"))
+        assertEquals(false, DjCommander.matchesGenre(null, "rock"))
+        assertEquals(false, DjCommander.matchesGenre("Jazz", "rock"))
     }
 }

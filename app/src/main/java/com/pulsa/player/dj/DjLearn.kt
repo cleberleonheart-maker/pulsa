@@ -408,4 +408,17 @@ object DjLearn {
 
     fun rewind(context: Context, days: Int, limit: Int): RewindResult =
         learner(context).rewind(System.currentTimeMillis() / 1000L, days, limit)
+
+    /** Último toque (ts, em segundos) por música, de todas as músicas já vistas. */
+    fun lastPlayedMap(context: Context): Map<Long, Long> {
+        val out = HashMap<Long, Long>()
+        runCatching {
+            learner(context).readableDatabase.rawQuery(
+                "SELECT song_id, MAX(ts) FROM play_log GROUP BY song_id", null
+            ).use { c ->
+                while (c.moveToNext()) out[c.getLong(0)] = c.getLong(1)
+            }
+        }
+        return out
+    }
 }

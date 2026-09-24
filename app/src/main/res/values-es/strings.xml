@@ -30,13 +30,19 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.5.1):
+    <string name="changelog">Novedades de esta versión (5.6.0):
 
-→ SONIDO AMBIENTAL EN ESTÉREO REAL
-• Los sonidos de fondo ahora suenan en estéreo con imagen espacial por tipo: los truenos ruedan de un lado al otro, el arroyo se inclina a la derecha, la fogata crepita al centro con balanceo, lluvia y aves llenan la sala
+→ PLAYLIST DINÁMICA POR VOZ
+• Ahora puedes pedir una cola por regla: "Virginia, pon rock que no escucho desde hace 2 meses", "arma una cola de pagode que toqué poco" o "las que salté menos de 3 veces"
+• La Virginia filtra tu biblioteca al instante (género, tiempo sin escuchar, nº de reproducciones/saltos, solo favoritas) y responde cuántas armó: "Armé 42 canciones: Rock, que no escuchabas desde hace 60 días"
+• "pon rock" ahora también arma una cola solo de rock - artistas y géneros comparten la voz
 
-→ 4 SONIDOS AMBIENTALES NUEVOS
-• Además de Noche/Lluvia/Océano/Viento/Bosque/Ruidos, ahora hay: Lluvia y truenos, Fogata, Arroyo y Aves por la mañana (12 en total)</string>
+→ REGLAS QUE FUNCIONAN
+• "que no escuché desde hace 2 meses" (o semanas/días/años)
+• "que toqué menos de N veces" (o "toqué poco")
+• "que salté menos de N veces" (o "salté poco")
+• "mis favoritas de samba"
+• Los comandos encadenados siguen funcionando: "pon rock que no escucho y luego pausa"</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
@@ -79,6 +85,12 @@
     <string name="ambient_stopped">Sonido ambiental desactivado</string>
     <string name="ambient_volume">Volumen: %1$d%%</string>
     <string name="dj_voice_ambient_vol">Sonido ambiental al %1$d por ciento.</string>
+    <string name="dj_voice_dynq_done">Armé %1$d canciones: %2$s.</string>
+    <string name="dj_voice_dynq_none">No encontré canciones con ese filtro. Prueba algo como \"pon rock que no escucho desde hace 2 meses\".</string>
+    <string name="dj_voice_dynq_fav">favoritas</string>
+    <string name="dj_voice_dynq_age">que no escuchabas desde hace %1$d días</string>
+    <string name="dj_voice_dynq_plays">con menos de %1$d reproducciones</string>
+    <string name="dj_voice_dynq_skips">que saltaste menos de %1$d veces</string>
     <string name="dj_voice_ambient_off">No hay sonido ambiental reproduciéndose.</string>
     <string name="remove_song_confirm">¿Quitar esta canción de la lista?</string>
     <string name="prev_action">Anterior</string>

@@ -427,6 +427,73 @@ class MainVirgin(
         }
     }
 
+    private fun virgDynamicQueue(query: DjCommander.DynQuery?) {
+        if (query == null) {
+            virginSpeak(activity.getString(R.string.dj_voice_dynq_none))
+            return
+        }
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val songs = Library.allSongs(ctx)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi { virginSpeak(say(R.string.dj_voice_dynq_none)) }
+                return@post
+            }
+            val favIds = runCatching {
+                PlaylistDb.get(ctx).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val learn = DjLearn.learn(ctx)
+            val lastPlayed = DjLearn.lastPlayedMap(ctx)
+            val nowSec = System.currentTimeMillis() / 1000L
+            val recent = DjSessionMemory.recentIds()
+            val pool = songs.filter { s ->
+                if (recent.contains(s.id)) return@filter false
+                if (learn.disliked.contains(s.id)) return@filter false
+                if (query.genres.isNotEmpty() &&
+                    query.genres.none { DjCommander.matchesGenre(Library.genreOf(ctx, s.id), it) }
+                ) return@filter false
+                if (query.favoritesOnly && s.id !in favIds) return@filter false
+                query.maxAgeDays?.let { max ->
+                    val last = lastPlayed[s.id]
+                    if (last != null && nowSec - last < max * 86400L) return@filter false
+                }
+                query.playsLessThan?.let { n ->
+                    if ((learn.plays[s.id] ?: 0) >= n) return@filter false
+                }
+                query.skipsLessThan?.let { n ->
+                    if ((learn.skipCount[s.id] ?: 0) >= n) return@filter false
+                }
+                true
+            }
+            ThreadPool.onUi {
+                if (pool.isEmpty()) {
+                    virginSpeak(say(R.string.dj_voice_dynq_none))
+                    return@onUi
+                }
+                val set = pool.shuffled().take(60)
+                Telemetry.log(activity, "Virgin dynq g=${query.genres} age=${query.maxAgeDays} plays<${query.playsLessThan} skips<${query.skipsLessThan}")
+                Playback.setShuffle(true)
+                Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
+                DjSessionMemory.notePlayed(set.map { it.id })
+                Playback.start(set, 0)
+                virginSpeak(say(R.string.dj_voice_dynq_done, set.size, dynqReason(query)))
+            }
+        }
+    }
+
+    private fun dynqReason(q: DjCommander.DynQuery): String {
+        val parts = ArrayList<String>()
+        q.genres.forEach {
+            parts.add(it.replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase() else c.toString() })
+        }
+        if (q.favoritesOnly) parts.add(say(R.string.dj_voice_dynq_fav))
+        q.maxAgeDays?.let { parts.add(say(R.string.dj_voice_dynq_age, it)) }
+        q.playsLessThan?.let { parts.add(say(R.string.dj_voice_dynq_plays, it)) }
+        q.skipsLessThan?.let { parts.add(say(R.string.dj_voice_dynq_skips, it)) }
+        return parts.joinToString(", ")
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -627,6 +694,7 @@ class MainVirgin(
                 ))
             }
             "only" -> virgArtistOnly(DjCommander.onlyArtist(norm))
+            "dynq" -> virgDynamicQueue(DjCommander.dynamicQuery(norm))
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong
