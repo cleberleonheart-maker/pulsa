@@ -30,16 +30,21 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.8.1):
+    <string name="changelog">What is new (5.9.0):
 
-→ HANDS-FREE
-• New setting: while the music plays, Virginia keeps listening for voice commands even with the app in the background (quiet status bar notice)
+→ NEW LOOK: AURORA NEBULA
+• Pulsa is now violet, pink and teal. The angled chassis stays.
+• None of this is decoration for its own sake: 111 colors that used to be loose numbers now have names.
+  Changing an element\'s color is editing a token, not hunting hex through 64 files.
 
 ★ FROM 5.8.0
 → SCENE RADIO: "Virgi, play something for workout / study / travel / driving" — curated shuffled radio
 → WEEKLY SPOKEN SUMMARY: "Virgi, summary of my week"
 → VIRGINIA\'S ALARM: "Virgi, wake me up at 7am (with rain)"; "cancel the alarm" turns it off
-→ SPOKEN SLEEP TIMER: "Virgi, stop in 20 minutes" (up to 12 hours)</string>
+→ SPOKEN SLEEP TIMER: "Virgi, stop in 20 minutes" (up to 12 hours)
+
+★ FROM 5.8.1
+→ HANDS-FREE: while the music plays, Virginia keeps listening for voice commands even with the app in the background</string>
     <string name="search_hint">Search songs, albums or artists</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>

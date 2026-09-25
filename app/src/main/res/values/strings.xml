@@ -32,16 +32,21 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.8.1):
+    <string name="changelog">Novidades desta versão (5.9.0):
 
-→ MÃOS-LIVRES
-• Novo toggle nas Config: com música tocando, a Virgínia escuta comandos de voz mesmo com o app em segundo plano (aviso discreto na barra)
+→ NOVA IDENTIDADE: AURORA NEBULA
+• A Pulsa ficou violeta, rosa e turquesa. O cinto chanfrado continua.
+• Nada aqui é enfeite por enfeite: 111 cores que eram números soltos agora têm nome. Mexer
+  na cor de um elemento passou a ser editar um token, e não caçar hex em 64 arquivos.
 
 ★ BOMBAS DA 5.8.0
 → RÁDIO POR CENA: "Virgi, toca pra malhar / estudar / viajar / dirigir" — rádio curada e embaralhada
 → RESUMO SEMANAL FALADO: "Virgi, resumo da minha semana"
 → DESPERTADOR DA VIRGÍNIA: "Virgi, me acorda às 7h (com chuva)"; "cancela o alarme" desarma
-→ SLEEP TIMER FALADO: "Virgi, para em 20 minutos" (até 12 horas)</string>
+→ SLEEP TIMER FALADO: "Virgi, para em 20 minutos" (até 12 horas)
+
+★ DA 5.8.1
+→ MÃOS-LIVRES: com música tocando, a Virgínia escuta comandos de voz mesmo com o app em segundo plano</string>
     <string name="search_hint">Buscar músicas, álbuns ou artistas</string>
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>

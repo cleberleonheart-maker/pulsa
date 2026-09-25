@@ -30,16 +30,21 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.8.1):
+    <string name="changelog">Novedades de esta versión (5.9.0):
 
-→ MANOS LIBRES
-• Nuevo ajuste: con la música sonando, Virginia sigue escuchando comandos de voz incluso con la app en segundo plano (aviso discreto en la barra)
+→ NUEVA IDENTIDAD: AURORA NEBULA
+• Pulsa ahora es violeta, rosa y turquesa. El chasis angulado se queda.
+• Nada de esto es adorno por adornar: 111 colores que eran números sueltos ahora tienen nombre. Cambiar
+  el color de un elemento es editar un token, no buscar hex por 64 archivos.
 
 ★ DE LA 5.8.0
 → RADIO POR ESCENA: "Virgi, pon para entrenar / estudiar / viajar / conducir" — radio curada y barajada
 → RESUMEN SEMANAL HABLADO: "Virgi, resumen de mi semana"
 → DESPERTADOR DE VIRGINIA: "Virgi, despiértame a las 7h (con lluvia)"; "cancela la alarma" lo apaga
-→ TEMPORIZADOR HABLADO: "Virgi, para en 20 minutos" (hasta 12 horas)</string>
+→ TEMPORIZADOR HABLADO: "Virgi, para en 20 minutos" (hasta 12 horas)
+
+★ DE LA 5.8.1
+→ MANOS LIBRES: con la música sonando, Virginia sigue escuchando comandos de voz incluso con la app en segundo plano</string>
     <string name="search_hint">Buscar canciones, álbumes o artistas</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
