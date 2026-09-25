@@ -30,7 +30,7 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.9.0):
+    <string name="changelog">What is new (5.9.1):
 
 → NEW LOOK: AURORA NEBULA
 • Pulsa is now violet, pink and teal. The angled chassis stays.

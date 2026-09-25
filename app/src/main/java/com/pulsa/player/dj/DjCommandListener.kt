@@ -32,8 +32,11 @@ class DjCommandListener(
     private val mainHandler = Handler(Looper.getMainLooper())
     private var lastStartMs = 0L
     private val minGapMs = 3000L
-    private val errorRetryMs = 1500L
+    private var retryMs = FIRST_RETRY_MS
     private val retryRunnable = Runnable { restart() }
+
+    @Volatile
+    private var emptyCount = 0
 
     init {
         recognizer?.setRecognitionListener(object : RecognitionListener {
@@ -45,12 +48,18 @@ class DjCommandListener(
             override fun onError(error: Int) {
                 if (!listening) return
                 when (error) {
-                    // Erros transitorios: reinicia com um cooldown maior para nao
-                    // ficar bipando sem parar (cada reinicio re-aciona o bip do reconhecedor).
+                    // Erros transitorios: volta a escutar com espera crescente.
+                    // Sem isso o microfone abria e fechava a cada ~3s enquanto a musica
+                    // tocava, sem parar: cada startListening() liga o microfone de novo,
+                    // e o usuario via o indicador piscando sem parar.
                     SpeechRecognizer.ERROR_NO_MATCH,
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT,
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY,
+                    SpeechRecognizer.ERROR_CLIENT -> {
+                        emptyCount++
                         mainHandler.removeCallbacks(retryRunnable)
-                        mainHandler.postDelayed(retryRunnable, errorRetryMs)
+                        mainHandler.postDelayed(retryRunnable, retryMs)
+                        retryMs = (retryMs * 2).coerceAtMost(MAX_RETRY_MS)
                     }
                     // Erros fatais: para de ouvir e avisa a UI uma unica vez
                     else -> {
@@ -73,7 +82,11 @@ class DjCommandListener(
                     ?.trim()
                     ?: ""
                 if (text.isNotEmpty()) {
+                    emptyCount = 0
+                    retryMs = FIRST_RETRY_MS
                     onResult(text)
+                } else {
+                    emptyCount++
                 }
                 if (listening) {
                     ThreadPool.onUi { restart() }
@@ -92,11 +105,15 @@ class DjCommandListener(
         }
         reportedUnsupported = false
         listening = true
+        emptyCount = 0
+        retryMs = FIRST_RETRY_MS
         startListening()
     }
 
     fun stop() {
         listening = false
+        emptyCount = 0
+        retryMs = FIRST_RETRY_MS
         mainHandler.removeCallbacks(retryRunnable)
         runCatching { recognizer?.cancel() }
     }
@@ -131,6 +148,16 @@ class DjCommandListener(
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, appContext.packageName)
+            // Janela curta de silencio: sem isso o reconhecedor segura o microfone
+            // aberto pelo tempo padrao mesmo depois de voce terminar de falar.
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1200L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2500L)
         }
+    }
+
+    companion object {
+        /** Espera antes de reabrir o microfone quando ninguem falou nada. */
+        private const val FIRST_RETRY_MS = 2000L
+        private const val MAX_RETRY_MS = 15000L
     }
 }

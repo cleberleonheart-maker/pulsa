@@ -53,13 +53,29 @@ object DjSuggest {
             append("Lista:\n").append(listText)
         }
 
-        val reply = generate(context, prompt, maxTokens = 250) ?: return null
+        val reply = generate(context, prompt, maxTokens = 700) ?: return null
         return parse(reply)
     }
 
+    /**
+     * Sugere com a IA e cai no offline quando a IA falha.
+     *
+     * A IA depende de rede, chave válida e cota. Sem este fallback, uma falha de
+     * rede fazia a Virgin dizer "não consegui pensar em nada" mesmo tendo uma
+     * sugestão offline pronta - a resposta offline é determinística e sempre
+     * existe, então nunca vale a pena mostrar falha no lugar dela.
+     */
+    fun suggestOrOffline(context: Context, songs: List<Song>): Suggestion =
+        if (isReady(context)) suggest(context, songs) ?: offline(context, songs)
+        else offline(context, songs)
+
     /** Fala melhor o resultado: título, artista e o motivo separados. */
-    fun toSpeech(suggestion: Suggestion): String =
-        suggestion.title + ", de " + suggestion.artist + ". " + suggestion.reason
+    fun toSpeech(suggestion: Suggestion): String = buildString {
+        append(suggestion.title)
+        if (suggestion.artist.isNotBlank()) append(", de ").append(suggestion.artist)
+        append(". ")
+        append(suggestion.reason.ifBlank { "Essa combina com o momento." })
+    }
 
     private val REASONS_FAV = listOf(
         "É uma das tuas favoritas e faz tempo que ela não aparece.",
@@ -100,15 +116,50 @@ object DjSuggest {
         return Suggestion(pick.title, pick.artist, reason)
     }
 
+    /**
+     * Limpa o texto que a IA devolveu e vira Suggestion.
+     * Aceita o formato pedido (TITULO | ARTISTA | motivo) e tambem as variacoes
+     * que os modelos entregam na pratica: markdown em volta (**Titulo**), aspas,
+     * travessao no lugar do pipe, preambulo antes da resposta e resposta sem motivo.
+     */
     fun parse(raw: String): Suggestion? {
-        val line = raw.lines().map { it.trim() }.firstOrNull { it.contains("|") } ?: return null
-        val parts = line.split("|").map { it.trim() }
-        if (parts.size < 2) return null
-        val title = parts[0].replace("\"", "").trim()
-        val artist = parts[1].replace("\"", "").trim()
-        val reason = if (parts.size > 2) parts[2].replace("\"", "").trim() else ""
-        if (title.isBlank()) return null
+        val lines = raw.lines().map { it.trim() }.filter { it.isNotBlank() }
+        if (lines.isEmpty()) return null
+        // Pipe primeiro: se a linha tem "|" ele e o separador de campos, mesmo que
+        // a frase tambem contenha um travessao.
+        val sep = SEPARATORS.firstOrNull { s -> lines.any { l -> l.contains(s) } } ?: return null
+        val line = lines.first { it.contains(sep) }
+        val parts = line.split(sep).map { clean(it) }
+        if (parts.isEmpty() || parts[0].isBlank()) return null
+        val title = parts[0]
+        val artist = parts.getOrElse(1) { "" }
+        val reason = parts.drop(2).joinToString(" ").trim()
         return Suggestion(title, artist, reason)
+    }
+
+    /** Separadores aceitos entre titulo, artista e motivo. O pipe vem primeiro. */
+    private val SEPARATORS = listOf("|", " - ", " – ", " — ")
+
+    /**
+     * Tira markdown, aspas e espacos. NAO tira pontuacao final: "Charlie Brown Jr."
+     * perde o ponto e deixa de casar com a biblioteca.
+     */
+    private fun clean(s: String): String =
+        s.replace("*", "").replace("`", "").replace("\"", "").replace("'", "")
+            .replace("#", "").replace("_", " ").trim()
+
+    /**
+     * Partes de texto que a IA devolveu. Os modelos novos razonam antes de responder,
+     * e o raciocínio chega como parte separada (thought=true) - ler só a primeira
+     * parte pegava o raciocínio e não a resposta.
+     */
+    data class Part(val text: String, val thought: Boolean)
+
+    /** Junta as partes de resposta ignorando o raciocínio. */
+    fun answerFrom(parts: List<Part>): String? {
+        val real = parts.filter { !it.thought && it.text.isNotBlank() }
+        val text = if (real.isEmpty()) return null else real.joinToString("\n") { it.text }
+        return text.trim().ifBlank { null }
     }
 
     /** Encontra a música sugerida na biblioteca (por igualdade normalizada). */
@@ -153,20 +204,44 @@ object DjSuggest {
                 android.util.Log.w("DjSuggest", "Gemini HTTP $code: ${err.take(300)}")
                 null
             } else {
-                val json = conn.inputStream.bufferedReader().readText()
-                val result = JSONObject(json)
-                    .getJSONArray("candidates")
-                    .getJSONObject(0)
-                    .getJSONObject("content")
-                    .getJSONArray("parts")
-                    .getJSONObject(0)
-                    .getString("text")
-                result.trim()
+                answerOf(conn.inputStream.bufferedReader().readText())
             }
         } catch (t: Throwable) {
             android.util.Log.w("DjSuggest", "Gemini error", t)
             null
         }
+    }
+
+    /**
+     * Tira o texto de resposta do JSON do Gemini. Lê todas as partes e ignora as
+     * de raciocínio; quando não sobra resposta, registra o finishReason, que é o
+     * que diz se foi corte de token, bloqueio ou resposta vazia.
+     */
+    private fun answerOf(body: String): String? {
+        val root = JSONObject(body)
+        val candidates = root.optJSONArray("candidates")
+        if (candidates == null || candidates.length() == 0) {
+            android.util.Log.w("DjSuggest", "Gemini sem candidates: ${root.optString("promptFeedback").take(200)}")
+            return null
+        }
+        val candidate = candidates.getJSONObject(0)
+        val partsJson = candidate.optJSONObject("content")?.optJSONArray("parts")
+        val parts = ArrayList<Part>()
+        if (partsJson != null) {
+            for (i in 0 until partsJson.length()) {
+                val p = partsJson.optJSONObject(i) ?: continue
+                parts.add(Part(p.optString("text"), p.optBoolean("thought", false)))
+            }
+        }
+        val answer = answerFrom(parts)
+        if (answer == null) {
+            android.util.Log.w(
+                "DjSuggest",
+                "Gemini devolveu sem resposta utilizavel: finishReason=" +
+                    candidate.optString("finishReason") + " partes=" + parts.size
+            )
+        }
+        return answer
     }
 
     /** Resumo semanal em texto para a Virgin contar as novidades do usuário. */

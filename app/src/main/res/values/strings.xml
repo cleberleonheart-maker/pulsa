@@ -32,8 +32,20 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.9.0):
+    <string name="changelog">Novidades desta versão (5.9.1):
 
+→ MICROFONE PARADO
+• A mão livre não fica mais abrindo e fechando o microfone a cada 3 segundos enquanto a música
+  toca. Quando você não fala nada, a Virgínia espera cada vez mais antes de tentar de novo; quando
+  você fala, ela volta na hora.
+
+→ A VIRGÍNIA VOLTA A RECOMENDAR
+• O botão de recomendar da Home falhava com "não consigo pensar em nada" mesmo com a IA ligada.
+  Agora, se a IA não responder (rede, cota, chave), ela usa a sugestão offline em vez de desistir.
+• Também deixei a leitura da resposta da IA mais esperta: ela não tenta mais usar o raciocínio
+  da IA como se fosse a resposta (o que fazia a recomendação sempre falhar).
+
+★ DA 5.9.0
 → NOVA IDENTIDADE: AURORA NEBULA
 • A Pulsa ficou violeta, rosa e turquesa. O cinto chanfrado continua.
 • Nada aqui é enfeite por enfeite: 111 cores que eram números soltos agora têm nome. Mexer

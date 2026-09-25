@@ -546,36 +546,22 @@ class VirginHomeFragment : Fragment() {
             Toast.makeText(requireActivity(), R.string.dj_empty, Toast.LENGTH_LONG).show()
             return
         }
-        if (DjSuggest.isReady(ctx)) {
-            speak(getString(R.string.v_rec_thinking))
-            ThreadPool.post {
-                val suggestion = DjSuggest.suggest(ctx, Library.allSongs(ctx))
-                ThreadPool.onUi {
-                    if (suggestion == null) {
-                        speak(getString(R.string.v_rec_fail))
-                        return@onUi
-                    }
-                    playSuggestion(ctx, suggestion)
+        speak(getString(R.string.v_rec_thinking))
+        ThreadPool.post {
+            val suggestion = DjSuggest.suggestOrOffline(ctx, songs)
+            ThreadPool.onUi {
+                if (suggestion.title.isBlank()) {
+                    speak(getString(R.string.v_rec_fail))
+                    return@onUi
                 }
-            }
-        } else {
-            val suggestion = DjSuggest.offline(ctx, songs)
-            if (suggestion.title.isBlank()) {
-                speak(getString(R.string.v_rec_fail))
-                return
-            }
-            speak(getString(R.string.v_rec_thinking))
-            ThreadPool.post {
-                ThreadPool.onUi { playSuggestion(ctx, suggestion) }
+                playSuggestion(ctx, suggestion)
             }
         }
     }
 
     private fun playSuggestion(ctx: Context, suggestion: DjSuggest.Suggestion) {
         val all = Library.allSongs(ctx)
-        val found = all.firstOrNull {
-            it.title.equals(suggestion.title, ignoreCase = true)
-        }
+        val found = DjSuggest.findSong(all, suggestion)
         Telemetry.log(ctx, "Virgin AI sugeriu: ${suggestion.title}")
         speak(DjSuggest.toSpeech(suggestion), onDone = {
             if (found != null) {

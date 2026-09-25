@@ -30,7 +30,7 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.9.0):
+    <string name="changelog">Novedades de esta versión (5.9.1):
 
 → NUEVA IDENTIDAD: AURORA NEBULA
 • Pulsa ahora es violeta, rosa y turquesa. El chasis angulado se queda.
