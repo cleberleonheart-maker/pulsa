@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.pulsa.player.ui.RadarPanelDrawable xmlns:app="http://schemas.android.com/apk/res-auto"
-    app:panelColor="#660C1C13"
+    app:panelColor="@color/radar_raised_a66"
     app:panelCut="8dp"
     app:panelStroke="@color/neon_border"
     app:panelStrokeWidth="1dp" />

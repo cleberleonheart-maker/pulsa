@@ -9,9 +9,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="270"
-                android:centerColor="#0A2112"
-                android:endColor="#15331E"
-                android:startColor="#04100A" />
+                android:centerColor="@color/radar_deep"
+                android:endColor="@color/radar_line_soft"
+                android:startColor="@color/radar_sunken" />
         </shape>
     </item>
 
@@ -22,10 +22,10 @@
         android:top="-60dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#22A8E62A"
-                android:endColor="#00A8E62A"
+                android:centerColor="@color/neon_lime_a22"
+                android:endColor="@color/neon_lime_a00"
                 android:gradientRadius="240dp"
-                android:startColor="#0FA8E62A"
+                android:startColor="@color/neon_lime_a0F"
                 android:type="radial" />
         </shape>
     </item>
@@ -35,10 +35,10 @@
         android:top="-50dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#20FF2E4D"
-                android:endColor="#00FF2E4D"
+                android:centerColor="@color/neon_red_a20"
+                android:endColor="@color/neon_red_a00"
                 android:gradientRadius="230dp"
-                android:startColor="#10FF2E4D"
+                android:startColor="@color/neon_red_a10"
                 android:type="radial" />
         </shape>
     </item>
@@ -48,10 +48,10 @@
         android:top="120dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#14B6FF2E"
-                android:endColor="#00B6FF2E"
+                android:centerColor="@color/neon_green_a14"
+                android:endColor="@color/neon_green_a00"
                 android:gradientRadius="120dp"
-                android:startColor="#08B6FF2E"
+                android:startColor="@color/neon_green_a08"
                 android:type="radial" />
         </shape>
     </item>
@@ -63,7 +63,7 @@
         <shape android:shape="oval">
             <stroke
                 android:width="1.5dp"
-                android:color="#40B6FF2E" />
+                android:color="@color/neon_green_a40" />
             <size
                 android:width="264dp"
                 android:height="264dp" />
@@ -75,7 +75,7 @@
         <shape android:shape="oval">
             <stroke
                 android:width="1dp"
-                android:color="#1FFF2E4D" />
+                android:color="@color/neon_red_a1F" />
             <size
                 android:width="344dp"
                 android:height="344dp" />
@@ -88,10 +88,10 @@
         android:gravity="bottom|center_horizontal">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#99B6FF2E"
-                android:endColor="#00B6FF2E"
+                android:centerColor="@color/neon_green_a99"
+                android:endColor="@color/neon_green_a00"
                 android:gradientRadius="8dp"
-                android:startColor="#4DB6FF2E"
+                android:startColor="@color/neon_green_a4D"
                 android:type="radial" />
             <size
                 android:width="18dp"
@@ -104,10 +104,10 @@
         android:left="44dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#B3FF2E4D"
-                android:endColor="#00FF2E4D"
+                android:centerColor="@color/neon_red_aB3"
+                android:endColor="@color/neon_red_a00"
                 android:gradientRadius="7dp"
-                android:startColor="#59FF2E4D"
+                android:startColor="@color/neon_red_a59"
                 android:type="radial" />
             <size
                 android:width="16dp"
@@ -120,10 +120,10 @@
         android:right="60dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#80FFFFFF"
-                android:endColor="#00FFFFFF"
+                android:centerColor="@color/white_a80"
+                android:endColor="@color/white_a00"
                 android:gradientRadius="5dp"
-                android:startColor="#33FFFFFF"
+                android:startColor="@color/white_a33"
                 android:type="radial" />
             <size
                 android:width="12dp"
@@ -140,9 +140,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:centerColor="#FFB6FF2E"
-                android:endColor="#73B6FF2E"
-                android:startColor="#73B6FF2E" />
+                android:centerColor="@color/neon_green"
+                android:endColor="@color/neon_green_a73"
+                android:startColor="@color/neon_green_a73" />
             <size android:height="2dp" />
         </shape>
     </item>
@@ -154,9 +154,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:centerColor="#59FF2E4D"
-                android:endColor="#26FF2E4D"
-                android:startColor="#26FF2E4D" />
+                android:centerColor="@color/neon_red_a59"
+                android:endColor="@color/neon_red_a26"
+                android:startColor="@color/neon_red_a26" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -170,9 +170,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:centerColor="#62B6FF2E"
-                android:endColor="#14B6FF2E"
-                android:startColor="#14B6FF2E" />
+                android:centerColor="@color/neon_green_a62"
+                android:endColor="@color/neon_green_a14"
+                android:startColor="@color/neon_green_a14" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -184,9 +184,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="90"
-                android:centerColor="#0C1C13"
-                android:endColor="#06100B"
-                android:startColor="#15331E" />
+                android:centerColor="@color/radar_raised"
+                android:endColor="@color/radar_bg"
+                android:startColor="@color/radar_line_soft" />
             <size android:height="22dp" />
         </shape>
     </item>
@@ -197,7 +197,7 @@
         android:left="0dp"
         android:right="0dp">
         <shape android:shape="rectangle">
-            <solid android:color="#22B6FF2E" />
+            <solid android:color="@color/neon_green_a22" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -206,7 +206,7 @@
         android:left="18dp"
         android:right="18dp">
         <shape android:shape="rectangle">
-            <solid android:color="#26B6FF2E" />
+            <solid android:color="@color/neon_green_a26" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -215,7 +215,7 @@
         android:left="48dp"
         android:right="48dp">
         <shape android:shape="rectangle">
-            <solid android:color="#28B6FF2E" />
+            <solid android:color="@color/neon_green_a28" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -224,7 +224,7 @@
         android:left="90dp"
         android:right="90dp">
         <shape android:shape="rectangle">
-            <solid android:color="#26B6FF2E" />
+            <solid android:color="@color/neon_green_a26" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -233,7 +233,7 @@
         android:left="142dp"
         android:right="142dp">
         <shape android:shape="rectangle">
-            <solid android:color="#22B6FF2E" />
+            <solid android:color="@color/neon_green_a22" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -242,7 +242,7 @@
         android:left="204dp"
         android:right="204dp">
         <shape android:shape="rectangle">
-            <solid android:color="#1CB6FF2E" />
+            <solid android:color="@color/neon_green_a1C" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -251,7 +251,7 @@
         android:left="278dp"
         android:right="278dp">
         <shape android:shape="rectangle">
-            <solid android:color="#16B6FF2E" />
+            <solid android:color="@color/neon_green_a16" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -260,7 +260,7 @@
         android:left="364dp"
         android:right="364dp">
         <shape android:shape="rectangle">
-            <solid android:color="#12B6FF2E" />
+            <solid android:color="@color/neon_green_a12" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -269,7 +269,7 @@
         android:left="466dp"
         android:right="466dp">
         <shape android:shape="rectangle">
-            <solid android:color="#0EB6FF2E" />
+            <solid android:color="@color/neon_green_a0E" />
             <size android:height="1dp" />
         </shape>
     </item>
@@ -281,10 +281,10 @@
         android:top="52dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#99FFFFFF"
-                android:endColor="#00FFFFFF"
+                android:centerColor="@color/white_a99"
+                android:endColor="@color/white_a00"
                 android:gradientRadius="4dp"
-                android:startColor="#33FFFFFF"
+                android:startColor="@color/white_a33"
                 android:type="radial" />
             <size
                 android:width="10dp"
@@ -297,10 +297,10 @@
         android:top="34dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#80B6FF2E"
-                android:endColor="#00B6FF2E"
+                android:centerColor="@color/neon_green_a80"
+                android:endColor="@color/neon_green_a00"
                 android:gradientRadius="3dp"
-                android:startColor="#26B6FF2E"
+                android:startColor="@color/neon_green_a26"
                 android:type="radial" />
             <size
                 android:width="9dp"
@@ -313,10 +313,10 @@
         android:top="22dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#66FF6A7A"
-                android:endColor="#00FF6A7A"
+                android:centerColor="@color/neon_coral_a66"
+                android:endColor="@color/neon_coral_a00"
                 android:gradientRadius="3dp"
-                android:startColor="#22FF6A7A"
+                android:startColor="@color/neon_coral_a22"
                 android:type="radial" />
             <size
                 android:width="9dp"
@@ -329,10 +329,10 @@
         android:top="88dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#66FFFFFF"
-                android:endColor="#00FFFFFF"
+                android:centerColor="@color/white_a66"
+                android:endColor="@color/white_a00"
                 android:gradientRadius="2dp"
-                android:startColor="#26FFFFFF"
+                android:startColor="@color/white_a26"
                 android:type="radial" />
             <size
                 android:width="8dp"
@@ -345,10 +345,10 @@
         android:top="150dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#59B6FF2E"
-                android:endColor="#00B6FF2E"
+                android:centerColor="@color/neon_green_a59"
+                android:endColor="@color/neon_green_a00"
                 android:gradientRadius="2dp"
-                android:startColor="#22B6FF2E"
+                android:startColor="@color/neon_green_a22"
                 android:type="radial" />
             <size
                 android:width="8dp"
@@ -361,10 +361,10 @@
         android:top="48dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#59FF6A7A"
-                android:endColor="#00FF6A7A"
+                android:centerColor="@color/neon_coral_a59"
+                android:endColor="@color/neon_coral_a00"
                 android:gradientRadius="2dp"
-                android:startColor="#22FF6A7A"
+                android:startColor="@color/neon_coral_a22"
                 android:type="radial" />
             <size
                 android:width="8dp"

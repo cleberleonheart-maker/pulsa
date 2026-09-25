@@ -120,7 +120,7 @@
                 android:background="@drawable/seg_glow_l"
                 android:gravity="center"
                 android:text="@string/btn_party"
-                android:textColor="#04140A"
+                android:textColor="@color/radar_home"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -132,7 +132,7 @@
                 android:background="@drawable/seg_glow_r"
                 android:gravity="center"
                 android:text="@string/btn_relax"
-                android:textColor="#04140A"
+                android:textColor="@color/radar_home"
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>

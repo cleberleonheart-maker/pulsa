@@ -1,6 +1,8 @@
 # Pulsa · Ideias para depois
 
 > Lista de melhorias futuras (não implementadas ainda).
+>
+> **Plano grande:** [Central multimídia](#central-multimídia-música--vídeo--rádio--podcast) (música + vídeo + rádio + podcast, carro/TV/cast) — auditado em 2026-09.
 
 - [x] **Redesign Terminal Radar** (4.14.0): repaginação completa da identidade — adeus synthwave (rosa/roxo/ciano). Terminal de varredura: paleta lima `#B6FF2E` + rubi de alerta `#FF2E4D` sobre preto-esverdeado (`#06100B`/`#0C1C13`); painéis e cards com canto cortado a 45° em toda a interface — chassi chanfrado via `ShapeAppearance.Pulsa.Radar` (tema) + `RadarPanelDrawable` (rows/inputs/decks/cápsulas) —; fundo com retículo de travação e blips (`bg_aurora`), sweep de radar animado nos anéis da tela de reprodução (`OrbitRingsView`), HUD monoespaçado (`TextAppearance.Pulsa.Hud`), avatares/ícones com gradientes refinados. Virgínia (locutora) e curiosidades entre as músicas seguem intactas
 
@@ -138,3 +140,69 @@
 ## Web player (pulsaweb) — a fazer (app separado da web)
 - [ ] **Controle do "Ouvir juntos" pelo PC**: o web player entra na sessão com o código de 5 letras e espelha/controla sem celular — `MirrorSync` + pulsaweb
 - [ ] **Pulsa Rewind / replay do ano na web**: replay das músicas mais tocadas + gráfico de ano completo no dashboard web, gerado da telemetria (`/stats` já agrega) — o resumo já existe no app (4.12.0)
+
+## Central multimídia (música + vídeo + rádio + podcast)
+
+> Auditoria do código em 2026-09: o que já existe e o que falta para o Pulsa virar uma central de mídia de verdade (uma app só para áudio, vídeo, rádio e podcast, com integração com carro/TV/fone e download offline).
+
+### Já existe (base boa)
+- [x] Áudio com serviço de background, MediaSession e notificação estilo (`playback/PlaybackService` + `MediaPlayer`), crossfade, A/B, sleep timer, scrobble Last.fm
+- [x] Rádio em streaming via ExoPlayer + busca no radio-browser (`RadioActivity` + `dj/TamiRadio`)
+- [x] Vídeo local (`VideoPlayerActivity` + `ui/VideosTabFragment`)
+- [x] Biblioteca, playlists, favoritas e letras (`data/Library.kt`, `data/PlaylistDb`, `sync/Lyrics`)
+- [x] Importação de arquivos (SAF/USB) via `dj/DjSession` + `media/GalleryScanner`
+- [x] Sync com servidor próprio e PWA web como segunda tela (`sync/RemoteSync`, `sync/MirrorSync`, `web/`)
+- [x] DJ/Virgin, hotword, memória e aprendizado de gosto (o diferencial do app)
+
+### Bloqueadores (o que impede de ser "central")
+- [ ] **Playback em três lugares**: `MediaPlayer` (música), ExoPlayer (rádio) e `VideoView` (vídeo) — sem Media3 unificado não há HLS/DASH, sem `MediaSessionService` não há Android Auto/Wear/TV/Assistant, sem `MediaButtonReceiver` não há botão de fone (`playback/Playback.kt`, `RadioActivity.kt:188`, `VideoPlayerActivity.kt`)
+- [ ] **Biblioteca exposta ao sistema**: as músicas já vêm do MediaStore (`data/Library.kt:25`), mas playlists/favoritas/meta vivem num SQLite próprio (`data/PlaylistDb` v6) e nada disso é publicado — sem `MediaLibraryService` não há Android Auto, Wear, Assistant, busca do sistema nem "tocando agora" do Android
+- [ ] **Vídeo é de arquivo local só**: sem HLS/DASH, sem legenda, sem Picture-in-Picture, sem gesture de seek, sem modo paisagem/TV
+- [ ] **Download sem fila**: HTTP direto → MediaStore, sem retomar, sem `DownloadManager`, sem download de streaming, e bloqueia URLs de YouTube/Spotify (`media/MusicDownloader.kt`, `SettingsActivity.kt:578`)
+- [ ] **Podcast inexistente**: só um `DIRECTORY_PODCASTS` solto no scan; sem modelo de feed, assinatura, episódio, capítulos, auto-download (`media/GalleryScanner.kt:31`)
+- [ ] **Sem carro/TV/cast**: sem Cast SDK, `androidx.car`, `androidx.tv.leanback`; USB e Bluetooth são só texto, não integração
+- [ ] **Sync limitado**: polling com `ThreadPool`, sem Room/WorkManager; backup cobre aprendizado do DJ e EQ, não biblioteca/playlists (`SettingsActivity.kt:677`, `sync/RemoteSync.kt`)
+
+### Fases (ordem que destrava o resto)
+- [ ] **F1 · Fundação** ([plano detalhado em `docs/F1-FUNDACAO-MEDIA3.md`](docs/F1-FUNDACAO-MEDIA3.md)): migrar o playback para Media3 + `MediaSessionService`/`MediaLibraryService`; MediaStore como fonte única; Room para playlists/favoritas; WorkManager para sync e downloads. Só isso já entrega Android Auto, Wear, fone, system controls e busca do sistema. Fazer por camadas (trocar o motor mantendo a API atual) para não quebrar DJ/hotword
+- [ ] **F2 · Vídeo e streaming**: ExoPlayer/Media3 para vídeo local + HLS/DASH, legenda (SRT/VTT), PiP, gesto de seek, downloaded offline, encoder de download
+- [ ] **F3 · Podcast e séries**: modelo de feed e assinatura, episódios com data/duração, capítulos, marcar ouvido, auto-download por regra, gerenciar storage
+- [ ] **F4 · Casa, carro e TV**: Cast SDK (Chromecast/speaker), Android Auto (template de mídia), TV leanback (10 feet, foco/remote), equalizador e segundo display
+- [ ] **F5 · A central em si**: busca e filas unificadas entre áudio/vídeo/podcast, "continuar de onde parou" cruzando mídias, Download Center com fila/pausa, handoff celular↔PC↔TV (a PWA em `web/` já é a superfície), atalhos (shortcuts) e compartilhamento (M3U, áudio, vídeo)
+- [ ] **Transversal**: Room + DataStore no lugar de SQLite/prefs, `kotlinx.coroutines` no lugar de `ThreadPool`, backup completo da biblioteca (hoje só DJ/EQ) com restauração em outro aparelho, e um banco de mídia (`MediaLibraryService`) como fonte para Assistant e Android Auto
+
+### Novas ideias para a central
+- [ ] **Fila universal**: uma única fila aceitando música, vídeo, episódio e rádio, com reordenação por voz ("virgi, joga o vídeo pro fim") e histórico do que já tocou de cada tipo (`Playback.queue` + novo modelo)
+- [ ] **"Continuar de onde parei" cruzando mídias**: a home mostra um card só com a última coisa tocada (música OU vídeo OU episódio) e a Virgin retoma falando "voltando pro episódio de ontem, você parou no minuto 34" (`DjMemory` + `MainVirgin`)
+- [ ] **Busca unificada com filtros**: um campo de busca que casa música, vídeo, podcast, artista e episódio, com chips de filtro (baixado, não ouvido, duração, data) (`SearchActivity` + `SearchAdapter`)
+- [ ] **Sessão com objetivo**: "virgi, monta uma sessão de 40 minutos pra dormir: 2 músicas calmas e 1 podcast" — a Virgin escolhe por duração somada, não só por gênero (`DjEngine` + `Ambient`)
+- [ ] **Download Center**: fila com pausar/retomar/cancelar, Velocidade, "só no Wi-Fi", limite de espaço por mídia e aviso antes de encher o cartão (`MediaDownloader` + WorkManager)
+- [ ] **Baixar por voz**: "virgi, baixa esse episódio pra ouvir no carro" / "limpa o que tá ocupando espaço" (`DjCommander` + Download Center)
+- [ ] **Limpeza automática do offline**: apaga o que não foi ouvido há X dias (com aviso de voz antes), liberando cartão sozinho (`Settings` + WorkManager)
+- [ ] **Download de streaming com API oficial**: iTunes/Spotify/Podcast Index/ytdlp local em vez de raspar página — hoje o app bloqueia essas URLs de propósito (`SettingsActivity.kt:578`)
+- [ ] **Pular propaganda de podcast**: detecta silêncio/mesma faixa no começo do episódio e corta, com opção "não pular" (`Media3` + `DjLearn` do listener)
+- [ ] **Modo podcast no EQ**: preset de voz (corta 2–4 kHz e realça presença) separado do preset de música, porque podcast e música não se mixam igual (`AudioFx.presetForGenre` + perfil de fonte)
+- [ ] **Transcrição e busca falada no podcast**: transcrever o episódio (Whisper local ou no servidor) e perguntar "virgi, o que falaram sobre bitcoin nesse episódio?" — com resposta em voz e o trecho citado (`Lyrics` → novo módulo de transcrição + `DjCommander`)
+- [ ] **Sumário falado de episódio**: a Virgin resume o episódio em 3 frases ao terminar ("o que ficou") e sugere o próximo da mesma série (`DjVoice` + resumo do Gemini já usado em `DjSuggest`)
+- [ ] **Capítulos e marcadores**: navegação por capítulo dentro de podcasts e vídeos longos, com marcadores por voz ("virgi, pula pro capítulo 3") (`Lyrics` modelo de capítulos + `DjCommander`)
+- [ ] **Picture-in-Picture e player flutuante**: sair do app continua o vídeo numa janela PIP, com retorno ao audio ao fechar (`VideoPlayerActivity` + Media3)
+- [ ] **Legenda no vídeo**: carregar SRT/VTT, busca por hora, fonte e tamanho ajustáveis, e legenda "ouvir junto" (vira letra no Now Playing) (`Lyrics` reaproveitado)
+- [ ] **Vídeo por voz**: "virgi, continua o filme", "pausa e volta 30s" — igual o "retomar" que já existe para música (`MainVirgin` + `VideoPlayerActivity`)
+- [ ] **Velocidade e saltinho**: 1.2x/1.5x/2x + pulo de 15s nos episódios e vídeos, com a Virgin ganhando voz se você usa muito (`Playback` + `DjLearn`)
+- [ ] **Android Auto de verdade**: abas por mídia (música/rádio/podcast/vídeo), voz do Google Assist ("toca meu podcast"), e navegador para o resto — exige `MediaBrowserService` e passar pelo review do Google
+- [ ] **Wear OS**: app mínimo com play/pause, favoritar e "tocar X" no pulso, espelhando o estado pelo `MediaSession`
+- [ ] **TV 10 feet**: home por capas, foco com controle remoto, busca por voz do OK Google e fila da Virgin aparecendo na TV (`androidx.tv.leanback`)
+- [ ] **Cast/AirPlay de verdade**: Mandar música, vídeo e podcast para Chromecast/speaker com a capa e o controle voltando pro celular (`Cast SDK` + `MediaSession`)
+- [ ] **Handoff entre aparelhos**: começa a ouvir no fone, aparece no carro; começa no carro, volta pro celular — reaproveitando o servidor que já existe (`RemoteSync` + `MirrorSync`)
+- [ ] **Nuvem de mídia de verdade**: além do `/songs`, o servidor guarda playlists, favoritos, progresso de cada mídia e o que está baixado — a PWA vira segunda tela completa, tocando o que você quer pelo navegador (`RemoteSync` + `web/`)
+- [ ] **Economia de dados e bateria**: baixa resolução de vídeo em dados móveis, pause de vídeo na tela desligada, e "não baixar nada sem Wi-Fi" por padrão (`Settings` + `NetworkCapabilities`)
+- [ ] **Atalho na tela inicial** para "Baixados offline", "Continuar", "Novo episódio" e "Virgin FM" (`AppWidgetProvider` + shortcuts estáticos)
+- [ ] **Modo família/kids**: filtro por faixa/podcast com senha, volume travado e sem rádio — útil com o app em carro compartilhado
+- [ ] **Cartão compartilhável unificado**: música, episódio ou vídeo viram um card com capa pra mandar no zap (`AvatarFavorites` reaproveitado)
+
+### Armadilhas conhecidas (antes de começar)
+- [ ] **O EQ é preso ao `sessionId` do `MediaPlayer`**: ao trocar por Media3 o `sessionId` muda e o `Equalizer`/`BassBoost` de `audio/AudioFx` param de aplicar — precisa religar por sessão e testar banda a banda antes de considerar a migração pronta
+- [ ] **DJ e hotword tocam o player diretamente**: `dj/DjSession`, `dj/MainVirgin` e `HotwordBridge` assumem a API de `Playback`. Migrar o motor sem manter essa API é o jeito mais rápido de quebrar a Virgin — daí a estratégia em camadas da F1
+- [ ] **Permissões e política**: `MANAGE_EXTERNAL_STORAGE`/acesso total de arquivos e `FOREGROUND_SERVICE_MICROPHONE`pedem justificativa; o `build.yml` só assina release, mas publicar na Play exige ficha de dados e política de privacidade
+- [ ] **Rádio em `.m3u8` pode não tocar** hoje: falta o módulo HLS do ExoPlayer, então algumas URLs de stream do radio-browser falham silenciosamente — já vale corrigir na F1
+- [ ] **Sync atual depende de rede cleartext e servidor de pé**: a F5 assume um servidor real (VPS/túnel) e não só LAN; testar em 4G é obrigatório antes de vender como "nuvem"

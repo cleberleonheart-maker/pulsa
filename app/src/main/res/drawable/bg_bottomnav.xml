@@ -5,9 +5,9 @@
     <!-- Corpo chanfrado (chassis radar) -->
     <item>
         <com.pulsa.player.ui.RadarPanelDrawable
-            app:panelColor="#F008150E"
+            app:panelColor="@color/radar_panel_aF0"
             app:panelCut="14dp"
-            app:panelStroke="#46B6FF2E"
+            app:panelStroke="@color/neon_green_a46"
             app:panelStrokeWidth="1dp" />
     </item>
 
@@ -19,9 +19,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:centerColor="#66FF6A7A"
-                android:endColor="#26B6FF2E"
-                android:startColor="#26FF2E4D" />
+                android:centerColor="@color/neon_coral_a66"
+                android:endColor="@color/neon_green_a26"
+                android:startColor="@color/neon_red_a26" />
             <size android:height="2dp" />
         </shape>
     </item>
@@ -34,10 +34,10 @@
         android:top="26dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#AAB6FF2E"
-                android:endColor="#00B6FF2E"
+                android:centerColor="@color/neon_green_aAA"
+                android:endColor="@color/neon_green_a00"
                 android:gradientRadius="12dp"
-                android:startColor="#FFB6FF2E"
+                android:startColor="@color/neon_green"
                 android:type="radial" />
             <size
                 android:width="24dp"
@@ -53,10 +53,10 @@
         android:top="26dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#AAFF2E4D"
-                android:endColor="#00FF2E4D"
+                android:centerColor="@color/neon_red_aAA"
+                android:endColor="@color/neon_red_a00"
                 android:gradientRadius="12dp"
-                android:startColor="#FFFF6A7A"
+                android:startColor="@color/neon_coral"
                 android:type="radial" />
             <size
                 android:width="24dp"

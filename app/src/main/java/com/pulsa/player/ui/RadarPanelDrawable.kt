@@ -10,6 +10,7 @@ import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
+import androidx.core.content.res.ResourcesCompat
 import android.util.AttributeSet
 import android.util.TypedValue
 import org.xmlpull.v1.XmlPullParser
@@ -19,16 +20,16 @@ import org.xmlpull.v1.XmlPullParser
  *
  * Substitui as superfícies estáticas que o `<shape>` só permite arredondar
  * (rows, inputs, cápsulas, decks). O corte é fixo em dp, independente do
- * tamanho do painel — o chanfrado acompanha o esqueleto `ShapeAppearance.Pulsa.Radar`.
+ * tamanho do painel — o chanfrado acompanha o esqueleto `ShapeAppearance.Pulsa.PanelCut`.
  *
  * Uso (usado direto como raiz de um drawable XML):
- * <com.pulsa.player.ui.RadarPanelDrawable
+ * <com.pulsa.player.ui.PanelCutDrawable
  *     app:panelColor="@color/glass_fill"
  *     app:panelStroke="@color/neon_border"
  *     app:panelStrokeWidth="1.5dp"
  *     app:panelCut="10dp" />
  */
-class RadarPanelDrawable : Drawable() {
+class PanelCutDrawable : Drawable() {
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
@@ -54,12 +55,12 @@ class RadarPanelDrawable : Drawable() {
     }
 
     private fun parse(r: Resources, attrs: AttributeSet) {
-        val ta = r.obtainAttributes(attrs, R.styleable.RadarPanel)
-        fillPaint.color = ta.getColor(R.styleable.RadarPanel_panelColor, 0xFF08150E.toInt())
-        strokePaint.color = ta.getColor(R.styleable.RadarPanel_panelStroke, 0xFF1D3A26.toInt())
+        val ta = r.obtainAttributes(attrs, R.styleable.PanelCut)
+        fillPaint.color = ta.getColor(R.styleable.PanelCut_panelColor, ResourcesCompat.getColor(r, R.color.surface, null))
+        strokePaint.color = ta.getColor(R.styleable.PanelCut_panelStroke, ResourcesCompat.getColor(r, R.color.neon_border_soft, null))
         strokePaint.strokeWidth =
-            ta.getDimensionPixelOffset(R.styleable.RadarPanel_panelStrokeWidth, dp(1f).toInt()).toFloat()
-        cutPx = ta.getDimensionPixelOffset(R.styleable.RadarPanel_panelCut, dp(10f).toInt())
+            ta.getDimensionPixelOffset(R.styleable.PanelCut_panelStrokeWidth, dp(1f).toInt()).toFloat()
+        cutPx = ta.getDimensionPixelOffset(R.styleable.PanelCut_panelCut, dp(10f).toInt())
             .toFloat()
         ta.recycle()
         halfStrokePx = strokePaint.strokeWidth / 2f
