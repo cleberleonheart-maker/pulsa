@@ -30,9 +30,17 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.9.1):
+    <string name="changelog">What is new (5.9.2):
+→ VIRGIN NAMES THE SONG CORRECTLY NOW
+• She announced every song backwards: "Now playing: Charlie Brown Jr., by Evidências".
+  Title and artist were swapped in 9 places. Now it is "Evidências, by Charlie Brown Jr.".
 
-→ NEW LOOK: AURORA NEBULA
+→ THE HOUR ANNOUNCEMENT NOW PLAYS
+• When the Virgin said the time and "let's start with this song", nothing played at all.
+  Now, if nothing is playing, she actually starts the song and only then says which one it is.
+
+★ FROM 5.9.1
+→ MICROPHONE STOPPED
 • Pulsa is now violet, pink and teal. The angled chassis stays.
 • None of this is decoration for its own sake: 111 colors that used to be loose numbers now have names.
   Changing an element\'s color is editing a token, not hunting hex through 64 files.
@@ -547,6 +555,7 @@
     <string name="tami_clock_start_day">Let\'s start your day with this song:</string>
     <string name="tami_clock_start_after">Let\'s start your afternoon with this song:</string>
     <string name="tami_clock_start_night">Let\'s start your evening with this song:</string>
+    <string name="tami_clock_now">And now on air:</string>
     <string name="blacklist_title">Access blocked</string>
     <string name="blacklist_message">This device was disabled by the administrator. Updates, data reporting and remote features have been blocked.</string>
     <string name="ban_title">Admin</string>

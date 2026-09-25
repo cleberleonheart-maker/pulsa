@@ -30,9 +30,17 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.9.1):
+    <string name="changelog">Novedades de esta versión (5.9.2):
+→ VIRGIN DICE AHORA LA CANCIÓN CORRECTA
+• Anunciaba todas las canciones al revés: "Sonando ahora: Charlie Brown Jr., de Evidências".
+  El título y el artista estaban cambiados en 9 sitios. Ahora es "Evidencias, de Charlie Brown Jr.".
 
-→ NUEVA IDENTIDAD: AURORA NEBULA
+→ LA HORA AHORA SÍ DA PLAY
+• Cuando la Virgin decía la hora y "vamos a empezar con esta canción", no sonaba nada.
+  Ahora, si no está sonando nada, empieza la canción de verdad y recién después dice cuál es.
+
+★ DE LA 5.9.1
+→ MICRÓFONO PARADO
 • Pulsa ahora es violeta, rosa y turquesa. El chasis angulado se queda.
 • Nada de esto es adorno por adornar: 111 colores que eran números sueltos ahora tienen nombre. Cambiar
   el color de un elemento es editar un token, no buscar hex por 64 archivos.
@@ -547,6 +555,7 @@
     <string name="tami_clock_start_day">¡Empecemos tu día con esta canción!</string>
     <string name="tami_clock_start_after">¡Empecemos tu tarde con esta canción!</string>
     <string name="tami_clock_start_night">¡Empecemos tu noche con esta canción!</string>
+    <string name="tami_clock_now">Y ahora en el aire:</string>
     <string name="blacklist_title">Acceso bloqueado</string>
     <string name="blacklist_message">Este dispositivo fue desactivado por el administrador. Se bloquearon las actualizaciones, el envío de datos y las funciones remotas.</string>
     <string name="ban_title">Admin</string>

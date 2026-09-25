@@ -7,6 +7,7 @@ import com.pulsa.player.R
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.Library
+import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.sync.Telemetry
 import java.util.Calendar
@@ -137,18 +138,52 @@ object TamiRadio {
         } else {
             ctx.getString(R.string.tami_clock_time, hour, minute)
         }
-        val song = Playback.currentSong
-        val track = if (song != null) {
-            ctx.getString(R.string.dj_voice_track, song.artist, song.title)
-        } else {
-            ""
+        val greet = ctx.getString(greetRes)
+
+        // Ja tem musica no ar: a Virgin anuncia a hora e o que continua tocando.
+        // Nao promete "vamos comecar com essa musica", porque ai ela estaria
+        // chamando de "comeco" uma musica que ja estava tocando.
+        val current = Playback.currentSong?.takeIf { Playback.isPlaying }
+        if (current != null) {
+            speak(
+                listOf(greet, time, ctx.getString(R.string.tami_clock_now), track(current))
+                    .filter { it.isNotBlank() }
+                    .joinToString(" ")
+            )
+            return
         }
-        speak(
-            listOf(ctx.getString(greetRes), time, ctx.getString(startRes), track)
-                .filter { it.isNotBlank() }
-                .joinToString(" ")
-        )
+
+        // Radio ligada mas nada tocando: a Virgin comeca uma musica de verdade,
+        // e so entao fala qual e. Antes ela falava "vamos comecar com essa
+        // musica" e nao tocava nada.
+        ThreadPool.post {
+            val songs = Library.allSongs(ctx)
+            val picked = songs.shuffled().firstOrNull()
+            ThreadPool.onUi {
+                if (!active) return@onUi
+                if (picked == null) {
+                    speak(listOf(greet, time).filter { it.isNotBlank() }.joinToString(" "))
+                    return@onUi
+                }
+                val queue = ArrayList(songs)
+                queue.remove(picked)
+                queue.add(0, picked)
+                Telemetry.log(ctx, "TamiRadio hora em ponto tocando ${picked.title}")
+                Playback.setShuffle(true)
+                Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
+                Playback.start(queue, 0)
+                speak(
+                    listOf(greet, time, ctx.getString(startRes), track(picked))
+                        .filter { it.isNotBlank() }
+                        .joinToString(" ")
+                )
+            }
+        }
     }
+
+    private fun track(song: Song): String =
+        app?.getString(R.string.dj_voice_track, song.title, song.artist) ?: ""
 
     private fun speak(text: String) {
         val ctx = app ?: return

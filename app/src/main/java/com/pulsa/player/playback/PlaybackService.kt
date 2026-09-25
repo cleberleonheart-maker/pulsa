@@ -557,7 +557,7 @@ class PlaybackService : Service() {
             this, Settings.languageTag(Settings.language(this))
         ).also { bgVoice = it }
         val leading = DjFacts.leadIn(Settings.djIntensity(this))
-        val track = getString(R.string.dj_voice_track, song.artist, song.title)
+        val track = getString(R.string.dj_voice_track, song.title, song.artist)
         val songId = song.id
         val speakNow = { text: String ->
             voice.init { ready ->

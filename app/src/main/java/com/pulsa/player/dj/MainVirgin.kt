@@ -259,7 +259,7 @@ class MainVirgin(
         virginListener?.start()
         val cur = Playback.currentSong
         val msg = if (cur != null) {
-            activity.getString(R.string.dj_voice_track, cur.artist, cur.title)
+            activity.getString(R.string.dj_voice_track, cur.title, cur.artist)
         } else {
             activity.getString(R.string.dj_voice_hello)
         }
@@ -309,7 +309,7 @@ class MainVirgin(
         radioLastId = newId
         val deduction = DjDedication.take()
         val track = activity.getString(
-            R.string.dj_voice_track, song.artist, song.title
+            R.string.dj_voice_track, song.title, song.artist
         )
         val named = if (deduction != null) {
             activity.getString(R.string.dj_voice_dedication_lead, deduction) + " " + track
@@ -843,7 +843,7 @@ class MainVirgin(
             "info" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {
-                    virginSpeak(say(R.string.dj_voice_track, cur.artist, cur.title))
+                    virginSpeak(say(R.string.dj_voice_track, cur.title, cur.artist))
                 } else {
                     virginSpeak(say(R.string.dj_voice_unknown))
                 }

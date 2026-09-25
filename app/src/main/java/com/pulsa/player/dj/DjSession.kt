@@ -212,7 +212,7 @@ class DjSession(
                     if (!lastCompleted && !suppressNextLearnSkip) {
                         DjLearn.recordSkip(app, learnId)
                     }
-                    announce = activity.getString(R.string.dj_voice_track, song?.artist, song?.title)
+                    announce = activity.getString(R.string.dj_voice_track, song?.title, song?.artist)
                 }
                 suppressNextLearnSkip = false
                 if (newId >= 0L) {
@@ -226,13 +226,13 @@ class DjSession(
                     val body = curiosityBody(song)
                     if (body != null) {
                         announce = "$body " +
-                            activity.getString(R.string.dj_voice_track, song?.artist, song?.title)
+                            activity.getString(R.string.dj_voice_track, song?.title, song?.artist)
                     }
                 }
             }
         }
         if (!djActive && announce == null && Settings.djRadio(activity)) {
-            val base = activity.getString(R.string.dj_voice_track, song?.artist, song?.title)
+            val base = activity.getString(R.string.dj_voice_track, song?.title, song?.artist)
             announce = curiosityBody(song)?.let { "$it $base" } ?: base
         }
         if (song != null) {
@@ -888,7 +888,7 @@ class DjSession(
             "info" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {
-                    speak(say(R.string.dj_voice_track, cur.artist, cur.title))
+                    speak(say(R.string.dj_voice_track, cur.title, cur.artist))
                 } else {
                     speak(say(R.string.dj_voice_unknown))
                 }

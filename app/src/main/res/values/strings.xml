@@ -32,8 +32,16 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.9.1):
+    <string name="changelog">Novidades desta versão (5.9.2):
+→ VIRGIN FALA A MÚSICA CERTA AGORA
+• Ela anunciava toda música ao contrário: "Tocando agora: Charlie Brown Jr., de Evidências".
+  O nome e o artista estavam trocados em 9 lugares. Agora é "Evidências, de Charlie Brown Jr.".
 
+→ A HORA AGORA DÁ PLAY
+• Quando a Virgin falava as horas e dizia "vamos começar com essa música", nem tocava nada.
+  Agora, se não estiver tocando nada, ela começa a música de verdade e só então fala qual é.
+
+★ DA 5.9.1
 → MICROFONE PARADO
 • A mão livre não fica mais abrindo e fechando o microfone a cada 3 segundos enquanto a música
   toca. Quando você não fala nada, a Virgínia espera cada vez mais antes de tentar de novo; quando
@@ -581,6 +589,7 @@
     <string name="tami_clock_start_day">Vamos começar o seu dia com essa música:</string>
     <string name="tami_clock_start_after">Vamos começar a sua tarde com essa música:</string>
     <string name="tami_clock_start_night">Vamos começar a sua noite com essa música:</string>
+    <string name="tami_clock_now">E no ar agora:</string>
     <string name="blacklist_title">Acesso bloqueado</string>
     <string name="blacklist_message">Este dispositivo foi desativado pelo administrador. Atualizações, envio de dados e recursos remotos foram bloqueados.</string>
     <string name="ban_title">Administração</string>
