@@ -5,10 +5,10 @@
 
     <!-- Base chanfrada (chassis radar) -->
     <item>
-        <com.pulsa.player.ui.RadarPanelDrawable
-            app:panelColor="@color/radar_raised_aF0"
+        <com.pulsa.player.ui.PanelCutDrawable
+            app:panelColor="@color/bg_elev_aF0"
             app:panelCut="14dp"
-            app:panelStroke="@color/neon_green_a3D"
+            app:panelStroke="@color/aurora_violet_a3D"
             app:panelStrokeWidth="1dp" />
     </item>
 
@@ -21,9 +21,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:centerColor="@color/neon_coral_a66"
-                android:endColor="@color/neon_green_a1F"
-                android:startColor="@color/neon_red_a2F" />
+                android:centerColor="@color/aurora_pink_a66"
+                android:endColor="@color/hud_grid"
+                android:startColor="@color/aurora_rose_a2F" />
             <size android:height="2dp" />
         </shape>
     </item>

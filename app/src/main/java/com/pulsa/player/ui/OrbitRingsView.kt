@@ -1,4 +1,5 @@
 package com.pulsa.player.ui
+import com.pulsa.player.R
 
 import com.pulsa.player.core.Settings
 
@@ -10,6 +11,7 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
@@ -34,37 +36,39 @@ class OrbitRingsView @JvmOverloads constructor(
 
     private val density = resources.displayMetrics.density
 
+    private fun c(id: Int) = ContextCompat.getColor(context, id)
+
     private val ringOuter = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2f * density
-        color = 0x88B6FF2E.toInt()
+        color = c(R.color.aurora_violet_a88)
     }
     private val ringInner = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1.3f * density
-        color = 0x59B6FF2E.toInt()
+        color = c(R.color.aurora_violet_a59)
     }
     private val ringDash = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1f * density
-        color = 0x40FF2E4D.toInt()
+        color = c(R.color.aurora_rose_a40)
     }
-    private val particleMagenta = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFF6A7A.toInt() }
-    private val particleMagentaGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66FF2E4D.toInt() }
-    private val particleCyan = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFB6FF2E.toInt() }
-    private val particleCyanGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66B6FF2E.toInt() }
+    private val particlePink = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = c(R.color.aurora_pink) }
+    private val particlePinkGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = c(R.color.aurora_rose_a66) }
+    private val particleViolet = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = c(R.color.aurora_violet) }
+    private val particleVioletGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = c(R.color.aurora_violet_a66) }
 
-    // Sweep de radar: varredura lima girando com rastro decaído + alvo rubi na borda
+    // Sweep de radar: varredura violeta girando com rastro decaído + alvo rosa na borda
     private val sweepFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0x1CB6FF2E.toInt()
+        color = c(R.color.aurora_violet_a1C)
     }
     private val sweepLine = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1.6f * density
-        color = 0x99B6FF2E.toInt()
+        color = c(R.color.aurora_violet_a99)
     }
     private val blip = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFFFF2E4D.toInt()
+        color = c(R.color.aurora_rose)
     }
     private val sweepRect = RectF()
 
@@ -214,11 +218,11 @@ class OrbitRingsView @JvmOverloads constructor(
         val px = centerX + cos(a) * rxO
         val py = centerY + sin(a) * ryO
         val posA = rotateFrom(px, py, 18f)
-        drawParticle(canvas, posA.first, posA.second, particleMagentaGlow, particleMagenta, 5f * density)
+        drawParticle(canvas, posA.first, posA.second, particlePinkGlow, particlePink, 5f * density)
 
         val b = a + PI.toFloat()
         val posB = rotateFrom(centerX + cos(b) * rxI, centerY + sin(b) * ryI, -10f)
-        drawParticle(canvas, posB.first, posB.second, particleCyanGlow, particleCyan, 4.4f * density)
+        drawParticle(canvas, posB.first, posB.second, particleVioletGlow, particleViolet, 4.4f * density)
     }
 
     /** Reavalia a preferência "fundo animado" (chamado ao voltar pra tela). */

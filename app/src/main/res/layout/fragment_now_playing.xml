@@ -48,7 +48,7 @@
                 android:layout_width="280dp"
                 android:layout_height="280dp"
                 app:cardElevation="16dp"
-                app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar"
+                app:shapeAppearance="@style/ShapeAppearance.Pulsa.PanelCut"
                 app:strokeColor="@color/neon_border_soft"
                 app:strokeWidth="1dp">
 

@@ -4,10 +4,10 @@
 
     <!-- Pod chanfrado (chassis radar) -->
     <item>
-        <com.pulsa.player.ui.RadarPanelDrawable
-            app:panelColor="@color/radar_raised_aF0"
+        <com.pulsa.player.ui.PanelCutDrawable
+            app:panelColor="@color/bg_elev_aF0"
             app:panelCut="12dp"
-            app:panelStroke="@color/neon_green_a59"
+            app:panelStroke="@color/aurora_violet_a59"
             app:panelStrokeWidth="1dp" />
     </item>
 
@@ -19,8 +19,8 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:endColor="@color/neon_red_aCC"
-                android:startColor="@color/neon_coral_a99" />
+                android:endColor="@color/aurora_rose_aCC"
+                android:startColor="@color/aurora_pink_a99" />
             <size android:height="2dp" />
         </shape>
     </item>
@@ -32,7 +32,7 @@
         android:left="6dp"
         android:top="24dp">
         <shape android:shape="oval">
-            <solid android:color="@color/neon_green_aB3" />
+            <solid android:color="@color/aurora_violet_aB3" />
             <size
                 android:width="4dp"
                 android:height="4dp" />
@@ -46,7 +46,7 @@
         android:right="6dp"
         android:top="24dp">
         <shape android:shape="oval">
-            <solid android:color="@color/neon_green_aB3" />
+            <solid android:color="@color/aurora_violet_aB3" />
             <size
                 android:width="4dp"
                 android:height="4dp" />

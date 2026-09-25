@@ -4,10 +4,10 @@
 
     <!-- Corpo chanfrado (chassis radar) -->
     <item>
-        <com.pulsa.player.ui.RadarPanelDrawable
-            app:panelColor="@color/radar_panel_aF0"
+        <com.pulsa.player.ui.PanelCutDrawable
+            app:panelColor="@color/surface_aF0"
             app:panelCut="14dp"
-            app:panelStroke="@color/neon_green_a46"
+            app:panelStroke="@color/aurora_violet_a46"
             app:panelStrokeWidth="1dp" />
     </item>
 
@@ -19,9 +19,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:centerColor="@color/neon_coral_a66"
-                android:endColor="@color/neon_green_a26"
-                android:startColor="@color/neon_red_a26" />
+                android:centerColor="@color/aurora_pink_a66"
+                android:endColor="@color/aurora_violet_a26"
+                android:startColor="@color/aurora_rose_a26" />
             <size android:height="2dp" />
         </shape>
     </item>
@@ -34,10 +34,10 @@
         android:top="26dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="@color/neon_green_aAA"
-                android:endColor="@color/neon_green_a00"
+                android:centerColor="@color/aurora_violet_aAA"
+                android:endColor="@color/aurora_violet_a00"
                 android:gradientRadius="12dp"
-                android:startColor="@color/neon_green"
+                android:startColor="@color/aurora_violet"
                 android:type="radial" />
             <size
                 android:width="24dp"
@@ -53,10 +53,10 @@
         android:top="26dp">
         <shape android:shape="oval">
             <gradient
-                android:centerColor="@color/neon_red_aAA"
-                android:endColor="@color/neon_red_a00"
+                android:centerColor="@color/aurora_rose_aAA"
+                android:endColor="@color/aurora_rose_a00"
                 android:gradientRadius="12dp"
-                android:startColor="@color/neon_coral"
+                android:startColor="@color/aurora_pink"
                 android:type="radial" />
             <size
                 android:width="24dp"

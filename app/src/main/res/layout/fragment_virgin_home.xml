@@ -120,7 +120,7 @@
                 android:background="@drawable/seg_glow_l"
                 android:gravity="center"
                 android:text="@string/btn_party"
-                android:textColor="@color/radar_home"
+                android:textColor="@color/surface_variant"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -132,7 +132,7 @@
                 android:background="@drawable/seg_glow_r"
                 android:gravity="center"
                 android:text="@string/btn_relax"
-                android:textColor="@color/radar_home"
+                android:textColor="@color/surface_variant"
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -184,7 +184,7 @@
                 android:scaleType="centerCrop"
                 android:src="@drawable/ic_music_note"
                 android:tint="@color/ic_placeholder"
-                app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar" />
+                app:shapeAppearance="@style/ShapeAppearance.Pulsa.PanelCut" />
 
             <LinearLayout
                 android:layout_width="0dp"

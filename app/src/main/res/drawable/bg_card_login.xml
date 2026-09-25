@@ -5,8 +5,8 @@
             <corners android:radius="28dp" />
             <gradient
                 android:angle="45"
-                android:endColor="@color/neon_lime_a55"
-                android:startColor="@color/neon_red_a66" />
+                android:endColor="@color/aurora_cyan_a55"
+                android:startColor="@color/aurora_rose_a66" />
         </shape>
     </item>
     <item
@@ -18,7 +18,7 @@
             <corners android:radius="27dp" />
             <gradient
                 android:angle="135"
-                android:endColor="@color/radar_bg"
+                android:endColor="@color/bg"
                 android:startColor="@color/violet_card" />
         </shape>
     </item>

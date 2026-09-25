@@ -34,7 +34,7 @@
                 android:scaleType="centerCrop"
                 android:src="@drawable/ic_music_note"
                 android:tint="@color/ic_placeholder"
-                app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar" />
+                app:shapeAppearance="@style/ShapeAppearance.Pulsa.PanelCut" />
         </FrameLayout>
 
         <LinearLayout

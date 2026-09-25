@@ -8,8 +8,8 @@
     android:focusable="true"
     app:cardBackgroundColor="@color/glass_fill"
     app:cardElevation="2dp"
-    app:rippleColor="@color/neon_green_a40"
-    app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar"
+    app:rippleColor="@color/aurora_violet_a40"
+    app:shapeAppearance="@style/ShapeAppearance.Pulsa.PanelCut"
     app:strokeColor="@color/neon_border_soft"
     app:strokeWidth="1dp">
 

@@ -4,8 +4,8 @@
     <corners android:radius="20dp" />
     <gradient
         android:angle="45"
-        android:endColor="@color/neon_red"
-        android:startColor="@color/neon_coral" />
+        android:endColor="@color/aurora_rose"
+        android:startColor="@color/aurora_pink" />
     <size
         android:width="90dp"
         android:height="40dp" />

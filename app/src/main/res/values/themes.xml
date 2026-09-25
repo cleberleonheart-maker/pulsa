@@ -109,7 +109,7 @@
     </style>
 
     <!-- Mantém o nome Radar como alias arredondado (compatibilidade) -->
-    <style name="ShapeAppearance.Pulsa.Radar" parent="@style/ShapeAppearance.Pulsa.Orb" />
+    <style name="ShapeAppearance.Pulsa.PanelCut" parent="@style/ShapeAppearance.Pulsa.Orb" />
 
     <style name="ThemeOverlay.Pulsa.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorSurface">@color/surface</item>

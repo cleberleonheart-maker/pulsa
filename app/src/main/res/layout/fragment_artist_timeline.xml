@@ -21,7 +21,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardElevation="6dp"
-                app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar"
+                app:shapeAppearance="@style/ShapeAppearance.Pulsa.PanelCut"
                 app:strokeColor="@color/neon_border_soft"
                 app:strokeWidth="1dp">
 
@@ -78,7 +78,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:cardBackgroundColor="@color/white_a1F"
-            app:shapeAppearance="@style/ShapeAppearance.Pulsa.Radar"
+            app:shapeAppearance="@style/ShapeAppearance.Pulsa.PanelCut"
             app:strokeColor="@color/neon_border_soft"
             app:strokeWidth="1dp">
 
