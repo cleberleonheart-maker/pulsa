@@ -64,6 +64,39 @@ Quem usa, e quanto (medido no código):
 - `DjActivity.kt`, `MainActivity.kt` — fazem `startService` + `bindService` e setam `Playback.service`
 - `SettingsActivity.kt:3x` e `widget/PulsaWidget.kt` — **puxam `Playback.service` direto**, fora do objeto
 
+### 3.1 Auditoria do contrato em 5.9.3 (E0, 27/09)
+
+A lista de §3 **continua válida**: `Playback.kt` tem exatamente os 12 estados, os 17
+comandos e o `Listener` listados, nada foi acrescentado desde o 5.8.1. O que mudou é o
+**tamanho do acoplamento** e o **número de furos** que a fachada vai ter de fechar:
+
+| Medida | 5.9.3 |
+|---|---|
+| Arquivos que chamam `Playback.*` | 29 |
+| Call sites `Playback.*` | ~250 |
+| `MainVirgin` / `DjSession` / `NowPlayingFragment` | 66 / 59 / 32 |
+| Acessos a `Playback.service` fora do objeto | 12, em 7 arquivos |
+
+Furos que a fachada precisa fechar **antes** de trocar o motor (não estão em §3 porque já
+nasceram vazando):
+
+1. `PlaybackService.applyDanceParamsForRefresh()` — `SettingsActivity.kt:547`. Não existe no
+   objeto `Playback`: quem chama a Config precisa do serviço para religar os efeitos depois
+   de trocar Equalizer/BassBoost. **Tem que entrar na fachada** (ex.: `Playback.refreshFx()`
+   fazendo isso, ou um `setAudioFxMode` novo).
+2. `PlaybackService.currentArt(): Bitmap` — `widget/PulsaWidget.kt:20,29`. O widget monta o
+   `RemoteViews` com a capa. Uma fachada sobre `MediaController` não devolve `Bitmap`; ou o
+   widget passa a pedir a capa pelo mesmo caminho que a tela Now Playing usa, ou a
+   `currentArt` vira um método do serviço acessível por um handle explícito.
+3. `Playback.service != null` como "o app já subiu?" — `MainVirgin.kt:1223` faz *polling* de
+   8 × 250 ms esperando o bind. Com `MediaController` (conexão assíncrona) esse padrão
+   continua válido, mas a fachada precisa de um equivalente honesto — senão o alarme da
+   Virgin perde o `start` e a música não toca.
+
+Nenhuma alteração de `Playback` é permitida sem mexer nesses 12 pontos e nos ~250 call sites
+ao mesmo tempo. É por isso que E2 troca **a conexão**, não o motor.
+
+
 ## 4. Arquitetura alvo
 
 ```
