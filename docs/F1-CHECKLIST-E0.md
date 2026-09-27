@@ -3,9 +3,11 @@
 > Teste **manual** de aceitação da F1. É o que se roda depois de **cada** passo (E2, E3, E4…):
 > se algum item quebra, o passo anterior está com defeito, não o próximo.
 >
-> Como o build local não roda neste aparelho (o daemon do Gradle é morto pelo sistema — ver
-> `.termux-resume.md`), a verificação de cada passo é: compilar no CI + rodar este checklist.
-> Nada de mexer no motor de playback sem ele.
+> Como o build local não roda neste aparelho (o daemon do Gradle é morto pelo sistema — medido
+> em 27/09: 40min sem artefato, e a fase de configuração leva 4min40 de relógio contra os 3min do
+> CI inteiro — ver `.termux-resume.md`), a verificação de cada passo é: compilar no CI + rodar
+> este checklist. Para editar Kotlin entre um CI e outro, `scripts/verificar-rapido.sh` faz o
+> type-check e os testes sem Gradle. Nada de mexer no motor de playback sem o checklist.
 >
 > **Baseline 27/09:** 5.9.3, `versionCode` 124, 68 testes unitários (56 antigos + 12 novos),
 > APK de referência = o que o CI publicou para 124.

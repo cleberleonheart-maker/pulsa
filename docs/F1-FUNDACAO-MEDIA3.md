@@ -62,7 +62,7 @@ Quem usa, e quanto (medido no código):
 - `ui/VirginHomeFragment.kt`, `ui/SongsTabFragment.kt`, `ui/PlaylistDetailFragment.kt`, `ui/TrendsFragment.kt`, `ui/SongActions.kt` — `start(...)`
 - `sync/MirrorSync.kt` — pause/play do "ouvir juntos"
 - `DjActivity.kt`, `MainActivity.kt` — fazem `startService` + `bindService` e setam `Playback.service`
-- `SettingsActivity.kt:3x` e `widget/PulsaWidget.kt` — **puxam `Playback.service` direto**, fora do objeto
+- `SettingsActivity.kt` (4: 133, 141, 546, 547) e `widget/PulsaWidget.kt` (20, 29) — **puxam `Playback.service` direto**, fora do objeto
 
 ### 3.1 Auditoria do contrato em 5.9.3 (E0, 27/09)
 
@@ -75,7 +75,7 @@ comandos e o `Listener` listados, nada foi acrescentado desde o 5.8.1. O que mud
 | Arquivos que chamam `Playback.*` | 29 |
 | Call sites `Playback.*` | ~250 |
 | `MainVirgin` / `DjSession` / `NowPlayingFragment` | 66 / 59 / 32 |
-| Acessos a `Playback.service` fora do objeto | 12, em 7 arquivos |
+| Acessos a `Playback.service` fora do objeto | 14, em 6 arquivos (12 externos + 2 dentro do próprio `PlaybackService`) |
 
 Furos que a fachada precisa fechar **antes** de trocar o motor (não estão em §3 porque já
 nasceram vazando):
