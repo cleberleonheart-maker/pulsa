@@ -30,7 +30,23 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.9.2):
+    <string name="changelog">Novedades de esta versión (5.9.3):
+→ LA APP YA NO SE QUEDA EN LA PANTALLA DE LA VIRGIN
+• El manos libres encendía el micrófono antes de convertirse en servicio en primer plano. En
+  Android 12+ eso mata el proceso: la Pulsa abría, moría y volvía a la misma pantalla. Ahora entra
+  en primer plano de inmediato, antes de cualquier decisión.
+
+→ LA ACTUALIZACIÓN VUELVE A APARECER
+• Si la descarga terminaba pero la instalación no salía (el sistema la bloqueó, la cancelaste), la
+  Pulsa creía que ya había ofrecido esa versión y nunca más la ofrecía. Ahora el intento vale por
+  12 horas, y una versión realmente instalada nunca más se repite.
+
+→ MICRÓFONO SIN EL CICLO DE 3 SEGUNDOS
+• El caso más común no era un error, era silencio: con música sonando y nadie hablando, el
+  reconocimiento volvía vacío y el micrófono se reabría al instante. Ahora el silencio también
+  espera, y la espera se duplica en cada intento.
+
+★ DE LA 5.9.2
 → VIRGIN DICE AHORA LA CANCIÓN CORRECTA
 • Anunciaba todas las canciones al revés: "Sonando ahora: Charlie Brown Jr., de Evidências".
   El título y el artista estaban cambiados en 9 sitios. Ahora es "Evidencias, de Charlie Brown Jr.".
@@ -41,6 +57,16 @@
 
 ★ DE LA 5.9.1
 → MICRÓFONO PARADO
+• El manos libres ya no abre y cierra el micrófono cada 3 segundos mientras suena la música.
+  Cuando no dices nada, Virginia espera un poco más cada vez antes de volver a intentar; cuando
+  hablas, vuelve al instante.
+
+→ VIRGINIA VUELVE A RECOMENDAR
+• El botón de recomendar de la Home fallaba con "no se me ocurre nada" aun con la IA activada.
+  Ahora, si la IA no responde (red, cuota, clave), usa la sugerencia sin conexión en vez de rendirse.
+
+★ DE LA 5.9.0
+→ NUEVA IDENTIDAD: AURORA NEBULA
 • Pulsa ahora es violeta, rosa y turquesa. El chasis angulado se queda.
 • Nada de esto es adorno por adornar: 111 colores que eran números sueltos ahora tienen nombre. Cambiar
   el color de un elemento es editar un token, no buscar hex por 64 archivos.

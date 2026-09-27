@@ -46,6 +46,13 @@ object UpdateChecker {
 
     private data class VersionResult(val code: Long, val name: String, val apkUrl: String)
 
+    /**
+     * Janela em que o aviso de update fica abafado depois de uma tentativa.
+     * Curta o bastante para o usuario nao achar que o Pulsa parou de se
+     * atualizar, longa o bastante para nao oferecer a cada abertura.
+     */
+    private const val ATTEMPT_COOLDOWN_MS = 12L * 60L * 60L * 1000L
+
     /** Consulta TODOS os hosts (publicos primeiro) e devolve o de MAIOR versionCode. */
     private fun queryLatest(context: Context): VersionResult? {
         return bestFrom(publicHosts) ?: bestFrom(privateHosts(context))
@@ -103,12 +110,17 @@ object UpdateChecker {
                         .show()
                     return@onUi
                 }
-                downloadFromSiteNow(context, latest!!.name, latest.apkUrl)
+                downloadFromSiteNow(context, latest.name, latest.apkUrl, latest.code)
             }
         }
     }
 
-    private fun downloadFromSiteNow(context: Context, latestName: String, versionUrl: String) {
+    private fun downloadFromSiteNow(
+        context: Context,
+        latestName: String,
+        versionUrl: String,
+        latestCode: Long
+    ) {
         if (context !is android.app.Activity) return
         if (!ensureInstallPermission(context)) return
         if (context.isFinishing || context.isDestroyed) return
@@ -133,8 +145,14 @@ object UpdateChecker {
             ThreadPool.onUi {
                 runCatching { dialog.dismiss() }
                 if (target != null) {
-                    markAttempted(context, latestName)
-                    installApk(context.applicationContext, target)
+                    // Marca so depois que a instalacao foi disparada: marcar antes
+                    // deixava a versao travada pra sempre se o download terminasse
+                    // mas a instalacao falhasse ou o usuario cancelasse.
+                    val started = runCatching {
+                        installApk(context.applicationContext, target)
+                    }.isSuccess
+                    if (started) markAttempted(context, latestName, latestCode)
+                    else clearAttempted(context)
                 } else {
                     clearAttempted(context)
                     CrashLogger.writeLog(context, "UPDATE MANUAL: download nao concluido")
@@ -174,26 +192,99 @@ object UpdateChecker {
     private fun prefs(context: Context) =
         context.getSharedPreferences("pulsa_update", Context.MODE_PRIVATE)
 
-    /** Guarda que o usuário já baixou/instalou esta versão, pra não re-oferecer. */
-    fun markAttempted(context: Context, latestName: String) {
+    /**
+     * Guarda que o usuario ja baixou esta versao, pra nao oferecer em loop.
+     * A marca e provisoria: instalar e um passo que o usuario pode perder, cancelar
+     * ou que o sistema pode bloquear, entao ela vale so por [ATTEMPT_COOLDOWN_MS]
+     * (ou para sempre, se a versao tentada for a que esta instalada).
+     */
+    fun markAttempted(context: Context, latestName: String, latestCode: Long = 0L) {
         try {
-            prefs(context).edit().putString("attempted_name", latestName).apply()
+            prefs(context).edit()
+                .putString("attempted_name", latestName)
+                .putLong("attempted_code", latestCode)
+                .putLong("attempted_at", System.currentTimeMillis())
+                .apply()
         } catch (t: Throwable) {
         }
     }
 
-    /** Download abortou: zera pra que a próxima checagem automática possa re-oferecer. */
+    /** Download abortou: zera pra que a proxima checagem automatica possa re-oferecer. */
     fun clearAttempted(context: Context) {
         try {
-            prefs(context).edit().remove("attempted_name").apply()
+            prefs(context).edit()
+                .remove("attempted_name")
+                .remove("attempted_code")
+                .remove("attempted_at")
+                .apply()
         } catch (t: Throwable) {
         }
     }
+
+    /** Marca vencida (ou antiga, sem carimbo de tempo) sai fora do caminho na proxima checagem. */
+    private fun pruneAttempted(context: Context) {
+        try {
+            val p = prefs(context)
+            val name = p.getString("attempted_name", null) ?: return
+            val keep = keepAttempt(
+                attemptedCode = p.getLong("attempted_code", 0L),
+                attemptedAt = p.getLong("attempted_at", 0L),
+                currentCode = BuildConfig.VERSION_CODE.toLong(),
+                nowMs = System.currentTimeMillis()
+            )
+            if (keep) return
+            CrashLogger.writeLog(context, "UPDATE: tentativa antiga de $name liberada")
+            clearAttempted(context)
+        } catch (t: Throwable) {
+        }
+    }
+
+    private fun keepAttempt(
+        attemptedCode: Long,
+        attemptedAt: Long,
+        currentCode: Long,
+        nowMs: Long
+    ): Boolean {
+        // A versao tentada virou a instalada: o update deu certo, nao ha o que repetir.
+        if (attemptedCode > 0L && currentCode >= attemptedCode) return true
+        // Marca sem carimbo de tempo (versoes antigas do app): nao da pra saber
+        // quando a tentativa aconteceu, entao nao segura o aviso.
+        if (attemptedAt <= 0L) return false
+        return nowMs - attemptedAt < ATTEMPT_COOLDOWN_MS
+    }
+
+    /** Decisao pura (testada em UpdateAttemptTest) de abafar ou nao o aviso de update. */
+    @Suppress("unused")
+    fun suppressAttempt(
+        latestName: String,
+        attemptedName: String?,
+        attemptedCode: Long,
+        attemptedAt: Long,
+        currentCode: Long,
+        nowMs: Long
+    ): Boolean {
+        if (attemptedName.isNullOrEmpty()) return false
+        // Instalou: o codigo do app ja e o da versao tentada, nada a re-oferecer.
+        if (attemptedCode > 0L && currentCode >= attemptedCode) return true
+        if (attemptedName != latestName) return false
+        return keepAttempt(attemptedCode, attemptedAt, currentCode, nowMs)
+    }
+
+    private fun alreadyTried(context: Context, latestName: String): Boolean =
+        suppressAttempt(
+            latestName = latestName,
+            attemptedName = prefs(context).getString("attempted_name", null),
+            attemptedCode = prefs(context).getLong("attempted_code", 0L),
+            attemptedAt = prefs(context).getLong("attempted_at", 0L),
+            currentCode = BuildConfig.VERSION_CODE.toLong(),
+            nowMs = System.currentTimeMillis()
+        )
 
     fun check(context: Context) {
         ThreadPool.post {
             Blacklist.refresh(context)
             if (Blacklist.isBanned(context)) return@post
+            pruneAttempted(context)
             val latest = queryLatest(context)
             if (latest != null) handle(context, "${latest.code}|${latest.name}|${latest.apkUrl}")
         }
@@ -222,8 +313,9 @@ object UpdateChecker {
             return
         }
         if (lastShownCode == latestCode) return
+        // So abafa se a tentativa ainda vale (recem tentada ou ja instalada).
+        if (alreadyTried(context, latestName)) return
         lastShownCode = latestCode
-        if (prefs(context).getString("attempted_name", null) == latestName) return
         ThreadPool.onUi {
             if (context !is android.app.Activity) return@onUi
             if (context.isFinishing) return@onUi
@@ -233,17 +325,23 @@ object UpdateChecker {
                     Intent(context, UpdateService::class.java)
                         .putExtra(UpdateService.EXTRA_NAME, latestName)
                         .putExtra(UpdateService.EXTRA_URL, apkUrl)
+                        .putExtra(UpdateService.EXTRA_CODE, latestCode)
                 )
                 CrashLogger.writeLog(context, "UPDATE: atualizacao automatica iniciada $latestName")
                 Telemetry.log(context, "UPDATE automatico iniciado $latestName")
             } catch (t: Throwable) {
                 CrashLogger.writeLog(context, "UPDATE: auto start falhou $t")
-                postUpdateNotification(context, latestName, apkUrl)
+                postUpdateNotification(context, latestName, apkUrl, latestCode)
             }
         }
     }
 
-    private fun postUpdateNotification(context: Context, latestName: String, apkUrl: String) {
+    private fun postUpdateNotification(
+        context: Context,
+        latestName: String,
+        apkUrl: String,
+        latestCode: Long
+    ) {
         try {
             if (Build.VERSION.SDK_INT >= 33 &&
                 ContextCompat.checkSelfPermission(
@@ -258,7 +356,8 @@ object UpdateChecker {
                 context, 0,
                 Intent(context, UpdateService::class.java)
                     .putExtra(UpdateService.EXTRA_NAME, latestName)
-                    .putExtra(UpdateService.EXTRA_URL, apkUrl),
+                    .putExtra(UpdateService.EXTRA_URL, apkUrl)
+                    .putExtra(UpdateService.EXTRA_CODE, latestCode),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

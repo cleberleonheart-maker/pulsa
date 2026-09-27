@@ -1,5 +1,4 @@
 package com.pulsa.player.dj
-import com.pulsa.player.core.ThreadPool
 
 import android.content.Context
 import android.content.Intent
@@ -32,11 +31,8 @@ class DjCommandListener(
     private val mainHandler = Handler(Looper.getMainLooper())
     private var lastStartMs = 0L
     private val minGapMs = 3000L
-    private var retryMs = FIRST_RETRY_MS
+    private val backoff = MicBackoff(FIRST_RETRY_MS, MAX_RETRY_MS)
     private val retryRunnable = Runnable { restart() }
-
-    @Volatile
-    private var emptyCount = 0
 
     init {
         recognizer?.setRecognitionListener(object : RecognitionListener {
@@ -55,12 +51,7 @@ class DjCommandListener(
                     SpeechRecognizer.ERROR_NO_MATCH,
                     SpeechRecognizer.ERROR_SPEECH_TIMEOUT,
                     SpeechRecognizer.ERROR_RECOGNIZER_BUSY,
-                    SpeechRecognizer.ERROR_CLIENT -> {
-                        emptyCount++
-                        mainHandler.removeCallbacks(retryRunnable)
-                        mainHandler.postDelayed(retryRunnable, retryMs)
-                        retryMs = (retryMs * 2).coerceAtMost(MAX_RETRY_MS)
-                    }
+                    SpeechRecognizer.ERROR_CLIENT -> scheduleRetry()
                     // Erros fatais: para de ouvir e avisa a UI uma unica vez
                     else -> {
                         listening = false
@@ -82,20 +73,37 @@ class DjCommandListener(
                     ?.trim()
                     ?: ""
                 if (text.isNotEmpty()) {
-                    emptyCount = 0
-                    retryMs = FIRST_RETRY_MS
+                    resetBackoff()
                     onResult(text)
-                } else {
-                    emptyCount++
+                    // Ouviu mesmo: reabre sem espera, senao o comando seguinte
+                    // entraria na fila e o microfone ficaria mudo por segundos.
+                    restart()
+                    return
                 }
-                if (listening) {
-                    ThreadPool.onUi { restart() }
-                }
+                // Nada reconhecido: e o caso comum com musica tocando. O
+                // backoff precisa valer aqui tambem, nao so no onError — senao o
+                // ciclo de ~3s volta (e era o que o usuario viu na 5.9.1).
+                scheduleRetry()
             }
 
             override fun onPartialResults(partialResults: Bundle?) {}
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
+    }
+
+    /**
+     * Reabre o microfone depois de um silencio/erro, dobrando a espera a cada
+     * tentativa ate [MAX_RETRY_MS]. Vale tanto para onError quanto para
+     * onResults vazio.
+     */
+    private fun scheduleRetry() {
+        if (!listening) return
+        mainHandler.removeCallbacks(retryRunnable)
+        mainHandler.postDelayed(retryRunnable, backoff.next())
+    }
+
+    private fun resetBackoff() {
+        backoff.reset()
     }
 
     fun start() {
@@ -105,15 +113,13 @@ class DjCommandListener(
         }
         reportedUnsupported = false
         listening = true
-        emptyCount = 0
-        retryMs = FIRST_RETRY_MS
+        resetBackoff()
         startListening()
     }
 
     fun stop() {
         listening = false
-        emptyCount = 0
-        retryMs = FIRST_RETRY_MS
+        resetBackoff()
         mainHandler.removeCallbacks(retryRunnable)
         runCatching { recognizer?.cancel() }
     }

@@ -20,6 +20,7 @@ class UpdateService : Service() {
         const val EXTRA_NAME = "name"
         const val EXTRA_URL = "url"
         const val EXTRA_APK = "apk_path"
+        const val EXTRA_CODE = "code"
         const val CHANNEL_ID = "updates"
         const val NOTIF_ANNOUNCE = 9000
         const val NOTIF_PROGRESS = 9001
@@ -54,9 +55,10 @@ class UpdateService : Service() {
         }
         val name = intent?.getStringExtra(EXTRA_NAME) ?: "latest"
         val url = intent?.getStringExtra(EXTRA_URL) ?: ""
+        val code = intent?.getLongExtra(EXTRA_CODE, 0L) ?: 0L
         Thread {
             try {
-                download(name, url)
+                download(name, url, code)
             } finally {
                 stopSelf()
             }
@@ -64,7 +66,7 @@ class UpdateService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun download(name: String, url: String) {
+    private fun download(name: String, url: String, code: Long) {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannel(this)
         if (Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) {
@@ -97,15 +99,21 @@ class UpdateService : Service() {
         if (target != null) {
             nm.cancel(NOTIF_PROGRESS)
             CrashLogger.writeLog(this, "UPDATE: servico baixou ${target.absolutePath}")
-            UpdateChecker.markAttempted(this, name)
-            UpdateChecker.installApk(applicationContext, target)
+            // Instala primeiro e so entao marca: se a instalacao nao sair, o
+            // UpdateChecker precisa poder re-oferecer a versao.
+            val started = runCatching {
+                UpdateChecker.installApk(applicationContext, target)
+            }.isSuccess
+            if (started) UpdateChecker.markAttempted(this, name, code)
+            else UpdateChecker.clearAttempted(this)
         } else {
             UpdateChecker.clearAttempted(this)
             val pi = PendingIntent.getService(
                 this, 1,
                 Intent(this, UpdateService::class.java)
                     .putExtra(EXTRA_NAME, name)
-                    .putExtra(EXTRA_URL, url),
+                    .putExtra(EXTRA_URL, url)
+                    .putExtra(EXTRA_CODE, code),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val notif = NotificationCompat.Builder(this, CHANNEL_ID)

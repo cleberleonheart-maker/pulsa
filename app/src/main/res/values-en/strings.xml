@@ -30,17 +30,44 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.9.2):
+    <string name="changelog">What is new (5.9.3):
+→ THE APP NO LONGER STICKS ON VIRGIN\'S SPLASH
+• Hands-free turned the microphone on before becoming a foreground service. On Android 12+ that
+  kills the process: Pulsa would open, die and come back to the same screen. It now goes
+  foreground first, before any decision.
+
+→ THE UPDATE SHOWS UP AGAIN
+• If the download finished but the install did not (system blocked it, you cancelled), Pulsa
+  thought it had already offered that version and never offered it again. An attempt now counts
+  for 12 hours, and a version that is really installed never repeats.
+
+→ NO 3-SECOND MICROPHONE CYCLE
+• The most common case was not an error, it was silence: with music playing and nobody talking,
+  recognition came back empty and the microphone reopened right away. Silence now waits too, and
+  the wait doubles each attempt.
+
+★ FROM 5.9.2
 → VIRGIN NAMES THE SONG CORRECTLY NOW
 • She announced every song backwards: "Now playing: Charlie Brown Jr., by Evidências".
   Title and artist were swapped in 9 places. Now it is "Evidências, by Charlie Brown Jr.".
 
 → THE HOUR ANNOUNCEMENT NOW PLAYS
-• When the Virgin said the time and "let's start with this song", nothing played at all.
+• When the Virgin said the time and "let\'s start with this song", nothing played at all.
   Now, if nothing is playing, she actually starts the song and only then says which one it is.
 
 ★ FROM 5.9.1
 → MICROPHONE STOPPED
+• Hands-free no longer opens and closes the microphone every 3 seconds while the music plays.
+  When you say nothing, Virginia waits a little longer each time before trying again; when you
+  do speak, she is back right away.
+
+→ VIRGINIA RECOMMENDS AGAIN
+• The recommend button on Home failed with "I can\'t think of anything" even with the AI on.
+  Now, if the AI does not answer (network, quota, key), she uses the offline suggestion instead
+  of giving up.
+
+★ FROM 5.9.0
+→ NEW IDENTITY: AURORA NEBULA
 • Pulsa is now violet, pink and teal. The angled chassis stays.
 • None of this is decoration for its own sake: 111 colors that used to be loose numbers now have names.
   Changing an element\'s color is editing a token, not hunting hex through 64 files.

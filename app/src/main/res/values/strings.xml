@@ -32,7 +32,23 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.9.2):
+    <string name="changelog">Novidades desta versão (5.9.3):
+→ O APP NÃO TRAVA MAIS NA TELA DA VIRGIN
+• A mão livre ligava o microfone antes de virar serviço de primeiro plano. No Android 12+ isso
+  mata o processo: o Pulsa abria, morria e voltava para a mesma tela. Agora ele entra em primeiro
+  plano na hora, antes de qualquer decisão.
+
+→ A ATUALIZAÇÃO VOLTA A APARECER
+• Se o download terminava mas a instalação não saía (sistema bloqueou, você cancelou), o Pulsa
+  achava que já tinha oferecido aquela versão e nunca mais oferecia. Agora a tentativa vale por
+  12 horas, e versão instalada de verdade nunca mais repete.
+
+→ MICROFONE SEM O CICLO DE 3 SEGUNDOS
+• O caso mais comum não era erro, era silêncio: com música tocando e ninguém falando, o
+  reconhecimento voltava vazio e o microfone reabria na hora. Agora o silêncio também espera, e a
+  espera dobra a cada tentativa.
+
+★ DA 5.9.2
 → VIRGIN FALA A MÚSICA CERTA AGORA
 • Ela anunciava toda música ao contrário: "Tocando agora: Charlie Brown Jr., de Evidências".
   O nome e o artista estavam trocados em 9 lugares. Agora é "Evidências, de Charlie Brown Jr.".
