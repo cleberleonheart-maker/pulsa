@@ -758,7 +758,7 @@ class DjSession(
         host.refreshMicUi(true, false)
         Playback.setMicListening(true)
         commandListener?.destroy()
-        commandListener = DjCommandListener(activity) { handleCommand(it) }
+        commandListener = DjCommandListener(activity, onResult = { handleCommand(it) })
         commandListener?.start()
         speak(activity.getString(R.string.dj_mic_hint))
     }
