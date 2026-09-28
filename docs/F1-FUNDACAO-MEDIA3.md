@@ -253,7 +253,7 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 >   + timeouts) — streams do streamtheworld/icecast acabam com UA por baixo do pano.
 > - `.m3u8` roda porque `media3-exoplayer-hls` já existia no `build.gradle.kts` (E3); datasource novo cobre
 >   redirect http→https das URLs do radio-browser.
-> - **Reteste no aparelho:** tocar estação → fechar o app → música segue e a notificação mostra o nome da estação;
+> - **Reteste no aparelho (28/09, `5764e1e`): CONFIRMADO — rádio OK.** Tocar estação → fechar o app → música segue e a notificação mostra o nome da estação;
 >   trocar de estação re-conecta; `.m3u8` (Antena 1) toca; erro de stream mostra "Erro" + toast em vez de travar.
 > - **Encerrar na mão (fechar de verdade, swipe) também passou a continuar (7b9f5f1):**
 >   o portão do foreground virou `playingLike` (`playWhenReady` e `READY`/`BUFFERING`) — live stream cai para
@@ -299,6 +299,11 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 > - Nenhuma dependência nova: `media3-common` já traz `Player.setVideoSurfaceView/getVideoSize`; sem `media3-ui`,
 >   sem `media3-extractor` (legendas SRT/VTT ficaram de fora do corte inicial — próximo passo).
 > - Validado local: compile do conjunto explícito (16 arquivos) + **62 testes DJ OK**. PR #1, `feature/media3`.
+> - **Validado no aparelho em 28/09 com `5764e1e`:** música toca, rádio OK, vídeo OK e **8D OK**
+>   (o pan LFO sobreviveu à troca de `audioSessionId` — a armadilha nº1 desta doc). O defeito do
+>   `DefaultDataSource` acima foi encontrado exatamente assim. **Falta do checklist do E0:** EQ
+>   (presets, automático por gênero, custom 5 bandas, karaokê), crossfade, A/B, sleep mix, dance,
+>   duck da Virgin, widget, e o teste de morte (tocar → force-stop → reabrir).
 
 **E6 · MediaLibraryService (1–2 dias)**
 - `playback/PulsaLibraryService : MediaLibraryService` publicando a árvore (raiz "Pulsa", filhos "Músicas", "Rádio", "Vídeos", "Playlists", "Favoritas", "Adicionadas recentemente").
