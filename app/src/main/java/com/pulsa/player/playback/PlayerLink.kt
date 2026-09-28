@@ -7,9 +7,9 @@ import com.pulsa.player.model.Song
  * F1/E2 — a ponte entre a fachada [Playback] e o motor de música.
  *
  * É o "PlayerHolder" do plano: uma superfície só, com o que a fachada precisa, para que
- * **trocar a conexão não seja trocar o motor**. Hoje a implementação é o `MediaPlayer`
- * legado dentro de [PlaybackService]; no E3 entra a outra implementação, sobre o
- * `MediaController`, e nem a fachada nem os 29 consumidores de [Playback] mudam.
+ * **trocar a conexão não seja trocar o motor**. A implementação atual é o `ExoPlayer`
+ * dentro de [PlaybackService] (E3a); nem a fachada nem os 29 consumidores de [Playback]
+ * mudam.
  *
  * Regra do passo: a fachada fala com o motor **por aqui**, e nunca mais com o `Service`
  * diretamente. Quem cuida de `EQ`, 8D, crossfade, A/B e do `audioSessionId` continua sendo o
@@ -51,12 +51,13 @@ interface PlayerLink {
 }
 
 /**
- * E2 — implementação legada: o motor continua sendo o `android.media.MediaPlayer` do
- * [PlaybackService]. Tudo aqui é repasse 1:1 dos membros públicos do serviço; nenhum
- * `private set` é violado porque só são lidos.
+ * E3a — implementação que roda o motor sobre o `ExoPlayer` dentro de [PlaybackService].
+ * O `service` continua sendo um `Service` comum com `MediaSessionCompat`; a troca do motor
+ * aconteceu sem mudar o contrato. Tudo aqui é repasse 1:1 dos membros públicos do serviço;
+ * nenhum `private set` é violado porque só são lidos.
  *
- * No E3 esta classe é substituída pela que fala com o `MediaController`, que é a parte
- * que faz a música passar para o `ExoPlayer`.
+ * No E3b esta classe é substituída pela que fala com o `MediaController`, que é a parte
+ * que remove a `MediaSessionCompat` e usa a sessão do Media3.
  */
 class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
 

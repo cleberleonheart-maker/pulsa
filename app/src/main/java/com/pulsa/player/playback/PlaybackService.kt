@@ -8,9 +8,8 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.media.AudioAttributes
 import android.media.AudioManager
-import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.Handler
@@ -22,6 +21,14 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
 import com.pulsa.player.data.ArtLoader
@@ -37,8 +44,10 @@ import com.pulsa.player.audio.MusicVisualizer
 import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
+import java.io.File
 import kotlin.random.Random
 
+@OptIn(UnstableApi::class)
 class PlaybackService : Service() {
 
     companion object {
@@ -72,7 +81,8 @@ class PlaybackService : Service() {
     var positionMs: Long = 0L
         private set
 
-    private var mp: MediaPlayer? = null
+    private var player: ExoPlayer? = null
+    private var awaitingReady = false
     private var playerLink: ServicePlayerLink? = null
     private lateinit var session: MediaSessionCompat
     private lateinit var notificationManager: NotificationManager
@@ -93,7 +103,6 @@ class PlaybackService : Service() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val fadeHandler = Handler(Looper.getMainLooper())
     private val sleepHandler = Handler(Looper.getMainLooper())
-    private var fadeOutRunnable: Runnable? = null
     private var fadeInRunnable: Runnable? = null
     private var sleepMix = false
     private var sleepFadeRunnable: Runnable? = null
@@ -118,7 +127,7 @@ class PlaybackService : Service() {
                     if (micListening) {
                         // Reconhecedor de voz da Virgin ativo: abaixa a musica em vez de pausar.
                         micDucked = true
-                        runCatching { mp?.setVolume(0.35f, 0.35f) }
+                        runCatching { player?.setVolume(0.35f) }
                         mainHandler.removeCallbacks(panRunnable)
                     } else if (isPlaying) {
                         pauseOnFocusLoss = true
@@ -127,7 +136,7 @@ class PlaybackService : Service() {
                 }
                 AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                     ducked = true
-                    runCatching { mp?.setVolume(0.25f, 0.25f) }
+                    runCatching { player?.setVolume(0.25f) }
                     mainHandler.removeCallbacks(panRunnable)
                 }
                 AudioManager.AUDIOFOCUS_GAIN -> {
@@ -163,16 +172,16 @@ class PlaybackService : Service() {
 
     private fun restoreVolume() {
         if (ducked) {
-            runCatching { mp?.setVolume(0.25f, 0.25f) }
+            runCatching { player?.setVolume(0.25f) }
             return
         }
         if (micListening) {
-            runCatching { mp?.setVolume(0.35f, 0.35f) }
+            runCatching { player?.setVolume(0.35f) }
             return
         }
         updateEightD()
         if (!Settings.audio8d(this) || !isPlaying) {
-            runCatching { mp?.setVolume(1f, 1f) }
+            runCatching { player?.setVolume(1f) }
         }
     }
 
@@ -184,7 +193,7 @@ class PlaybackService : Service() {
             if (on) {
                 if (isPlaying) {
                     micDucked = true
-                    runCatching { mp?.setVolume(0.35f, 0.35f) }
+                    runCatching { player?.setVolume(0.35f) }
                     mainHandler.removeCallbacks(panRunnable)
                 }
             } else if (micDucked) {
@@ -197,27 +206,27 @@ class PlaybackService : Service() {
     private var panAngle = 0.0
     private val panRunnable = object : Runnable {
         override fun run() {
-            if (fadeOutRunnable != null || fadeInRunnable != null) {
+            if (fadeInRunnable != null) {
                 mainHandler.postDelayed(this, PAN_STEP_MS)
                 return
             }
-            val player = mp
-            if (player == null || !player.isPlaying) return
+            val p = player ?: return
+            if (!p.isPlaying) return
             panAngle = (panAngle + PAN_ANGLE_STEP) % (2.0 * Math.PI)
             val pan = (Math.sin(panAngle) + 1.0) / 2.0
-            val left = Math.sqrt(1.0 - pan).toFloat()
-            val right = Math.sqrt(pan).toFloat()
-            runCatching { player.setVolume(left, right) }
+            // E3: sem volume estéreo no ExoPlayer, o 8D vira um "fôlego" de volume
+            // (mesma curva e período do pan LR), não a posição em 2 canais.
+            val volume = (0.22f + 0.78f * pan.toFloat()).coerceIn(0f, 1f)
+            runCatching { p.setVolume(volume) }
             mainHandler.postDelayed(this, PAN_STEP_MS)
         }
     }
 
     private fun crossfadeMs(): Int = Settings.crossfadeMs(Settings.crossfade(this))
-    private fun isCrossfadeOn(): Boolean = crossfadeMs() > 0
 
     val currentSong: Song? get() = queue.getOrNull(index.coerceAtLeast(0))
-    val isPlaying: Boolean get() = mp?.isPlaying == true
-    val audioSessionId: Int get() = mp?.audioSessionId ?: 0
+    val isPlaying: Boolean get() = player?.isPlaying == true
+    val audioSessionId: Int get() = player?.audioSessionId ?: 0
 
     private fun currentSongGenre(): String? =
         runCatching { currentSong?.id?.let { Library.genreOf(applicationContext, it) } }.getOrNull()
@@ -261,9 +270,12 @@ class PlaybackService : Service() {
 
     override fun onDestroy() {
         stopEightD()
-        fadeOutRunnable?.let { fadeHandler.removeCallbacks(it) }
         fadeInRunnable?.let { fadeHandler.removeCallbacks(it) }
-        mp?.release()
+        player?.let {
+            it.removeListener(playerListener)
+            it.release()
+        }
+        player = null
         AudioFx.release()
         MusicVisualizer.detach()
         session.release()
@@ -272,31 +284,35 @@ class PlaybackService : Service() {
     }
 
     fun refreshFx() {
-        mp?.let { AudioFx.apply(applicationContext, it.audioSessionId, currentSongGenre()) }
+        player?.let {
+            if (it.audioSessionId > 0) {
+                AudioFx.apply(applicationContext, it.audioSessionId, currentSongGenre())
+            }
+        }
         updateEightD()
     }
 
     private fun applyDanceParams() {
-        mp?.let { p ->
+        player?.let { p ->
             runCatching {
-                p.playbackParams = p.playbackParams
-                    .setSpeed(Settings.danceSpeed(this))
-                    .setPitch(Settings.dancePitch(this))
+                p.setPlaybackParameters(
+                    PlaybackParameters(Settings.danceSpeed(this), Settings.dancePitch(this))
+                )
             }
         }
     }
 
     fun applyDanceParamsForRefresh() {
         val playing = isPlaying
-        runCatching { mp?.pause() }
+        player?.pause()
         applyDanceParams()
-        if (playing) runCatching { mp?.start() }
+        if (playing) player?.play()
     }
 
     private fun updateEightD() {
         mainHandler.removeCallbacks(panRunnable)
         if (!Settings.audio8d(this) || !isPlaying) return
-        runCatching { mp?.setVolume(1f, 1f) }
+        runCatching { player?.setVolume(1f) }
         panAngle = 0.0
         mainHandler.post(panRunnable)
     }
@@ -310,7 +326,7 @@ class PlaybackService : Service() {
 
     private fun stopEightD() {
         mainHandler.removeCallbacks(panRunnable)
-        runCatching { mp?.setVolume(1f, 1f) }
+        runCatching { player?.setVolume(1f) }
     }
 
     fun setShuffle(value: Boolean) {
@@ -333,7 +349,7 @@ class PlaybackService : Service() {
         sleepMix = on
         if (!on) {
             removeSleepFade()
-            runCatching { mp?.setVolume(1f, 1f) }
+            runCatching { player?.setVolume(1f) }
         }
     }
 
@@ -362,17 +378,9 @@ class PlaybackService : Service() {
         abB = -1L
     }
 
-    private fun currentPosMs(): Long = try {
-        mp?.currentPosition?.toLong() ?: 0L
-    } catch (e: Exception) {
-        0L
-    }
+    private fun currentPosMs(): Long = player?.currentPosition ?: 0L
 
-    private fun durationMs(): Long = try {
-        mp?.duration?.toLong() ?: 0L
-    } catch (e: Exception) {
-        0L
-    }
+    private fun durationMs(): Long = player?.duration?.let { if (it > 0L) it else 0L } ?: 0L
 
     private fun removeSleepFade() {
         sleepFadeRunnable?.let { sleepHandler.removeCallbacks(it) }
@@ -382,21 +390,21 @@ class PlaybackService : Service() {
     /** Diminui o volume lentamente e pausa quando o mix dormir completa o set. */
     private fun startSleepFade() {
         removeSleepFade()
-        val player = mp ?: return
-        if (player !== mp) return
+        val p = player ?: return
+        if (p !== player) return
         val stepMs = 900L
         var step = 0
         val r = object : Runnable {
             override fun run() {
                 step++
                 val volume = 1f - step.toFloat() / FADE_STEPS
-                runCatching { player.setVolume(volume.coerceAtLeast(0f), volume.coerceAtLeast(0f)) }
+                runCatching { p.setVolume(volume.coerceAtLeast(0f)) }
                 if (step >= FADE_STEPS) {
                     sleepFadeRunnable = null
-                    if (player !== mp) return
+                    if (p !== player) return
                     sleepMix = false
                     pause()
-                    runCatching { player.setVolume(1f, 1f) }
+                    runCatching { p.setVolume(1f) }
                 } else {
                     sleepHandler.postDelayed(this, stepMs)
                 }
@@ -450,8 +458,8 @@ class PlaybackService : Service() {
     }
 
     fun play() {
-        val p = mp ?: return
-        if (!p.isPlaying) p.start()
+        val p = player ?: return
+        if (!p.isPlaying) p.play()
         requestAudioFocus()
         startEightD()
         scheduleTick()
@@ -460,7 +468,7 @@ class PlaybackService : Service() {
     }
 
     fun pause() {
-        val p = mp ?: return
+        val p = player ?: return
         if (p.isPlaying) p.pause()
         saveResumeState()
         if (!pauseOnFocusLoss) abandonAudioFocus()
@@ -470,21 +478,19 @@ class PlaybackService : Service() {
     }
 
     fun seekTo(ms: Long) {
-        mp?.let { p ->
-            try {
-                p.seekTo(ms.toInt())
-            } catch (e: Exception) {
-            }
+        try {
+            player?.seekTo(ms)
             emitProgress()
+        } catch (e: Exception) {
         }
     }
 
     fun next() = advanceIndex(1)
 
     fun prev() {
-        val pos = mp?.currentPosition ?: 0
+        val pos = player?.currentPosition ?: 0
         if (pos > 3000) {
-            mp?.seekTo(0)
+            player?.seekTo(0)
             emitProgress()
             return
         }
@@ -509,43 +515,60 @@ class PlaybackService : Service() {
         positionMs = 0L
         resetAbLoop()
         try {
-            val old = mp
-            if (old != null) {
-                old.setOnPreparedListener(null)
-                old.setOnCompletionListener(null)
-                old.setOnErrorListener(null)
-            }
-            if (isCrossfadeOn() && old != null && old.isPlaying) {
-                fadeOut(old, crossfadeMs())
-            } else {
-                old?.release()
-            }
-            val player = MediaPlayer()
-            try {
-                player.setAudioAttributes(
+            if (song.path.isBlank()) throw IllegalStateException("sem arquivo")
+            val p = player ?: ExoPlayer.Builder(this)
+                .setAudioAttributes(
                     AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
+                        .setUsage(C.USAGE_MEDIA)
+                        .setContentType(C.CONTENT_TYPE_MUSIC)
+                        .build(),
+                    false
                 )
-                player.setDataSource(song.path)
-                player.setOnPreparedListener { onPrepared(player) }
-                player.setOnCompletionListener { onTrackEnded() }
-                player.setOnErrorListener { _, _, _ -> onTrackError(); true }
-                player.prepareAsync()
-            } catch (e: Exception) {
-                runCatching { player.release() }
-                throw e
-            }
-            mp = player
-            AudioFx.apply(applicationContext, player.audioSessionId, currentSongGenre())
-            MusicVisualizer.attach(player.audioSessionId)
+                .build()
+                .also {
+                    it.addListener(playerListener)
+                    player = it
+                }
+            awaitingReady = true
+            p.setPlayWhenReady(false)
+            p.setMediaItems(
+                queue.map { it -> MediaItem.fromUri(Uri.fromFile(File(it.path))) },
+                index.coerceIn(0, queue.lastIndex),
+                0L
+            )
+            p.prepare()
             ensureForeground(song)
             publishMetadata(song)
             LastFm.nowPlaying(applicationContext, song, song.durationMs)
             Playback.notifySong(song, index)
             announceInBackground(song)
         } catch (e: Exception) {
+            onTrackError()
+        }
+    }
+
+    /** Religou os efeitos na sessão de áudio do ExoPlayer (estável por instância). */
+    private fun attachEffects() {
+        val p = player ?: return
+        val sessionId = p.audioSessionId
+        if (sessionId <= 0) return
+        AudioFx.apply(applicationContext, sessionId, currentSongGenre())
+        MusicVisualizer.attach(sessionId)
+    }
+
+    private val playerListener = object : Player.Listener {
+        override fun onAudioSessionIdChanged(audioSessionId: Int) {
+            attachEffects()
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            when (playbackState) {
+                Player.STATE_READY -> onPlayerReady()
+                Player.STATE_ENDED -> onTrackEnded()
+            }
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
             onTrackError()
         }
     }
@@ -592,27 +615,17 @@ class PlaybackService : Service() {
         }
     }
 
-    private fun onPrepared(player: MediaPlayer) {
-        if (player !== mp) return
+    private fun onPlayerReady() {
+        if (!awaitingReady) return
+        awaitingReady = false
+        val p = player ?: return
         consecutiveErrors = 0
-        restoreSavedPosition(player)
+        restoreSavedPosition(p)
         val fadeMs = crossfadeMs()
-        if (fadeMs > 0 && player != null) {
-            runCatching { player.setVolume(0f, 0f) }
-            try {
-                player.start()
-            } catch (e: Exception) {
-            }
-            fadeIn(player, fadeMs)
-        } else {
-            player?.let {
-                try {
-                    it.setVolume(1f, 1f)
-                    it.start()
-                } catch (e: Exception) {
-                }
-            }
-        }
+        attachEffects()
+        runCatching { p.setVolume(if (fadeMs > 0) 0f else 1f) }
+        runCatching { p.play() }
+        if (fadeMs > 0) fadeIn(p, fadeMs)
         requestAudioFocus()
         publishState()
         scheduleTick()
@@ -620,44 +633,18 @@ class PlaybackService : Service() {
         applyDanceParams()
     }
 
-    private fun restoreSavedPosition(player: MediaPlayer) {
+    private fun restoreSavedPosition(p: ExoPlayer) {
         if (!Settings.resumeOn(this)) return
         val song = currentSong ?: return
         if (song.id != Settings.resumeSongId(this)) return
         val savedPos = Settings.resumePosition(this)
-        val dur = try {
-            player.duration.toLong()
-        } catch (e: Exception) {
-            0L
-        }
-        if (savedPos in 5001L..(dur - 10000)) {
-            runCatching { player.seekTo(savedPos.toInt()) }
+        val dur = p.duration
+        if (dur > 0L && savedPos in 5001L..(dur - 10000)) {
+            runCatching { p.seekTo(savedPos) }
         }
     }
 
-    private fun fadeOut(player: MediaPlayer, ms: Int) {
-        fadeOutRunnable?.let { fadeHandler.removeCallbacks(it) }
-        fadeOutRunnable = null
-        val stepMs = ms / FADE_STEPS
-        var step = 0
-        val r = object : Runnable {
-            override fun run() {
-                step++
-                val volume = 1f - step.toFloat() / FADE_STEPS
-                runCatching { player.setVolume(volume.coerceAtLeast(0f), volume.coerceAtLeast(0f)) }
-                if (step >= FADE_STEPS) {
-                    runCatching { player.release() }
-                    fadeOutRunnable = null
-                } else {
-                    fadeHandler.postDelayed(this, stepMs.toLong())
-                }
-            }
-        }
-        fadeOutRunnable = r
-        fadeHandler.post(r)
-    }
-
-    private fun fadeIn(player: MediaPlayer, ms: Int) {
+    private fun fadeIn(p: ExoPlayer, ms: Int) {
         fadeInRunnable?.let { fadeHandler.removeCallbacks(it) }
         fadeInRunnable = null
         val stepMs = ms / FADE_STEPS
@@ -666,7 +653,7 @@ class PlaybackService : Service() {
             override fun run() {
                 step++
                 val volume = step.toFloat() / FADE_STEPS
-                runCatching { player.setVolume(volume.coerceAtMost(1f), volume.coerceAtMost(1f)) }
+                runCatching { p.setVolume(volume.coerceAtMost(1f)) }
                 if (step < FADE_STEPS) {
                     fadeHandler.postDelayed(this, stepMs.toLong())
                 } else {
@@ -685,8 +672,8 @@ class PlaybackService : Service() {
         if (SleepTimer.isActive() && SleepTimer.isEndOfTrack()) return
         if (abActive) {
             try {
-                mp?.seekTo(abA.toInt())
-                mp?.start()
+                player?.seekTo(abA)
+                player?.play()
                 positionMs = abA
                 emitProgress()
             } catch (e: Exception) {
@@ -698,8 +685,8 @@ class PlaybackService : Service() {
         }
         if (repeatOne) {
             try {
-                mp?.seekTo(0)
-                mp?.start()
+                player?.seekTo(0)
+                player?.play()
                 positionMs = 0L
                 emitProgress()
             } catch (e: Exception) {
@@ -719,7 +706,7 @@ class PlaybackService : Service() {
             stopEightD()
             pause()
             try {
-                mp?.seekTo(0)
+                player?.seekTo(0)
             } catch (e: Exception) {
             }
         }
@@ -752,17 +739,9 @@ class PlaybackService : Service() {
     }
 
     private fun emitProgress() {
-        val p = mp ?: return
-        val pos = try {
-            p.currentPosition.toLong()
-        } catch (e: Exception) {
-            0L
-        }
-        val dur = try {
-            p.duration.toLong().coerceAtLeast(0L)
-        } catch (e: Exception) {
-            0L
-        }
+        val p = player ?: return
+        val pos = p.currentPosition
+        val dur = p.duration.let { if (it > 0L) it else 0L }
         positionMs = pos
         Playback.notifyProgress(pos, dur)
         if (abActive && isPlaying && dur > 0L && abB <= dur && pos >= abB) {
@@ -778,11 +757,7 @@ class PlaybackService : Service() {
     private fun saveResumeState() {
         val song = currentSong ?: return
         if (!Settings.resumeOn(this)) return
-        val pos = try {
-            (mp?.currentPosition ?: 0).toLong()
-        } catch (e: Exception) {
-            0L
-        }
+        val pos = player?.currentPosition ?: 0L
         if (pos > 0) {
             Settings.setResumeState(this, song.id, pos, song.title, song.artist)
         }
@@ -798,11 +773,7 @@ class PlaybackService : Service() {
         if (!Settings.lastFmKey(this).isNullOrBlank() &&
             Settings.lastFmUser(this).isNotBlank() && Settings.lastFmSession(this).isNotBlank()
         ) {
-            val dur = try {
-                (mp?.duration ?: 0).toLong()
-            } catch (e: Exception) {
-                0L
-            }
+            val dur = player?.duration?.let { if (it > 0L) it else 0L } ?: 0L
             if (dur >= 30000 && positionMs >= dur * 0.5) {
                 LastFm.scrobble(applicationContext, song, dur)
             }
@@ -823,7 +794,7 @@ class PlaybackService : Service() {
 
     private fun updateSessionState() {
         val state = if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
-        val pos = (mp?.currentPosition ?: 0).toLong()
+        val pos = player?.currentPosition ?: 0L
         session.setPlaybackState(
             PlaybackStateCompat.Builder()
                 .setActions(
