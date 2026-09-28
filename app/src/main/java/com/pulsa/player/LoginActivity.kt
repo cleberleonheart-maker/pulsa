@@ -25,7 +25,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.pulsa.player.core.Account
-import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.sync.ConfirmMail
 import com.pulsa.player.core.Settings
@@ -35,6 +34,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.security.SecureRandom
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class LoginActivity : AppCompatActivity() {
 
@@ -209,6 +210,7 @@ class LoginActivity : AppCompatActivity() {
         }
         btn.visibility = View.VISIBLE
         divider.visibility = View.VISIBLE
+        btn.isEnabled = true
         btn.setSize(SignInButton.SIZE_WIDE)
         btn.setOnClickListener {
             val playOk = GoogleApiAvailability.getInstance()
@@ -259,10 +261,31 @@ class LoginActivity : AppCompatActivity() {
         verifyGoogleToken(idToken)
     }
 
+    /**
+     * Criado sob demanda: a maioria das telas de login nem toca no Google, e a `LoginActivity` não
+     * é `singleTask` (o manifest), então abrir duas vezes criaria duas instâncias — cada uma com
+     * sua thread. Como só o login com Google usa, o executor nasce no primeiro uso.
+     */
+    private val loginExecutor: ExecutorService by lazy { Executors.newSingleThreadExecutor() }
+
+    /**
+     * A verificação do token NÃO pode esperar a fila do `ThreadPool` (3 threads, e no boot o
+     * `UpdateChecker`/`Blacklist` ocupam as três com rede). Com a task presa na fila, a tela
+     * ficava parada para sempre depois de escolher o e-mail — sem erro, sem retorno. Login é
+     * caminho crítico: executor dedicado, e a tela mostra que está verificando.
+     */
     private fun verifyGoogleToken(idToken: String) {
         val clientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
         val main = Handler(Looper.getMainLooper())
-        ThreadPool.post {
+        main.post { showVerifying(true) }
+        loginExecutor.execute {
+            fun fail(reason: String) {
+                Telemetry.log(this@LoginActivity, "LOGIN google: $reason")
+                main.post {
+                    showVerifying(false)
+                    showError(getString(R.string.login_google_error))
+                }
+            }
             val email = try {
                 val url = "https://oauth2.googleapis.com/tokeninfo?id_token=" +
                     URLEncoder.encode(idToken, "UTF-8")
@@ -270,27 +293,60 @@ class LoginActivity : AppCompatActivity() {
                 conn.requestMethod = "GET"
                 conn.connectTimeout = 8000
                 conn.readTimeout = 8000
-                val text = conn.inputStream.bufferedReader().use { it.readText() }
-                conn.inputStream.close()
-                val json = JSONObject(text)
+                // O endpoint responde 400 com o corpo do erro em `errorStream`: ler
+                // `inputStream` diretamente lançaria e o token inválido viraria "sem internet".
+                val stream = if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream
+                val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                conn.disconnect()
+                val json = try {
+                    JSONObject(text)
+                } catch (t: Throwable) {
+                    fail("tokeninfo resposta ilegivel http=${conn.responseCode} corpo=${text.take(200)}")
+                    return@execute
+                }
                 val aud = json.optString("aud", "")
                 val verified = json.optString("email_verified", "false")
                 if (aud != clientId || !verified.equals("true", true)) {
-                    Telemetry.log(this@LoginActivity, "LOGIN google token invalido aud=$aud verified=$verified")
-                    main.post { showError(getString(R.string.login_google_error)) }
-                    return@post
+                    fail("token invalido aud=$aud verified=$verified")
+                    return@execute
                 }
                 json.optString("email", "")
             } catch (t: Throwable) {
                 Telemetry.log(this@LoginActivity, "LOGIN google verificacao falhou: ${t.message}")
-                null
+                main.post {
+                    showVerifying(false)
+                    showError(getString(R.string.login_google_network_error))
+                }
+                return@execute
             }
             if (email.isNullOrEmpty()) {
-                main.post { showError(getString(R.string.login_google_error)) }
-                return@post
+                fail("token sem email")
+                return@execute
             }
-            main.post { loginWithGoogle(email) }
+            main.post {
+                showVerifying(false)
+                loginWithGoogle(email)
+            }
         }
+    }
+
+    /**
+     * Feedback visível durante a verificação: sem isso a tela fica parada e não dá para saber se
+     * travou ou se está trabalhando. O botão do Google some enquanto verifica (não dá para
+     * disparar dois logins) e uma linha de status entra no lugar.
+     */
+    private fun showVerifying(on: Boolean) {
+        if (isFinishing || isDestroyed) return
+        val btn = findViewById<View>(R.id.btn_login_google)
+        val status = findViewById<TextView>(R.id.login_google_status)
+        if (BuildConfig.GOOGLE_WEB_CLIENT_ID.isEmpty()) return
+        // `gone` no botão em vez de `invisible` deixaria o "ou continue com" e o status pulando
+        // layout; `invisible` segura o lugar. E se o login veio do atalho automático, a tela
+        // pode nem ter sido montada ainda — daí o guard de `isFinishing`.
+        btn.visibility = if (on) View.INVISIBLE else View.VISIBLE
+        btn.isEnabled = !on
+        status.visibility = if (on) View.VISIBLE else View.GONE
+        if (on) status.text = getString(R.string.login_google_verifying)
     }
 
     private fun loginWithGoogle(email: String) {
@@ -308,6 +364,9 @@ class LoginActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        // Se a pessoa sair no meio da verificação, o executor não pode vazar: a task segura o
+        // `Activity` e o `main.post` continuaria apontando para uma tela morta.
+        loginExecutor.shutdownNow()
         orbSets.forEach { runCatching { it.cancel() } }
         orbSets.clear()
         runCatching { pulseSet?.cancel() }

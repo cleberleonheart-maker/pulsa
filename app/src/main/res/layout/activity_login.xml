@@ -298,6 +298,16 @@
                     android:layout_marginTop="10dp"
                     android:visibility="gone" />
 
+                <TextView
+                    android:id="@+id/login_google_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_login_primary"
                     style="@style/Widget.Pulsa.NeonButton"

@@ -292,6 +292,8 @@
     <string name="login_google_error">Couldn\'t sign in with Google</string>
     <string name="login_google_gms">Google isn\'t available on this device</string>
     <string name="login_google_not_configured">Google sign-in isn\'t configured yet</string>
+    <string name="login_google_verifying">Checking with Google…</string>
+    <string name="login_google_network_error">Couldn\'t reach Google. Check your internet connection.</string>
     <string name="rw_title">Pulsa Rewind</string>
     <string name="rw_tab_all">All time</string>
     <string name="rw_tab_30">30 days</string>
