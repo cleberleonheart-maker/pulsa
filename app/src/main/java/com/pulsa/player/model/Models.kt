@@ -10,7 +10,15 @@ data class Song(
     val path: String,
     val year: Int,
     val dateAdded: Long = 0L
-)
+) {
+    /** Rádio = item que o serviço toca como fluxo, `path = "radio:<url>"` (E4). */
+    val isRadio: Boolean get() = path.startsWith(RADIO_PREFIX)
+    val radioUrl: String? get() = if (isRadio) path.removePrefix(RADIO_PREFIX) else null
+
+    companion object {
+        const val RADIO_PREFIX = "radio:"
+    }
+}
 
 data class Album(
     val id: Long,

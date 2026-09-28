@@ -13,11 +13,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import com.pulsa.player.model.Song
+import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.RadioStations
@@ -59,9 +56,10 @@ class RadioActivity : AppCompatActivity() {
         Station("Rádio Itatiaia 95.7", "Notícias / Esportes", "https://8903.brasilstream.com.br/stream")
     )
 
-    private var player: ExoPlayer? = null
-    private var currentUrl: String? = null
-    private var loading = false
+    private var playbackBind: Playback.Bind? = null
+    private var activeStation: Station? = null
+    private var errorShownFor: String? = null
+    private var pendingStation: Station? = null
     private lateinit var statusText: TextView
     private lateinit var listContainer: LinearLayout
     private val rowByIndex = mutableListOf<View>()
@@ -78,7 +76,53 @@ class RadioActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.btn_radio_back).setOnClickListener { finish() }
         rebuildList()
-        setStatusStopped()
+        renderStatus()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        playbackBind = Playback.connect(this) {
+            pendingStation?.let { flushPending(it) }
+            renderStatus()
+            highlightActive()
+        }
+    }
+
+    override fun onStop() {
+        if (Playback.listener === playbackListener) Playback.listener = null
+        playbackBind?.let { Playback.release(it) }
+        playbackBind = null
+        super.onStop()
+    }
+
+    /** E4: o rádio agora toca no mesmo motor do app; esta tela só dirige a fachada. */
+    private val playbackListener = object : Playback.Listener {
+        override fun onSongChanged(song: Song?, index: Int) {
+            syncActiveFromPlayback()
+        }
+
+        override fun onPlayStateChanged(isPlaying: Boolean) {
+            renderStatus()
+            highlightActive()
+        }
+
+        override fun onProgress(positionMs: Long, durationMs: Long) = Unit
+
+        override fun onTrackError(song: Song?) {
+            errorShownFor = song?.radioUrl
+            renderStatus()
+            if (!isFinishing && !isDestroyed) {
+                Toast.makeText(this@RadioActivity, R.string.radio_error, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Playback.listener = playbackListener
+        syncActiveFromPlayback()
+        renderStatus()
+        highlightActive()
     }
 
     private fun rebuildList() {
@@ -177,7 +221,7 @@ class RadioActivity : AppCompatActivity() {
             .setPositiveButton(R.string.delete) { d, _ ->
                 d.dismiss()
                 RadioStations.remove(this, station.url)
-                if (currentUrl == station.url) stop()
+                if (activeStation?.url == station.url) Playback.toggle()
                 Toast.makeText(this, R.string.radio_removed, Toast.LENGTH_SHORT).show()
                 rebuildList()
             }
@@ -263,109 +307,79 @@ class RadioActivity : AppCompatActivity() {
 
     private fun toggleStation(idx: Int) {
         val station = stations[idx]
-        if (currentUrl == station.url && player != null) {
-            stop()
+        val current = Playback.currentSong
+        if (current?.isRadio == true && current.radioUrl == station.url) {
+            Playback.toggle()
             return
         }
         startStation(station)
     }
 
     private fun startStation(station: Station) {
-        stop()
-        currentUrl = station.url
-        loading = true
+        activeStation = station
+        errorShownFor = null
+        pendingStation = station
         setStatusConnecting()
-        highlightRow(station.url)
+        highlightActive()
+        if (Playback.isReady) flushPending(station)
+    }
 
-        try {
-            val exo = ExoPlayer.Builder(this)
-                .setAudioAttributes(AudioAttributes.DEFAULT, true)
-                .build()
-            exo.setMediaItem(MediaItem.fromUri(station.url))
-            exo.playWhenReady = true
-            exo.addListener(object : Player.Listener {
-                override fun onPlaybackStateChanged(state: Int) {
-                    if (player !== exo) return
-                    when (state) {
-                        Player.STATE_READY -> {
-                            loading = false
-                            CrashLogger.writeLog(this@RadioActivity, "RADIO PRONTO ${station.name} ${station.url}")
-                            ThreadPool.onUi {
-                                if (currentUrl == station.url) setStatusLive(station.name)
-                            }
-                        }
-                        Player.STATE_ENDED -> {
-                            if (currentUrl == station.url) {
-                                ThreadPool.onUi {
-                                    if (currentUrl == station.url) stop()
-                                }
-                            }
-                        }
-                    }
-                }
+    private fun flushPending(station: Station) {
+        if (pendingStation?.url != station.url) return
+        pendingStation = null
+        activeStation = station
+        errorShownFor = null
+        Playback.start(listOf(songFor(station)), 0)
+        renderStatus()
+    }
 
-                override fun onPlayerError(error: PlaybackException) {
-                    CrashLogger.writeLog(
-                        this@RadioActivity,
-                        "RADIO ERRO ${station.name} ${station.url} -> code=${error.errorCodeName} msg=${error.message}"
-                    )
-                    ThreadPool.onUi {
-                        if (currentUrl != station.url) return@onUi
-                        stop()
-                        if (!isFinishing && !isDestroyed) {
-                            Toast.makeText(this@RadioActivity, R.string.radio_error, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            })
-            player = exo
-            exo.prepare()
-            CrashLogger.writeLog(this, "RADIO iniciando ${station.name} ${station.url}")
-        } catch (e: Exception) {
-            CrashLogger.writeLog(this, "RADIO excecao ${station.name} $e")
-            try {
-                player?.release()
-            } catch (_: Exception) {
+    private fun songFor(station: Station) = Song(
+        id = (station.url.hashCode() and 0x7fffffff).toLong(),
+        title = station.name,
+        artist = station.genre,
+        album = getString(R.string.radio),
+        albumId = 0L,
+        durationMs = 0L,
+        path = Song.RADIO_PREFIX + station.url,
+        year = 0
+    )
+
+    private fun syncActiveFromPlayback() {
+        val current = Playback.currentSong
+        if (current?.isRadio == true) {
+            activeStation = stations.firstOrNull { it.url == current.radioUrl } ?: Station(
+                current.title, current.artist, current.radioUrl ?: ""
+            )
+            errorShownFor = null
+        }
+    }
+
+    private fun renderStatus() {
+        val station = activeStation
+        when {
+            station == null -> {
+                if (isFinishing || isDestroyed) return
+                setStatusStopped()
             }
-            player = null
-            ThreadPool.onUi {
-                if (currentUrl == station.url) {
-                    stop()
-                    setStatusError()
-                }
+            errorShownFor == station.url -> {
+                if (isFinishing || isDestroyed) return
+                setStatusError()
+            }
+            Playback.isPlaying -> setStatusLive(station.name)
+            else -> {
+                if (isFinishing || isDestroyed) return
+                setStatusStopped()
             }
         }
     }
 
-    private fun stop() {
-        try {
-            if (loading) CrashLogger.writeLog(this, "RADIO parado durante conexao url=$currentUrl")
-        } catch (_: Exception) {
-        }
-        loading = false
-        val exo = player
-        player = null
-        currentUrl = null
-        if (exo != null) {
-            try {
-                exo.stop()
-            } catch (_: Exception) {
-            }
-            try {
-                exo.release()
-            } catch (_: Exception) {
-            }
-        }
-        highlightRow(null)
-        if (!isFinishing && !isDestroyed) setStatusStopped()
-    }
-
-    private fun highlightRow(activeUrl: String?) {
+    private fun highlightActive() {
+        val activeUrl = activeStation?.url
         stations.forEachIndexed { idx, station ->
-            val row = rowByIndex[idx]
+            val row = rowByIndex.getOrNull(idx) ?: return@forEachIndexed
             val btn = row.findViewById<ImageButton>(R.id.radio_row_btn)
             val icon = row.findViewById<ImageView>(R.id.radio_row_icon)
-            if (station.url == activeUrl) {
+            if (station.url == activeUrl && Playback.isPlaying) {
                 btn.setImageResource(R.drawable.ic_pause)
                 btn.contentDescription = getString(R.string.radio_pause)
                 icon.tint(R.color.primary)
@@ -398,7 +412,6 @@ class RadioActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        stop()
         AnimatedBackground.stop()
         super.onDestroy()
     }

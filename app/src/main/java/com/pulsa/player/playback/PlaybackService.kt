@@ -25,7 +25,9 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
@@ -62,6 +64,7 @@ class PlaybackService : MediaSessionService() {
         const val FADE_STEPS = 10
         private const val PAN_STEP_MS = 150L
         private const val PAN_ANGLE_STEP = 0.105
+        private const val USER_AGENT = "PulsaRadio/3.42 (Android)"
     }
 
     var queue: List<Song> = emptyList()
@@ -281,6 +284,15 @@ class PlaybackService : MediaSessionService() {
                     .setContentType(C.CONTENT_TYPE_MUSIC)
                     .build(),
                 false
+            )
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(
+                    DefaultHttpDataSource.Factory()
+                        .setUserAgent(USER_AGENT)
+                        .setConnectTimeoutMs(10000)
+                        .setReadTimeoutMs(10000)
+                        .setAllowCrossProtocolRedirects(true)
+                )
             )
             .build()
             .also { it.addListener(playerListener) }
@@ -569,7 +581,7 @@ class PlaybackService : MediaSessionService() {
                 0L
             )
             p.prepare()
-            LastFm.nowPlaying(applicationContext, song, song.durationMs)
+            if (!song.isRadio) LastFm.nowPlaying(applicationContext, song, song.durationMs)
             Playback.notifySong(song, index)
             loadLargeIcon(song)
             announceInBackground(song)
@@ -580,7 +592,7 @@ class PlaybackService : MediaSessionService() {
 
     private fun mediaItemFor(song: Song): MediaItem =
         MediaItem.Builder()
-            .setUri(Uri.fromFile(File(song.path)))
+            .setUri(song.radioUrl?.let(Uri::parse) ?: Uri.fromFile(File(song.path)))
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(song.title)
@@ -799,6 +811,7 @@ class PlaybackService : MediaSessionService() {
 
     private fun onTrackError() {
         consecutiveErrors++
+        Playback.notifyTrackError(currentSong)
         if (queue.isNotEmpty() && consecutiveErrors <= queue.size) {
             advanceIndex(1)
         } else {
@@ -844,6 +857,7 @@ class PlaybackService : MediaSessionService() {
 
     private fun saveResumeState() {
         val song = currentSong ?: return
+        if (song.isRadio) return
         if (!Settings.resumeOn(this)) return
         val pos = player?.currentPosition ?: 0L
         if (pos > 0) {

@@ -242,6 +242,20 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 - Adicionar `media3-exoplayer-hls` já resolve o bug de `.m3u8` do radio-browser que hoje falha calado.
 - **Validação:** rádio continua funcionando com o app em background e a notificação passa a mostrar a estação (hoje não mostra).
 
+> **E4 · Execução real (28/09):** feito e validado local (compile + 5 suítes DJ → **62 testes OK**).
+> - `Song` ganhou `isRadio`/`radioUrl`: rádio é `path = "radio:<url>"` (`Models.kt`); `PlaybackService`
+>   faz `Uri.parse` no `mediaItemFor`, pula `LastFm.nowPlaying`/resume para rádio, e notifica erro via novo
+>   `Playback.Listener.onTrackError(song)` (default — nenhum implementador quebrou).
+> - `RadioActivity` largou o `ExoPlayer` próprio e dirige só a fachada (`Playback.start(listOf(radioSong), 0)`,
+>   mesmo segundo toque = `Playback.toggle()`). Status "Conectando…/No ar · estação/Erro" via `Playback.listener`
+>   (mesmo padrão single-slot de MainActivity/DjActivity/NowPlayingActivity, claro no `onStop`).
+> - `ExoPlayer.Builder` ganhou `DefaultMediaSourceFactory` com `DefaultHttpDataSource` (UA + redirect cross-protocol
+>   + timeouts) — streams do streamtheworld/icecast acabam com UA por baixo do pano.
+> - `.m3u8` roda porque `media3-exoplayer-hls` já existia no `build.gradle.kts` (E3); datasource novo cobre
+>   redirect http→https das URLs do radio-browser.
+> - **Reteste no aparelho:** tocar estação → fechar o app → música segue e a notificação mostra o nome da estação;
+>   trocar de estação re-conecta; `.m3u8` (Antena 1) toca; erro de stream mostra "Erro" + toast em vez de travar.
+
 **E5 · Vídeo no mesmo motor (1–2 dias)**
 - `MediaItem` `video:<id>` com `MimeTypes` detectado; `VideoPlayerActivity` vira só uma tela de player, sem `VideoView`.
 - Legendas: `media3-extractor` (SRT/VTT) reaproveitando o modelo de `sync/Lyrics.kt`.

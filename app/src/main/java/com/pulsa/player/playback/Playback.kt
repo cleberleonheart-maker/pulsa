@@ -27,6 +27,9 @@ object Playback {
         fun onSongChanged(song: Song?, index: Int)
         fun onPlayStateChanged(isPlaying: Boolean)
         fun onProgress(positionMs: Long, durationMs: Long)
+
+        /** Falha ao tocar a faixa atual (E4: a tela de rádio usa para mostrar erro/retry). */
+        fun onTrackError(song: Song?) {}
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -259,5 +262,10 @@ object Playback {
     fun notifyProgress(positionMs: Long, durationMs: Long) {
         val l = listener ?: return
         onMain { l.onProgress(positionMs, durationMs) }
+    }
+
+    fun notifyTrackError(song: Song?) {
+        val l = listener ?: return
+        onMain { l.onTrackError(song) }
     }
 }
