@@ -1,13 +1,9 @@
 package com.pulsa.player
 
 import android.animation.ValueAnimator
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
-import android.os.IBinder
 import android.view.KeyEvent
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -26,7 +22,6 @@ import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.dj.DjSession
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.playback.PlaybackService
 import com.pulsa.player.audio.Ambient
 import com.pulsa.player.core.Settings
 
@@ -46,8 +41,8 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     private var avatarView: android.view.View? = null
     private var avatarBob: ValueAnimator? = null
 
-    private var bound = false
     private var triggered = false
+    private var playbackBind: Playback.Bind? = null
 
     private val session by lazy {
         DjSession(
@@ -81,19 +76,6 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             session.onPendriveTreeResult(uri)
         }
-
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Playback.service = (service as PlaybackService.LocalBinder).service
-            bound = true
-            render()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            Playback.service = null
-            bound = false
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -179,23 +161,17 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     override fun onStart() {
         super.onStart()
         Playback.listener = this
-        val playbackIntent = Intent(this, PlaybackService::class.java)
-        runCatching { applicationContext.startService(playbackIntent) }
-        applicationContext.bindService(
-            playbackIntent,
-            connection,
-            Context.BIND_AUTO_CREATE
-        )
+        // F1/E2: a ligação é da fachada. O `render()` continua sendo chamado na hora (como
+        // era) e de novo quando a ligação fecha, que é quando os controles têm estado.
+        playbackBind = Playback.connect(this) { render() }
         render()
     }
 
     override fun onStop() {
         session.stopForBackground()
         if (Playback.listener === this) Playback.listener = null
-        if (bound) {
-            bound = false
-            runCatching { applicationContext.unbindService(connection) }
-        }
+        playbackBind?.let { Playback.release(it) }
+        playbackBind = null
         super.onStop()
     }
 

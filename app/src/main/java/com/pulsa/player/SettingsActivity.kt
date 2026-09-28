@@ -130,7 +130,7 @@ class SettingsActivity : AppCompatActivity() {
             isChecked = Settings.equalizerOn(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setEqualizerOn(this@SettingsActivity, checked)
-                Playback.service?.refreshFx()
+                Playback.refreshFx()
             }
         }
 
@@ -138,7 +138,7 @@ class SettingsActivity : AppCompatActivity() {
             isChecked = Settings.audio8d(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setAudio8d(this@SettingsActivity, checked)
-                Playback.service?.refreshFx()
+                Playback.refreshFx()
             }
         }
 
@@ -543,8 +543,8 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle(R.string.pick_quality)
             .setSingleChoiceItems(names, current) { dialog, which ->
                 Settings.setAudioQuality(this, keys[which])
-                Playback.service?.refreshFx()
-                Playback.service?.applyDanceParamsForRefresh()
+                Playback.refreshFx()
+                Playback.reapplyDanceParams()
                 findViewById<TextView>(R.id.quality_value).text = qualityLabel()
                 dialog.dismiss()
             }

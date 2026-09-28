@@ -73,6 +73,7 @@ class PlaybackService : Service() {
         private set
 
     private var mp: MediaPlayer? = null
+    private var playerLink: ServicePlayerLink? = null
     private lateinit var session: MediaSessionCompat
     private lateinit var notificationManager: NotificationManager
     private var largeIcon: android.graphics.Bitmap? = null
@@ -242,7 +243,11 @@ class PlaybackService : Service() {
                 override fun onSeekTo(pos: Long) = seekTo(pos)
             })
         }
-        Playback.service = this
+        // F1/E2: o serviço se anuncia na fachada pelo `PlayerLink`, em vez de expor
+        // `Playback.service`. O widget e os broadcasts dependem disso para desenhar estado
+        // sem connectar — por isso o registro mora aqui e não no `bindService`.
+        playerLink = ServicePlayerLink(this)
+        Playback.attach(playerLink!!)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -262,7 +267,7 @@ class PlaybackService : Service() {
         AudioFx.release()
         MusicVisualizer.detach()
         session.release()
-        if (Playback.service === this) Playback.service = null
+        playerLink?.let { Playback.detach(it) }
         super.onDestroy()
     }
 

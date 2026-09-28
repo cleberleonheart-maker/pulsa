@@ -137,7 +137,10 @@ PY
 [ -n "$KCP" ] || erro "kotlin-compiler-embeddable $KOTLIN_VER não está no cache do Gradle"
 
 kotlinc() {
-    java -Xmx1200m -cp "$KCP" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
+    # 900m e não mais: este aparelho tem 7,6GB com o sistema e o Termux em cima, e outro
+    # projeto pode estar compilando junto — com 1200m o compilador entra em swap e leva
+    # 20min em vez de 1.
+    java -Xmx900m -cp "$KCP" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
         -nowarn -Xskip-metadata-version-check -jvm-target 17 -no-stdlib "$@"
 }
 
@@ -163,10 +166,12 @@ if [ ${#ARQUIVOS[@]} -eq 0 ]; then
         while IFS= read -r f; do ARQUIVOS+=("$f"); done < <(find app/src/main/java -name "*.kt")
     else
         # O padrão é o que o branch mexeu (e o que está modificado sem commit):
-        # é o que você está editando, e compila em ~1min.
+        # é o que você está editando, e compila em ~1min. `ls-files --others` entra porque
+        # arquivo novo nem aparece no `git diff`.
         while IFS= read -r f; do
             [ -f "$f" ] && ARQUIVOS+=("$f")
-        done < <({ git diff --name-only main...HEAD; git diff --name-only; git diff --name-only --cached; } 2>/dev/null | sort -u | grep '\.kt$')
+        done < <({ git diff --name-only main...HEAD; git diff --name-only; git diff --name-only --cached; \
+                    git ls-files --others --exclude-standard; } 2>/dev/null | sort -u | grep '\.kt$')
         if [ ${#ARQUIVOS[@]} -eq 0 ]; then
             erro "nada mudou em relação à main; use --tudo para compilar o app inteiro"
         fi

@@ -1,14 +1,10 @@
 package com.pulsa.player
 
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.IBinder
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.Menu
@@ -31,7 +27,6 @@ import com.pulsa.player.model.Artist
 import com.pulsa.player.model.Playlist
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.playback.PlaybackService
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.ui.AlbumsTabFragment
@@ -83,8 +78,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var miniVirgin: ImageView
     private var miniSwipeDetector: GestureDetector? = null
     private var currentTag = VirginHomeFragment::class.java.simpleName
-    private var bound = false
-    private var serviceBound = false
+    private var playbackBind: Playback.Bind? = null
     private var appliedAccent: String = Settings.ACCENT_PURPLE
     private var pendingSection: String? = null
 
@@ -132,19 +126,6 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     fun launchWriteRequest(intentSender: android.content.IntentSender?) {
         if (intentSender != null) {
             writeRequest.launch(IntentSenderRequest.Builder(intentSender).build())
-        }
-    }
-
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Playback.service = (service as PlaybackService.LocalBinder).service
-            bound = true
-            syncMiniPlayer()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            Playback.service = null
-            bound = false
         }
     }
 
@@ -328,14 +309,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             showTab(currentTag, fragmentFor(currentTag))
         }
 
-        val playbackIntent = Intent(this, PlaybackService::class.java)
-        runCatching { applicationContext.startService(playbackIntent) }
-        applicationContext.bindService(
-            playbackIntent,
-            connection,
-            Context.BIND_AUTO_CREATE
-        )
-        serviceBound = true
+        // F1/E2: a ligação com o motor é da fachada. A Activity só diz "me avisa quando
+        // estiver pronto" — ela não sabe mais qual classe de serviço é essa.
+        playbackBind = Playback.connect(this) { syncMiniPlayer() }
         Telemetry.log(this, "createMain: bindService ok")
 
         if (!Permissions.hasAccess(this)) {
@@ -419,7 +395,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         MotionControls.attachIfEnabled(
             this,
             onShake = {
-                if (Playback.queue.isNotEmpty() && (Playback.service != null)) Playback.next()
+                if (Playback.queue.isNotEmpty() && Playback.isReady) Playback.next()
             },
             onTilt = { dir ->
                 val am = getSystemService(AudioManager::class.java)
@@ -454,10 +430,8 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     }
 
     override fun onDestroy() {
-        if (serviceBound) {
-            serviceBound = false
-            runCatching { applicationContext.unbindService(connection) }
-        }
+        playbackBind?.let { Playback.release(it) }
+        playbackBind = null
         virgin.destroy()
         super.onDestroy()
     }

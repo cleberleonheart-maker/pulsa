@@ -1217,10 +1217,10 @@ class MainVirgin(
         }
     }
 
-    /** Aguarda o PlaybackService ficar disponível (o app acabou de abrir pelo alarme). */
+    /** Aguarda o motor ficar disponível (o app acabou de abrir pelo alarme). */
     private fun playWhenBound(set: List<Song>, tries: Int) {
         if (activity.isFinishing || activity.isDestroyed) return
-        if (Playback.service != null) {
+        if (Playback.isReady) {
             Playback.setShuffle(true)
             Playback.setRepeatAll(true)
             Playback.setSleepMix(false)

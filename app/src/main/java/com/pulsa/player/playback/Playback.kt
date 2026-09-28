@@ -1,9 +1,27 @@
 package com.pulsa.player.playback
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.graphics.Bitmap
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
 import com.pulsa.player.model.Song
 
+/**
+ * A fachada do playback. É o **único** lugar do app que sabe que existe um motor de música.
+ *
+ * F1/E2: o motor continua sendo o legado ([ServicePlayerLink] → [PlaybackService]), mas
+ * ninguém fora de `playback/` mais fala com o `Service`: nem `SettingsActivity`, nem
+ * `PulsaWidget`, nem `MainActivity`/`DjActivity`, nem a Virgin. O publicador `Playback.service`
+ * foi embora — o que existia era API pública de fato e foi o que a auditoria do E0 achou.
+ *
+ * Contrato: os 29 arquivos que chamam [Playback] não mudam neste passo. O que mudou é o
+ * **transporte** por baixo: em E3 a mesma fachada passa a falar com o `MediaController`, e é
+ * só isso que troca.
+ */
 object Playback {
     interface Listener {
         fun onSongChanged(song: Song?, index: Int)
@@ -13,91 +31,211 @@ object Playback {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    /**
+     * O motor, quando ele está vivo. Preenchido pelo próprio [PlaybackService] no `onCreate`
+     * (e não pelo `bindService`) porque é o que permite ao widget e aos broadcasts desenharem
+     * estado sem precisar connectar — o mesmo comportamento de antes, quando o serviço se
+     * registrava em `Playback.service`.
+     */
     @Volatile
-    var service: PlaybackService? = null
+    private var link: PlayerLink? = null
 
     @Volatile
     var listener: Listener? = null
 
-    val currentSong: Song? get() = service?.currentSong
-    val isPlaying: Boolean get() = service?.isPlaying ?: false
-    val index: Int get() = service?.index ?: -1
-    val shuffle: Boolean get() = service?.shuffle ?: false
-    val repeatAll: Boolean get() = service?.repeatAll ?: true
-    val repeatOne: Boolean get() = service?.repeatOne ?: false
-    val abActive: Boolean get() = service?.abActive ?: false
-    val markerA: Long get() = service?.abA ?: -1L
-    val markerB: Long get() = service?.abB ?: -1L
-    val position: Long get() = service?.positionMs ?: 0L
-    val queue: List<Song> get() = service?.queue ?: emptyList()
-    val audioSessionId: Int get() = service?.audioSessionId ?: 0
+    /**
+     * O motor está no ar? Substitui o antigo `Playback.service != null`, que três arquivos
+     * usavam como "o app já subiu?" — inclusive a Virgin esperando o serviço ficar pronto
+     * depois do alarme.
+     */
+    val isReady: Boolean get() = link != null
+
+    val currentSong: Song? get() = link?.currentSong
+    val isPlaying: Boolean get() = link?.isPlaying ?: false
+    val index: Int get() = link?.index ?: -1
+    val shuffle: Boolean get() = link?.shuffle ?: false
+    val repeatAll: Boolean get() = link?.repeatAll ?: true
+    val repeatOne: Boolean get() = link?.repeatOne ?: false
+    val abActive: Boolean get() = link?.abActive ?: false
+    val markerA: Long get() = link?.markerA ?: -1L
+    val markerB: Long get() = link?.markerB ?: -1L
+    val position: Long get() = link?.position ?: 0L
+    val queue: List<Song> get() = link?.queue ?: emptyList()
+    val audioSessionId: Int get() = link?.audioSessionId ?: 0
+
+    // ---------------------------------------------------------------- ligação (bind)
+
+    private var bindRefs = 0
+    private var bindRequested = false
+    private var bindConnected = false
+    private var bindContext: Context? = null
+    private val pendingReady = mutableListOf<() -> Unit>()
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            bindConnected = true
+            val callbacks = pendingReady.toList()
+            pendingReady.clear()
+            callbacks.forEach { onMain { it() } }
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            bindConnected = false
+        }
+    }
+
+    /**
+     * Liga a tela ao motor. `onReady` roda assim que a ligação fecha (ou na hora, se já
+     * estava ligada) — é o que a Virgin, a mini-player e o DJ usavam para desenhar depois
+     * do `bindService`.
+     *
+     * O bind é contado: `MainActivity` liga por `onCreate`/`onDestroy` e `DjActivity` por
+     * `onStart`/`onStop`, então as duas podem estar conectadas ao mesmo tempo sem brigar pelo
+     * mesmo `ServiceConnection`. O [Bind] devolvido é o que desliga — passar o handle, em vez
+     * de um `disconnect(context)` solto, é o que impede a contagem de sair de esquis no
+     * caminho em que a tela morre antes de conseguir ligar (`createMain` lançou).
+     */
+    fun connect(context: Context, onReady: () -> Unit = {}): Bind {
+        bindRefs++
+        val handle = Bind()
+        if (bindConnected) {
+            onMain { onReady() }
+            return handle
+        }
+        pendingReady += onReady
+        if (bindRequested) return handle
+        bindRequested = true
+        val app = context.applicationContext
+        bindContext = app
+        val intent = Intent(app, PlaybackService::class.java)
+        runCatching { app.startService(intent) }
+        app.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        return handle
+    }
+
+    /** O devolve [connect]. O motor em si continua de pé: quem desliga o som é o usuário. */
+    fun release(bind: Bind) {
+        if (!bind.released) {
+            bind.released = true
+            releaseBind()
+        }
+    }
+
+    private fun releaseBind() {
+        if (bindRefs == 0) return
+        bindRefs--
+        if (bindRefs > 0) return
+        bindRequested = false
+        bindConnected = false
+        pendingReady.clear()
+        bindContext?.let { runCatching { it.unbindService(serviceConnection) } }
+        bindContext = null
+    }
+
+    class Bind internal constructor() {
+        internal var released = false
+    }
+
+    // ------------------------------------------------- registro do motor (só playback/)
+
+    internal fun attach(link: PlayerLink) {
+        this.link = link
+    }
+
+    internal fun detach(link: PlayerLink) {
+        if (this.link === link) this.link = null
+    }
+
+    // ------------------------------------------------------------------ transporte
+
+    /**
+     * Intenções dos botões do widget. O widget não deveria nem saber o nome do serviço: é a
+     * fachada que sabe como falar com o motor.
+     */
+    fun toggleIntent(context: Context): Intent =
+        Intent(context, PlaybackService::class.java).setAction(PlaybackService.ACTION_TOGGLE)
+
+    fun nextIntent(context: Context): Intent =
+        Intent(context, PlaybackService::class.java).setAction(PlaybackService.ACTION_NEXT)
+
+    fun prevIntent(context: Context): Intent =
+        Intent(context, PlaybackService::class.java).setAction(PlaybackService.ACTION_PREV)
+
+    // ---------------------------------------------------------------------- comandos
+
+    fun currentArt(): Bitmap? = link?.currentArt()
 
     fun refreshFx() {
-        service?.refreshFx()
+        link?.refreshFx()
+    }
+
+    /** Reaplica velocidade/pitch depois de mudar a qualidade: era o `furo 1` da auditoria. */
+    fun reapplyDanceParams() {
+        link?.reapplyDanceParams()
     }
 
     fun refreshCurrentMeta() {
-        service?.refreshCurrentMeta()
+        link?.refreshCurrentMeta()
     }
 
     fun start(songs: List<Song>, startIndex: Int) {
-        service?.start(songs, startIndex)
+        link?.start(songs, startIndex)
     }
 
     fun toggle() {
-        service?.toggle()
+        link?.toggle()
     }
 
     fun pause() {
-        service?.pause()
+        link?.pause()
     }
 
     fun next() {
-        service?.next()
+        link?.next()
     }
 
     fun prev() {
-        service?.prev()
+        link?.prev()
     }
 
     fun seekTo(ms: Long) {
-        service?.seekTo(ms)
+        link?.seekTo(ms)
     }
 
     fun setShuffle(value: Boolean) {
-        service?.setShuffle(value)
+        link?.setShuffle(value)
     }
 
     fun setRepeatAll(value: Boolean) {
-        service?.setRepeatAll(value)
+        link?.setRepeatAll(value)
     }
 
     fun setRepeatOne(value: Boolean) {
-        service?.setRepeatOne(value)
+        link?.setRepeatOne(value)
     }
 
     fun setSleepMix(on: Boolean) {
-        service?.setSleepMix(on)
+        link?.setSleepMix(on)
     }
 
     fun setMarkerA() {
-        service?.setMarkerA()
+        link?.setMarkerA()
     }
 
     fun setMarkerB() {
-        service?.setMarkerB()
+        link?.setMarkerB()
     }
 
     fun clearAbLoop() {
-        service?.clearAbLoop()
+        link?.clearAbLoop()
     }
 
     fun setMicListening(on: Boolean) {
-        service?.setMicListening(on)
+        link?.setMicListening(on)
     }
 
     fun cycleRepeat() {
-        service?.cycleRepeat()
+        link?.cycleRepeat()
     }
 
     private fun onMain(block: () -> Unit) {

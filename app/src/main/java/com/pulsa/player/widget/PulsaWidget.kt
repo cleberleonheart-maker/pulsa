@@ -12,26 +12,25 @@ import com.pulsa.player.MainActivity
 import com.pulsa.player.R
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.playback.PlaybackService
 
 class PulsaWidget : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        val svc = Playback.service
         render(
             context, ids,
-            svc?.currentSong, svc?.isPlaying == true, svc?.currentArt()
+            Playback.currentSong, Playback.isPlaying, Playback.currentArt()
         )
     }
 
     companion object {
         fun refresh(context: Context) {
-            val svc = Playback.service ?: return
+            // Sem motor não há o que redesenhar: o widget fica como está, como ficava antes.
+            if (!Playback.isReady) return
             val ids = AppWidgetManager.getInstance(context).getAppWidgetIds(
                 ComponentName(context, PulsaWidget::class.java)
             )
             if (ids.isEmpty()) return
-            render(context, ids, svc.currentSong, svc.isPlaying, svc.currentArt())
+            render(context, ids, Playback.currentSong, Playback.isPlaying, Playback.currentArt())
         }
 
         private fun render(context: Context, ids: IntArray, song: Song?, playing: Boolean, art: Bitmap?) {
@@ -56,20 +55,17 @@ class PulsaWidget : AppWidgetProvider() {
 
             val toggle = PendingIntent.getService(
                 context, 11,
-                Intent(context, PlaybackService::class.java)
-                    .setAction(PlaybackService.ACTION_TOGGLE),
+                Playback.toggleIntent(context),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val next = PendingIntent.getService(
                 context, 12,
-                Intent(context, PlaybackService::class.java)
-                    .setAction(PlaybackService.ACTION_NEXT),
+                Playback.nextIntent(context),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val prev = PendingIntent.getService(
                 context, 13,
-                Intent(context, PlaybackService::class.java)
-                    .setAction(PlaybackService.ACTION_PREV),
+                Playback.prevIntent(context),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val open = PendingIntent.getActivity(
