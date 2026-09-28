@@ -146,6 +146,8 @@
     <string name="dj_voice_sleeptimer_set">¡Listo! Pauso la música en %1$d minutos.</string>
     <string name="dj_voice_sleeptimer_done">Listo, pausado. ¡Buenas noches!</string>
     <string name="dj_voice_sleeptimer_none">No está sonando nada ahora para pausar.</string>
+    <string name="gestures_label">Gestos</string>
+    <string name="gestures_desc">Sacude el teléfono para cambiar de canción e inclínalo para cambiar el volumen</string>
     <string name="hands_free_label">Manos libres</string>
     <string name="hands_free_desc">Virginia escucha comandos de voz mientras suena la música, incluso en segundo plano</string>
     <string name="hands_free_no_mic">Sin acceso al micrófono no hay manos libres.</string>

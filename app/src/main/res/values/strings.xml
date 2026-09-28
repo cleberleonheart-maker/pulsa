@@ -500,6 +500,8 @@
     <string name="dj_voice_sleeptimer_set">Tranquilo! Paro a música daqui a %1$d minutos.</string>
     <string name="dj_voice_sleeptimer_done">Pronto, pausado. Boa noite!</string>
     <string name="dj_voice_sleeptimer_none">Não tem nada tocando agora pra eu pausar.</string>
+    <string name="gestures_label">Gestos</string>
+    <string name="gestures_desc">Agite o aparelho para trocar de música e incline para mudar o volume</string>
     <string name="hands_free_label">Mãos-livres</string>
     <string name="hands_free_desc">A Virgínia escuta comandos de voz enquanto a música toca, mesmo em segundo plano</string>
     <string name="hands_free_no_mic">Sem o acesso ao microfone não dá pra ficar de mãos-livres.</string>

@@ -149,6 +149,18 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        // Gestos (shake/inclinacao): o interruptor nao existia, entao `Settings.gesturesOn`
+        // ficava sempre false e o recurso era inalcancavel. Aqui so grava a escolha: quem
+        // registra o sensor e a MainActivity, no onResume, via `attachIfEnabled` — assim o
+        // callback do shake nao e sobrescrito por uma lambda vazia enquanto a tela de Ajustes
+        // esta aberta.
+        findViewById<MaterialSwitch>(R.id.gestures_switch).apply {
+            isChecked = Settings.gesturesOn(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setGesturesOn(this@SettingsActivity, checked)
+            }
+        }
+
         findViewById<MaterialSwitch>(R.id.hotword_switch).apply {
             isChecked = Settings.hotword(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
