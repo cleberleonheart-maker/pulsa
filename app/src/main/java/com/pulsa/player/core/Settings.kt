@@ -522,6 +522,32 @@ object Settings {
 
     fun resumeSongArtist(context: Context): String = prefs(context).getString("resume_artist", "") ?: ""
 
+    // Rádio guardado para continuar tocando caso o processo renasça (E4). Só enquanto
+    // estava de fato tocando/pausado por estado "tem som"; limpo no pause deliberado.
+    fun setRadioResume(context: Context, url: String, title: String, genre: String) {
+        prefs(context).edit()
+            .putString("radio_resume_url", url)
+            .putString("radio_resume_title", title)
+            .putString("radio_resume_genre", genre)
+            .apply()
+    }
+
+    fun radioResume(context: Context): Triple<String, String, String>? {
+        val url = prefs(context).getString("radio_resume_url", "") ?: ""
+        if (url.isBlank()) return null
+        val title = prefs(context).getString("radio_resume_title", "") ?: ""
+        val genre = prefs(context).getString("radio_resume_genre", "") ?: ""
+        return Triple(url, title, genre)
+    }
+
+    fun clearRadioResume(context: Context) {
+        prefs(context).edit()
+            .remove("radio_resume_url")
+            .remove("radio_resume_title")
+            .remove("radio_resume_genre")
+            .apply()
+    }
+
     private fun isArtDir(file: java.io.File): Boolean = file.isDirectory && file.name == "art"
 
     fun cacheSize(context: Context): Long {

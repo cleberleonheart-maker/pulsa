@@ -233,6 +233,19 @@ class PlaybackService : MediaSessionService() {
 
     val currentSong: Song? get() = queue.getOrNull(index.coerceAtLeast(0))
     val isPlaying: Boolean get() = player?.isPlaying == true
+
+    /**
+     * E4 — "tem som pra tocar": playWhenReady + READY/BUFFERING. O `Player.isPlaying` cai para
+     * `false` durante `isLoading`/rebuffer, e stream de rádio re-buffereia o tempo todo (música
+     * local quase nunca). O foreground NÃO pode ler esse flicker no background: com ele o
+     * `onUpdateNotification` cai no super, o manager do Media3 decide que "acabou" e faz
+     * `stopForeground(true)`/`stopSelf` — era o rádio morrendo junto com o app.
+     */
+    val playingLike: Boolean
+        get() = player?.let { p ->
+            p.playWhenReady &&
+                (p.playbackState == Player.STATE_READY || p.playbackState == Player.STATE_BUFFERING)
+        } ?: false
     val audioSessionId: Int get() = player?.audioSessionId ?: 0
 
     private fun currentSongGenre(): String? =
@@ -265,10 +278,18 @@ class PlaybackService : MediaSessionService() {
      */
     override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
         val song = currentSong
-        if (isPlaying && song != null) {
+        if (startInForegroundRequired) {
+            if (playingLike && song != null) {
+                ensureForeground(song)
+            } else {
+                super.onUpdateNotification(session, true)
+            }
+            return
+        }
+        if (playingLike && song != null) {
             ensureForeground(song)
         } else {
-            super.onUpdateNotification(session, startInForegroundRequired)
+            super.onUpdateNotification(session, false)
         }
     }
 
@@ -314,6 +335,10 @@ class PlaybackService : MediaSessionService() {
         // sem connectar — por isso o registro mora aqui e não no `bindService`.
         playerLink = ServicePlayerLink(this)
         Playback.attach(playerLink!!)
+        if (queue.isEmpty()) {
+            // Processo renasceu com rádio no ar (ex.: encerrado no gesto): volta a tocar.
+            runCatching { restoreRadioResume() }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -528,6 +553,9 @@ class PlaybackService : MediaSessionService() {
         val p = player ?: return
         if (p.isPlaying) p.pause()
         saveResumeState()
+        // Pausa deliberada (botão/fone/erro fatal): não voltar com o rádio sozinho se o
+        // processo renascer. O saveResumeState acima recém-gravou o rádio; limpo depois.
+        Settings.clearRadioResume(this)
         if (!pauseOnFocusLoss) abandonAudioFocus()
         stopEightD()
         mainHandler.removeCallbacks(progressTick)
@@ -858,8 +886,11 @@ class PlaybackService : MediaSessionService() {
 
     private fun saveResumeState() {
         val song = currentSong ?: return
-        if (song.isRadio) return
         if (!Settings.resumeOn(this)) return
+        if (song.isRadio) {
+            song.radioUrl?.let { Settings.setRadioResume(this, it, song.title, song.artist) }
+            return
+        }
         val pos = player?.currentPosition ?: 0L
         if (pos > 0) {
             Settings.setResumeState(this, song.id, pos, song.title, song.artist)
@@ -869,6 +900,25 @@ class PlaybackService : MediaSessionService() {
     private fun clearResumeState() {
         if (Settings.resumeSongId(this) < 0L) return
         Settings.setResumeState(this, -1L, 0L, "", "")
+    }
+
+    /** E4 — estende o restore do `resume`: o rádio volta se o processo renasceu com a estação no ar. */
+    private fun restoreRadioResume() {
+        if (!Settings.resumeOn(this)) return
+        val saved = Settings.radioResume(this) ?: return
+        val (url, title, genre) = saved
+        Settings.clearRadioResume(this)
+        val song = Song(
+            id = (url.hashCode() and 0x7fffffff).toLong(),
+            title = title.ifBlank { getString(R.string.radio) },
+            artist = genre,
+            album = getString(R.string.radio),
+            albumId = 0L,
+            durationMs = 0L,
+            path = Song.RADIO_PREFIX + url,
+            year = 0
+        )
+        start(listOf(song), 0)
     }
 
     private fun scrobbleCurrentIfNeeded() {
