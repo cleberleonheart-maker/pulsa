@@ -285,6 +285,7 @@ class PlaybackService : MediaSessionService() {
                     .build(),
                 false
             )
+            .setWakeMode(C.WAKE_MODE_NETWORK)
             .setMediaSourceFactory(
                 DefaultMediaSourceFactory(
                     DefaultHttpDataSource.Factory()
