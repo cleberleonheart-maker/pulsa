@@ -1,6 +1,7 @@
 package com.pulsa.player.playback
 
 import android.graphics.Bitmap
+import androidx.media3.common.Player
 import com.pulsa.player.model.Song
 
 /**
@@ -28,14 +29,17 @@ interface PlayerLink {
     val position: Long
     val queue: List<Song>
     val audioSessionId: Int
+    val player: Player?
 
     fun currentArt(): Bitmap?
     fun refreshFx()
     fun reapplyDanceParams()
     fun refreshCurrentMeta()
     fun start(songs: List<Song>, startIndex: Int)
+    fun play()
     fun toggle()
     fun pause()
+    fun stop()
     fun next()
     fun prev()
     fun seekTo(ms: Long)
@@ -75,12 +79,14 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
     override val position: Long get() = service.positionMs
     override val queue: List<Song> get() = service.queue
     override val audioSessionId: Int get() = service.audioSessionId
+    override val player: Player? get() = service.playerView
 
     override fun currentArt(): Bitmap? = service.currentArt()
     override fun refreshFx() = service.refreshFx()
     override fun reapplyDanceParams() = service.applyDanceParamsForRefresh()
     override fun refreshCurrentMeta() = service.refreshCurrentMeta()
     override fun start(songs: List<Song>, startIndex: Int) = service.start(songs, startIndex)
+    override fun play() = service.play()
     override fun toggle() = service.toggle()
     override fun pause() = service.pause()
     override fun next() = service.next()
@@ -95,4 +101,5 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
     override fun clearAbLoop() = service.clearAbLoop()
     override fun setMicListening(on: Boolean) = service.setMicListening(on)
     override fun cycleRepeat() = service.cycleRepeat()
+    override fun stop() = service.stop()
 }

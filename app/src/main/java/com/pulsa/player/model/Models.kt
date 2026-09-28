@@ -15,8 +15,13 @@ data class Song(
     val isRadio: Boolean get() = path.startsWith(RADIO_PREFIX)
     val radioUrl: String? get() = if (isRadio) path.removePrefix(RADIO_PREFIX) else null
 
+    /** Vídeo = item que o serviço toca e a tela de vídeo renderiza, `path = "video:<id>"` (E5). */
+    val isVideo: Boolean get() = path.startsWith(VIDEO_PREFIX)
+    val videoId: Long? get() = if (isVideo) path.removePrefix(VIDEO_PREFIX).toLongOrNull() else null
+
     companion object {
         const val RADIO_PREFIX = "radio:"
+        const val VIDEO_PREFIX = "video:"
     }
 }
 

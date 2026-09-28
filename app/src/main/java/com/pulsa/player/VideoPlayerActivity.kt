@@ -2,12 +2,12 @@ package com.pulsa.player
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.SurfaceView
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageButton
@@ -15,15 +15,25 @@ import android.widget.ProgressBar
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
-import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.media3.common.Player
+import com.pulsa.player.core.Helper
 import com.pulsa.player.data.VideoLibrary
+import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.core.Helper
 import kotlin.math.abs
 
-class VideoPlayerActivity : AppCompatActivity() {
+/**
+ * E5 — a tela de vídeo agora é só uma tela: quem toca é o mesmo motor do rádio/música.
+ *
+ * Cada vídeo vira um `Song` com `path = "video:<id>"` ([Song.VIDEO_PREFIX]); a activity
+ * anexa um [SurfaceView] ao `Player` do serviço ([Playback.player]) e dirige o motor pela
+ * fachada (play/pause/next/prev/seek). Entrar num vídeo substitui a fila da música — o
+ * mesmo player é um só, então é impossível a música "invadir" o vídeo tocando junto (o
+ * problema que este passo elimina). Sair da tela devolve a fila que estava tocando antes.
+ */
+class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
     companion object {
         private const val EXTRA_IDS = "video_ids"
@@ -40,7 +50,7 @@ class VideoPlayerActivity : AppCompatActivity() {
         }
     }
 
-    private lateinit var videoView: VideoView
+    private lateinit var surfaceView: SurfaceView
     private lateinit var loading: ProgressBar
     private lateinit var errorView: TextView
     private lateinit var topBar: View
@@ -52,27 +62,28 @@ class VideoPlayerActivity : AppCompatActivity() {
     private lateinit var playBtn: ImageButton
 
     private var videos: List<Video> = emptyList()
+    private var videoSongs: List<Song> = emptyList()
     private var index = 0
-    private var resumeMusic = false
+    private var resumeQueue: List<Song> = emptyList()
+    private var resumeIndex = -1
+    private var resumePlaying = false
+    private var prevShuffle = false
+    private var prevRepeatAll = true
+    private var prevRepeatOne = false
     private var dragging = false
     private var autoplay = true
+    private var finished = false
+    private var playbackBind: Playback.Bind? = null
     private val handler = Handler(Looper.getMainLooper())
 
     private val hideRunnable = Runnable { hideControls() }
-
-    private val tick = object : Runnable {
-        override fun run() {
-            updateProgress()
-            if (videoView.isPlaying) handler.postDelayed(this, 500)
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video_player)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        videoView = findViewById(R.id.vp_video)
+        surfaceView = findViewById(R.id.vp_video)
         loading = findViewById(R.id.vp_loading)
         errorView = findViewById(R.id.vp_error)
         topBar = findViewById(R.id.vp_top)
@@ -100,7 +111,7 @@ class VideoPlayerActivity : AppCompatActivity() {
 
             override fun onStopTrackingTouch(seek: SeekBar) {
                 dragging = false
-                runCatching { videoView.seekTo(seekBar.progress) }
+                Playback.seekTo(seekBar.progress.toLong())
                 scheduleHide()
             }
         })
@@ -140,49 +151,117 @@ class VideoPlayerActivity : AppCompatActivity() {
             return
         }
         index = (intent.getIntExtra(EXTRA_INDEX, 0)).coerceIn(0, videos.lastIndex)
+        videoSongs = videos.map {
+            Song(
+                id = it.id,
+                title = it.title,
+                artist = "",
+                album = getString(R.string.tab_videos),
+                albumId = 0L,
+                durationMs = it.durationMs,
+                path = Song.VIDEO_PREFIX + it.id,
+                year = 0
+            )
+        }
 
-        videoView.setOnPreparedListener { onPrepared() }
-        videoView.setOnCompletionListener { onCompleted() }
-        videoView.setOnErrorListener { _, _, _ -> onVideoError() }
+        // Guarda o que estava tocando para devolver na saída — o motor é único, então lançar
+        // o vídeo já corta a música (nada de dois tocadores ao mesmo tempo).
+        resumeQueue = Playback.queue
+        resumeIndex = Playback.index
+        resumePlaying = Playback.isPlaying
+        prevShuffle = Playback.shuffle
+        prevRepeatAll = Playback.repeatAll
+        prevRepeatOne = Playback.repeatOne
 
-        resumeMusic = Playback.isPlaying
-        if (resumeMusic) Playback.toggle()
-
-        openCurrent()
+        playbackBind = Playback.connect(this) { startVideos() }
         showControls()
     }
 
-    private fun openCurrent() {
-        val video = videos[index]
-        titleView.text = video.title
-        seekBar.max = 1000
-        loading.visibility = View.VISIBLE
-        errorView.visibility = View.GONE
-        durationText.text = Helper.formatDuration(video.durationMs)
-        currentText.text = Helper.formatDuration(0)
-        runCatching {
-            videoView.setVideoURI(Uri.parse(video.path))
-            if (autoplay) videoView.start()
-        }.onFailure { showError(getString(R.string.video_player_error)) }
+    private fun startVideos() {
+        if (videos.isEmpty()) return
+        // O vídeo anda como fila normal do motor: repeat-all, sem shuffle nem repeat-one,
+        // para "next" avançar em vez de repetir/embaralhar o próprio vídeo.
+        Playback.setShuffle(false)
+        Playback.setRepeatAll(true)
+        Playback.setRepeatOne(false)
+        Playback.start(videoSongs, index)
+        render()
     }
 
-    private fun onPrepared() {
-        loading.visibility = View.GONE
-        val duration = runCatching { videoView.duration }.getOrDefault(0)
-        if (duration > 0) {
-            seekBar.max = duration
-            durationText.text = Helper.formatDuration(duration.toLong())
+    private fun currentVideoTitle(): String {
+        val song = Playback.currentSong
+        if (song?.isVideo == true) {
+            val video = videos.firstOrNull { it.id == song.videoId }
+            if (video != null) return video.title
         }
-        if (autoplay) videoView.start()
+        return ""
     }
 
-    private fun onCompleted() {
-        step(1)
+    private fun render() {
+        titleView.text = currentVideoTitle().ifBlank { getString(R.string.tab_videos) }
+        val dur = Playback.currentSong?.durationMs ?: 0L
+        if (dur > 0L) {
+            seekBar.max = dur.toInt()
+            durationText.text = Helper.formatDuration(dur)
+        } else {
+            seekBar.max = 1000
+        }
+        errorView.visibility = View.GONE
+        updateState()
     }
 
-    private fun onVideoError(): Boolean {
-        showError(getString(R.string.video_player_error))
-        return true
+    private fun togglePlayback() {
+        if (errorView.visibility == View.VISIBLE) return
+        if (Playback.isPlaying) Playback.pause() else Playback.play()
+        updateState()
+    }
+
+    private fun step(delta: Int) {
+        if (videos.isEmpty()) return
+        if (delta > 0 && index >= videos.lastIndex) {
+            Playback.seekTo(0)
+            Playback.play()
+            showControls()
+            return
+        }
+        Playback.next()
+        showControls()
+    }
+
+    override fun onSongChanged(song: Song?, index: Int) {
+        if (song?.isVideo != true) return
+        render()
+    }
+
+    override fun onPlayStateChanged(isPlaying: Boolean) {
+        updateState()
+    }
+
+    override fun onProgress(positionMs: Long, durationMs: Long) {
+        if (dragging) return
+        if (durationMs > 0L) {
+            seekBar.max = durationMs.toInt()
+            durationText.text = Helper.formatDuration(durationMs)
+        }
+        seekBar.progress = positionMs.toInt().coerceIn(0, seekBar.max)
+        currentText.text = Helper.formatDuration(positionMs)
+    }
+
+    override fun onTrackError(song: Song?) {
+        if (song?.isVideo == true) showError(getString(R.string.video_player_error))
+    }
+
+    private fun updateState() {
+        if (errorView.visibility == View.VISIBLE) {
+            loading.visibility = View.GONE
+            return
+        }
+        val p = Playback.player
+        val playing = Playback.isPlaying
+        val buffering = p?.playbackState == Player.STATE_IDLE || p?.playbackState == Player.STATE_BUFFERING
+        loading.visibility = if (buffering) View.VISIBLE else View.GONE
+        playBtn.setImageResource(if (playing) R.drawable.ic_pause else R.drawable.ic_play)
+        if (playing) scheduleHide()
     }
 
     private fun showError(msg: String) {
@@ -192,52 +271,6 @@ class VideoPlayerActivity : AppCompatActivity() {
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
     }
 
-    private fun togglePlayback() {
-        if (errorView.visibility == View.VISIBLE) return
-        if (videoView.isPlaying) pausePlayback() else startPlayback()
-    }
-
-    private fun startPlayback() {
-        autoplay = true
-        videoView.start()
-        updatePlayIcon()
-        handler.removeCallbacks(tick)
-        handler.post(tick)
-        scheduleHide()
-    }
-
-    private fun pausePlayback() {
-        autoplay = false
-        videoView.pause()
-        updatePlayIcon()
-        handler.removeCallbacks(hideRunnable)
-        showControls()
-    }
-
-    private fun updatePlayIcon() {
-        playBtn.setImageResource(if (videoView.isPlaying) R.drawable.ic_pause else R.drawable.ic_play)
-    }
-
-    private fun step(delta: Int) {
-        if (videos.isEmpty()) return
-        if (delta > 0 && index >= videos.lastIndex) {
-            videoView.seekTo(0)
-            startPlayback()
-            return
-        }
-        index = (((index + delta) % videos.size) + videos.size) % videos.size
-        autoplay = videoView.isPlaying || autoplay
-        openCurrent()
-        showControls()
-    }
-
-    private fun updateProgress() {
-        if (dragging) return
-        val pos = runCatching { videoView.currentPosition }.getOrDefault(0)
-        seekBar.progress = pos
-        currentText.text = Helper.formatDuration(pos.toLong())
-    }
-
     private fun toggleControls() {
         if (topBar.visibility == View.VISIBLE) hideControls() else showControls()
     }
@@ -245,12 +278,12 @@ class VideoPlayerActivity : AppCompatActivity() {
     private fun showControls() {
         topBar.visibility = View.VISIBLE
         bottomBar.visibility = View.VISIBLE
-        updatePlayIcon()
-        if (videoView.isPlaying) scheduleHide()
+        updateState()
+        if (Playback.isPlaying) scheduleHide()
     }
 
     private fun hideControls() {
-        if (errorView.visibility == View.VISIBLE || !videoView.isPlaying) return
+        if (errorView.visibility == View.VISIBLE || !Playback.isPlaying) return
         topBar.visibility = View.GONE
         bottomBar.visibility = View.GONE
     }
@@ -262,36 +295,45 @@ class VideoPlayerActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (videos.isNotEmpty() && errorView.visibility == View.GONE) {
-            runCatching {
-                if (videoView.isPlaying) {
-                    startPlayback()
-                } else if (autoplay) {
-                    videoView.start()
-                }
-            }
+        if (videos.isNotEmpty() && !finished) {
+            Playback.listener = this
+            Playback.player?.setVideoSurfaceView(surfaceView)
+            if (autoplay) Playback.play()
+            render()
         }
     }
 
     override fun onPause() {
         handler.removeCallbacks(hideRunnable)
-        handler.removeCallbacks(tick)
-        if (videoView.isPlaying) {
-            videoView.pause()
-            autoplay = true
-        } else {
-            autoplay = false
+        if (Playback.listener === this) Playback.listener = null
+        Playback.player?.clearVideoSurfaceView(surfaceView)
+        if (videos.isNotEmpty()) {
+            autoplay = Playback.isPlaying
+            Playback.pause()
         }
         super.onPause()
     }
 
+    override fun onStop() {
+        if (Playback.listener === this) Playback.listener = null
+        super.onStop()
+    }
+
     override fun onDestroy() {
+        finished = true
         handler.removeCallbacks(hideRunnable)
-        handler.removeCallbacks(tick)
-        runCatching {
-            if (videoView.isPlaying) videoView.stopPlayback()
+        if (Playback.listener === this) Playback.listener = null
+        Playback.player?.clearVideoSurfaceView(surfaceView)
+        playbackBind?.let { Playback.release(it) }
+        playbackBind = null
+        Playback.setShuffle(prevShuffle)
+        Playback.setRepeatAll(prevRepeatAll)
+        Playback.setRepeatOne(prevRepeatOne)
+        if (resumePlaying && resumeQueue.isNotEmpty()) {
+            Playback.start(resumeQueue, resumeIndex.coerceAtLeast(0))
+        } else {
+            Playback.stop()
         }
-        if (resumeMusic && !Playback.isPlaying) Playback.toggle()
         super.onDestroy()
     }
 }

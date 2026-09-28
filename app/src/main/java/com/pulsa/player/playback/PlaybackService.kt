@@ -39,6 +39,7 @@ import com.pulsa.player.R
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.model.Song
 import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.dj.DjFacts
@@ -86,6 +87,12 @@ class PlaybackService : MediaSessionService() {
 
     var positionMs: Long = 0L
         private set
+
+    /**
+     * E5 — o `Player` vivo do motor, para a tela de vídeo anexar o `SurfaceView` e ler estado
+     * de buffer/erro. O transporte continua sendo por [Playback] (comandos da fachada).
+     */
+    val playerView: Player? get() = player
 
     private var player: ExoPlayer? = null
     private var awaitingReady = false
@@ -562,6 +569,29 @@ class PlaybackService : MediaSessionService() {
         publishState()
     }
 
+    /**
+     * E5 — interrompe a fila e zera o motor. É a "parada" que a fachada não tinha: sair da
+     * tela de vídeo sem música anterior não pode deixar o último vídeo encalhado na fila
+     * (a música que "invade" o nada). Não para o serviço: ele continua de pé ocioso.
+     * Mantém o `resume` de música intacto — vídeo nunca chega a gravá-lo.
+     */
+    fun stop() {
+        val p = player ?: return
+        runCatching { p.stop() }
+        runCatching { p.clearMediaItems() }
+        runCatching { p.setPlayWhenReady(false) }
+        queue = emptyList()
+        index = -1
+        positionMs = 0L
+        consecutiveErrors = 0
+        Settings.clearRadioResume(this)
+        stopEightD()
+        mainHandler.removeCallbacks(progressTick)
+        Playback.notifySong(null, -1)
+        Playback.notifyPlayState(false)
+        refreshNotification()
+    }
+
     fun seekTo(ms: Long) {
         try {
             player?.seekTo(ms)
@@ -610,7 +640,7 @@ class PlaybackService : MediaSessionService() {
                 0L
             )
             p.prepare()
-            if (!song.isRadio) LastFm.nowPlaying(applicationContext, song, song.durationMs)
+            if (!song.isRadio && !song.isVideo) LastFm.nowPlaying(applicationContext, song, song.durationMs)
             Playback.notifySong(song, index)
             loadLargeIcon(song)
             announceInBackground(song)
@@ -619,9 +649,12 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
-    private fun mediaItemFor(song: Song): MediaItem =
-        MediaItem.Builder()
-            .setUri(song.radioUrl?.let(Uri::parse) ?: Uri.fromFile(File(song.path)))
+    private fun mediaItemFor(song: Song): MediaItem {
+        val uri = song.videoId?.let { VideoLibrary.contentUri(it) }
+            ?: song.radioUrl?.let(Uri::parse)
+            ?: Uri.fromFile(File(song.path))
+        return MediaItem.Builder()
+            .setUri(uri)
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(song.title)
@@ -630,6 +663,7 @@ class PlaybackService : MediaSessionService() {
                     .build()
             )
             .build()
+    }
 
     /** Religou os efeitos na sessão de áudio do ExoPlayer (estável por instância). */
     private fun attachEffects() {
@@ -703,6 +737,7 @@ class PlaybackService : MediaSessionService() {
     private var bgLastAnnounceId = -1L
 
     private fun announceInBackground(song: Song) {
+        if (song.isVideo) return
         if (Playback.listener != null) return
         if (!Settings.djRadio(this) || !Settings.djVoice(this)) return
         if (song.id == bgLastAnnounceId) return
@@ -887,6 +922,7 @@ class PlaybackService : MediaSessionService() {
     private fun saveResumeState() {
         val song = currentSong ?: return
         if (!Settings.resumeOn(this)) return
+        if (song.isVideo) return
         if (song.isRadio) {
             song.radioUrl?.let { Settings.setRadioResume(this, it, song.title, song.artist) }
             return
@@ -1098,6 +1134,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     private fun loadLargeIcon(song: Song) {
+        if (song.isVideo) return
         ThreadPool.post {
             val bmp = ArtLoader.decode(applicationContext, song.albumId, song.path)
             ThreadPool.onUi {

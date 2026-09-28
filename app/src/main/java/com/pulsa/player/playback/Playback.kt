@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import androidx.media3.common.Player
 import com.pulsa.player.model.Song
 
 /**
@@ -65,6 +66,13 @@ object Playback {
     val position: Long get() = link?.position ?: 0L
     val queue: List<Song> get() = link?.queue ?: emptyList()
     val audioSessionId: Int get() = link?.audioSessionId ?: 0
+
+    /**
+     * O `Player` do motor (E5). Só a tela de vídeo usa: ela anexa o `SurfaceView` e lê estado
+     * de vídeo (buffer/erro) diretamente. Para tudo o mais continua valendo: o transporte é
+     * por aqui, e não pelos comandos do `Player`.
+     */
+    val player: Player? get() = link?.player
 
     // ---------------------------------------------------------------- ligação (bind)
 
@@ -183,6 +191,16 @@ object Playback {
 
     fun start(songs: List<Song>, startIndex: Int) {
         link?.start(songs, startIndex)
+    }
+
+    /** Retoma a reprodução (E5: a tela de vídeo volta do segundo plano e o motor estava pausado). */
+    fun play() {
+        link?.play()
+    }
+
+    /** Interrompe a fila e zera o motor (E5: sair do vídeo sem música anterior não deixa video encalhado). */
+    fun stop() {
+        link?.stop()
     }
 
     fun toggle() {

@@ -269,6 +269,26 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 - `VideoLibrary.kt` (54 linhas) entra na árvore de mídia.
 - **Validação:** vídeo local toca com áudio junto, e a música para de invadir o vídeo.
 
+> **E5 · Execução real (28/09):** vídeo toca no MESMO motor do rádio/música — é impossível a música
+> "invadir" o vídeo porque o player é um só, e entrar no vídeo substitui a fila (nada de dois tocadores).
+> - `Song` ganhou `isVideo`/`videoId`: vídeo é `path = "video:<id>"` (`Models.kt`); o `mediaItemFor` resolve
+>   `VideoLibrary.contentUri(id)` (`content://media/external/video/media/<id>`), e o `DefaultDataSource`
+>   já existente liga o `content://`. Pula `LastFm`/resume/`loadLargeIcon`/anúncio de voz para vídeo.
+> - `VideoPlayerActivity` largou o `VideoView`: virou só tela. Anexa um `SurfaceView` (`vp_video`) ao player do
+>   serviço via novo `Playback.player` (`Player?`; exposto só para a tela de vídeo ler buffer/erro e anexar a
+>   superfície — o transporte continua pela fachada) e dirige `Playback.play/pause/next/seek/toggle`.
+> - Cada vídeo vira um `Song` na fila do motor (`Playback.start(videoSongs, index)`); com repeat-all e sem
+>   shuffle/repeat-one o "next" avança em vez de repetir; virar a fila já corta a música.
+> - Entrada guarda `resumeQueue/resumeIndex/resumePlaying` e os toggles de shuffle/repeat antes de lançar o
+>   vídeo; na saída devolve a fila (se havia música tocando) ou zera o motor com o novo `Playback.stop()`
+>   (a "parada" que a fachada não tinha — sem ela o último vídeo ficava encalhado e virava "música invadindo").
+>   `stop()` não mexe no `resume` de música salvo (vídeo nunca chega a gravá-lo).
+> - Controles/fling/toque para esconder barras continuam iguais ao `VideoView` (mesmo layout, mesmo detector);
+>   progresso/duração vêm do listener (`onProgress` do motor, emissão de 500ms).
+> - Nenhuma dependência nova: `media3-common` já traz `Player.setVideoSurfaceView/getVideoSize`; sem `media3-ui`,
+>   sem `media3-extractor` (legendas SRT/VTT ficaram de fora do corte inicial — próximo passo).
+> - Validado local: compile do conjunto explícito (16 arquivos) + **62 testes DJ OK**. PR #1, `feature/media3`.
+
 **E6 · MediaLibraryService (1–2 dias)**
 - `playback/PulsaLibraryService : MediaLibraryService` publicando a árvore (raiz "Pulsa", filhos "Músicas", "Rádio", "Vídeos", "Playlists", "Favoritas", "Adicionadas recentemente").
 - No manifest: `<service android:exported="true">` com `MediaSessionService`/`MediaLibraryService` — sem `exported=true` o Auto/Wear/Assistant não enxergam.
