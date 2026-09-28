@@ -255,7 +255,9 @@ class MainVirgin(
         host.syncVirginIcon()
         Playback.setMicListening(true)
         virginListener?.destroy()
-        virginListener = DjCommandListener(activity) { handleCommand(it) }
+        // Maos-livres: espera a palavra com o microfone quase todo fechado. Reabrir em
+        // sequencia era o laço infinito que o usuario viu tres vezes.
+        virginListener = DjCommandListener(activity, MicMode.WORD_WATCH) { handleCommand(it) }
         virginListener?.start()
         val cur = Playback.currentSong
         val msg = if (cur != null) {

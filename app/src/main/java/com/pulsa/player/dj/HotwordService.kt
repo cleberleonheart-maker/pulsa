@@ -47,7 +47,9 @@ class HotwordService : Service() {
             return
         }
         Hotword.running = true
-        listener = DjCommandListener(this) { text ->
+        // Mesmo caso da Virgin ligada: aqui o microfone e para CAÇAR a palavra, entao o
+        // ciclo e de janela curta e intervalo longo (DjCommandListener.DUTY_IDLE_MS).
+        listener = DjCommandListener(this, MicMode.WORD_WATCH) { text ->
             if (!HotwordBridge.deliver(text)) stopNow()
         }
         listener?.start()

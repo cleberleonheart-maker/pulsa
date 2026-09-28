@@ -11,8 +11,45 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import java.util.Locale
 
+/**
+ * Como o microfone se comporta depois de uma janela de escuta.
+ *
+ * O laço antigo era sempre [CONTINUOUS], e isso e o que o usuario viu tres vezes: o
+ * reconhecedor abria, ouvia 1,2-2,5s, voltava vazio e reabria, sem fim, enquanto a maos-livres
+ * estivesse ligada. O backoff da 5.9.3 so esticou o intervalo (3s -> 2/4/8/15s); o laço
+ * continuava infinito, entao o sintoma era o mesmo.
+ */
+enum class MicMode {
+    /**
+     * Quem apertou o botao de microfone esta falando agora: reabre em seguida para nao
+     * perder o proximo comando da conversa. E o caso da tela do DJ.
+     */
+    CONTINUOUS,
+
+    /**
+     * Espera a palavra de ativacao com o microfone quase todo fechado: abre ~1,5s, fecha
+     * [MicMode.DUTY_IDLE_MS] e so abre de novo se faz sentido. E o caso da
+     * maos-livres (Virgin ligada e o servico de fundo).
+     *
+     * O que da para fazer e o que nao da: para OUVIR a palavra o microfone precisa estar
+     * aberto — nao existe motor de palavra-chave do sistema aqui, o app so recebe o texto
+     * ja transcrito. Da para deixar a janela pequena e o intervalo grande, nao da para
+     * ouvir sem abrir.
+     */
+    WORD_WATCH;
+
+    companion object {
+        /**
+         * Quanto tempo o microfone fica fechado entre janelas na maos-livres. Com a janela
+         * de escuta de ~1,2-2,5s, o microfone fica aberto ~10% do tempo em vez de sempre.
+         */
+        const val DUTY_IDLE_MS = 13000L
+    }
+}
+
 class DjCommandListener(
     context: Context,
+    private val mode: MicMode = MicMode.CONTINUOUS,
     private val onResult: (text: String) -> Unit
 ) {
     private val appContext = context.applicationContext
@@ -31,7 +68,7 @@ class DjCommandListener(
     private val mainHandler = Handler(Looper.getMainLooper())
     private var lastStartMs = 0L
     private val minGapMs = 3000L
-    private val backoff = MicBackoff(FIRST_RETRY_MS, MAX_RETRY_MS)
+    private val cycle = MicCycle(mode, MicBackoff(FIRST_RETRY_MS, MAX_RETRY_MS))
     private val retryRunnable = Runnable { restart() }
 
     init {
@@ -51,7 +88,7 @@ class DjCommandListener(
                     SpeechRecognizer.ERROR_NO_MATCH,
                     SpeechRecognizer.ERROR_SPEECH_TIMEOUT,
                     SpeechRecognizer.ERROR_RECOGNIZER_BUSY,
-                    SpeechRecognizer.ERROR_CLIENT -> scheduleRetry()
+                    SpeechRecognizer.ERROR_CLIENT -> scheduleNext(heard = false)
                     // Erros fatais: para de ouvir e avisa a UI uma unica vez
                     else -> {
                         listening = false
@@ -73,17 +110,13 @@ class DjCommandListener(
                     ?.trim()
                     ?: ""
                 if (text.isNotEmpty()) {
-                    resetBackoff()
+                    cycle.reset()
                     onResult(text)
-                    // Ouviu mesmo: reabre sem espera, senao o comando seguinte
-                    // entraria na fila e o microfone ficaria mudo por segundos.
-                    restart()
-                    return
                 }
-                // Nada reconhecido: e o caso comum com musica tocando. O
-                // backoff precisa valer aqui tambem, nao so no onError — senao o
-                // ciclo de ~3s volta (e era o que o usuario viu na 5.9.1).
-                scheduleRetry()
+                // Ouviu ou nao ouviu, a proxima janela e a politica que decide — inclusive
+                // o caso vazio, que e o comum com musica tocando (e era por via dele que o
+                // ciclo de ~3s voltava).
+                scheduleNext(heard = text.isNotEmpty())
             }
 
             override fun onPartialResults(partialResults: Bundle?) {}
@@ -91,19 +124,12 @@ class DjCommandListener(
         })
     }
 
-    /**
-     * Reabre o microfone depois de um silencio/erro, dobrando a espera a cada
-     * tentativa ate [MAX_RETRY_MS]. Vale tanto para onError quanto para
-     * onResults vazio.
-     */
-    private fun scheduleRetry() {
+    /** Abre o microfone de novo no tempo que a politica [MicCycle] mandar. */
+    private fun scheduleNext(heard: Boolean) {
         if (!listening) return
         mainHandler.removeCallbacks(retryRunnable)
-        mainHandler.postDelayed(retryRunnable, backoff.next())
-    }
-
-    private fun resetBackoff() {
-        backoff.reset()
+        val wait = cycle.waitBeforeReopen(heard)
+        if (wait <= 0L) restart() else mainHandler.postDelayed(retryRunnable, wait)
     }
 
     fun start() {
@@ -113,13 +139,13 @@ class DjCommandListener(
         }
         reportedUnsupported = false
         listening = true
-        resetBackoff()
+        cycle.reset()
         startListening()
     }
 
     fun stop() {
         listening = false
-        resetBackoff()
+        cycle.reset()
         mainHandler.removeCallbacks(retryRunnable)
         runCatching { recognizer?.cancel() }
     }
