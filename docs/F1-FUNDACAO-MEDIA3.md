@@ -177,7 +177,7 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 - Loop A/B no `emitProgress` continua, lendo `player.currentPosition` (o cache local da facade).
 - **Validação:** o checklist do E0 inteiro, com atenção especial a EQ/8D/crossfade.
 
-> **E3 · Execução real (28/09) — E3a feito, E3b em andamento**
+> **E3 · Execução real (28/09) — E3a feito, E3b feito e validado no aparelho**
 >
 > **E3a — motor no serviço (FEITO, `6b9bfb1`, CI verde):** `PlaybackService` agora cria um
 > `ExoPlayer` próprio no `onCreate` (com `audioAttributes` e `handleAudioFocus = false`), sem a
@@ -185,7 +185,7 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 > visualizador), A/B, sleep mix e 8D realocados no `Player.Listener`; a fachada e os consumidores
 > não mudaram (o `LocalBinder` repassa os mesmos métodos).
 >
-> **E3b — sessão Media3 no lugar da `MediaSessionCompat` (em andamento):**
+> **E3b — sessão Media3 no lugar da `MediaSessionCompat` (FEITO, `9470e6b`, CI verde):**
 > - Descoberta-chave na tag 1.3.1 (`MediaSessionService.onBind`): com *action nula* — que é como
 >   o `Playback.connect` faz `bindService` — o base devolve `null` e o sistema chama `onNullBinding`,
 >   matando a conexão que mantém a fachada/estado vivos. Por isso o `onBind` foi sobrescrito:
@@ -211,13 +211,31 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 >   mesmas actions, `MediaStyle().setMediaSession(session.getSessionCompatToken())`) e guarda o
 >   `Callback` para reposto após o artwork (`refreshNotification`). `ensureForeground` e o
 >   `notify` manual saíram.
+> - **Correções do test-drive (29/09):**
+>   - **Foreground segurado pela mão enquanto toca.** O `MediaSessionService` decide o foreground
+>     pelo controller interno (`playWhenReady` + `STATE_READY`); com o app em background essa
+>     decisão oscilava e ele chamava `stopForeground(true)` → o processo morria (música parava
+>     "depois de uns minutos", mãos livres e notificação iam embora; o botão do widget também
+>     parava — serviço reiniciado com fila vazia fazia `play()` no vazio). `ensureForeground(song)`
+>     voltou (startForeground próprio, id 10, `FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK` no ≥29,
+>     chamado no `publishState` tocando) e o `onUpdateNotification` foi sobrescrito: enquanto toca
+>     **não** chamamos o `super` (o manager de mídia nunca roda o teardown); pausado, o `super`
+>     cuida.
+>   - **Janela de voz não morre em erro transiente.** `DjCommandListener` com janela ativa
+>     remarca a escuta com backoff (500 ms → 3 s) em `ERROR_BUSY`/`NO_MATCH`/`SPEECH_TIMEOUT`/
+>     `CLIENT` em vez de fechar a sessão (por isso o mãos livres "ia embora" na segunda ativação
+>     quando o reconhecedor devolvia BUSY enquanto a música tocava).
 > - **Cleanup previsto (próximo passo):** remover a `MediaSessionCompat`, o `PlaybackStateCompat`
 >   escrito à mão e o `updateSessionState` — o snapshot agora sai direto do player. `exported`
 >   continua `false` (SystemUI acessa via registro do compat; publicar é tarefa do E7).
 > - **Validação do ponto atual:** `PlaybackService.kt` + `PlayerLink.kt` + `Playback.kt` +
 >   `MicBackoff.kt` + `MicCycle.kt` + `DjCommandListener.kt` compilam localmente contra o
 >   `media3-session-1.3.1.jar` (baixado do Google Maven; Maven Central dá 404 para a `androidx.media3`)
->   pelo caminho fake no cache do Gradle; `MicCycleTest` + `MicBackoffTest` → **66 testes OK**.
+>   pelo caminho fake no cache do Gradle; `MicCycleTest` + `MicBackoffTest` → **66 testes OK**;
+>   test-drive do usuário no aparelho (APK `pulsa-f1-e3b-124b.apk`) confirmou: música continua em
+>   background, mãos livres e notificação persistem, voz reabre após o comando.
+> - **Reminder:** a E3b removeu o `setResumePosition` do Media3 (window suspend position);
+>   `subscription`/`window` com `liveStreamPosition` embutida nos `MediaItem` compensa no rádio.
 
 **E4 · Rádio no mesmo motor (1 dia)**
 - `RadioActivity` passa a enfileirar `radio:<url>` no mesmo serviço (hoje tem `ExoPlayer` próprio em `RadioActivity.kt:281`).
