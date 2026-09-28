@@ -299,12 +299,15 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 > - Nenhuma dependência nova: `media3-common` já traz `Player.setVideoSurfaceView/getVideoSize`; sem `media3-ui`,
 >   sem `media3-extractor` (legendas SRT/VTT ficaram de fora do corte inicial — próximo passo).
 > - Validado local: compile do conjunto explícito (16 arquivos) + **62 testes DJ OK**. PR #1, `feature/media3`.
-> - **Validado no aparelho em 28/09 com `5764e1e`:** música toca, rádio OK, vídeo OK e **8D OK**
->   (o pan LFO sobreviveu à troca de `audioSessionId` — a armadilha nº1 desta doc). O defeito do
->   `DefaultDataSource` acima foi encontrado exatamente assim. **Falta do checklist do E0:** EQ
->   (presets, automático por gênero, custom 5 bandas, karaokê), crossfade, A/B, sleep mix, dance,
->   duck da Virgin, e o teste de morte (tocar → force-stop → reabrir). **Widget OK**: o
->   `PulsaWidget` lê o service direto (armadilha nº5 desta doc) e não precisou mudar.
+> - **Validado no aparelho em 28/09 com `5764e1e`:** música toca, rádio OK, vídeo OK, **8D OK**
+>   (o pan LFO sobreviveu à troca de `audioSessionId` — a armadilha nº1 desta doc), **widget OK**
+>   (o `PulsaWidget` lê o service direto, armadilha nº5, e não precisou mudar) e **o checklist do
+>   E0 inteiro** (EQ com todos os presets/automático/custom/karaokê, crossfade, A/B, sleep mix,
+>   dance, duck da Virgin, botões e o teste de morte do processo). O defeito do `DefaultDataSource`
+>   acima foi encontrado exatamente por causa do test-drive.
+>
+> **E0–E5 fechados e validados no aparelho.** O motor de playback não é mais risco: o resto da F1
+> é superfície (E6 em diante).
 
 **E6 · MediaLibraryService (1–2 dias)**
 - `playback/PulsaLibraryService : MediaLibraryService` publicando a árvore (raiz "Pulsa", filhos "Músicas", "Rádio", "Vídeos", "Playlists", "Favoritas", "Adicionadas recentemente").
