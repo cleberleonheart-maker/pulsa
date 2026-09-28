@@ -25,6 +25,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -66,6 +67,15 @@ class PlaybackService : MediaSessionService() {
         private const val PAN_STEP_MS = 150L
         private const val PAN_ANGLE_STEP = 0.105
         private const val USER_AGENT = "PulsaRadio/3.42 (Android)"
+
+        /**
+         * Quantas faixas seguidas podem falhar antes de desistir da fila. O limite era
+         * `queue.size` (pula tudo), e com a fonte de dados errada TODAS as faixas falhavam: o
+         * `advanceIndex` remontava fila + notificação no main thread uma vez por faixa e o app
+         * deixava de responder. Três seguidas já é biblioteca quebrada, não faixa ruim — aí
+         * para e pausa, que é o mesmo desfecho de sempre com uma música só.
+         */
+        private const val MAX_CONSECUTIVE_ERRORS = 3
     }
 
     var queue: List<Song> = emptyList()
@@ -315,12 +325,19 @@ class PlaybackService : MediaSessionService() {
             )
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .setMediaSourceFactory(
+                // E4: o datasource HTTP cobre rádio (UA + redirect + timeouts). E5: o vídeo é
+                // `content://` e a música `file://` — passá-los POR UM DefaultDataSource embaixo
+                // para não os jogar no DefaultHttpDataSource (que só aceita http/https). Sem o
+                // wrapper, música e vídeo locais morriam com erro de fonte.
                 DefaultMediaSourceFactory(
-                    DefaultHttpDataSource.Factory()
-                        .setUserAgent(USER_AGENT)
-                        .setConnectTimeoutMs(10000)
-                        .setReadTimeoutMs(10000)
-                        .setAllowCrossProtocolRedirects(true)
+                    DefaultDataSource.Factory(
+                        this,
+                        DefaultHttpDataSource.Factory()
+                            .setUserAgent(USER_AGENT)
+                            .setConnectTimeoutMs(10000)
+                            .setReadTimeoutMs(10000)
+                            .setAllowCrossProtocolRedirects(true)
+                    )
                 )
             )
             .build()
@@ -876,7 +893,7 @@ class PlaybackService : MediaSessionService() {
     private fun onTrackError() {
         consecutiveErrors++
         Playback.notifyTrackError(currentSong)
-        if (queue.isNotEmpty() && consecutiveErrors <= queue.size) {
+        if (queue.isNotEmpty() && consecutiveErrors <= MAX_CONSECUTIVE_ERRORS) {
             advanceIndex(1)
         } else {
             consecutiveErrors = 0

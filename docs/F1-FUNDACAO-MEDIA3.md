@@ -272,8 +272,19 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 > **E5 · Execução real (28/09):** vídeo toca no MESMO motor do rádio/música — é impossível a música
 > "invadir" o vídeo porque o player é um só, e entrar no vídeo substitui a fila (nada de dois tocadores).
 > - `Song` ganhou `isVideo`/`videoId`: vídeo é `path = "video:<id>"` (`Models.kt`); o `mediaItemFor` resolve
->   `VideoLibrary.contentUri(id)` (`content://media/external/video/media/<id>`), e o `DefaultDataSource`
->   já existente liga o `content://`. Pula `LastFm`/resume/`loadLargeIcon`/anúncio de voz para vídeo.
+>   `VideoLibrary.contentUri(id)` (`content://media/external/video/media/<id>`). Pula
+>   `LastFm`/resume/`loadLargeIcon`/anúncio de voz para vídeo.
+> - **Defeito do E5 achado no aparelho (música parou de tocar + app sem resposta):** o
+>   `DefaultMediaSourceFactory` ficou só com o `DefaultHttpDataSource` do E4, que aceita SÓ
+>   http/https — a música local (`file://`) e o vídeo (`content://`) morriam com erro de fonte, e
+>   nenhuma faixa tocava. Agravou em "não está respondendo": o `onTrackError` pulava a fila
+>   INTEIRA (o limite era `queue.size`) e, como todas as faixas falhavam, remontava fila +
+>   notificação no main thread uma vez por faixa. Dois consertos: o HTTP embrulhado num
+>   `DefaultDataSource.Factory(this, ...)` (roteia `file://`/`content://` internamente, sem
+>   dependência nova — `media3-datasource` já vem com o `media3-exoplayer`) e o limite da
+>   cascata em `MAX_CONSECUTIVE_ERRORS = 3`. **Lição: toda fonte de URI que a app monta
+>   (`file://`, `content://`, http) precisa estar listada no `DefaultDataSource`, não só a
+>   última que apareceu no diff.**
 > - `VideoPlayerActivity` largou o `VideoView`: virou só tela. Anexa um `SurfaceView` (`vp_video`) ao player do
 >   serviço via novo `Playback.player` (`Player?`; exposto só para a tela de vídeo ler buffer/erro e anexar a
 >   superfície — o transporte continua pela fachada) e dirige `Playback.play/pause/next/seek/toggle`.
