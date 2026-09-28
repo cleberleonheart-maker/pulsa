@@ -6,9 +6,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Binder
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
@@ -249,6 +251,23 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onGetSession(controller: MediaSession.ControllerInfo): MediaSession = session
+
+    /**
+     * E3b — enquanto toca, nós seguramos o foreground (ver `ensureForeground`) e NÃO
+     * deixamos o `MediaSessionService` decidir por conta própria: a decisão dele depende do
+     * controller interno (playWhenReady + STATE_READY) e, com o app em background, ele oscila
+     * e chama `stopForeground(true)`, o que remove a nossa notificação da bandeja (foi exatamente
+     * o sintoma: "a música continua e mãos livres aparecem, só a notificação some"). Pausado,
+     * o `super` cuida do resto.
+     */
+    override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
+        val song = currentSong
+        if (isPlaying && song != null) {
+            ensureForeground(song)
+        } else {
+            super.onUpdateNotification(session, startInForegroundRequired)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -790,9 +809,13 @@ class PlaybackService : MediaSessionService() {
 
     private fun publishState() {
         Playback.notifyPlayState(isPlaying)
-        // Mãos-livres acompanha a reprodução: liga ao tocar, desliga ao pausar.
-        if (isPlaying) com.pulsa.player.dj.Hotword.startIfNeeded(this)
-        else com.pulsa.player.dj.Hotword.stopIfRunning(this)
+        if (isPlaying) {
+            currentSong?.let { ensureForeground(it) }
+            // Mãos-livres acompanha a reprodução: liga ao tocar, desliga ao pausar.
+            com.pulsa.player.dj.Hotword.startIfNeeded(this)
+        } else {
+            com.pulsa.player.dj.Hotword.stopIfRunning(this)
+        }
         refreshNotification()
     }
 
@@ -934,6 +957,26 @@ class PlaybackService : MediaSessionService() {
 
         largeIcon?.let { builder.setLargeIcon(it) }
         return builder.build()
+    }
+
+    /**
+     * E3b — o `MediaSessionService` decide quando entrar em foreground pelo controller interno
+     * (playWhenReady + STATE_READY). Isso é frágil na hora de ir ao background: se a decisão
+     * atrasar ou o controller oscilar, o serviço cai do foreground e o sistema mata o processo
+     * ("toca uns minutos e para", notificação some junto). Enquanto toca, seguro o foreground
+     * aqui também, com a nossa notificação (mesmo id 10) — igual ao E3a.
+     */
+    private fun ensureForeground(song: Song) {
+        val notification = buildNotification(song)
+        if (Build.VERSION.SDK_INT >= 29) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
     }
 
     private fun buildIdleNotification(): Notification {
