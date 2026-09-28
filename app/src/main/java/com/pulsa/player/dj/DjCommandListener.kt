@@ -14,10 +14,11 @@ import java.util.Locale
 /**
  * Como o microfone se comporta depois de uma janela de escuta.
  *
- * O laço antigo era sempre [CONTINUOUS], e isso e o que o usuario viu tres vezes: o
- * reconhecedor abria, ouvia 1,2-2,5s, voltava vazio e reabria, sem fim, enquanto a maos-livres
- * estivesse ligada. O backoff da 5.9.3 so esticou o intervalo (3s -> 2/4/8/15s); o laço
- * continuava infinito, entao o sintoma era o mesmo.
+ * A versao antiga abria o microfone num laço infinito enquanto a maos-livres estivesse ligada
+ * — o usuario viu isso tres vezes seguindo numeros (3s -> 2/4/8/15s), nao a estrutura. A
+ * conclusao honesta e que nao existe escuta de palavra-chave silenciosa aqui: qualquer app
+ * que "escuta a palavra" abre o microfone e o indicador do sistema acende. Entao a maos-livres
+ * virou UM_SO disparo: o microfone so abre quando voce pede, por 6s, e fecha sozinho.
  */
 enum class MicMode {
     /**
@@ -27,30 +28,19 @@ enum class MicMode {
     CONTINUOUS,
 
     /**
-     * Espera a palavra de ativacao com o microfone quase todo fechado: abre ~1,5s, fecha
-     * [MicMode.DUTY_IDLE_MS] e so abre de novo se faz sentido. E o caso da
-     * maos-livres (Virgin ligada e o servico de fundo).
-     *
-     * O que da para fazer e o que nao da: para OUVIR a palavra o microfone precisa estar
-     * aberto — nao existe motor de palavra-chave do sistema aqui, o app so recebe o texto
-     * ja transcrito. Da para deixar a janela pequena e o intervalo grande, nao da para
-     * ouvir sem abrir.
+     * Uma unica janela de escuta, pelo tempo que o chamador passa em `start()`, e depois
+     * fecha sozinha. Nao reabre em hipotese alguma. E o caso do botao "Ouvir" da notificacao
+     * de maos-livres e da escuta da Virgin na tela — o indicador de microfone so acende
+     * quando o usuario pediu, e apaga quando a janela acaba.
      */
-    WORD_WATCH;
-
-    companion object {
-        /**
-         * Quanto tempo o microfone fica fechado entre janelas na maos-livres. Com a janela
-         * de escuta de ~1,2-2,5s, o microfone fica aberto ~10% do tempo em vez de sempre.
-         */
-        const val DUTY_IDLE_MS = 13000L
-    }
+    ONE_SHOT
 }
 
 class DjCommandListener(
     context: Context,
     private val mode: MicMode = MicMode.CONTINUOUS,
-    private val onResult: (text: String) -> Unit
+    private val onResult: (text: String) -> Unit,
+    private val onClosed: (() -> Unit)? = null
 ) {
     private val appContext = context.applicationContext
     private val locale: Locale = Locale.getDefault()
@@ -71,6 +61,16 @@ class DjCommandListener(
     private val cycle = MicCycle(mode, MicBackoff(FIRST_RETRY_MS, MAX_RETRY_MS))
     private val retryRunnable = Runnable { restart() }
 
+    /** Fecha sozinho quando o tempo da janela de [ONE_SHOT] acaba. */
+    private val windowRunnable = Runnable { stop() }
+    private var closedCallbackRun = false
+
+    private fun runClosed() {
+        if (closedCallbackRun) return
+        closedCallbackRun = true
+        onClosed?.invoke()
+    }
+
     init {
         recognizer?.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {}
@@ -89,15 +89,18 @@ class DjCommandListener(
                     SpeechRecognizer.ERROR_SPEECH_TIMEOUT,
                     SpeechRecognizer.ERROR_RECOGNIZER_BUSY,
                     SpeechRecognizer.ERROR_CLIENT -> scheduleNext(heard = false)
-                    // Erros fatais: para de ouvir e avisa a UI uma unica vez
+                    // Erros fatais: para de ouvir e avisa a UI uma unica vez, e fecha a janela
+                    // (senao o chamador ficaria com windowOpen/duck presos para sempre).
                     else -> {
                         listening = false
                         mainHandler.removeCallbacks(retryRunnable)
+                        mainHandler.removeCallbacks(windowRunnable)
                         mainHandler.post {
                             if (!reportedUnsupported) {
                                 reportedUnsupported = true
                                 onResult("__unsupported__")
                             }
+                            runClosed()
                         }
                     }
                 }
@@ -124,37 +127,57 @@ class DjCommandListener(
         })
     }
 
-    /** Abre o microfone de novo no tempo que a politica [MicCycle] mandar. */
+    /** Abre o microfone de novo no tempo que a politica [MicCycle] mandar. Para [ONE_SHOT],
+     * a politica devolve "nunca mais" e a janela fecha sozinha. */
     private fun scheduleNext(heard: Boolean) {
         if (!listening) return
         mainHandler.removeCallbacks(retryRunnable)
         val wait = cycle.waitBeforeReopen(heard)
+        if (wait == null) {
+            stop()
+            return
+        }
         if (wait <= 0L) restart() else mainHandler.postDelayed(retryRunnable, wait)
     }
 
-    fun start() {
+    /**
+     * Abre uma janela de escuta. [windowMs] > 0 faz o microfone fechar sozinho ao fim de
+     * [windowMs] — e o que a maos-livres e a Virgin usam para "so quando eu pedir".
+     */
+    fun start(windowMs: Long = 0L) {
         if (recognizer == null) {
             onResult("__unsupported__")
+            runClosed()
             return
         }
         reportedUnsupported = false
         listening = true
         cycle.reset()
+        if (windowMs > 0) {
+            mainHandler.removeCallbacks(windowRunnable)
+            mainHandler.postDelayed(windowRunnable, windowMs)
+        }
         startListening()
     }
 
     fun stop() {
+        val wasListening = listening
         listening = false
         cycle.reset()
         mainHandler.removeCallbacks(retryRunnable)
+        mainHandler.removeCallbacks(windowRunnable)
         runCatching { recognizer?.cancel() }
+        if (wasListening) runClosed()
     }
 
     fun destroy() {
+        val wasListening = listening
         listening = false
         mainHandler.removeCallbacks(retryRunnable)
+        mainHandler.removeCallbacks(windowRunnable)
         runCatching { recognizer?.cancel() }
         runCatching { recognizer?.destroy() }
+        if (wasListening) runClosed()
     }
 
     private fun startListening() {

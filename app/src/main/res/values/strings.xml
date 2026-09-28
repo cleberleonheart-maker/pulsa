@@ -506,7 +506,9 @@
     <string name="hands_free_desc">A Virgínia escuta comandos de voz enquanto a música toca, mesmo em segundo plano</string>
     <string name="hands_free_no_mic">Sem o acesso ao microfone não dá pra ficar de mãos-livres.</string>
     <string name="hotword_notif_title">Pulsa — mãos-livres ativo</string>
-    <string name="hotword_notif_text">Escutando comandos de voz enquanto a música toca</string>
+    <string name="hotword_notif_text">Esperando — toque em "Ouvir" para falar</string>
+    <string name="hotword_notif_listening">Ouvindo… fale o comando</string>
+    <string name="hotword_action_listen">Ouvir</string>
     <string name="hotword_channel">Mãos-livres</string>
     <string name="hotword_channel_desc">Aviso da escuta de comandos em segundo plano</string>
     <string name="dj_voice_hands_free_ui">Essa eu só faço com a tela aberta. Abre o app e me pede de novo.</string>

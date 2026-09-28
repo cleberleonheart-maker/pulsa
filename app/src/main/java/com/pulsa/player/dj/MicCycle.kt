@@ -14,19 +14,20 @@ class MicCycle(
     private val backoff: MicBackoff
 ) {
     /**
-     * Quanto esperar antes de reabrir o microfone.
+     * Quanto esperar antes de reabrir o microfone, ou `null` para nunca mais abrir.
      *
      * @param heard veio algum texto reconhecido nesta janela.
      */
-    fun waitBeforeReopen(heard: Boolean): Long = when (mode) {
+    fun waitBeforeReopen(heard: Boolean): Long? = when (mode) {
         // Quem apertou o botao esta falando: se ouviu algo, reabre na hora para nao perder
         // o resto da frase. Se nao ouviu nada, a espera cresce (2s, 4s, 8s, 15s) — aqui o
-        // laço e para ouvir a conversa, e nao para procurar uma palavra.
+        // laço é para ouvir a conversa, nao para procurar uma palavra.
         MicMode.CONTINUOUS -> if (heard) 0L else backoff.next()
 
-        // Espera da palavra: tanto tendo ouvido algo (a palavra e o comando) quanto nao, a
-        // janela fecha e o microfone descansa. Nao ha backoff aqui — o objetivo e nao abrir.
-        MicMode.WORD_WATCH -> MicMode.DUTY_IDLE_MS
+        // Escuta por pedido (maos-livres e Virgin): uma janela, acabou, fecha. Nao reabre
+        // por conta propria em nenhum caso — se reabrisse, era o "pisca sem parar" que o
+        // usuario reclamou tres vezes.
+        MicMode.ONE_SHOT -> null
     }
 
     /** Alguem realmente falou: a proxima espera volta ao comeco. */

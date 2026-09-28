@@ -1,7 +1,6 @@
 package com.pulsa.player.dj
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -32,7 +31,7 @@ class MicCycleTest {
     @Test
     fun `botao de microfone nunca espera mais que o teto`() {
         val c = cycle(MicMode.CONTINUOUS)
-        var waited = 0L
+        var waited: Long? = 0L
         repeat(10) { waited = c.waitBeforeReopen(heard = false) }
         assertEquals(15000L, waited)
     }
@@ -47,23 +46,19 @@ class MicCycleTest {
     }
 
     @Test
-    fun `maos-livres sempre fecha o microfone, mesmo ouvindo a palavra`() {
-        val c = cycle(MicMode.WORD_WATCH)
-        assertEquals(MicMode.DUTY_IDLE_MS, c.waitBeforeReopen(heard = true))
-        assertEquals(MicMode.DUTY_IDLE_MS, c.waitBeforeReopen(heard = false))
+    fun `escuta por pedido nunca reabre o microfone, nem depois de ouvir`() {
+        val c = cycle(MicMode.ONE_SHOT)
+        assertEquals(null, c.waitBeforeReopen(heard = true))
+        assertEquals(null, c.waitBeforeReopen(heard = false))
     }
 
     @Test
-    fun `maos-livres nao abre o microfone em sequencia, nunca`() {
-        val c = cycle(MicMode.WORD_WATCH)
-        var menor = Long.MAX_VALUE
-        repeat(50) { menor = minOf(menor, c.waitBeforeReopen(heard = it % 2 == 0)) }
-        // Com a janela de escuta de ~1,2-2,5s e o intervalo de 13s, o microfone fica
-        // aberto ~10% do tempo. O laço antigo abria sem parar; este e o que impede.
-        assertEquals(MicMode.DUTY_IDLE_MS, menor)
-        assertTrue(
-            "microfone aberto o tempo todo de novo",
-            MicMode.DUTY_IDLE_MS > (1200L + 2500L) * 2
-        )
+    fun `escuta por pedido nunca devolve uma janela sequer, em nenhuma recorrencia`() {
+        val c = cycle(MicMode.ONE_SHOT)
+        repeat(50) {
+            assertEquals(null, c.waitBeforeReopen(heard = it % 2 == 0))
+        }
+        // Era aqui que morava o bug: o laço abria o microfone sem parar e o ponto laranja
+        // ficava aceso enquanto a maos-livres estivesse ligada.
     }
 }

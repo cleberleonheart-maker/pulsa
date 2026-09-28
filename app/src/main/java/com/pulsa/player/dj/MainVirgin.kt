@@ -63,6 +63,9 @@ class MainVirgin(
         const val ACTION_VIRGIN_ALARM = "com.pulsa.player.action.VIRGIN_ALARM"
         const val EXTRA_ALARM_AMBIENT = "virgin_alarm_ambient"
         private const val RESUME_LISTENER_DELAY_MS = 800L
+
+        /** Janela unica de escuta da Virgin na tela, antes de fechar sozinha. */
+        private const val VIRGIN_WINDOW_MS = 6000L
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
         private const val AMBIENT_DUCK_FACTOR = 0.2f
@@ -253,12 +256,12 @@ class MainVirgin(
         Hotword.stopIfRunning(activity)
         virginOn = true
         host.syncVirginIcon()
-        Playback.setMicListening(true)
         virginListener?.destroy()
-        // Maos-livres: espera a palavra com o microfone quase todo fechado. Reabrir em
-        // sequencia era o laço infinito que o usuario viu tres vezes.
-        virginListener = DjCommandListener(activity, MicMode.WORD_WATCH) { handleCommand(it) }
-        virginListener?.start()
+        // Escuta por pedido (janela unica): o microfone so abre depois que ela termina de
+        // falar, quando resumeVirginSpeech chama doResumeVirginListener com a janela. Se
+        // abrisse aqui, ela ouviria a própria saudação (eco) e a janela pegaria a boca dela.
+        // Duck so durante a janela ou a fala, nunca permanente.
+        virginListener = DjCommandListener(activity, MicMode.ONE_SHOT, onResult = { handleCommand(it) })
         val cur = Playback.currentSong
         val msg = if (cur != null) {
             activity.getString(R.string.dj_voice_track, cur.title, cur.artist)
@@ -300,7 +303,9 @@ class MainVirgin(
 
     private fun doResumeVirginListener() {
         if (activity.isFinishing || activity.isDestroyed || !virginOn || virginSpeechPaused) return
-        virginListener?.start()
+        // Janela unica de escuta: abre aqui (depois da fala dela), 6s, fecha sozinha.
+        // Depois de ouvir um comando ela fala de novo e a proxima janela abre daqui mesmo.
+        virginListener?.start(VIRGIN_WINDOW_MS)
     }
 
     fun announceRadioSong(song: Song) {
@@ -348,9 +353,13 @@ class MainVirgin(
         val lang = virginLang
         val duckAmbient = Ambient.isOn() && Ambient.duckFactor() >= 1f
         if (duckAmbient) Ambient.setDuck(AMBIENT_DUCK_FACTOR)
+        // Enquanto ela fala, a musica fica baixa (e volta so no fim da fala). Nao deixar
+        // o duck permanente: era por ele que a musica ficava a 35% a sessão inteira.
+        Playback.setMicListening(true)
         voice.init { ready ->
             if (!ready || activity.isDestroyed) {
                 if (duckAmbient) Ambient.setDuck(1f)
+                Playback.setMicListening(false)
                 if (!hold) resumeVirginSpeech()
                 return@init
             }
@@ -358,6 +367,7 @@ class MainVirgin(
                 virginLastSpeechEndMs = SystemClock.elapsedRealtime()
                 if (duckAmbient) Ambient.setDuck(1f)
                 ThreadPool.onUi {
+                    Playback.setMicListening(false)
                     if (!hold) resumeVirginSpeech()
                 }
             }

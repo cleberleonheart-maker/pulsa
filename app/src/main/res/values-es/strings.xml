@@ -152,7 +152,9 @@
     <string name="hands_free_desc">Virginia escucha comandos de voz mientras suena la música, incluso en segundo plano</string>
     <string name="hands_free_no_mic">Sin acceso al micrófono no hay manos libres.</string>
     <string name="hotword_notif_title">Pulsa — manos libres activo</string>
-    <string name="hotword_notif_text">Escuchando comandos de voz mientras suena la música</string>
+    <string name="hotword_notif_text">Esperando — toca "Escuchar" para hablar</string>
+    <string name="hotword_notif_listening">Escuchando… di tu comando</string>
+    <string name="hotword_action_listen">Escuchar</string>
     <string name="hotword_channel">Manos libres</string>
     <string name="hotword_channel_desc">Aviso de escucha de comandos en segundo plano</string>
     <string name="dj_voice_hands_free_ui">Eso solo lo hago con la pantalla abierta. Abre la app y pídemelo otra vez.</string>

@@ -153,7 +153,9 @@
     <string name="hands_free_desc">Virginia listens for voice commands while the music plays, even in the background</string>
     <string name="hands_free_no_mic">Without microphone access there is no hands-free.</string>
     <string name="hotword_notif_title">Pulsa — hands-free active</string>
-    <string name="hotword_notif_text">Listening to voice commands while the music plays</string>
+    <string name="hotword_notif_text">Waiting — tap "Listen" to speak</string>
+    <string name="hotword_notif_listening">Listening… say your command</string>
+    <string name="hotword_action_listen">Listen</string>
     <string name="hotword_channel">Hands-free</string>
     <string name="hotword_channel_desc">Background voice listening notice</string>
     <string name="dj_voice_hands_free_ui">I can only do that with the app open. Open Pulsa and ask me again.</string>
