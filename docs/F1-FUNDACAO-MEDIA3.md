@@ -255,6 +255,13 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 >   redirect http→https das URLs do radio-browser.
 > - **Reteste no aparelho:** tocar estação → fechar o app → música segue e a notificação mostra o nome da estação;
 >   trocar de estação re-conecta; `.m3u8` (Antena 1) toca; erro de stream mostra "Erro" + toast em vez de travar.
+> - **Encerrar na mão (fechar de verdade, swipe) também passou a continuar (7b9f5f1):**
+>   o portão do foreground virou `playingLike` (`playWhenReady` e `READY`/`BUFFERING`) — live stream cai para
+>   `isPlaying=false` durante `isLoading`/rebuffer, o `onUpdateNotification` caía no `super`, o manager do Media3
+>   via "acabou" e derrubava o FGS no swipe → processo morria junto (`4877f95` com `setWakeMode(NETWORK)` cobriu o
+>   CPU dormindo, mas não o FGS derrubado). Música local nunca carregava em background, por isso só o rádio sofria.
+>   Persistência dupla: `saveResumeState` grava `radio_resume` (url/título/gênero) enquanto toca e o `onCreate`
+>   restaura a estação se o processo renasceu com ela no ar; `pause()` deliberado limpa (não volta sozinho).
 
 **E5 · Vídeo no mesmo motor (1–2 dias)**
 - `MediaItem` `video:<id>` com `MimeTypes` detectado; `VideoPlayerActivity` vira só uma tela de player, sem `VideoView`.
