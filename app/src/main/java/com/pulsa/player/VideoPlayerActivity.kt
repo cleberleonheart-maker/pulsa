@@ -21,6 +21,7 @@ import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.core.Helper
+import kotlin.math.abs
 
 class VideoPlayerActivity : AppCompatActivity() {
 
@@ -108,6 +109,21 @@ class VideoPlayerActivity : AppCompatActivity() {
             override fun onSingleTapUp(e: MotionEvent): Boolean {
                 toggleControls()
                 return true
+            }
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                val dx = e2.x - (e1?.x ?: e2.x)
+                val dy = e2.y - (e1?.y ?: e2.y)
+                if (abs(dx) > abs(dy) && abs(dx) > 60 && abs(velocityX) > 400) {
+                    step(if (dx < 0) -1 else 1)
+                    return true
+                }
+                return false
             }
         })
         findViewById<View>(R.id.vp_root).setOnTouchListener { _, e ->
