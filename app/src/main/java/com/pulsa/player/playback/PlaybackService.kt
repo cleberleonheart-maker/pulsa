@@ -4,31 +4,32 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ServiceInfo
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Binder
-import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.os.SystemClock
-import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.session.MediaSessionCompat
-import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.CommandButton
+import androidx.media3.session.MediaNotification
+import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionResult
+import com.google.common.collect.ImmutableList
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
 import com.pulsa.player.data.ArtLoader
@@ -48,7 +49,7 @@ import java.io.File
 import kotlin.random.Random
 
 @OptIn(UnstableApi::class)
-class PlaybackService : Service() {
+class PlaybackService : MediaSessionService() {
 
     companion object {
         private const val CHANNEL_ID = "playback"
@@ -84,8 +85,9 @@ class PlaybackService : Service() {
     private var player: ExoPlayer? = null
     private var awaitingReady = false
     private var playerLink: ServicePlayerLink? = null
-    private lateinit var session: MediaSessionCompat
+    private lateinit var session: MediaSession
     private lateinit var notificationManager: NotificationManager
+    private var notificationChangedCallback: MediaNotification.Provider.Callback? = null
     private var largeIcon: android.graphics.Bitmap? = null
     private var audioManager: AudioManager? = null
 
@@ -235,23 +237,46 @@ class PlaybackService : Service() {
         val service: PlaybackService get() = this@PlaybackService
     }
 
-    override fun onBind(intent: Intent?): IBinder = LocalBinder()
+    /**
+     * E3b: o [MediaSessionService] só devolve binder de mídia quando o intent chega com as
+     * actions de sessão (`SERVICE_INTERFACE`/`MediaBrowserService`); para qualquer outro — e o
+     * `Playback.connect` liga sem action — ele devolve null, o que derruba o bind. Por isso o
+     * override: sem action (o bind da fachada) sai o [LocalBinder] de sempre; as actions de
+     * mídia passam para o base, que cuida da sessão do sistema e dos browsers legados.
+     */
+    override fun onBind(intent: Intent?): IBinder? {
+        return if (intent?.action == null) LocalBinder() else super.onBind(intent)
+    }
+
+    override fun onGetSession(controller: MediaSession.ControllerInfo): MediaSession = session
 
     override fun onCreate() {
         super.onCreate()
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         createChannel()
-        session = MediaSessionCompat(this, "PulsaPlayback").apply {
-            isActive = true
-            setCallback(object : MediaSessionCompat.Callback() {
-                override fun onPlay() = toggle()
-                override fun onPause() = toggle()
-                override fun onSkipToNext() = next()
-                override fun onSkipToPrevious() = prev()
-                override fun onSeekTo(pos: Long) = seekTo(pos)
-            })
-        }
+        player = ExoPlayer.Builder(this)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.CONTENT_TYPE_MUSIC)
+                    .build(),
+                false
+            )
+            .build()
+            .also { it.addListener(playerListener) }
+        session = MediaSession.Builder(this, player!!)
+            .setSessionActivity(
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+            .setCallback(sessionCallback)
+            .build()
+        setMediaNotificationProvider(pulsaNotificationProvider)
         // F1/E2: o serviço se anuncia na fachada pelo `PlayerLink`, em vez de expor
         // `Playback.service`. O widget e os broadcasts dependem disso para desenhar estado
         // sem connectar — por isso o registro mora aqui e não no `bindService`.
@@ -265,21 +290,21 @@ class PlaybackService : Service() {
             ACTION_NEXT -> next()
             ACTION_PREV -> prev()
         }
-        return START_NOT_STICKY
+        return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onDestroy() {
         stopEightD()
         fadeInRunnable?.let { fadeHandler.removeCallbacks(it) }
+        playerLink?.let { Playback.detach(it) }
+        if (::session.isInitialized) session.release()
         player?.let {
             it.removeListener(playerListener)
+            AudioFx.release()
+            MusicVisualizer.detach()
             it.release()
         }
         player = null
-        AudioFx.release()
-        MusicVisualizer.detach()
-        session.release()
-        playerLink?.let { Playback.detach(it) }
         super.onDestroy()
     }
 
@@ -449,7 +474,7 @@ class PlaybackService : Service() {
         q[i] = updated
         queue = q
         publishMetadata(updated)
-        updateNotification()
+        refreshNotification()
         Playback.notifySong(updated, i)
     }
 
@@ -516,36 +541,35 @@ class PlaybackService : Service() {
         resetAbLoop()
         try {
             if (song.path.isBlank()) throw IllegalStateException("sem arquivo")
-            val p = player ?: ExoPlayer.Builder(this)
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(C.USAGE_MEDIA)
-                        .setContentType(C.CONTENT_TYPE_MUSIC)
-                        .build(),
-                    false
-                )
-                .build()
-                .also {
-                    it.addListener(playerListener)
-                    player = it
-                }
+            val p = player ?: return
             awaitingReady = true
             p.setPlayWhenReady(false)
             p.setMediaItems(
-                queue.map { it -> MediaItem.fromUri(Uri.fromFile(File(it.path))) },
+                queue.map { mediaItemFor(it) },
                 index.coerceIn(0, queue.lastIndex),
                 0L
             )
             p.prepare()
-            ensureForeground(song)
-            publishMetadata(song)
             LastFm.nowPlaying(applicationContext, song, song.durationMs)
             Playback.notifySong(song, index)
+            loadLargeIcon(song)
             announceInBackground(song)
         } catch (e: Exception) {
             onTrackError()
         }
     }
+
+    private fun mediaItemFor(song: Song): MediaItem =
+        MediaItem.Builder()
+            .setUri(Uri.fromFile(File(song.path)))
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(song.title)
+                    .setArtist(song.artist)
+                    .setAlbumTitle(song.album)
+                    .build()
+            )
+            .build()
 
     /** Religou os efeitos na sessão de áudio do ExoPlayer (estável por instância). */
     private fun attachEffects() {
@@ -568,8 +592,50 @@ class PlaybackService : Service() {
             }
         }
 
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            // E3b: comandos vindos de fora (SystemUI, fone, MediaController) tocam o player
+            // direto pela sessão — aqui o serviço sincroniza o que a reprodução precisa fazer
+            // por conta própria. Os chamadores internos passam por play()/pause(), e o set é
+            // idempotente, então o dobro de execução não muda nada.
+            syncExternalPlaybackState(isPlaying)
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             onTrackError()
+        }
+    }
+
+    /**
+     * E3b — o roteamento da sessão Media3: comandos que o serviço precisa tratar com a própria
+     * lógica (próxima/anterior refazem a fila no ExoPlayer; um `seekToNext` do sistema depois
+     * seria uma segunda passada) são interceptados e bloqueados com um resultado de erro — o
+     * [MediaSessionService] não re-executa, e o guia é só receber o "não", sem retry. Play/pause
+     * e seek ficam com o comportamento padrão da sessão (a execução certa pra cada botão), e o
+     * `onIsPlayingChanged` do listener cuida do resto. O STOP volta a ser no-op, como era no
+     * callback legado da `MediaSessionCompat`.
+     */
+    private val sessionCallback = object : MediaSession.Callback {
+        override fun onPlayerCommandRequest(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            playerCommand: Int
+        ): Int = when (playerCommand) {
+            Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+            Player.COMMAND_SEEK_TO_NEXT_WINDOW,
+            Player.COMMAND_SEEK_TO_NEXT -> {
+                next()
+                SessionResult.RESULT_ERROR_UNKNOWN
+            }
+
+            Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+            Player.COMMAND_SEEK_TO_PREVIOUS_WINDOW,
+            Player.COMMAND_SEEK_TO_PREVIOUS -> {
+                prev()
+                SessionResult.RESULT_ERROR_UNKNOWN
+            }
+
+            Player.COMMAND_STOP -> SessionResult.RESULT_ERROR_UNKNOWN
+            else -> SessionResult.RESULT_SUCCESS
         }
     }
 
@@ -727,8 +793,7 @@ class PlaybackService : Service() {
         // Mãos-livres acompanha a reprodução: liga ao tocar, desliga ao pausar.
         if (isPlaying) com.pulsa.player.dj.Hotword.startIfNeeded(this)
         else com.pulsa.player.dj.Hotword.stopIfRunning(this)
-        updateSessionState()
-        updateNotification()
+        refreshNotification()
     }
 
     fun currentArt(): android.graphics.Bitmap? = largeIcon
@@ -781,32 +846,36 @@ class PlaybackService : Service() {
     }
 
     private fun publishMetadata(song: Song) {
-        session.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, song.album)
-                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.durationMs)
-                .build()
-        )
-        updateSessionState()
+        val p = player ?: return
+        // E3b: a metadata da sessão vem dos MediaItems do player; trocar o item da posição
+        // corrente dispara o snapshot novo (SystemUI/notificação do sistema).
+        runCatching {
+            p.replaceMediaItem(
+                p.currentMediaItemIndex,
+                p.getMediaItemAt(p.currentMediaItemIndex).buildUpon().setMediaMetadata(mediaItemFor(song).mediaMetadata).build()
+            )
+        }
     }
 
-    private fun updateSessionState() {
-        val state = if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
-        val pos = player?.currentPosition ?: 0L
-        session.setPlaybackState(
-            PlaybackStateCompat.Builder()
-                .setActions(
-                    PlaybackStateCompat.ACTION_PLAY or
-                        PlaybackStateCompat.ACTION_PAUSE or
-                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                        PlaybackStateCompat.ACTION_SEEK_TO
-                )
-                .setState(state, pos, 1f, SystemClock.elapsedRealtime())
-                .build()
-        )
+    /**
+     * E3b: comandos de fora tocam o player direto pela sessão; este set é o que a reprodução
+     * faz por conta própria. Idempotente de propósito: `play()`/`pause()` da fachada rodam o
+     * mesmo conjunto logo depois do `onIsPlayingChanged` disparar.
+     */
+    private fun syncExternalPlaybackState(playing: Boolean) {
+        if (playing) {
+            requestAudioFocus()
+            startEightD()
+            scheduleTick()
+            applyDanceParams()
+            publishState()
+        } else {
+            saveResumeState()
+            if (!pauseOnFocusLoss) abandonAudioFocus()
+            stopEightD()
+            mainHandler.removeCallbacks(progressTick)
+            publishState()
+        }
     }
 
     private fun createChannel() {
@@ -856,7 +925,7 @@ class PlaybackService : Service() {
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setStyle(
                 MediaStyle()
-                    .setMediaSession(session.sessionToken)
+                    .setMediaSession(session.getSessionCompatToken())
                     .setShowActionsInCompactView(0, 1, 2)
             )
             .addAction(R.drawable.ic_skip_prev, getString(R.string.prev_action), prevIntent)
@@ -867,26 +936,56 @@ class PlaybackService : Service() {
         return builder.build()
     }
 
-    private fun ensureForeground(song: Song) {
-        val notification = buildNotification(song)
-        if (Build.VERSION.SDK_INT >= 29) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
-        loadLargeIcon(song)
+    private fun buildIdleNotification(): Notification {
+        val contentIntent = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_music_note)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentIntent(contentIntent)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOnlyAlertOnce(true)
+            .setOngoing(false)
+            .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+            .build()
     }
 
-    private fun updateNotification() {
+    /**
+     * E3b — o `MediaSessionService` exige um provider e cuida do foreground por conta própria
+     * (sobe ao tocar, desce ao pausar). O provider devolve a **nossa** notificação de sempre
+     * (mesmo layout, id 10, actions); nada de notificação dupla porque o padrão do Media3 não
+     * roda junto.
+     */
+    private val pulsaNotificationProvider = object : MediaNotification.Provider {
+        override fun createNotification(
+            mediaSession: MediaSession,
+            customLayout: ImmutableList<CommandButton>,
+            actionFactory: MediaNotification.ActionFactory,
+            onNotificationChangedCallback: MediaNotification.Provider.Callback
+        ): MediaNotification {
+            notificationChangedCallback = onNotificationChangedCallback
+            val song = currentSong
+            val notification = if (song != null) buildNotification(song) else buildIdleNotification()
+            return MediaNotification(NOTIFICATION_ID, notification)
+        }
+
+        override fun handleCustomCommand(
+            mediaSession: MediaSession,
+            action: String,
+            extras: Bundle
+        ): Boolean = false
+    }
+
+    private fun refreshNotification() {
         PulsaWidget.refresh(this)
         val song = currentSong ?: return
-        try {
-            notificationManager.notify(NOTIFICATION_ID, buildNotification(song))
-        } catch (e: Exception) {
+        val cb = notificationChangedCallback ?: return
+        runCatching {
+            cb.onNotificationChanged(MediaNotification(NOTIFICATION_ID, buildNotification(song)))
         }
     }
 
@@ -897,7 +996,7 @@ class PlaybackService : Service() {
                 if (bmp != null) {
                     largeIcon = bmp
                     if (currentSong?.id == song.id) {
-                        updateNotification()
+                        refreshNotification()
                         PulsaWidget.refresh(applicationContext)
                     }
                 }

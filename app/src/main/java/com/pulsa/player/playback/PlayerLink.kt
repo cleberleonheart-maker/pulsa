@@ -51,13 +51,15 @@ interface PlayerLink {
 }
 
 /**
- * E3a — implementação que roda o motor sobre o `ExoPlayer` dentro de [PlaybackService].
- * O `service` continua sendo um `Service` comum com `MediaSessionCompat`; a troca do motor
- * aconteceu sem mudar o contrato. Tudo aqui é repasse 1:1 dos membros públicos do serviço;
- * nenhum `private set` é violado porque só são lidos.
+ * E3a+E3b — a ponte [Playback] ↔ [PlaybackService]. O motor é um `ExoPlayer` único dentro do
+ * serviço (E3a) e a sessão de mídia é a do Media3 — `MediaSessionService` + `MediaSession`
+ * (E3b): a `MediaSessionCompat`, o `MediaStyle` legado e o `PlaybackStateCompat` escritos à
+ * mão sumiram, junto com o `ensureForeground` manual (quem sobe/desce o foreground é o
+ * próprio `MediaSessionService` via nosso provider de notificação). O transporte continua o
+ * mesmo `LocalBinder` do serviço, então nem a fachada nem os consumidores mudaram.
  *
- * No E3b esta classe é substituída pela que fala com o `MediaController`, que é a parte
- * que remove a `MediaSessionCompat` e usa a sessão do Media3.
+ * Tudo aqui é repasse 1:1 dos membros públicos do serviço; nenhum `private set` é violado
+ * porque só são lidos.
  */
 class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
 

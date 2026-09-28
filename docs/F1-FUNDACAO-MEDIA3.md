@@ -119,6 +119,9 @@ PulsaLibrary : MediaLibraryService   (árvore: Músicas / Rádio / Vídeos / Pod
 
 Decisões:
 - **A fachada `Playback` vira `PulsaPlayback` sobre `MediaController`** e passa a funcionar mesmo com o app morto (Estado salvo/reconectado). Nenhum consumidor precisa mudar.
+  > **Corrigido na prática (E2–E3b):** a fachada ficou como está — só deixa de conhecer o serviço
+  > e passa a falar com o motor pela conexão. Ler posição continua por `Playback` (cache local),
+  > não por round-trip de `MediaController`; a sessão Media3 vive dentro do mesmo serviço.
 - **Um `ExoPlayer` só**, com `ExoPlayer.Builder().setAudioAttributes(..., handleAudioFocus = false)` — o foco de áudio continua gerenciado à mão pelo serviço, porque a Virgin precisa de *duck* e *pause sob perda de foco transitória* (`PlaybackService.kt:108-145`), comportamento que o `handleAudioFocus` padrão não reproduz.
 - **Fila unificada já nasce aqui**: `MediaItem` com `mediaId` estável (`song:<id>`, `radio:<url>`, `video:<id>`), o que é pré-requisito do "Fila universal" e do `MediaLibraryService`.
 - **Crossfade** deixa de ser `setVolume` em `Handler` e passa a ser `ExoPlayer` com `setVolume` controlado por `Player.Listener` no `onMediaItemTransition` — mesma sensação, menos código.
@@ -174,6 +177,48 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 - Loop A/B no `emitProgress` continua, lendo `player.currentPosition` (o cache local da facade).
 - **Validação:** o checklist do E0 inteiro, com atenção especial a EQ/8D/crossfade.
 
+> **E3 · Execução real (28/09) — E3a feito, E3b em andamento**
+>
+> **E3a — motor no serviço (FEITO, `6b9bfb1`, CI verde):** `PlaybackService` agora cria um
+> `ExoPlayer` próprio no `onCreate` (com `audioAttributes` e `handleAudioFocus = false`), sem a
+> sessão. Cada `prepareCurrent` enfileira a fila inteira em `setMediaItems`; efeitos (EQ,
+> visualizador), A/B, sleep mix e 8D realocados no `Player.Listener`; a fachada e os consumidores
+> não mudaram (o `LocalBinder` repassa os mesmos métodos).
+>
+> **E3b — sessão Media3 no lugar da `MediaSessionCompat` (em andamento):**
+> - Descoberta-chave na tag 1.3.1 (`MediaSessionService.onBind`): com *action nula* — que é como
+>   o `Playback.connect` faz `bindService` — o base devolve `null` e o sistema chama `onNullBinding`,
+>   matando a conexão que mantém a fachada/estado vivos. Por isso o `onBind` foi sobrescrito:
+>   action `null` → `LocalBinder()` de sempre; qualquer outra → `super.onBind(intent)` (que devolve
+>   o `sessionBinder` de mídia). Assinatura precisa ser `IBinder?` (o base é nullable).
+> - `class PlaybackService : MediaSessionService()`, `session` criado via
+>   `MediaSession.Builder(this, player!!)`, `onGetSession` devolve a singleton. `onStartCommand`
+>   delega ao `super` depois dos `START`/`STOP`/`NEXT`/`PREV` próprios (o base já trata
+>   `ACTION_MEDIA_BUTTON` e devolve `START_STICKY` para intent nulo). `onDestroy` libera a sessão
+>   antes do player.
+> - **Comandos externos:** não há `COMMAND_PLAY`/`COMMAND_PAUSE` nesse Player — play/pause vêm
+>   como `COMMAND_PLAY_PAUSE` e o default do `Media3` executa a operação certa para o botão
+>   (idempotente). `onPlayerCommandRequest` bloqueia (`RESULT_ERROR_UNKNOWN`) `SEEK_TO_NEXT*`/
+>   `SEEK_TO_PREVIOUS*` (que virariam segundo pulo na fila recriada por `prepareCurrent`) e
+>   `COMMAND_STOP` (no-op, paridade com o legado). Bookkeeping da reprodução vem de
+>   `onIsPlayingChanged` → `syncExternalPlaybackState` (idempotente, mesmo conjunto de sempre).
+> - **Metadata:** não existe `MediaSession.setMediaMetadata`/`Player.setMediaItemMetadata` na
+>   versão — o snapshot vem dos `MediaItem`. `prepareCurrent` embute `MediaMetadata`
+>   (title/artist/album, sem `setDurationMs`) em cada item; `publishMetadata` vira
+>   `player.replaceMediaItem(index, ...)`.
+> - **Notificação:** o `MediaSessionService` exige provider (devolver `null` dá NPE) e sobe/desce
+>   o foreground sozinho. O provider devolve a **nossa** notificação (mesma `NOTIFICATION_ID` 10,
+>   mesmas actions, `MediaStyle().setMediaSession(session.getSessionCompatToken())`) e guarda o
+>   `Callback` para reposto após o artwork (`refreshNotification`). `ensureForeground` e o
+>   `notify` manual saíram.
+> - **Cleanup previsto (próximo passo):** remover a `MediaSessionCompat`, o `PlaybackStateCompat`
+>   escrito à mão e o `updateSessionState` — o snapshot agora sai direto do player. `exported`
+>   continua `false` (SystemUI acessa via registro do compat; publicar é tarefa do E7).
+> - **Validação do ponto atual:** `PlaybackService.kt` + `PlayerLink.kt` + `Playback.kt` +
+>   `MicBackoff.kt` + `MicCycle.kt` + `DjCommandListener.kt` compilam localmente contra o
+>   `media3-session-1.3.1.jar` (baixado do Google Maven; Maven Central dá 404 para a `androidx.media3`)
+>   pelo caminho fake no cache do Gradle; `MicCycleTest` + `MicBackoffTest` → **66 testes OK**.
+
 **E4 · Rádio no mesmo motor (1 dia)**
 - `RadioActivity` passa a enfileirar `radio:<url>` no mesmo serviço (hoje tem `ExoPlayer` próprio em `RadioActivity.kt:281`).
 - Adicionar `media3-exoplayer-hls` já resolve o bug de `.m3u8` do radio-browser que hoje falha calado.
@@ -221,7 +266,7 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 7. **Mídia do sistema e `MediaItem`.** `MediaItem` não aceita caminho de arquivo cru sem `Uri`/`File` válido no Android 7+; `song.path` (`Library.kt:22`) precisa virar `Uri.fromFile`/`content://` corretamente, senão dá `IllegalStateException` no `prepare`.
 8. **Crossfade com `MediaPlayer` compartilhando o foco.** Depois do E3 a sensação precisa ser igual: fade-out da atual, fade-in da nova, sem gap audível. Regra: a mesma constante `FADE_STEPS = 10` e o mesmo `crossfadeMs` (`PlaybackService.kt:50`, `214`).
 9. **Rádio e `minSdk 23`.** `media3-datasource-okhttp` e HLS funcionam em 23, mas testar num aparelho antigo (API 23–26) antes de considerar o passo pronto.
-10. **Android 14 / FGS.** `FOREGROUND_SERVICE_MEDIA_PLAYBACK` já está no manifest (linha 16) — bom. Mas `MediaSessionService` inicia foreground em `onGetSession`; se a sessão for criada sem tocar, pode aparecer notificação fantasma. Iniciar foreground só no primeiro `play()`.
+10. **Android 14 / FGS.** `FOREGROUND_SERVICE_MEDIA_PLAYBACK` já está no manifest (linha 16) — bom. Mas `MediaSessionService` inicia foreground em `onGetSession`; se a sessão for criada sem tocar, pode aparecer notificação fantasma. **Resolvido no E3b:** o provider devolve `buildIdleNotification()` enquanto `currentSong == null` — o sistema sobe a notificação de transporte do próprio Media3 (que é obrigatória), não a nossa, e ela sai quando a música toca. Iniciar foreground só no primeiro `play()` ficou desnecessário: quem decide o texto é o provider, não o serviço.
 
 ## 7. Como testar a cada passo
 
