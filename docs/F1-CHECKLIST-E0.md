@@ -10,7 +10,13 @@
 > type-check e os testes sem Gradle. Nada de mexer no motor de playback sem o checklist.
 >
 > **Baseline 27/09:** 5.9.3, `versionCode` 124, 68 testes unitários (56 antigos + 12 novos),
-> APK de referência = o que o CI publicou para 124.
+> APK de referência = o que o CI publicou para 124. **O usuário confirmou que a 5.9.3 instala e
+> abre normalmente** — a causa do splash travado era mesmo o `HotwordService` devolvendo do
+> `onCreate` sem `startForeground`.
+>
+> **Estado:** E0, E1 e E2 feitos e verdes no CI. Como o E2 mexe em conexão, ele é o primeiro
+> passo que exige este checklist inteiro rodado no aparelho, não só nos grupos tocados.
+
 
 ## 1. Ligar e tocar (o básico que quebra primeiro)
 

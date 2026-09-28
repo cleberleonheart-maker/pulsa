@@ -138,12 +138,33 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 - Manter `minSdk 23` (Media3 1.3 e Room 2.6 suportam) e `compileSdk 34`.
 - Compilar e rodar os testes: a meta do passo é **zero mudança de comportamento**.
 
-**E2 · Fachada com MediaController (1 dia)**
-- Criar `playback/PulsaSessionService : MediaSessionService` com um `ExoPlayer` e a sessão, sem migrar a música ainda.
-- Criar `playback/PulsaPlayback.kt` (ou adaptar `Playback.kt`) com a API de §3 implementada sobre `MediaController` + `PlayerHolder` (conexão assíncrona, re-conecta em `onStart` do serviço).
-- `Playback.service` deixa de existir: `SettingsActivity` e `PulsaWidget` passam a usar a fachada (mexer só nesses dois pontos).
-- Migrar `MainActivity`/`DjActivity` do `bindService` manual para a fachada.
-- **Validação:** app abre, toca, notificação funciona, DJ continua, widget funciona. Motor ainda é o `MediaPlayer` (modo legado dentro do serviço) — só a *conexão* mudou.
+**E2 · Fachada com a conexão (1 dia) — FEITO 27/09, `2a591d1`, CI verde**
+- Escopo real, diferente do rascunho original: **só a conexão**, não a sessão. Criar a
+  `MediaSessionService` aqui mostraria um segundo item nos controles do sistema, vazio e sem
+  som, ao lado da notificação atual — ou seja, mudança de comportamento, que é a única coisa
+  que este passo não pode trazer. A sessão entra no E3, quando o `ExoPlayer` for o motor de
+  verdade e a sessão tiver o que controlar.
+- `playback/PlayerLink.kt`: o "PlayerHolder" do plano. `PlayerLink` é o contrato com o motor;
+  `ServicePlayerLink` repassa 1:1 o `MediaPlayer` legado. No E3 entra a implementação sobre
+  `MediaController` — e nem a fachada nem os 29 consumidores mudam.
+- `playback/Playback.kt`: `Playback.service` **deixou de existir**. A fachada é o único lugar do
+  app que sabe que existe um motor. Os 29 arquivos que já chamavam `Playback` não mudaram.
+- `Playback.connect(context) { avisa quando ligou }` devolve um `Bind`; `Playback.release(bind)`
+  desfaz. Substituiu os dois `ServiceConnection` duplicados (MainActivity e DjActivity) e
+  corrigiu de passagem o flag `bound` do DjActivity, que só virava no callback e portanto
+  vazava o bind quando a tela saía antes de a ligação fechar.
+- Os três furos de §3.1 fecharam: `Playback.isReady` (no lugar de `Playback.service != null`,
+  em `MainActivity:422` e no polling da Virgin depois do alarme), `Playback.reapplyDanceParams()`
+  (no lugar de `applyDanceParamsForRefresh()`) e `Playback.currentArt()` (no lugar do `Bitmap`
+  lido do serviço). O widget parou de conhecer o serviço: pede as intenções à fachada.
+- **Preservado de propósito:** quem se anuncia na fachada é o próprio `PlaybackService` no
+  `onCreate`, e não o `bindService`, e o motor continua valendo depois do `unbind`. É disso que
+  o widget depende — um `BroadcastReceiver` não conecta nada e ainda assim desenha a faixa
+  tocando. Refazer isso é tarefa do E3, quando a sessão passa a ser dona do player.
+- **Validação:** 11 arquivos compilam, as 6 suítes passam (68 testes) e o CI da PR #1 ficou
+  verde. A contagem de bind não tem teste unitário (precisa de `Context` e `bindService` de
+  verdade) — por isso o checklist do E0 no aparelho é a rede deste passo.
+
 
 **E3 · Música no ExoPlayer (2–3 dias) — o passo crítico**
 - `MediaItem` por `Song`; `setMediaItems(items, index, positionMs)`.
