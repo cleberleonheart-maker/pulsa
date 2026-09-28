@@ -303,7 +303,8 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 >   (o pan LFO sobreviveu à troca de `audioSessionId` — a armadilha nº1 desta doc). O defeito do
 >   `DefaultDataSource` acima foi encontrado exatamente assim. **Falta do checklist do E0:** EQ
 >   (presets, automático por gênero, custom 5 bandas, karaokê), crossfade, A/B, sleep mix, dance,
->   duck da Virgin, widget, e o teste de morte (tocar → force-stop → reabrir).
+>   duck da Virgin, e o teste de morte (tocar → force-stop → reabrir). **Widget OK**: o
+>   `PulsaWidget` lê o service direto (armadilha nº5 desta doc) e não precisou mudar.
 
 **E6 · MediaLibraryService (1–2 dias)**
 - `playback/PulsaLibraryService : MediaLibraryService` publicando a árvore (raiz "Pulsa", filhos "Músicas", "Rádio", "Vídeos", "Playlists", "Favoritas", "Adicionadas recentemente").
