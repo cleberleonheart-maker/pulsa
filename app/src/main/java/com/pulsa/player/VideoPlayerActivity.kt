@@ -11,7 +11,6 @@ import android.os.Looper
 import android.app.PictureInPictureParams
 import android.view.GestureDetector
 import android.view.MotionEvent
-import android.view.SurfaceView
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageButton
@@ -35,7 +34,8 @@ import kotlin.math.abs
  * E5 — a tela de vídeo agora é só uma tela: quem toca é o mesmo motor do rádio/música.
  *
  * Cada vídeo vira um `Song` com `path = "video:<id>"` ([Song.VIDEO_PREFIX]); a activity
- * anexa um [SurfaceView] ao `Player` do serviço ([Playback.player]) e dirige o motor pela
+ * anexa uma [androidx.media3.ui.PlayerView] ao `Player` do serviço ([Playback.player]) e
+ * dirige o motor pela
  * fachada (play/pause/next/prev/seek). Entrar num vídeo substitui a fila da música — o
  * mesmo player é um só, então é impossível a música "invadir" o vídeo tocando junto (o
  * problema que este passo elimina). Sair da tela devolve a fila que estava tocando antes.
@@ -57,7 +57,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         }
     }
 
-    private lateinit var surfaceView: SurfaceView
+    private lateinit var playerView: androidx.media3.ui.PlayerView
     private lateinit var loading: ProgressBar
     private lateinit var errorView: TextView
     private lateinit var topBar: View
@@ -67,8 +67,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var durationText: TextView
     private lateinit var seekBar: SeekBar
     private lateinit var playBtn: ImageButton
-    private lateinit var subtitleView: androidx.media3.ui.SubtitleView
-
+    
     private var videos: List<Video> = emptyList()
     private var videoSongs: List<Song> = emptyList()
     private var index = 0
@@ -109,7 +108,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         setContentView(R.layout.activity_video_player)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        surfaceView = findViewById(R.id.vp_video)
+        playerView = findViewById(R.id.vp_video)
         loading = findViewById(R.id.vp_loading)
         errorView = findViewById(R.id.vp_error)
         topBar = findViewById(R.id.vp_top)
@@ -119,7 +118,6 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         durationText = findViewById(R.id.vp_duration)
         seekBar = findViewById(R.id.vp_seek)
         playBtn = findViewById(R.id.vp_play)
-        subtitleView = findViewById(R.id.vp_subtitles)
 
         findViewById<ImageButton>(R.id.vp_back).setOnClickListener {
             closingForMusic.set(true)
@@ -285,33 +283,22 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
      */
     private fun applySubtitle(song: Song) {
         val player = Playback.player
-        if (player == null) {
-            subtitleView.visibility = View.GONE
-            return
-        }
-        // Esconde imediatamente: enquanto procura, a legenda antiga nao deve piscar.
-        subtitleView.visibility = View.GONE
+        if (player == null) return
+        val before = player.currentMediaItem?.localConfiguration?.uri
         ThreadPool.post {
             val attached = runCatching {
-                val current = player.currentMediaItem
-                if (current != null) Subtitles.attach(applicationContext, current) else null
+                player.currentMediaItem?.let { Subtitles.attach(applicationContext, it) }
             }.getOrNull()
             ThreadPool.onUi {
                 if (isFinishing || isDestroyed) return@onUi
-                // O video pode ter trocado de faixa enquanto procurava: so aplica se for
-                // o mesmo item, senao a legenda do video anterior aparece no seguinte.
-                if (player.currentMediaItem?.localConfiguration?.uri !=
-                    attached?.localConfiguration?.uri
-                ) {
-                    return@onUi
-                }
-                if (attached == null) {
-                    subtitleView.setPlayer(null)
-                    subtitleView.visibility = View.GONE
-                    return@onUi
-                }
-                subtitleView.setPlayer(player)
-                subtitleView.visibility = View.VISIBLE
+                // O video pode ter trocado de faixa enquanto procurava o .srt. So troca o
+                // item se for o MESMO: se nao, a legenda do video anterior entraria no
+                // seguinte, e o MediaItem novo seria sobrescrito por um item velho.
+                if (player.currentMediaItem?.localConfiguration?.uri != before) return@onUi
+                val target = attached ?: return@onUi
+                // Substitui o item no lugar (replaceMediaItem), para nao perder a posicao
+                // nem a fila: setMediaItems reiniciaria o video do zero.
+                player.replaceMediaItem(player.currentMediaItemIndex, target)
             }
         }
     }
@@ -458,7 +445,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         } else {
             // Voltou a tela cheia — reanexar o surface e mostrar as barras de novo.
             handler.removeCallbacks(hideRunnable)
-            Playback.player?.setVideoSurfaceView(surfaceView)
+            playerView.player = Playback.player
             render()
             // Voltando do PiP, a legenda foi solta no onStop: religa.
             Playback.currentSong?.takeIf { it.isVideo }?.let { applySubtitle(it) }
@@ -472,7 +459,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         if (videos.isNotEmpty() && !finished) {
             Playback.listener = this
-            Playback.player?.setVideoSurfaceView(surfaceView)
+            playerView.player = Playback.player
             if (autoplay) Playback.play()
             render()
             // Recomecando, religa a legenda do video que ja esta tocando.
@@ -490,7 +477,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             super.onPause()
             return
         }
-        Playback.player?.clearVideoSurfaceView(surfaceView)
+        playerView.player = null
         if (videos.isNotEmpty()) {
             autoplay = Playback.isPlaying
             Playback.pause()
@@ -500,9 +487,6 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
     override fun onStop() {
         if (Playback.listener === this) Playback.listener = null
-        // Em PiP a activity segue viva e o vídeo tocando, mas a SubtitleView pertence à
-        // tela cheia: solta o player para não desenhar a legenda por cima do PiP.
-        if (isInPictureInPictureMode) subtitleView.setPlayer(null)
         // KEEP_SCREEN_ON só faz sentido com a tela de vídeo na mão. Em PiP deixava a tela
         // acesa o tempo todo; e a flag é do lado do SO, então sobreviveria à activity.
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -518,10 +502,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         finished = true
         handler.removeCallbacks(hideRunnable)
         if (Playback.listener === this) Playback.listener = null
-        // Solta o player da SubtitleView: se nao, o player continua com referencia para
-        // uma view morta e o leak atravessa a activity.
-        subtitleView.setPlayer(null)
-        Playback.player?.clearVideoSurfaceView(surfaceView)
+        playerView.player = null
         playbackBind?.let { Playback.release(it) }
         playbackBind = null
         Playback.setShuffle(prevShuffle)

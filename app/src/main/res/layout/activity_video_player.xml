@@ -1,27 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/vp_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg">
 
-    <SurfaceView
+    <!--
+        PlayerView em vez de SurfaceView cru: ele cuida da superficie E da legenda
+        (a SubtitleView e interna a ela). Uma SubtitleView solta nao tem setPlayer --
+        so a PlayerView sabe qual decoder de legenda acoplar ao player.
+        `use_controller=false` porque esta tela ja tem as barras proprias (vp_top/vp_bottom)
+        e dois controles sobrepostos brigariam pelo toque.
+    -->
+    <androidx.media3.ui.PlayerView
         android:id="@+id/vp_video"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <!--
-        Legenda desenhada por cima do video. Precisa ficar logo abaixo das barras de
-        controle, que ficam depois no mesmo FrameLayout. O edge-to-edge deixa a posicao
-        proporcional, entao a legenda acompanha o video em tela cheia e no PiP.
-    -->
-    <androidx.media3.ui.SubtitleView
-        android:id="@+id/vp_subtitles"
-        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="bottom"
-        android:layout_marginBottom="48dp"
-        android:visibility="gone" />
+        app:use_controller="false"
+        app:surface_type="surface_view"
+        app:resize_mode="fit"
+        app:shutter_background_color="@android:color/transparent" />
 
     <ProgressBar
         android:id="@+id/vp_loading"
