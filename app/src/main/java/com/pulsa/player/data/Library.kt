@@ -51,17 +51,26 @@ object Library {
      *
      * Faixa que não existe mais (apagada do dispositivo) é omitida. Por isso o tamanho do
      * resultado pode ser menor que o da lista: quem chama tem de reajustar o índice.
+     *
+     * A busca vai em lotes de [ID_BATCH]: um `IN` com a fila inteira estoura o limite de
+     * variáveis do SQLite (999 nas versões antigas) numa playlist grande, e a consulta
+     * voltaria vazia — a fila restaurada viria pela metade, sem erro nenhum na tela.
      */
     fun songsByIds(context: Context, ids: List<Long>): List<Song> {
         if (ids.isEmpty()) return emptyList()
-        val placeholders = ids.joinToString(",") { "?" }
-        val found = querySongs(
-            context,
-            "${MediaStore.Audio.Media._ID} IN ($placeholders) AND ${MediaStore.Audio.Media.IS_MUSIC}!=0",
-            ids.map { it.toString() }.toTypedArray()
-        ).associateBy { it.id }
+        val found = HashMap<Long, Song>(ids.size)
+        for (batch in ids.chunked(ID_BATCH)) {
+            val placeholders = batch.joinToString(",") { "?" }
+            querySongs(
+                context,
+                "${MediaStore.Audio.Media._ID} IN ($placeholders) AND ${MediaStore.Audio.Media.IS_MUSIC}!=0",
+                batch.map { it.toString() }.toTypedArray()
+            ).forEach { found[it.id] = it }
+        }
         return ids.mapNotNull { found[it] }
     }
+
+    private const val ID_BATCH = 400
 
     private val gospelKeywords = listOf(
         "gospel", "louvor", "adora", "adorac", "adorã", "hinario", "hino", "harpa",
