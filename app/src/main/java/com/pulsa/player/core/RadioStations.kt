@@ -64,8 +64,13 @@ object RadioStations {
      * `http://a.com/stream` e `https://a.com/stream?x=1` são o mesmo stream, e sem isso a
      * mesma rádio entrava duas vezes na sintonia — aparecendo duas vezes na fila do
      * PlaybackService, o que fazia o botão de avançar "pular" uma sem mudar de estação.
+     *
+     * Pública porque o `PlaybackService` precisa comparar a URL que está tocando com a da
+     * lista, e a que está tocando nem sempre é byte a byte igual: se o usuário salvou
+     * `http://` de uma estação que já vinha `https://` nas padrão, a lista agrupa as duas
+     * (pelo `normUrl`) mas devolve a do usuário, e comparar direto falhava.
      */
-    private fun normUrl(url: String): String = url.trim().lowercase()
+    fun normUrl(url: String): String = url.trim().lowercase()
         .removePrefix("https://")
         .removePrefix("http://")
         .substringBefore('?')

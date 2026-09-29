@@ -745,7 +745,11 @@ class PlaybackService : MediaLibraryService() {
         // estão salvas nas preferences).
         val stations = RadioStations.all(this)
         if (stations.size < 2) return
-        val startIndex = stations.indexOfFirst { it.url == currentUrl }
+        // Compara pela URL normalizada, não byte a byte: `all()` agrupa por ela e devolve a
+        // estação que o usuário salvou, que pode diferir em esquema/query da que está
+        // tocando. Comparação exata fazia o botão de avançar não achar a estação atual.
+        val currentKey = RadioStations.normUrl(currentUrl)
+        val startIndex = stations.indexOfFirst { RadioStations.normUrl(it.url) == currentKey }
         // Estação que não está na lista do usuário (padrão) ou lista vazia: sem base para girar.
         if (startIndex < 0) return
         val size = stations.size

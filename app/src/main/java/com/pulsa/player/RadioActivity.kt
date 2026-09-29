@@ -388,7 +388,13 @@ class RadioActivity : AppCompatActivity() {
     private fun toggleStation(idx: Int) {
         val station = stations[idx]
         val current = Playback.currentSong
-        if (current?.isRadio == true && current.radioUrl == station.url) {
+        // Normaliza a URL: a lista pode trazer a mesma estação com esquema/query diferente
+        // da que está tocando (o usuário salvou `http://` de uma que vinha `https://`), e a
+        // comparação exata fazia o clique reiniciar a rádio em vez de pausar.
+        val playingUrl = current?.radioUrl
+        if (current?.isRadio == true && playingUrl != null &&
+            RadioStations.normUrl(playingUrl) == RadioStations.normUrl(station.url)
+        ) {
             Playback.toggle()
             return
         }
@@ -427,7 +433,9 @@ class RadioActivity : AppCompatActivity() {
     private fun syncActiveFromPlayback() {
         val current = Playback.currentSong
         if (current?.isRadio == true) {
-            activeStation = stations.firstOrNull { it.url == current.radioUrl } ?: Station(
+            activeStation = stations.firstOrNull {
+                RadioStations.normUrl(it.url) == RadioStations.normUrl(current.radioUrl ?: "")
+            } ?: Station(
                 current.title, current.artist, current.radioUrl ?: ""
             )
             errorShownFor = null
@@ -459,7 +467,9 @@ class RadioActivity : AppCompatActivity() {
             val row = rowByIndex.getOrNull(idx) ?: return@forEachIndexed
             val btn = row.findViewById<ImageButton>(R.id.radio_row_btn)
             val icon = row.findViewById<ImageView>(R.id.radio_row_icon)
-            if (station.url == activeUrl && Playback.isPlaying) {
+            if (activeUrl != null &&
+                RadioStations.normUrl(station.url) == RadioStations.normUrl(activeUrl) && Playback.isPlaying
+            ) {
                 btn.setImageResource(R.drawable.ic_pause)
                 btn.contentDescription = getString(R.string.radio_pause)
                 icon.tint(R.color.primary)

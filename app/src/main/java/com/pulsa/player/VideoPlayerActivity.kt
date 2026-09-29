@@ -401,8 +401,13 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     override fun onPictureInPictureModeChanged(isInPipMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPipMode, newConfig)
         if (isInPipMode) {
-            // Esconde as barras: em PiP só o vídeo deve aparecer.
-            hideControls()
+            // Esconde as barras direto, sem passar por hideControls(): aquele método volta
+            // cedo quando o player está pausado, e esconder as barras dentro da janela
+            // minúscula do PiP ocupa metade dela. Aqui não há como pausado ser erro —
+            // pausado no PiP é um estado legítimo.
+            handler.removeCallbacks(hideRunnable)
+            topBar.visibility = View.GONE
+            bottomBar.visibility = View.GONE
         } else {
             // Voltou a tela cheia — reanexar o surface e mostrar as barras de novo.
             handler.removeCallbacks(hideRunnable)
