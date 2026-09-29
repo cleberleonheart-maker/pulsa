@@ -155,24 +155,32 @@
 - [x] DJ/Virgin, hotword, memória e aprendizado de gosto (o diferencial do app)
 
 ### Bloqueadores (o que impede de ser "central")
-- [ ] **Playback em três lugares**: `MediaPlayer` (música), ExoPlayer (rádio) e `VideoView` (vídeo) — sem Media3 unificado não há HLS/DASH, sem `MediaSessionService` não há Android Auto/Wear/TV/Assistant, sem `MediaButtonReceiver` não há botão de fone (`playback/Playback.kt`, `RadioActivity.kt:188`, `VideoPlayerActivity.kt`)
-- [ ] **Biblioteca exposta ao sistema**: as músicas já vêm do MediaStore (`data/Library.kt:25`), mas playlists/favoritas/meta vivem num SQLite próprio (`data/PlaylistDb` v6) e nada disso é publicado — sem `MediaLibraryService` não há Android Auto, Wear, Assistant, busca do sistema nem "tocando agora" do Android
-- [ ] **Vídeo é de arquivo local só**: sem HLS/DASH, sem legenda, sem Picture-in-Picture, sem gesture de seek, sem modo paisagem/TV
+> **Re-auditado em 29/09/2026.** A lista abaixo superestimava o trabalho: a migração Media3
+> (E0–E7) já resolveu F1 inteira, então dois destes bloqueadores **não existem mais**. O que
+> sobrou de verdade está marcado como tal. Ordem reavaliada: **vídeo → podcast → download →
+> Cast por último**.
+
+- [x] ~~**Playback em três lugares**~~ — **RESOLVIDO (E0–E5).** `MediaPlayer`/`ExoPlayer`/`VideoView` foram unificados em `playback/Playback` sobre Media3, com `MediaSessionService` e `MediaButtonReceiver`. É o que destravou Android Auto/Wear/Assistant, HLS/DASH e o botão de fone. O botão de fone chegou no E7 (`BECOMING_NOISY`, pausa quando o fone sai, validado no aparelho)
+- [x] ~~**Biblioteca exposta ao sistema**~~ — **RESOLVIDO (E6).** `PlaybackService` é `MediaLibraryService` e publica a árvore em `playback/PulsaLibraryTree.kt`; registrado no manifest com `exported="true"`. Verificado no aparelho: `pm query-services` lista o app igual ao Spotify. **Ressalva:** o HyperOS não tem a tela nativa de Fontes de mídia e o Google Assistant só oferece YouTube Music e Spotify, então a validação funcional é impossível neste aparelho — mas o registro está correto
+- [ ] **Vídeo é de arquivo local só**: sem HLS/DASH, sem legenda, sem Picture-in-Picture, sem gesture de seek, sem modo paisagem/TV. **Agora é o maior ganho barato: o engine já é Media3, então isso é configurar, não reescrever**
 - [ ] **Download sem fila**: HTTP direto → MediaStore, sem retomar, sem `DownloadManager`, sem download de streaming, e bloqueia URLs de YouTube/Spotify (`media/MusicDownloader.kt`, `SettingsActivity.kt:578`)
 - [ ] **Podcast inexistente**: só um `DIRECTORY_PODCASTS` solto no scan; sem modelo de feed, assinatura, episódio, capítulos, auto-download (`media/GalleryScanner.kt:31`)
 - [ ] **Sem carro/TV/cast**: sem Cast SDK, `androidx.car`, `androidx.tv.leanback`; USB e Bluetooth são só texto, não integração
 - [ ] **Sync limitado**: polling com `ThreadPool`, sem Room/WorkManager; backup cobre aprendizado do DJ e EQ, não biblioteca/playlists (`SettingsActivity.kt:677`, `sync/RemoteSync.kt`)
 
 ### Fases (ordem que destrava o resto)
-- [ ] **F1 · Fundação** ([plano detalhado em `docs/F1-FUNDACAO-MEDIA3.md`](docs/F1-FUNDACAO-MEDIA3.md)): migrar o playback para Media3 + `MediaSessionService`/`MediaLibraryService`; MediaStore como fonte única; Room para playlists/favoritas; WorkManager para sync e downloads. Só isso já entrega Android Auto, Wear, fone, system controls e busca do sistema. Fazer por camadas (trocar o motor mantendo a API atual) para não quebrar DJ/hotword
-- [ ] **F2 · Vídeo e streaming**: ExoPlayer/Media3 para vídeo local + HLS/DASH, legenda (SRT/VTT), PiP, gesto de seek, downloaded offline, encoder de download
+- [x] **F1 · Fundação** ([plano detalhado em `docs/F1-FUNDACAO-MEDIA3.md`](docs/F1-FUNDACAO-MEDIA3.md)) — **FEITA em 29/09** (E0–E7, todas verdes no CI). Playback unificado em Media3, `MediaLibraryService` registrado, botão de fone funcionando, `BECOMING_NOISY` validado. **Falta só o resto do F1:** Room para playlists/favoritas e WorkManager para sync/downloads, que são transversais
+- [ ] **F2 · Vídeo e streaming** — **PRÓXIMO, é o de melhor retorno**: ExoPlayer/Media3 para vídeo local + HLS/DASH, legenda (SRT/VTT), PiP, gesto de seek, downloaded offline, encoder de download
 - [ ] **F3 · Podcast e séries**: modelo de feed e assinatura, episódios com data/duração, capítulos, marcar ouvido, auto-download por regra, gerenciar storage
-- [ ] **F4 · Casa, carro e TV**: Cast SDK (Chromecast/speaker), Android Auto (template de mídia), TV leanback (10 feet, foco/remote), equalizador e segundo display
+- [ ] **F4 · Casa, carro e TV** — **POR ÚLTIMO, de propósito**: Cast SDK (Chromecast/speaker), Android Auto (template de mídia), TV leanback (10 feet, foco/remote), equalizador e segundo display. Exige SDKs pesados e review do Google, e o Android Auto quase não é testável no aparelho atual — maior risco para ganho incerto. O que já dá pé: a sessão Media3 serve Android Auto/Wear/Assistant sem código novo
 - [ ] **F5 · A central em si**: busca e filas unificadas entre áudio/vídeo/podcast, "continuar de onde parou" cruzando mídias, Download Center com fila/pausa, handoff celular↔PC↔TV (a PWA em `web/` já é a superfície), atalhos (shortcuts) e compartilhamento (M3U, áudio, vídeo)
 - [ ] **Transversal**: Room + DataStore no lugar de SQLite/prefs, `kotlinx.coroutines` no lugar de `ThreadPool`, backup completo da biblioteca (hoje só DJ/EQ) com restauração em outro aparelho, e um banco de mídia (`MediaLibraryService`) como fonte para Assistant e Android Auto
 
 ### Novas ideias para a central
-- [ ] **Fila universal**: uma única fila aceitando música, vídeo, episódio e rádio, com reordenação por voz ("virgi, joga o vídeo pro fim") e histórico do que já tocou de cada tipo (`Playback.queue` + novo modelo)
+- [ ] **Fila universal**: uma única fila aceitando música, vídeo, episódio e rádio, com reordenação por voz ("virgi, joga o vídeo pro fim") e histórico do que já tocou de cada tipo (`Playback.queue` + novo modelo) — barata, porque `Playback.queue` já existe; é speech-to-intent
+- [ ] **"Qual é essa música?"** (Shazam interno): conversa direto com o diferencial do DJ, e um recognizer resolve
+- [ ] **Terceiro avatar · Vera** (`c6eb5fa`):Virgin e Victor são os dois roxos, então a Vera ganhou paleta própria (teal/ciano, óculos de sol) e voz própria (pitch 1.02, entre os outros dois). O `avatar_masculino` booleano virou id 0–2 com compatibilidade, e o toque na tela agora cicla os três. **Pendente de ver no aparelho** — vetor escrito sem preview visual
+- [ ] **Log de erro legível** (`8ec25af`): o `CrashLogger` escrevia só em `getExternalFilesDir`, que é `Android/data/` — bloqueado para leitura no Android 11+, então o crash acontecia e ninguém conseguia ler o stack. Agora espelha em `Download/Pulsa/pulsa-erros.log` via MediaStore, que o Termux lê. **Isso destrava o debug de todas as rodadas futuras**
 - [ ] **"Continuar de onde parei" cruzando mídias**: a home mostra um card só com a última coisa tocada (música OU vídeo OU episódio) e a Virgin retoma falando "voltando pro episódio de ontem, você parou no minuto 34" (`DjMemory` + `MainVirgin`)
 - [ ] **Busca unificada com filtros**: um campo de busca que casa música, vídeo, podcast, artista e episódio, com chips de filtro (baixado, não ouvido, duração, data) (`SearchActivity` + `SearchAdapter`)
 - [ ] **Sessão com objetivo**: "virgi, monta uma sessão de 40 minutos pra dormir: 2 músicas calmas e 1 podcast" — a Virgin escolhe por duração somada, não só por gênero (`DjEngine` + `Ambient`)
