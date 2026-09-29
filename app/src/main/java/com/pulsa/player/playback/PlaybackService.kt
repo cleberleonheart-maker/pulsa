@@ -747,6 +747,11 @@ class PlaybackService : MediaLibraryService() {
     private val libraryTree by lazy { PulsaLibraryTree(applicationContext) }
 
     private val sessionCallback = object : MediaLibraryService.MediaLibrarySession.Callback {
+        // `onPlayerCommandRequest` foi depreciado no Media3 1.3, mas ainda e o gancho que
+        // entrega next/prev ao botao do carro e ao controle do Wear. Suprimido aqui de
+        // proposito; migrar para `onConnect` + `Player` commands fica para quando a API
+        // substituta estiver estavel.
+        @Suppress("OVERRIDE_DEPRECATION")
         override fun onPlayerCommandRequest(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
@@ -892,7 +897,7 @@ class PlaybackService : MediaLibraryService() {
             return
         }
         speakNow(track)
-        DjFacts.fetchRemoteCuriosity(this, song.artist ?: "") { remote ->
+        DjFacts.fetchRemoteCuriosity(this, song.artist) { remote ->
             if (remote == null || Playback.listener != null) return@fetchRemoteCuriosity
             if (song.id != songId || !DjFacts.curiosityDue()) return@fetchRemoteCuriosity
             DjFacts.markCuriositySpoken()
