@@ -3,6 +3,8 @@ package com.pulsa.player
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -33,6 +35,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -190,11 +193,15 @@ class LoginActivity : AppCompatActivity() {
     private fun registerGoogleLauncher() {
         googleLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             val data = result.data
-            if (result.resultCode == RESULT_OK && data != null) {
-                handleGoogleResult(data)
-            } else {
-                Telemetry.log(this, "LOGIN google cancelado")
+            if (data == null) {
+                // Sem `data` é cancelamento real (status 125 / botão voltar): não é erro e não
+                // merece mensagem. Antes o filtro era `resultCode == RESULT_OK`, que jogava fora
+                // os erros de verdade (o Google devolve o status dentro de `data` mesmo com
+                // `resultCode` cancelado) — a falha sumia da tela e parecia travamento.
+                Telemetry.log(this, "LOGIN google cancelado (sem data)")
+                return@registerForActivityResult
             }
+            handleGoogleResult(data)
         }
     }
 
@@ -245,12 +252,24 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Erros do Google chegam como [ApiException] com `statusCode`. O 10 (`DEVELOPER_ERROR`) é o
+     * caso do SHA-1: a impressão digital do certificado que assinou este APK não está autorizada
+     * no Google Cloud. A mensagem mostra a impressão real, lida do pacote instalado, em vez de
+     * um valor anotado à mão — que envelhece no dia em que o keystore muda.
+     */
     private fun handleGoogleResult(data: Intent) {
         val account = try {
             GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException::class.java)
         } catch (e: ApiException) {
-            Telemetry.log(this, "LOGIN google falhou ${e.statusCode}: ${e.message}")
-            showError(getString(R.string.login_google_error))
+            val status = e.statusCode
+            Telemetry.log(this, "LOGIN google falhou status=$status: ${e.message}")
+            when (status) {
+                125 -> Telemetry.log(this, "LOGIN google cancelado (125)")
+                10 -> showError(getString(R.string.login_google_error_dev, signingSha1() ?: "?"))
+                4, 7, 8, 15 -> showError(getString(R.string.login_google_network_error))
+                else -> showError(getString(R.string.login_google_error))
+            }
             return
         }
         val idToken = account.idToken
@@ -460,6 +479,24 @@ class LoginActivity : AppCompatActivity() {
             .setDuration(240).setInterpolator(DecelerateInterpolator())
             .start()
     }
+
+    /**
+     * SHA-1 do certificado que realmente assinou o APK instalado, no formato que o Google Cloud
+     * pede. Lido do pacote de propósito: um valor copiado para a documentação vale até o
+     * keystore mudar, e aí o `DEVELOPER_ERROR` volta sem ninguém entender por quê.
+     */
+    private fun signingSha1(): String? = runCatching {
+        val signature = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+            info.signingInfo?.apkContentsSigners?.firstOrNull()
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+                .signatures?.firstOrNull()
+        } ?: return null
+        MessageDigest.getInstance("SHA-1").digest(signature.toByteArray())
+            .joinToString(":") { "%02X".format(it) }
+    }.getOrNull()
 
     private fun checkSmtpStatus() {
         val tv = findViewById<TextView>(R.id.login_smtp_status) ?: return

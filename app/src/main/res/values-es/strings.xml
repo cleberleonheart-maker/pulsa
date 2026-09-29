@@ -293,6 +293,7 @@
     <string name="login_google_not_configured">El inicio de sesión con Google aún no está configurado</string>
     <string name="login_google_verifying">Verificando con Google…</string>
     <string name="login_google_network_error">No se pudo contactar con Google. Revisa tu conexión a internet.</string>
+    <string name="login_google_error_dev">Esta app no está autorizada en Google. Registra la huella SHA-1 %1$s en "Credenciales OAuth" de Google Cloud.</string>
     <string name="rw_title">Pulsa Rewind</string>
     <string name="rw_tab_all">Siempre</string>
     <string name="rw_tab_30">30 días</string>

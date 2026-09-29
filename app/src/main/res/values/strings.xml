@@ -236,6 +236,7 @@
     <string name="login_google_not_configured">Login com Google ainda não configurado</string>
     <string name="login_google_verifying">Verificando com o Google…</string>
     <string name="login_google_network_error">Não foi possível falar com o Google. Confira a internet.</string>
+    <string name="login_google_error_dev">Este app não está autorizado no Google. Registre a impressão digital SHA-1 %1$s em "Credenciais do OAuth" no Google Cloud.</string>
     <string name="rw_title">Pulsa Rewind</string>
     <string name="rw_tab_all">Sempre</string>
     <string name="rw_tab_30">30 dias</string>
