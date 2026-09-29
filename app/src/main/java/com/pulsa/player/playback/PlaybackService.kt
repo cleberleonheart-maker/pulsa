@@ -57,7 +57,9 @@ import com.pulsa.player.core.ThreadPool
 import java.io.File
 import kotlin.random.Random
 
-@OptIn(UnstableApi::class)
+// `UnstableApi` e um marcador de anotacao, nao um requisito de opt-in: o `@OptIn` aqui
+// seria ignorado pelo compilador. Anotar a classe resolve de fato.
+@UnstableApi
 class PlaybackService : MediaLibraryService() {
 
     companion object {
@@ -750,15 +752,16 @@ class PlaybackService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
             playerCommand: Int
         ): Int = when (playerCommand) {
+            // `COMMAND_SEEK_TO_NEXT_WINDOW` e `COMMAND_SEEK_TO_PREVIOUS_WINDOW` foram
+            // renomeados e valem o mesmo numero dos `..._MEDIA_ITEM`: deixa-los aqui daria
+            // "duplicate label" e o when nem compilava.
             Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
-            Player.COMMAND_SEEK_TO_NEXT_WINDOW,
             Player.COMMAND_SEEK_TO_NEXT -> {
                 next()
                 SessionResult.RESULT_ERROR_UNKNOWN
             }
 
             Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
-            Player.COMMAND_SEEK_TO_PREVIOUS_WINDOW,
             Player.COMMAND_SEEK_TO_PREVIOUS -> {
                 prev()
                 SessionResult.RESULT_ERROR_UNKNOWN
@@ -824,7 +827,7 @@ class PlaybackService : MediaLibraryService() {
             mediaItems: MutableList<MediaItem>
         ): ListenableFuture<MutableList<MediaItem>> {
             val out = mediaItems.map { item ->
-                item.mediaId?.let { libraryTree.itemById(it) } ?: item
+                libraryTree.itemById(item.mediaId) ?: item
             }
             return Futures.immediateFuture(out.toMutableList())
         }
@@ -882,7 +885,7 @@ class PlaybackService : MediaLibraryService() {
             speakNow(track)
             return
         }
-        val fact = DjFacts.curiosityFor(song.artist ?: "")
+        val fact = DjFacts.curiosityFor(song.artist)
         if (fact != null) {
             DjFacts.markCuriositySpoken()
             speakNow("$leading $fact $track")
