@@ -34,27 +34,6 @@ class RadioActivity : AppCompatActivity() {
         val url: String
     )
 
-    private val defaultStations = listOf(
-        Station("Itaramã FM 97.1", "Hits / Litoral Gaúcho", "https://player.voxhd.com.br/proxy/7716"),
-        Station("Rádio Pampa FM 97.5", "Notícias", "http://cast4.audiostream.com.br:8653/aac"),
-        Station("Rádio Grenal 95.9", "Esportes", "https://grenal.audiostream.com.br:20000/aac"),
-        Station("Rádio Campeira FM", "Gaúcha / Sertanejo", "https://servidor34-3.brlogic.com:8164/live?source=website"),
-        Station("Rádio Nativa", "Sertanejo", "http://centova17.ciclanohost.com.br:8085/stream.mp3"),
-        Station("Mix FM Porto Alegre", "Pop / Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MIXFM_POAAAC.aac"),
-        Station("Antena 1 Porto Alegre", "Smooth Jazz", "https://antenaone.crossradio.com.br/stream/1"),
-        Station("Caiçara (Porto Alegre)", "MPB", "http://cast4.audiostream.com.br:8654/mp3"),
-        Station("104 FM (Porto Alegre)", "Pop / MPB", "http://cast4.audiostream.com.br:8651/mp3"),
-        Station("Torres FM 101.1", "Pop / Litoral", "https://cast4.audiostream.com.br:2661/mp3"),
-        Station("Eldorado FM", "Pop / Contemporânea", "https://cast4.audiostream.com.br:2652/mp3"),
-        Station("Antena 1 São Paulo 94.7", "Pop / Smooth Jazz", "http://antena1.newradio.it/stream?ext=.mp3"),
-        Station("89 FM A Rádio Rock", "Rock", "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_89FM_ADP.aac?dist=site-89fm"),
-        Station("Nova Brasil FM", "MPB", "https://playerservices.streamtheworld.com/api/livestream-redirect/NOVABRASIL_SPAAC.aac"),
-        Station("Bossa Nova Brazil", "Bossa Nova", "http://54.38.43.201:8009/stream-128kmp3-BossaNovaBrazil"),
-        Station("Rádio Cidade 102.9", "Rock Clássico", "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOCIDADEAAC.aac"),
-        Station("Alpha FM 101.7", "Light / Adult", "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_ALPHAFM_ADP.aac"),
-        Station("Bossa Jazz Brasil", "Jazz / MPB", "https://centova5.transmissaodigital.com:20104/live"),
-        Station("Rádio Itatiaia 95.7", "Notícias / Esportes", "https://8903.brasilstream.com.br/stream")
-    )
 
     private var playbackBind: Playback.Bind? = null
     private var activeStation: Station? = null
@@ -126,7 +105,10 @@ class RadioActivity : AppCompatActivity() {
     }
 
     private fun rebuildList() {
-        stations = defaultStations + RadioStations.list(this).map {
+        // `RadioStations.all` traz as padrão E as salvas, na ordem em que o botão de avançar
+        // percorre no `PlaybackService`. As duas telas precisam ver a mesma lista, senão avançar
+        // sai da estação que a tela acabou de mostrar.
+        stations = RadioStations.all(this).map {
             Station(it.name, if (it.genre.isBlank()) getString(R.string.radio) else it.genre, it.url)
         }
         listContainer.removeAllViews()

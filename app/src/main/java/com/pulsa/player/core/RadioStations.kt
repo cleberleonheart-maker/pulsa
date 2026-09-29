@@ -12,6 +12,46 @@ object RadioStations {
     private const val FILE = "pulsa_radio_stations"
     private const val SEP = "\u0001"
 
+    /**
+     * Estações que já vêm prontas, na ordem em que a tela de rádio mostra.
+     *
+     * Moravam hardcoded no `RadioActivity`, e isso impedia o `PlaybackService` de girar as
+     * estações no botão de avançar: ele só enxergava asstations salvas por URL, então tocar
+     * uma rádio padrão e apertar advance não encontrava a estação e não fazia nada.
+     */
+    val defaults: List<UserStation> = listOf(
+        UserStation("Itaramã FM 97.1", "Hits / Litoral Gaúcho", "https://player.voxhd.com.br/proxy/7716"),
+        UserStation("Rádio Pampa FM 97.5", "Notícias", "http://cast4.audiostream.com.br:8653/aac"),
+        UserStation("Rádio Grenal 95.9", "Esportes", "https://grenal.audiostream.com.br:20000/aac"),
+        UserStation("Rádio Campeira FM", "Gaúcha / Sertanejo", "https://servidor34-3.brlogic.com:8164/live?source=website"),
+        UserStation("Rádio Nativa", "Sertanejo", "http://centova17.ciclanohost.com.br:8085/stream.mp3"),
+        UserStation("Mix FM Porto Alegre", "Pop / Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MIXFM_POAAAC.aac"),
+        UserStation("Antena 1 Porto Alegre", "Smooth Jazz", "https://antenaone.crossradio.com.br/stream/1"),
+        UserStation("Caiçara (Porto Alegre)", "MPB", "http://cast4.audiostream.com.br:8654/mp3"),
+        UserStation("104 FM (Porto Alegre)", "Pop / MPB", "http://cast4.audiostream.com.br:8651/mp3"),
+        UserStation("Torres FM 101.1", "Pop / Litoral", "https://cast4.audiostream.com.br:2661/mp3"),
+        UserStation("Eldorado FM", "Pop / Contemporânea", "https://cast4.audiostream.com.br:2652/mp3"),
+        UserStation("Antena 1 São Paulo 94.7", "Pop / Smooth Jazz", "http://antena1.newradio.it/stream?ext=.mp3"),
+        UserStation("89 FM A Rádio Rock", "Rock", "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_89FM_ADP.aac?dist=site-89fm"),
+        UserStation("Nova Brasil FM", "MPB", "https://playerservices.streamtheworld.com/api/livestream-redirect/NOVABRASIL_SPAAC.aac"),
+        UserStation("Bossa Nova Brazil", "Bossa Nova", "http://54.38.43.201:8009/stream-128kmp3-BossaNovaBrazil"),
+        UserStation("Rádio Cidade 102.9", "Rock Clássico", "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOCIDADEAAC.aac"),
+        UserStation("Alpha FM 101.7", "Light / Adult", "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_ALPHAFM_ADP.aac"),
+        UserStation("Bossa Jazz Brasil", "Jazz / MPB", "https://centova5.transmissaodigital.com:20104/live"),
+        UserStation("Rádio Itatiaia 95.7", "Notícias / Esportes", "https://8903.brasilstream.com.br/stream")
+    )
+
+    /**
+     * Tudo que o botão de avançar deve percorrer: as padrão primeiro, depois as salvas pelo
+     * usuário, na mesma ordem da tela de rádio. Uma estação salva com a mesma URL de uma
+     * padrão entra uma vez só — a do usuário, que é a que o usuário escolheu nomear.
+     */
+    fun all(context: Context): List<UserStation> {
+        val saved = list(context)
+        val savedUrls = saved.map { it.url }.toSet()
+        return defaults.filterNot { it.url in savedUrls } + saved
+    }
+
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 

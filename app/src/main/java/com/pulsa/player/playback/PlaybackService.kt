@@ -55,6 +55,7 @@ import com.pulsa.player.sync.LastFm
 import com.pulsa.player.widget.PulsaWidget
 import com.pulsa.player.audio.MusicVisualizer
 import com.pulsa.player.audio.SleepTimer
+import com.pulsa.player.core.RadioStations
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import java.io.File
@@ -129,6 +130,26 @@ class PlaybackService : MediaLibraryService() {
 
     @Volatile
     private var micListening = false
+
+    /**
+     * `true` desde o último `pause()` até o próximo `play()`.
+     *
+     * Existe por causa de um bug achado no E7: o `pause()` grava o `radio_resume` e logo em
+     * seguida o apaga (pausa deliberada não pode ressuscitar a estação), mas o `p.pause()`
+     * dentro dele dispara `onIsPlayingChanged` -> `syncExternalPlaybackState(false)`, que
+     * chamava `saveResumeState()` DE NOVO — e isso acontece DEPOIS, porque o Media3 enfileira
+     * o evento e o entrega via Handler. Resultado: o rádio ficava gravado em disco e voltava
+     * sozinho no próximo `restoreRadioResume()`, o que o usuário viu ao pausar tirando o fone,
+     * fechar o app e reabrir.
+     *
+     * Uma flag tipo "ligada só durante o clear" não resolveria, justamente porque o evento
+     * chega tarde. Por isso a flag fica ligada até o próximo play, e o sync só deixa de gravar.
+     *
+     * O bug é anterior ao E7 (a duplicação é do E3b), mas só apareceu agora porque a pausa
+     * passou a vir de fora, por broadcast, em vez do botão.
+     */
+    @Volatile
+    private var pauseWasDeliberate = false
 
     @Volatile
     private var micDucked = false
@@ -620,6 +641,9 @@ class PlaybackService : MediaLibraryService() {
 
     fun play() {
         val p = player ?: return
+        // Ao voltar a tocar, o `saveResumeState` precisa valer de novo (grava a posição para o
+        // resume). A pausa anterior já cumpriu o seu papel de não deixar o rádio voltar sozinho.
+        pauseWasDeliberate = false
         if (!p.isPlaying) p.play()
         requestAudioFocus()
         startEightD()
@@ -632,8 +656,10 @@ class PlaybackService : MediaLibraryService() {
         val p = player ?: return
         if (p.isPlaying) p.pause()
         saveResumeState()
-        // Pausa deliberada (botão/fone/erro fatal): não voltar com o rádio sozinho se o
-        // processo renascer. O saveResumeState acima recém-gravou o rádio; limpo depois.
+        // Pausa deliberada (botão/fone/desconexão/erro fatal): não voltar com o rádio sozinho
+        // se o processo renascer. O saveResumeState acima recém-gravou o rádio; limpo depois.
+        // A flag também avisa o syncExternalPlaybackState para não regravar (ver o campo).
+        pauseWasDeliberate = true
         Settings.clearRadioResume(this)
         if (!pauseOnFocusLoss) abandonAudioFocus()
         stopEightD()
@@ -686,6 +712,15 @@ class PlaybackService : MediaLibraryService() {
 
     private fun advanceIndex(delta: Int) {
         if (queue.isEmpty()) return
+        // Rádio: a fila chega com UMA estação só (o RadioActivity chama
+        // `start(listOf(songFor(station)))`), então `(0 + 1) % 1` devolvia a mesma estação e o
+        // botão de avançar parecia morto. Aqui a fila é remontada com todas as estações do
+        // usuário, na ordem da tela do rádio, e a que está tocando vira o ponto de partida —
+        // aí o mesmo `((index + delta) % size)` da música passa a girar de verdade.
+        if (currentSong?.isRadio == true) {
+            advanceRadioStation(delta)
+            return
+        }
         index = if (shuffle && queue.size > 1) {
             var nextIndex = index
             while (nextIndex == index) nextIndex = Random.nextInt(queue.size)
@@ -696,6 +731,43 @@ class PlaybackService : MediaLibraryService() {
         }
         prepareCurrent()
     }
+
+    /**
+     * Gira as estações do rádio. A ordem é a mesma da tela do rádio: as padrão primeiro, depois
+     * as que o usuário salvou. A estação no ar vira a posição 0 da fila, então `delta` escolhe a
+     * vizinha e a última faz volta na primeira.
+     */
+    private fun advanceRadioStation(delta: Int) {
+        val current = currentSong ?: return
+        val currentUrl = current.radioUrl ?: return
+        // `all` e nao `list`: sem as padrão o botão não giraria quando o que está tocando é
+        // uma das 19 que já vêm no app (elas vivem em RadioStations.defaults, com URL, mas não
+        // estão salvas nas preferences).
+        val stations = RadioStations.all(this)
+        if (stations.size < 2) return
+        val startIndex = stations.indexOfFirst { it.url == currentUrl }
+        // Estação que não está na lista do usuário (padrão) ou lista vazia: sem base para girar.
+        if (startIndex < 0) return
+        val size = stations.size
+        val nextIndex = (((startIndex + delta) % size) + size) % size
+        val target = stations[nextIndex]
+        // A fila vai com TODAS as estações a partir da atual, para o next/prev continuarem
+        // funcionando depois (avançar duas vezes tem que andar duas estações, não voltar).
+        val ordered = (stations.drop(nextIndex) + stations.take(nextIndex))
+            .map { stationSong(it) }
+        start(ordered, 0)
+    }
+
+    private fun stationSong(station: com.pulsa.player.core.UserStation) = Song(
+        id = (station.url.hashCode() and 0x7fffffff).toLong(),
+        title = station.name,
+        artist = station.genre,
+        album = getString(R.string.radio),
+        albumId = 0L,
+        durationMs = 0L,
+        path = Song.RADIO_PREFIX + station.url,
+        year = 0
+    )
 
     private fun prepareCurrent() {
         val song = currentSong ?: return
@@ -1099,6 +1171,10 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun saveResumeState() {
+        // O `syncExternalPlaybackState(false)` chega DEPOIS do `pause()` (o Media3 entrega o
+        // evento do listener via Handler) e a chamada abaixo regravaria o rádio que o pause()
+        // acabou de limpar, ressuscitando a estação no próximo restoreRadioResume.
+        if (pauseWasDeliberate) return
         val song = currentSong ?: return
         if (!Settings.resumeOn(this)) return
         if (song.isVideo) return
