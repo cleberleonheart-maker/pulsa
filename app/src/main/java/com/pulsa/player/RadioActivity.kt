@@ -209,10 +209,11 @@ class RadioActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .create()
-        // Guarda o botão para o rótulo mostrar quantas locais já estão na sintonia.
+        dialog.show()
+        // getButton() só devolve o botão DEPOIS do show() — antes disso o AlertDialog
+        // ainda não inflou a barra de botões e retorna null sempre.
         tuneButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
         syncTuneButton()
-        dialog.show()
     }
 
     private fun saveStation(name: String, url: String) {

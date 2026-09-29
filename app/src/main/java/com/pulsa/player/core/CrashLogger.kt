@@ -133,13 +133,21 @@ object CrashLogger {
         resolver: android.content.ContentResolver,
         collection: android.net.Uri
     ): android.net.Uri? = try {
-        resolver.query(
-            collection,
-            arrayOf(MediaStore.MediaColumns._ID),
-            "${MediaStore.MediaColumns.DISPLAY_NAME}=? AND ${MediaStore.MediaColumns.MIME_TYPE}=?",
-            arrayOf(MIRROR_NAME, "text/plain"),
-            null
-        )?.use { c ->
+        // Filtra também pelo RELATIVE_PATH: sem isso, um arquivo com o mesmo nome em outro
+        // diretório do Download casava e a escrita iria para o arquivo errado.
+        val selection = buildString {
+            append("${MediaStore.MediaColumns.DISPLAY_NAME}=?")
+            append(" AND ${MediaStore.MediaColumns.MIME_TYPE}=?")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                append(" AND ${MediaStore.MediaColumns.RELATIVE_PATH}=?")
+            }
+        }
+        val args = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            arrayOf(MIRROR_NAME, "text/plain", "$MIRROR_DIR/")
+        } else {
+            arrayOf(MIRROR_NAME, "text/plain")
+        }
+        resolver.query(collection, arrayOf(MediaStore.MediaColumns._ID), selection, args, null)?.use { c ->
             if (c.moveToFirst()) {
                 android.content.ContentUris.withAppendedId(collection, c.getLong(0))
             } else {

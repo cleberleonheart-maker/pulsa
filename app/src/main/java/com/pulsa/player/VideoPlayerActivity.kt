@@ -78,6 +78,24 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     private var dragging = false
     private var autoplay = true
     private var finished = false
+
+    /**
+     * O usuário pediu o Picture-in-Picture pelo botão.
+     *
+     * Existe porque o gesto de arrastar o vídeo para o PiP só faz sentido depois de uma
+     * intenção explícita. Sem isso, sair da activity (qualquer uma) auto-reduz o vídeo.
+     * Reinicia a cada entrada na tela cheia: o botão passa a ser o gatilho de novo.
+     */
+    private var pipWanted = false
+
+    /**
+     * O usuário pediu para SAIR da tela de vídeo (botão voltar ou gesto do sistema),
+     * em vez de só fechar o PiP. Só nesse caso a fila da música é restaurada.
+     *
+     * É um AtomicBoolean e não um Boolean porque o onDestroy roda na main, mas o
+     * Picture-in-Picture pode ter mudado a activity em outra thread de estado.
+     */
+    private val closingForMusic = java.util.concurrent.atomic.AtomicBoolean(false)
     private var playbackBind: Playback.Bind? = null
     private val handler = Handler(Looper.getMainLooper())
 
@@ -99,7 +117,19 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         seekBar = findViewById(R.id.vp_seek)
         playBtn = findViewById(R.id.vp_play)
 
-        findViewById<ImageButton>(R.id.vp_back).setOnClickListener { finish() }
+        findViewById<ImageButton>(R.id.vp_back).setOnClickListener {
+            closingForMusic.set(true)
+            finish()
+        }
+        // O gesto de voltar (botão do sistema/gesto) chama finish() por fora do listener
+        // do botão, então precisa do mesmo tratamento — senão fechar a tela de vídeo pelo
+        // gesto não devolveria a fila da música.
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                closingForMusic.set(true)
+                finish()
+            }
+        })
         findViewById<ImageButton>(R.id.vp_pip).setOnClickListener { togglePip() }
         playBtn.setOnClickListener { togglePlayback() }
         findViewById<ImageButton>(R.id.vp_prev).setOnClickListener { step(-1) }
@@ -311,8 +341,10 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         if (isInPictureInPictureMode) {
             // Sai do PiP voltando a tela cheia; o vídeo segue tocando. Usa o
             // onPictureInPictureModeChanged(boolean, Configuration) com a config real.
+            pipWanted = false
             onPictureInPictureModeChanged(false, resources.configuration)
         } else if (supportsPiP()) {
+            pipWanted = true
             try {
                 enterPictureInPictureMode(pipParams())
             } catch (e: IllegalStateException) {
@@ -351,9 +383,13 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        // Autoriza o sistema a reduzir quando o usuário sair (botão home/recente). Só
-        // quando está em vídeo tocando — para o resto do app não muda nada.
-        if (videos.isNotEmpty() && Playback.isPlaying && supportsPiP()) {
+        // Autoriza o sistema a reduzir quando o usuário sair (botão home/recente).
+        //
+        // Só depois que o PiP foi pedido explicitamente pelo botão (pipWanted). Sem essa
+        // trava, `onUserLeaveHint` dispara a cada saída da activity — abrir o WhatsApp,
+        // trocar de aba, tocar numa notificação — e o vídeo cairia no cantinho sozinho,
+        // que não é o que o usuário pediu nem o que o Youtube faz.
+        if (pipWanted && videos.isNotEmpty() && Playback.isPlaying && supportsPiP()) {
             try {
                 setPictureInPictureParams(pipParams())
             } catch (e: IllegalStateException) {
@@ -378,6 +414,8 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
     override fun onResume() {
         super.onResume()
+        // Volta a manter a tela acesa: o onStop limpa a flag ao sair (inclusive para o PiP).
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         if (videos.isNotEmpty() && !finished) {
             Playback.listener = this
             Playback.player?.setVideoSurfaceView(surfaceView)
@@ -406,10 +444,18 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
     override fun onStop() {
         if (Playback.listener === this) Playback.listener = null
+        // KEEP_SCREEN_ON só faz sentido com a tela de vídeo na mão. Em PiP deixava a tela
+        // acesa o tempo todo; e a flag é do lado do SO, então sobreviveria à activity.
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         super.onStop()
     }
 
     override fun onDestroy() {
+        // Fechar o PiP (arrastando pra fora) mata a activity. Sem esta guarda, o
+        // onDestroy restaurava a fila da música ou dava Playback.stop(), e o vídeo
+        // MORRIA junto — um player que não sobrevive ao PiP não serve pra nada.
+        // O destino correto é voltar pro app em tela cheia, com o vídeo tocando.
+        val leftForMusic = closingForMusic.get()
         finished = true
         handler.removeCallbacks(hideRunnable)
         if (Playback.listener === this) Playback.listener = null
@@ -419,10 +465,14 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         Playback.setShuffle(prevShuffle)
         Playback.setRepeatAll(prevRepeatAll)
         Playback.setRepeatOne(prevRepeatOne)
-        if (resumePlaying && resumeQueue.isNotEmpty()) {
-            Playback.start(resumeQueue, resumeIndex.coerceAtLeast(0))
-        } else {
-            Playback.stop()
+        if (leftForMusic) {
+            // Só o "voltar" da tela cheia devolve a fila da música. Fechar o PiP é o
+            // contrário: o usuário quer CONTINUAR no vídeo.
+            if (resumePlaying && resumeQueue.isNotEmpty()) {
+                Playback.start(resumeQueue, resumeIndex.coerceAtLeast(0))
+            } else {
+                Playback.stop()
+            }
         }
         super.onDestroy()
     }
