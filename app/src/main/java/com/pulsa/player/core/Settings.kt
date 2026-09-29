@@ -78,6 +78,23 @@ object Settings {
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
+    /**
+     * URI do arquivo de log espelhado no `Download`, guardado para ser reaproveitado.
+     *
+     * O CrashLogger não consegue reencontrá-lo por nome: o MediaStore acrescenta a extensão
+     * do MIME ("pulsa-erros.log" vira "pulsa-erros.log.txt") e em `MediaStore.Downloads`
+     * não dá para filtrar por `RELATIVE_PATH`. Cada busca voltava vazia e o espelho
+     * virava um arquivo novo por erro. Guardando o URI, a escrita reaproveita o mesmo.
+     */
+    fun mirrorLogUri(context: Context): String? =
+        prefs(context).getString("mirror_log_uri", null)?.takeIf { it.isNotBlank() }
+
+    fun setMirrorLogUri(context: Context, uri: String?) {
+        prefs(context).edit().apply {
+            if (uri.isNullOrBlank()) remove("mirror_log_uri") else putString("mirror_log_uri", uri)
+        }.apply()
+    }
+
     /** Prefs de dados/controle interno (não sensível). */
     fun dataPrefs(context: Context): SharedPreferences = prefs(context)
 

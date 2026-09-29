@@ -93,6 +93,16 @@ class PlaybackService : MediaLibraryService() {
         private set
 
     /**
+     * Faz o próximo `onPlayerReady` NÃO tocar.
+     *
+     * O `prepareCurrent` deixa `playWhenReady` desligado, mas isso não bastava: o
+     * `onPlayerReady` chamava `play()` e `fadeIn()` sem olhar. Ou seja, restaurar a fila
+     * ligava o som sozinho com fade — que era o oposto do combinado. Esta trava faz o
+     * restore voltar de verdade pausado, e o `play()` do usuário passa a valer normal.
+     */
+    private var startPaused = false
+
+    /**
      * Impede que o [start] chamado pelo próprio restore grave a fila de novo: nesse
      * momento o player ainda está na posição 0 e sobrescreveria a posição salva,
      * apagando exatamente o que o restore veio para recuperar.
@@ -478,6 +488,7 @@ class PlaybackService : MediaLibraryService() {
             ?.takeIf { it >= 0 }
             ?: 0
         suppressQueueSave = true
+        startPaused = true
         try {
             start(songs, index)
             val pos = savedPos.coerceAtLeast(0L)
@@ -1126,6 +1137,14 @@ class PlaybackService : MediaLibraryService() {
         restoreSavedPosition(p)
         val fadeMs = crossfadeMs()
         attachEffects()
+        if (startPaused) {
+            // Restore de fila: fica pronto e parado. Sem play, sem fade, sem foco de áudio
+            // — o volume vai a 1 para o primeiro play do usuário não sair do zero.
+            startPaused = false
+            runCatching { p.setVolume(1f) }
+            publishState()
+            return
+        }
         runCatching { p.setVolume(if (fadeMs > 0) 0f else 1f) }
         runCatching { p.play() }
         if (fadeMs > 0) fadeIn(p, fadeMs)
@@ -1217,6 +1236,9 @@ class PlaybackService : MediaLibraryService() {
 
     private fun onTrackError() {
         consecutiveErrors++
+        // Se o restore falhou, o onPlayerReady nunca vem e a trava ficaria armada: a
+        // próxima música que tocasse normalmente entraria calada. Aqui ela é desarmada.
+        startPaused = false
         Playback.notifyTrackError(currentSong)
         if (queue.isNotEmpty() && consecutiveErrors <= MAX_CONSECUTIVE_ERRORS) {
             advanceIndex(1)

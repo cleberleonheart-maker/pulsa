@@ -115,82 +115,82 @@ object CrashLogger {
             }
         }
 
-        // Tenta achar o que já existe; o `insert` de um DISPLAY_NAME repetido criaria duplicata.
-        val existing = queryMirror(resolver, collection)
+        // Reaproveita o arquivo já criado (o URI guardado), senão cria um por erro.
+        val existing = queryMirror(context, resolver, collection)
         if (existing != null) {
-            resolver.openOutputStream(existing)?.use { it.write(text.toByteArray()) }
+            runCatching { resolver.openOutputStream(existing)?.use { it.write(text.toByteArray()) } }
             return
         }
-        // Nao achou: pode ser que o SO tenha criado as copias "(1)", "(2)" numa colisao
-        // anterior, que nao casam na query. Limpa antes de criar mais uma.
+        // Ainda não existe (primeira escrita, ou o usuário apagou o arquivo): cria e guarda
+        // o URI. Guardar é o que impede o próximo erro de virar um arquivo novo.
         purgeDuplicates(resolver, collection)
         val uri = resolver.insert(collection, values) ?: return
+        Settings.setMirrorLogUri(context, uri.toString())
         runCatching {
             resolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
         }.onFailure {
             // Falhou em cima: não deixa o registro órfão takingando espaço no Download.
             runCatching { resolver.delete(uri, null, null) }
+            Settings.setMirrorLogUri(context, null)
         }
     }
 
     private fun queryMirror(
+        context: Context,
         resolver: android.content.ContentResolver,
         collection: android.net.Uri
-    ): android.net.Uri? = try {
-        // Filtra também pelo RELATIVE_PATH: sem isso, um arquivo com o mesmo nome em outro
-        // diretório do Download casava e a escrita iria para o arquivo errado.
-        val selection = buildString {
-            append("${MediaStore.MediaColumns.DISPLAY_NAME}=?")
-            append(" AND ${MediaStore.MediaColumns.MIME_TYPE}=?")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                append(" AND ${MediaStore.MediaColumns.RELATIVE_PATH}=?")
-            }
+    ): android.net.Uri? {
+        // O caminho ANTERIOR era consultar por DISPLAY_NAME + RELATIVE_PATH, e era o que
+        // criava um arquivo por erro. Duas falhas somadas: o MediaStore acrescenta a
+        // extensão do MIME, então o nome real é "pulsa-erros.log.txt" e nunca casava com
+        // "pulsa-erros.log"; e em MediaStore.Downloads (Android 11+) não dá para filtrar
+        // por RELATIVE_PATH, então a consulta voltava vazia de qualquer jeito. Resultado:
+        // 32 cópias de 250 KB no Download, com o insert batendo de frente na anterior e o
+        // SO renomeando para "(1)", "(2)"...
+        //
+        // Agora o URI do espelho é guardado no SharedPreferences e reaproveitado direto.
+        // Não depende de nome, de extensão nem de coluna — que era justamente o problema.
+        Settings.mirrorLogUri(context)?.let { saved ->
+            val uri = android.net.Uri.parse(saved)
+            if (exists(resolver, uri)) return uri
         }
-        val args = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            arrayOf(MIRROR_NAME, "text/plain", "$MIRROR_DIR/")
-        } else {
-            arrayOf(MIRROR_NAME, "text/plain")
-        }
-        resolver.query(collection, arrayOf(MediaStore.MediaColumns._ID), selection, args, null)?.use { c ->
-            if (c.moveToFirst()) {
-                android.content.ContentUris.withAppendedId(collection, c.getLong(0))
-            } else {
-                null
-            }
-        }
+        return null
+    }
+
+    private fun exists(resolver: android.content.ContentResolver, uri: android.net.Uri): Boolean = try {
+        resolver.query(uri, arrayOf(MediaStore.MediaColumns._ID), null, null, null)
+            ?.use { it.moveToFirst() } == true
     } catch (t: Throwable) {
-        null
+        false
     }
 
     /**
-     * Apaga as cópias que o MediaStore criou por colisão de nome.
+     * Apaga os arquivos que sobraram das colunas de nome antigas.
      *
-     * O SO resolve colisão de DISPLAY_NAME renomeando o arquivo ("pulsa-erros.log (1).txt"),
-     * e aí ele deixa de casar na query acima — o espelho seguinte criava outro arquivo, e
-     * em meia hora de teste o Download tinha 32 cópias. Só isto não basta: o próximo passo
-     * é gravar num nome que nunca colide, e o insert tenta o nome fixo primeiro.
+     * Só roda quando ainda não há URI guardado, e apaga TUDO que casar com o nome-base —
+     * inclusive o arquivo canônico, porque o conteúdo antigo é o mesmo que está sendo
+     * gravado agora: apagar e recriar não perde nada e garante que a pasta termine com um
+     * arquivo só, em vez de um "(1)" antigo convivendo com o novo.
+     *
+     * A versão anterior filtrava por `RELATIVE_PATH` e nunca encontrava nada, porque em
+     * `MediaStore.Downloads` essa coluna não é consultável. Por isso o filtro é só o
+     * nome, sem caminho.
      */
     private fun purgeDuplicates(resolver: android.content.ContentResolver, collection: android.net.Uri) {
         try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
-            val pattern = "%" + MIRROR_NAME.substringBeforeLast('.')
+            val base = MIRROR_NAME.substringBeforeLast('.')
             resolver.query(
                 collection,
                 arrayOf(MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME),
-                "${MediaStore.MediaColumns.RELATIVE_PATH}=? AND ${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?",
-                arrayOf("$MIRROR_DIR/", pattern),
+                "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?",
+                arrayOf("%$base%"),
                 null
             )?.use { c ->
                 val idCol = c.getColumnIndex(MediaStore.MediaColumns._ID)
-                val nameCol = c.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
                 val doomed = mutableListOf<Long>()
                 while (c.moveToNext()) {
-                    if (idCol < 0 || nameCol < 0) break
-                    val name = c.getString(nameCol) ?: continue
-                    // Só apaga as variações "(n)"; o arquivo canônico fica.
-                    if (name != MIRROR_NAME && name.startsWith(MIRROR_NAME.substringBeforeLast('.'))) {
-                        doomed += c.getLong(idCol)
-                    }
+                    if (idCol < 0) break
+                    doomed += c.getLong(idCol)
                 }
                 for (id in doomed) {
                     runCatching { resolver.delete(ContentUris.withAppendedId(collection, id), null, null) }
