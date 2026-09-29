@@ -558,6 +558,51 @@ object Settings {
 
     fun resumeSongArtist(context: Context): String = prefs(context).getString("resume_artist", "") ?: ""
 
+    /**
+     * Fila salva para atravessar morte de processo e atualização do app.
+     *
+     * O [resumeState] acima guarda só UMA música, e nada no boot a devolvia: o restore
+     * automático era exclusivo do rádio. Numa atualização o Android mata o processo e o
+     * `onDestroy` não chegava a rodar, então a fila inteira se perdia.
+     *
+     * Guarda os `id`s do MediaStore em JSON, na ordem, com o índice e a posição. A faixa
+     * continua vindo do MediaStore no restore — o id é a chave, o resto é reconstruído, o
+     * que sobrevive bem a uma tag do app ter mudado de id entre versões.
+     */
+    fun setQueueState(context: Context, ids: List<Long>, index: Int, positionMs: Long) {
+        if (ids.isEmpty()) {
+            clearQueueState(context)
+            return
+        }
+        prefs(context).edit()
+            .putString("queue_ids", org.json.JSONArray(ids.map { it.toString() }).toString())
+            .putInt("queue_index", index)
+            .putLong("queue_position", positionMs)
+            .putLong("queue_saved_at", System.currentTimeMillis())
+            .apply()
+    }
+
+    /** `ids` na ordem salva, o índice da faixa atual e a posição dela, em ms. */
+    fun queueState(context: Context): Triple<List<Long>, Int, Long>? {
+        val raw = prefs(context).getString("queue_ids", "") ?: ""
+        if (raw.isBlank()) return null
+        val ids = runCatching {
+            val arr = org.json.JSONArray(raw)
+            (0 until arr.length()).mapNotNull { arr.optString(it).toLongOrNull() }
+        }.getOrNull()
+        if (ids.isNullOrEmpty()) return null
+        return Triple(ids, prefs(context).getInt("queue_index", 0), prefs(context).getLong("queue_position", 0L))
+    }
+
+    fun clearQueueState(context: Context) {
+        prefs(context).edit()
+            .remove("queue_ids")
+            .remove("queue_index")
+            .remove("queue_position")
+            .remove("queue_saved_at")
+            .apply()
+    }
+
     // Rádio guardado para continuar tocando caso o processo renasça (E4). Só enquanto
     // estava de fato tocando/pausado por estado "tem som"; limpo no pause deliberado.
     fun setRadioResume(context: Context, url: String, title: String, genre: String) {

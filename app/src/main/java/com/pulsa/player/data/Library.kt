@@ -42,6 +42,27 @@ object Library {
         )
     }
 
+    /**
+     * Carrega vários `id`s de uma vez, devolvendo na MESMA ordem em que foram pedidos.
+     *
+     * [querySongs] ordena por TRACK/TITLE, o que é certo para listar a biblioteca e errado
+     * para restaurar uma fila: a ordem salva é a ordem que o usuário montou. Por isso aqui
+     * o resultado é reordenado pelos ids recebidos, não pela query.
+     *
+     * Faixa que não existe mais (apagada do dispositivo) é omitida. Por isso o tamanho do
+     * resultado pode ser menor que o da lista: quem chama tem de reajustar o índice.
+     */
+    fun songsByIds(context: Context, ids: List<Long>): List<Song> {
+        if (ids.isEmpty()) return emptyList()
+        val placeholders = ids.joinToString(",") { "?" }
+        val found = querySongs(
+            context,
+            "${MediaStore.Audio.Media._ID} IN ($placeholders) AND ${MediaStore.Audio.Media.IS_MUSIC}!=0",
+            ids.map { it.toString() }.toTypedArray()
+        ).associateBy { it.id }
+        return ids.mapNotNull { found[it] }
+    }
+
     private val gospelKeywords = listOf(
         "gospel", "louvor", "adora", "adorac", "adorã", "hinario", "hino", "harpa",
         "igreja", "jesus", "cristo", "deus", "fiel", "salm", "cantico", "cântico",

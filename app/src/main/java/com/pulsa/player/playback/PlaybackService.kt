@@ -91,6 +91,13 @@ class PlaybackService : MediaLibraryService() {
         private set
     var index: Int = -1
         private set
+
+    /**
+     * Impede que o [start] chamado pelo próprio restore grave a fila de novo: nesse
+     * momento o player ainda está na posição 0 e sobrescreveria a posição salva,
+     * apagando exatamente o que o restore veio para recuperar.
+     */
+    private var suppressQueueSave = false
     var shuffle: Boolean = false
         private set
     var repeatAll: Boolean = true
@@ -438,6 +445,75 @@ class PlaybackService : MediaLibraryService() {
             // Processo renasceu com rádio no ar (ex.: encerrado no gesto): volta a tocar.
             runCatching { restoreRadioResume() }
         }
+        if (queue.isEmpty()) {
+            // Mesma coisa para a música: o processo foi morto (inclusive por instalação de
+            // versão nova, caso em que o onDestroy nem chega a rodar) e a fila salva volta
+            // PAUSADA na posição em que parou — o prepareCurrent já deixa playWhenReady
+            // desligado, então basta montar a fila e posição sem chamar play().
+            runCatching { restoreQueueState() }
+        }
+    }
+
+    /**
+     * Recarrega a fila salva e a deixa pronta, pausada, na posição salva.
+     *
+     * Só roda com a fila vazia — se o usuário já está tocando algo, o que está na tela
+     * ganha. Devolve `true` se restaurou.
+     */
+    private fun restoreQueueState(): Boolean {
+        if (!Settings.resumeOn(this)) return false
+        val (ids, savedIndex, savedPos) = Settings.queueState(this) ?: return false
+        if (ids.isEmpty()) return false
+        val songs = Library.songsByIds(this, ids)
+        if (songs.isEmpty()) {
+            // Toda a fila sumiu do MediaStore (fotos apagadas, sdcard removido). Não tenta
+            // de novo em todo boot e não deixa lixo salvo para sempre.
+            Settings.clearQueueState(this)
+            return false
+        }
+        // Ajusta o índice: com faixa apagada, a posição original apontaria para a música errada.
+        val currentId = ids.getOrNull(savedIndex.coerceIn(0, ids.lastIndex))
+        val index = currentId
+            ?.let { id -> songs.indexOfFirst { it.id == id } }
+            ?.takeIf { it >= 0 }
+            ?: 0
+        suppressQueueSave = true
+        try {
+            start(songs, index)
+            val pos = savedPos.coerceAtLeast(0L)
+            if (pos > 0L) {
+                runCatching { seekTo(pos) }
+            }
+        } finally {
+            suppressQueueSave = false
+        }
+        pauseWasDeliberate = true
+        return true
+    }
+
+    /**
+     * Grava a fila atual para o próximo processo. Chamado de [saveResumeState], que por
+     * sua vez roda no tick de posição — assim a fila e a posição andam juntas.
+     *
+     * Rádio e vídeo ficam de fora: o rádio tem o próprio mecanismo ([setRadioResume]) e
+     * vídeo não é retomável, e guardar um id sintético nesses casos faria o restore
+     * procurar no MediaStore uma faixa que nunca existiu.
+     */
+    private fun saveQueueState() {
+        if (suppressQueueSave) return
+        if (queue.isEmpty()) {
+            Settings.clearQueueState(this)
+            return
+        }
+        if (queue.any { it.isRadio || it.isVideo }) {
+            // Rádio e vídeo não são retomáveis. Deixar a fila antiga salva seria pior que
+            // não ter nada: o próximo boot restauraria uma playlist que o usuário já trocou.
+            Settings.clearQueueState(this)
+            return
+        }
+        val i = index.coerceIn(0, queue.lastIndex)
+        val pos = runCatching { player?.currentPosition ?: 0L }.getOrDefault(0L)
+        Settings.setQueueState(this, queue.map { it.id }, i, pos)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -451,6 +527,10 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onDestroy() {
         unregisterNoisyReceiver()
+        // Última chance de gravar a fila. numa instalação de versão nova o Android pode
+        // matar o processo sem chamar isto, e aí quem salva é o tick de 5s — por isso o
+        // start já grava na hora e isto aqui é só a rede de segurança.
+        runCatching { saveQueueState() }
         stopEightD()
         fadeInRunnable?.let { fadeHandler.removeCallbacks(it) }
         playerLink?.let { Playback.detach(it) }
@@ -612,6 +692,11 @@ class PlaybackService : MediaLibraryService() {
         queue = songs.toList()
         index = startIndex.coerceIn(0, queue.size - 1)
         prepareCurrent()
+        // Grava a fila nova na hora. Sem isso, uma instalação de versão nova nos primeiros
+        // segundos depois de dar play perderia a fila: o tick que grava a posição só roda a
+        // cada 5s de reprodução. No restore isso é suprimido (ver suppressQueueSave) para
+        // não sobrescrever a posição salva com 0 logo antes de aplicá-la.
+        saveQueueState()
     }
 
     fun refreshCurrentMeta() {
@@ -683,6 +768,8 @@ class PlaybackService : MediaLibraryService() {
         positionMs = 0L
         consecutiveErrors = 0
         Settings.clearRadioResume(this)
+        // Parada deliberada: não faz sentido a fila salva reaparecer no próximo boot.
+        Settings.clearQueueState(this)
         stopEightD()
         mainHandler.removeCallbacks(progressTick)
         Playback.notifySong(null, -1)
@@ -1179,6 +1266,7 @@ class PlaybackService : MediaLibraryService() {
         // evento do listener via Handler) e a chamada abaixo regravaria o rádio que o pause()
         // acabou de limpar, ressuscitando a estação no próximo restoreRadioResume.
         if (pauseWasDeliberate) return
+        saveQueueState()
         val song = currentSong ?: return
         if (!Settings.resumeOn(this)) return
         if (song.isVideo) return
