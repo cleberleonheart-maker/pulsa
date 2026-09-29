@@ -23,7 +23,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.Player
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Helper
+import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.VideoLibrary
+import com.pulsa.player.media.Subtitles
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
@@ -65,6 +67,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var durationText: TextView
     private lateinit var seekBar: SeekBar
     private lateinit var playBtn: ImageButton
+    private lateinit var subtitleView: androidx.media3.ui.SubtitleView
 
     private var videos: List<Video> = emptyList()
     private var videoSongs: List<Song> = emptyList()
@@ -116,6 +119,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         durationText = findViewById(R.id.vp_duration)
         seekBar = findViewById(R.id.vp_seek)
         playBtn = findViewById(R.id.vp_play)
+        subtitleView = findViewById(R.id.vp_subtitles)
 
         findViewById<ImageButton>(R.id.vp_back).setOnClickListener {
             closingForMusic.set(true)
@@ -267,6 +271,49 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     override fun onSongChanged(song: Song?, index: Int) {
         if (song?.isVideo != true) return
         render()
+        // Cada video tem sua legenda: reavalia no START, senão a legenda do video
+        // anterior ficaria desenhada no seguinte (e alguns nem tem legenda nenhuma).
+        applySubtitle(song)
+    }
+
+    /**
+     * Liga a `SubtitleView` ao player e anexa a legenda do video que esta tocando, se houver.
+     *
+     * A busca pelo arquivo `.srt`/`.vtt` toca o disco, entao vai para a `ThreadPool`: o
+     * `attach` devolve o MediaItem so quando acha legenda, e nesse caso trocamos o item
+     * atual no player. Sem legenda, so escondemos a view e deixamos o video tocar.
+     */
+    private fun applySubtitle(song: Song) {
+        val player = Playback.player
+        if (player == null) {
+            subtitleView.visibility = View.GONE
+            return
+        }
+        // Esconde imediatamente: enquanto procura, a legenda antiga nao deve piscar.
+        subtitleView.visibility = View.GONE
+        ThreadPool.post {
+            val attached = runCatching {
+                val current = player.currentMediaItem
+                if (current != null) Subtitles.attach(applicationContext, current) else null
+            }.getOrNull()
+            ThreadPool.onUi {
+                if (isFinishing || isDestroyed) return@onUi
+                // O video pode ter trocado de faixa enquanto procurava: so aplica se for
+                // o mesmo item, senao a legenda do video anterior aparece no seguinte.
+                if (player.currentMediaItem?.localConfiguration?.uri !=
+                    attached?.localConfiguration?.uri
+                ) {
+                    return@onUi
+                }
+                if (attached == null) {
+                    subtitleView.setPlayer(null)
+                    subtitleView.visibility = View.GONE
+                    return@onUi
+                }
+                subtitleView.setPlayer(player)
+                subtitleView.visibility = View.VISIBLE
+            }
+        }
     }
 
     override fun onPlayStateChanged(isPlaying: Boolean) {
@@ -413,6 +460,8 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             handler.removeCallbacks(hideRunnable)
             Playback.player?.setVideoSurfaceView(surfaceView)
             render()
+            // Voltando do PiP, a legenda foi solta no onStop: religa.
+            Playback.currentSong?.takeIf { it.isVideo }?.let { applySubtitle(it) }
             if (Playback.isPlaying) scheduleHide()
         }
     }
@@ -426,6 +475,8 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             Playback.player?.setVideoSurfaceView(surfaceView)
             if (autoplay) Playback.play()
             render()
+            // Recomecando, religa a legenda do video que ja esta tocando.
+            Playback.currentSong?.takeIf { it.isVideo }?.let { applySubtitle(it) }
         }
     }
 
@@ -449,6 +500,9 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
     override fun onStop() {
         if (Playback.listener === this) Playback.listener = null
+        // Em PiP a activity segue viva e o vídeo tocando, mas a SubtitleView pertence à
+        // tela cheia: solta o player para não desenhar a legenda por cima do PiP.
+        if (isInPictureInPictureMode) subtitleView.setPlayer(null)
         // KEEP_SCREEN_ON só faz sentido com a tela de vídeo na mão. Em PiP deixava a tela
         // acesa o tempo todo; e a flag é do lado do SO, então sobreviveria à activity.
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -464,6 +518,9 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         finished = true
         handler.removeCallbacks(hideRunnable)
         if (Playback.listener === this) Playback.listener = null
+        // Solta o player da SubtitleView: se nao, o player continua com referencia para
+        // uma view morta e o leak atravessa a activity.
+        subtitleView.setPlayer(null)
         Playback.player?.clearVideoSurfaceView(surfaceView)
         playbackBind?.let { Playback.release(it) }
         playbackBind = null

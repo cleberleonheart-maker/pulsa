@@ -74,6 +74,9 @@ dependencies {
     // OkHttp como DataSource, Room para playlists/favoritas (E8) e WorkManager para o
     // trabalho de fundo (E9). Nada e usado ainda - E1 e so dependencia, comportamento zero.
     implementation("androidx.media3:media3-session:1.3.1")
+    // Legendas (SRT/VTT/ASS) no video: traz o SubtitleView e os parsers de SRT/VTT que o
+    // PlayerView usa. Sem isso o Media3 decodifica a legenda mas nao ha onde desenhar.
+    implementation("androidx.media3:media3-ui:1.3.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.3.1")
     implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
     implementation("androidx.media3:media3-datasource-okhttp:1.3.1")

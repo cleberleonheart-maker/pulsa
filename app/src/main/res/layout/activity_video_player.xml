@@ -10,6 +10,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!--
+        Legenda desenhada por cima do video. Precisa ficar logo abaixo das barras de
+        controle, que ficam depois no mesmo FrameLayout. O edge-to-edge deixa a posicao
+        proporcional, entao a legenda acompanha o video em tela cheia e no PiP.
+    -->
+    <androidx.media3.ui.SubtitleView
+        android:id="@+id/vp_subtitles"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="48dp"
+        android:visibility="gone" />
+
     <ProgressBar
         android:id="@+id/vp_loading"
         android:layout_width="wrap_content"
