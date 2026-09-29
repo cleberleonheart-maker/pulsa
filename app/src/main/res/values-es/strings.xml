@@ -348,6 +348,7 @@
     <string name="favorite_add">Favorita</string>
     <string name="favorite_remove">Quitar de favoritas</string>
     <string name="favorite_added">Canción marcada como favorita</string>
+    <string name="favorite_error">No se pudo añadir a favoritos</string>
     <string name="favorite_removed">Quitada de favoritas</string>
     <string name="empty_favorites">Aún no hay canciones favoritas. Usa el menú de cada canción para marcarla.</string>
 

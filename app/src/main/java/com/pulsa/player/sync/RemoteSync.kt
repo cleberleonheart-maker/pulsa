@@ -51,12 +51,20 @@ object RemoteSync {
             if (!running) return
             if (!busy) {
                 busy = true
+                // O estado do player (isPlaying/currentSong/queue) tem de ser lido na MAIN.
+                // O ExoPlayer do Media3 exige a thread que o criou, e ler de uma thread do
+                // pool estoura IllegalStateException ("Player is accessed on the wrong
+                // thread"). Isso nao era problema do proprio sync: ele derrubava a thread do
+                // pool, e tudo que usasse o mesmo pool junto morria -- inclusive o
+                // favoritar, que por acaso roda no mesmo pool. Coleta-se o estado aqui, na
+                // main, e so entao o trabalho de rede vai para o pool.
+                val snapshot = runCatching { capturePlayerState() }.getOrNull()
                 ThreadPool.post {
                     try {
                         val ctx = appContext ?: return@post
                         Blacklist.refreshIfStale(ctx)
                         if (Blacklist.isBanned(ctx)) return@post
-                        pushState(ctx)
+                        if (snapshot != null) pushState(ctx, snapshot)
                         pollCommands(ctx)
                         maybePushSongs(ctx)
                         maybeSyncDjLearn(ctx)
@@ -76,17 +84,31 @@ object RemoteSync {
         handler.post(tick)
     }
 
-    private fun pushState(ctx: Context) {
+    /** Estado do player lido na MAIN, antes de o trabalho sair para o pool. */
+    private data class PlayerState(
+        val playing: Boolean,
+        val positionMs: Long,
+        val current: Song?,
+        val queue: List<Song>
+    )
+
+    private fun capturePlayerState(): PlayerState = PlayerState(
+        playing = Playback.isPlaying,
+        positionMs = Playback.position,
+        current = Playback.currentSong,
+        queue = Playback.queue
+    )
+
+    private fun pushState(ctx: Context, state: PlayerState) {
         val body = JSONObject().apply {
-            put("playing", Playback.isPlaying)
-            put("positionMs", Playback.position)
+            put("playing", state.playing)
+            put("positionMs", state.positionMs)
             put("volume", streamVolume(ctx))
             put("app", versionName(ctx))
             put("ts", System.currentTimeMillis())
-            val song = Playback.currentSong
-            put("current", song?.let { songJson(it) } ?: JSONObject.NULL)
+            put("current", state.current?.let { songJson(it) } ?: JSONObject.NULL)
             put("queue", JSONArray().apply {
-                for (s in Playback.queue) put(songJson(s))
+                for (s in state.queue) put(songJson(s))
             })
         }.toString()
         postJson(ctx, "/state", body)

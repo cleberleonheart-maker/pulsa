@@ -349,6 +349,7 @@
     <string name="favorite_add">Favorite</string>
     <string name="favorite_remove">Remove from favorites</string>
     <string name="favorite_added">Song favorited</string>
+    <string name="favorite_error">Could not add to favorites</string>
     <string name="favorite_removed">Removed from favorites</string>
     <string name="empty_favorites">No favorite songs yet. Use each song\'s menu to favorite it.</string>
 

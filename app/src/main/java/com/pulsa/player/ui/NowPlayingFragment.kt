@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.pulsa.player.R
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.playback.Playback
@@ -304,10 +305,26 @@ class NowPlayingFragment : Fragment() {
 
     private fun togglerLike() {
         val song = Playback.currentSong ?: return
+        val songId = song.id
         ThreadPool.post {
-            val db = PlaylistDb.get(requireActivity().applicationContext)
-            val fav = db.isFavorite(song.id)
-            db.setFavorite(song, !fav)
+            // runCatching: o pool e o mesmo do RemoteSync, e um crash la derrubava esta
+            // thread junto -- o coracao parecia "nao fazer nada" sem nenhum erro na tela.
+            runCatching {
+                val db = PlaylistDb.get(requireActivity().applicationContext)
+                val fav = db.isFavorite(songId)
+                db.setFavorite(song, !fav)
+            }.onFailure { e ->
+                CrashLogger.writeLog(requireContext(), "FAVORITAR falhou id=$songId -> $e")
+                ThreadPool.onUi {
+                    if (isAdded) {
+                        Toast.makeText(
+                            requireContext(),
+                            R.string.favorite_error,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
             ThreadPool.onUi {
                 if (isAdded) updateLikeIconFor(song)
             }

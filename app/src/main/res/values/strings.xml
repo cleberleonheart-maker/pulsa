@@ -291,6 +291,7 @@
     <string name="favorite_add">Favoritar</string>
     <string name="favorite_remove">Remover dos favoritos</string>
     <string name="favorite_added">Música favoritada</string>
+    <string name="favorite_error">Não foi possível favoritar</string>
     <string name="favorite_removed">Removida dos favoritos</string>
     <string name="empty_favorites">Nenhuma música favorita ainda. Use o menu de cada música para favoritar.</string>
 

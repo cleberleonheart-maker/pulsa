@@ -1,5 +1,6 @@
 package com.pulsa.player.core
 
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.os.Build
@@ -120,6 +121,9 @@ object CrashLogger {
             resolver.openOutputStream(existing)?.use { it.write(text.toByteArray()) }
             return
         }
+        // Nao achou: pode ser que o SO tenha criado as copias "(1)", "(2)" numa colisao
+        // anterior, que nao casam na query. Limpa antes de criar mais uma.
+        purgeDuplicates(resolver, collection)
         val uri = resolver.insert(collection, values) ?: return
         runCatching {
             resolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
@@ -156,6 +160,44 @@ object CrashLogger {
         }
     } catch (t: Throwable) {
         null
+    }
+
+    /**
+     * Apaga as cópias que o MediaStore criou por colisão de nome.
+     *
+     * O SO resolve colisão de DISPLAY_NAME renomeando o arquivo ("pulsa-erros.log (1).txt"),
+     * e aí ele deixa de casar na query acima — o espelho seguinte criava outro arquivo, e
+     * em meia hora de teste o Download tinha 32 cópias. Só isto não basta: o próximo passo
+     * é gravar num nome que nunca colide, e o insert tenta o nome fixo primeiro.
+     */
+    private fun purgeDuplicates(resolver: android.content.ContentResolver, collection: android.net.Uri) {
+        try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+            val pattern = "%" + MIRROR_NAME.substringBeforeLast('.')
+            resolver.query(
+                collection,
+                arrayOf(MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME),
+                "${MediaStore.MediaColumns.RELATIVE_PATH}=? AND ${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?",
+                arrayOf("$MIRROR_DIR/", pattern),
+                null
+            )?.use { c ->
+                val idCol = c.getColumnIndex(MediaStore.MediaColumns._ID)
+                val nameCol = c.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
+                val doomed = mutableListOf<Long>()
+                while (c.moveToNext()) {
+                    if (idCol < 0 || nameCol < 0) break
+                    val name = c.getString(nameCol) ?: continue
+                    // Só apaga as variações "(n)"; o arquivo canônico fica.
+                    if (name != MIRROR_NAME && name.startsWith(MIRROR_NAME.substringBeforeLast('.'))) {
+                        doomed += c.getLong(idCol)
+                    }
+                }
+                for (id in doomed) {
+                    runCatching { resolver.delete(ContentUris.withAppendedId(collection, id), null, null) }
+                }
+            }
+        } catch (t: Throwable) {
+        }
     }
 
 }
