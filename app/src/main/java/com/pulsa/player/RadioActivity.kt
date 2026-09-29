@@ -229,7 +229,7 @@ class RadioActivity : AppCompatActivity() {
                 } finally {
                     conn.disconnect()
                 }
-                parseSearchResults(body)
+                parseStations(body, 10)
             } catch (e: Exception) {
                 CrashLogger.writeLog(this, "RADIO busca falhou $query -> $e")
                 null
@@ -250,7 +250,75 @@ class RadioActivity : AppCompatActivity() {
         }
     }
 
-    private fun parseSearchResults(body: String): List<UserStation> {
+    /**
+     * Sintonia no automático: busca as rádios do estado e devolve para a sintonia girar por
+     * elas, somando às que já estavam no app — nenhuma das existentes é removida.
+     *
+     * Filtra por **estado**, e não por cidade, por um motivo medido: no radio-browser a maior
+     * parte das estações tem o campo `city` vazio, e buscar por `city=Porto Alegre` e
+     * `city=Canoas` devolve exatamente a mesma lista — incluindo "Jovem Pan - Florianópolis"
+     * e "Alpha FM - São Paulo". Por estado o filtro acerta. Também não dá para usar
+     * `bygeo` (o scanner por distância, que seria a sintonia mais fiel): o endpoint responde 404.
+     */
+    private fun tuneAutomatic() {
+        val state = RadioStations.state(this)
+        statusText.text = getString(R.string.radio_status_connecting)
+        ThreadPool.post {
+            val found = try {
+                val url = URL(
+                    "https://de1.api.radio-browser.info/json/stations/search" +
+                        "?state=${URLEncoder.encode(state, "UTF-8")}" +
+                        "&countrycode=BR&limit=60&hidebroken=true" +
+                        "&order=clickcount&reverse=true"
+                )
+                val conn = (url.openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 10000
+                    readTimeout = 10000
+                    requestMethod = "GET"
+                    setRequestProperty("User-Agent", "PulsaRadio/3.42 (Android)")
+                }
+                val body = try {
+                    val reader = BufferedReader(conn.inputStream.reader(Charsets.UTF_8))
+                    reader.use { it.readText() }
+                } finally {
+                    conn.disconnect()
+                }
+                parseStations(body, 60)
+            } catch (e: Exception) {
+                CrashLogger.writeLog(this, "RADIO sintonia $state falhou -> $e")
+                null
+            }
+            ThreadPool.onUi {
+                if (isFinishing || isDestroyed) return@onUi
+                setStatusStopped()
+                if (found.isNullOrEmpty()) {
+                    Toast.makeText(
+                        this@RadioActivity,
+                        R.string.radio_tune_fail,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@onUi
+                }
+                RadioStations.saveLocals(this, found)
+                rebuildList()
+                Toast.makeText(
+                    this@RadioActivity,
+                    getString(R.string.radio_tune_done, found.size),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    /**
+     * Parser do radio-browser, usado tanto pela busca por nome quanto pela sintonia
+     * automática — os dois endpoints devolvem o mesmo formato.
+     *
+     * Descarta URL quebrada/não-http e nome vazio, e remove duplicata por URL. O estado entra
+     * no rótulo porque a lista é do estado inteiro: sem isso a tela mostra "Atlântida - ATL" e
+     * o usuário não sabe de onde é.
+     */
+    private fun parseStations(body: String, limit: Int): List<UserStation> {
         if (body.isBlank()) return emptyList()
         val out = mutableListOf<UserStation>()
         val arr = JSONArray(body)
@@ -263,12 +331,12 @@ class RadioActivity : AppCompatActivity() {
             val name = obj.optString("name").trim()
             if (name.isEmpty()) continue
             var genre = obj.optString("tags").trim()
-            val country = obj.optString("country").trim()
-            if (country.isNotEmpty()) {
-                genre = if (genre.isEmpty()) country else "$genre · $country"
-            }
+            val st = obj.optString("state").trim()
+            val city = obj.optString("city").trim()
+            val local = listOf(city, st).filter { it.isNotEmpty() }.joinToString("/")
+            if (local.isNotEmpty()) genre = if (genre.isEmpty()) local else "$genre · $local"
             out += UserStation(name, genre, rawUrl)
-            if (out.size >= 10) break
+            if (out.size >= limit) break
         }
         return out
     }

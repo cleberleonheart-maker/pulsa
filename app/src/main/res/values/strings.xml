@@ -367,6 +367,9 @@
     <string name="radio_add_save">Salvar estação</string>
     <string name="radio_saved">Estação salva: %1$s</string>
     <string name="radio_removed">Estação removida</string>
+    <string name="radio_tune_auto">Sintonia no automático</string>
+    <string name="radio_tune_done">%1$d rádios na sintonia</string>
+    <string name="radio_tune_fail">Não foi possível buscar rádios</string>
     <string name="radio_remove_confirm">Remover %1$s das suas estações?</string>
     <string name="radio_search_empty">Nenhuma estação encontrada com esse nome</string>
     <string name="radio_search_fail">Não foi possível buscar estações. Verifique sua conexão.</string>

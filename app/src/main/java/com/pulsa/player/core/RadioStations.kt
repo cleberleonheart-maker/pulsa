@@ -43,14 +43,57 @@ object RadioStations {
 
     /**
      * Tudo que o botão de avançar deve percorrer: as padrão primeiro, depois as salvas pelo
-     * usuário, na mesma ordem da tela de rádio. Uma estação salva com a mesma URL de uma
-     * padrão entra uma vez só — a do usuário, que é a que o usuário escolheu nomear.
+     * usuário e as locais automáticas, na mesma ordem da tela de rádio. Uma estação salva
+     * com a mesma URL de uma padrão entra uma vez só — a do usuário, que é a que ele nomeou.
      */
     fun all(context: Context): List<UserStation> {
-        val saved = list(context)
-        val savedUrls = saved.map { it.url }.toSet()
-        return defaults.filterNot { it.url in savedUrls } + saved
+        val known = list(context) + locals(context)
+        val knownUrls = known.map { it.url }.toSet()
+        return defaults.filterNot { it.url in knownUrls } + known
     }
+
+    // --- locais automáticas (sintonia no automático) ---
+
+    /**
+     * As rádios Buscadas por estado e guardadas para a sintonia percorrer sem internet.
+     *
+     * Ficam num pref SEPARADO das do usuário de propósito: essas não aparecem na lista com
+     * lixeira para remover, e uma busca nova substitui o grupo inteiro sem tocar nas que o
+     * usuário salvou à mão.
+     */
+    fun locals(context: Context): List<UserStation> {
+        val raw = prefs(context).getString("locals", "") ?: ""
+        if (raw.isBlank()) return emptyList()
+        return raw.split('\n').mapNotNull { line ->
+            val parts = line.split(SEP)
+            if (parts.size < 3) return@mapNotNull null
+            val name = parts[0].trim()
+            val url = parts[2].trim()
+            if (name.isBlank() || url.isBlank()) null
+            else UserStation(name, parts[1].trim(), url)
+        }
+    }
+
+    fun saveLocals(context: Context, stations: List<UserStation>) {
+        prefs(context).edit().putString("locals", encode(stations)).apply()
+    }
+
+    fun hasLocals(context: Context) = locals(context).isNotEmpty()
+
+    /**
+     * Estado usado na sintonia automática. O padrão é o RS porque era o que a lista padrão do
+     * app já apontava; fica salvo para o usuário não precisar mexer no código se mudar de região.
+     */
+    fun state(context: Context): String =
+        prefs(context).getString("state", DEFAULT_STATE) ?: DEFAULT_STATE
+
+    fun setState(context: Context, value: String) {
+        val clean = value.trim().uppercase()
+        if (clean.isBlank() || clean.length > 2) return
+        prefs(context).edit().putString("state", clean).apply()
+    }
+
+    const val DEFAULT_STATE = "RS"
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)

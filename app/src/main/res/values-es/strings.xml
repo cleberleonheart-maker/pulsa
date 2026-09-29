@@ -424,6 +424,9 @@
     <string name="radio_add_save">Guardar estación</string>
     <string name="radio_saved">Estación guardada: %1$s</string>
     <string name="radio_removed">Estación eliminada</string>
+    <string name="radio_tune_auto">Sintonía automática</string>
+    <string name="radio_tune_done">%1$d emisoras en la sintonía</string>
+    <string name="radio_tune_fail">No se pudieron cargar las emisoras</string>
     <string name="radio_remove_confirm">¿Eliminar %1$s de tus estaciones?</string>
     <string name="radio_search_empty">No se encontraron estaciones con ese nombre</string>
     <string name="radio_search_fail">No se pudo buscar estaciones. Revisa tu conexión.</string>

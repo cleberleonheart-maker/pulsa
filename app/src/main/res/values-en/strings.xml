@@ -425,6 +425,9 @@
     <string name="radio_add_save">Save station</string>
     <string name="radio_saved">Station saved: %1$s</string>
     <string name="radio_removed">Station removed</string>
+    <string name="radio_tune_auto">Auto-tune</string>
+    <string name="radio_tune_done">%1$d stations in the tuner</string>
+    <string name="radio_tune_fail">Could not load stations</string>
     <string name="radio_remove_confirm">Remove %1$s from your stations?</string>
     <string name="radio_search_empty">No stations found with that name</string>
     <string name="radio_search_fail">Could not search stations. Check your connection.</string>
