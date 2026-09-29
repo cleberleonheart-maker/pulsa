@@ -7,6 +7,12 @@ import androidx.security.crypto.MasterKey
 import com.pulsa.player.R
 
 object Settings {
+    // Ids de avatar. Ficam publicos porque as telas desenham o avatar e a voz por causa
+    // deles; o numero e gravado em prefs, entao nao pode mudar depois.
+    const val VIRGIN = 0
+    const val VICTOR = 1
+    const val VERA = 2
+
     private const val FILE = "pulsa_settings"
     private const val SECRET_FILE = "pulsa_secrets"
     private const val KEY_DEVICE_ID = "device_id"
@@ -375,9 +381,39 @@ object Settings {
     fun masculineAvatar(context: Context): Boolean =
         prefs(context).getBoolean("avatar_masculino", false)
 
+    /**
+     * Qual dos tres avatares esta em uso.
+     *
+     * Foi um boolean so (virgem/Victor) e virou um id de 0 a 2 por causa da Vera. O
+     * `avatar_masculino` antigo continua sendo lido/escrito no mesmo lugar por compat, e
+     * a Vera entra como um valor novo do id -- quem ja tinha o Victor como masculino
+     * continua com o Victor, sem migracao.
+     */
+    fun avatarStyle(context: Context): Int = prefs(context).getInt("avatar_style", -1).let { stored ->
+        if (stored >= 0 && stored <= 2) {
+            stored
+        } else {
+            // Sem id gravado: deriva do boolean legado.
+            if (prefs(context).getBoolean("avatar_masculino", false)) VICTOR else VIRGIN
+        }
+    }
+
+    fun setAvatarStyle(context: Context, value: Int) {
+        val safe = value.coerceIn(VIRGIN, VERA)
+        prefs(context).edit()
+            .putInt("avatar_style", safe)
+            // Mantem o flag antigo coerente, para o caso de algo legado ainda o leia.
+            .putBoolean("avatar_masculino", safe == VICTOR)
+            .apply()
+    }
+
     fun assistantName(context: Context): String =
         context.getString(
-            if (masculineAvatar(context)) R.string.dj_voice_name_male else R.string.dj_voice_name
+            when (avatarStyle(context)) {
+                VICTOR -> R.string.dj_voice_name_male
+                VERA -> R.string.dj_voice_name_vera
+                else -> R.string.dj_voice_name
+            }
         )
 
     fun setDjRadio(context: Context, value: Boolean) {

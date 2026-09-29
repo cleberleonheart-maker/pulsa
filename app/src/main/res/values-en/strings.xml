@@ -451,6 +451,7 @@
     <string name="dj_no_permission">Allow music access so the DJ can mix your library.</string>
     <string name="dj_voice_name">Virgin</string>
     <string name="dj_voice_name_male">Victor</string>
+    <string name="dj_voice_name_vera">Vera</string>
     <string name="dj_voice_on">Voice: On</string>
     <string name="dj_voice_off">Voice: Off</string>
     <string name="dj_mic_on">Listening…</string>
@@ -622,6 +623,7 @@
     <string name="hero_status_playing">● Playing</string>
     <string name="hero_status_ready_m">○ Ready</string>
     <string name="hero_status_ready_f">○ Ready</string>
+    <string name="hero_status_ready_n">○ Ready</string>
     <string name="hero_status_no_songs">○ No songs yet</string>
     <string name="virgin_hub_note">Each card activates a function. Music facts stay with the DJ host.</string>
     <string name="home_library_title">Your library</string>
@@ -654,6 +656,7 @@
     <string name="v_avatar_switched">Now I am %1$s.</string>
     <string name="v_avatar_speak_male">Hey, commander? Now I am %1$s, with a masculine voice and look.</string>
     <string name="v_avatar_speak_female">Hey! I am %1$s again, with a feminine voice and look.</string>
+    <string name="v_avatar_speak_vera">Hi! Now I am %1$s, with my own look and voice.</string>
     <string name="v_relax_msg">Relax. I will take care of the vibe.</string>
     <string name="v_rec_off">Enable the Virgin AI in settings so I can recommend.</string>
     <string name="v_rec_thinking">Let me think of a good pick...</string>

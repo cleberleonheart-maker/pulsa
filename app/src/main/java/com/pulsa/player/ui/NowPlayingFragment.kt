@@ -168,14 +168,17 @@ class NowPlayingFragment : Fragment() {
     private fun refreshDreamTeam(songId: Long) {
         val partner = view?.findViewById<com.pulsa.player.ui.DancingVirginView>(R.id.np_virgin_dance_b) ?: return
         val single = view?.findViewById<com.pulsa.player.ui.DancingVirginView>(R.id.np_virgin_dance)
-        val male = Settings.masculineAvatar(requireContext())
+        val style = Settings.avatarStyle(requireContext())
         if (AvatarFavorites.favoriteId(requireContext()) != songId) {
-            single?.forceMale = null
+            single?.forceStyle = null
             partner.visibility = View.GONE
             return
         }
-        single?.forceMale = male
-        partner.forceMale = !male
+        // Sao tres avatares, mas o casal continua sendo dois: o ativo e o oposto
+        // classico (Virgin <-> Victor). Com a Vera no comando, ela dança com a Virgin.
+        val other = if (style == Settings.VICTOR) Settings.VIRGIN else Settings.VICTOR
+        single?.forceStyle = style
+        partner.forceStyle = other
         partner.visibility = View.VISIBLE
     }
 

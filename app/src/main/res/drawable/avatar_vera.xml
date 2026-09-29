@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Vera: o terceiro avatar. Mesma construção vetorial da Virgin (esfera "pôr-do-sol",
+    olhos redondos, piscada por path) mas com paleta TEAL/CIANO, distinta dos outros dois
+    — que são ambos roxos, para dar para differentiate de relance.
+    Estrutura de path idêntica à Virgin de propósito: o AnimatedVectorDrawable pisca
+    Target olhando o path pelo nome (blinkL/blinkR) e o DancingVirginView anima a partir
+    do esqueleto, então reusar a geometria mantém tudo funcionando sem tocar no código.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Halo de luz (ciano -> turquesa) -->
+    <path
+        android:pathData="M50,60m-46,0a46,46 0 1 1 92,0a46,46 0 1 1 -92,0Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:gradientRadius="46"
+                android:startColor="#3322D3EE"
+                android:centerColor="#1440E0D0"
+                android:endColor="#0067F5C3" />
+        </aapt:attr>
+    </path>
+
+    <!-- Cabeça: esfera retrô (highlight turquesa -> ciano -> teal profundo) -->
+    <path
+        android:pathData="M54,2a52,52 0 1 1 0,104a52,52 0 1 1 0,-104Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="0.34"
+                android:centerY="0.26"
+                android:gradientRadius="90"
+                android:startColor="#CFFAFE"
+                android:centerColor="#67E8F9"
+                android:endColor="#0E7490" />
+        </aapt:attr>
+    </path>
+
+    <!-- Estrela no topo (sparkrate branco-turquesa) -->
+    <path
+        android:fillColor="#ECFEFF"
+        android:pathData="M54,6 L57,15 L66,18 L57,21 L54,30 L51,21 L42,18 L51,15 Z" />
+
+    <!-- Óculos de sol (a marca da Vera): armação escura, lente com brilho turquesa -->
+    <group
+        android:rotation="-8"
+        android:pivotX="54"
+        android:pivotY="45">
+        <!-- haste esquerda -->
+        <path
+            android:fillColor="#134E4A"
+            android:pathData="M28,44L22,41L23,45L29,48Z" />
+        <!-- haste direita -->
+        <path
+            android:fillColor="#134E4A"
+            android:pathData="M80,44L86,41L85,45L79,48Z" />
+        <!-- ponte -->
+        <path
+            android:fillColor="#134E4A"
+            android:pathData="M50,43L58,43L58,46L50,46Z" />
+        <!-- armação esquerda -->
+        <path
+            android:pathData="M34,45m-11,0a11,11 0 1 1 22,0a11,11 0 1 1 -22,0Z"
+            android:strokeColor="#134E4A"
+            android:strokeWidth="3.4"
+            android:fillColor="#00FFFFFF" />
+        <!-- armação direita -->
+        <path
+            android:pathData="M74,45m-11,0a11,11 0 1 1 22,0a11,11 0 1 1 -22,0Z"
+            android:strokeColor="#134E4A"
+            android:strokeWidth="3.4"
+            android:fillColor="#00FFFFFF" />
+        <!-- brilho na lente esquerda -->
+        <path
+            android:fillColor="#CCFFFFFF"
+            android:pathData="M30,40L33,37.5L35.5,39.5L32.5,42L30,40Z" />
+        <!-- brilho na lente direita -->
+        <path
+            android:fillColor="#CCFFFFFF"
+            android:pathData="M70,40L73,37.5L75.5,39.5L72.5,42L70,40Z" />
+    </group>
+
+    <!-- Sorriso largo e curvo -->
+    <path
+        android:pathData="M40,72Q54,85 68,72"
+        android:strokeColor="#0A2A2E"
+        android:strokeLineCap="round"
+        android:strokeWidth="4.2" />
+
+    <!-- Pálpebras (invisíveis; usadas pelo AnimatedVectorDrawable para piscar) -->
+    <path
+        android:name="blinkL"
+        android:pathData="M28,45C33,41 41,41 46,44.5"
+        android:strokeColor="#0A2A2E"
+        android:strokeLineCap="round"
+        android:strokeWidth="3"
+        android:strokeAlpha="0" />
+    <path
+        android:name="blinkR"
+        android:pathData="M62,44.5C67,41 75,41 80,45"
+        android:strokeColor="#0A2A2E"
+        android:strokeLineCap="round"
+        android:strokeWidth="3"
+        android:strokeAlpha="0" />
+</vector>

@@ -393,6 +393,7 @@
     <string name="dj_no_permission">Permita o acesso à música para o DJ mixar sua biblioteca.</string>
     <string name="dj_voice_name">Virgin</string>
     <string name="dj_voice_name_male">Victor</string>
+    <string name="dj_voice_name_vera">Vera</string>
     <string name="dj_voice_on">Voz: Ligada</string>
     <string name="dj_voice_off">Voz: Desligada</string>
     <string name="dj_mic_on">Ouvindo…</string>
@@ -645,6 +646,7 @@
     <string name="hero_status_playing">● Tocando</string>
     <string name="hero_status_ready_m">○ Pronto</string>
     <string name="hero_status_ready_f">○ Pronta</string>
+    <string name="hero_status_ready_n">○ Pronto</string>
     <string name="hero_status_no_songs">○ Sem músicas ainda</string>
     <string name="virgin_hub_note">Cada card ativa uma função. As curiosidades da música continuam na locutora do DJ.</string>
     <string name="home_library_title">Sua biblioteca</string>
@@ -679,6 +681,7 @@
     <string name="v_avatar_switched">Agora sou %1$s.</string>
     <string name="v_avatar_speak_male">E aí, mandante? Agora eu sou %1$s, com voz e visual masculinos.</string>
     <string name="v_avatar_speak_female">Oi! Sou a %1$s de novo, com voz e visual femininos.</string>
+    <string name="v_avatar_speak_vera">Fala! Agora eu sou %1$s, com meu próprio visual e minha voz.</string>
     <string name="v_relax_msg">Pode relaxar. Deixa comigo o clima.</string>
     <string name="v_rec_off">Ative a IA da Virgin nas configurações para eu recomendar.</string>
     <string name="v_rec_thinking">Deixa eu pensar numa boa recomendação...</string>
