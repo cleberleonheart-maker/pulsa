@@ -30,10 +30,13 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.CommandButton
+import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionResult
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.collect.ImmutableList
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
@@ -55,7 +58,7 @@ import java.io.File
 import kotlin.random.Random
 
 @OptIn(UnstableApi::class)
-class PlaybackService : MediaSessionService() {
+class PlaybackService : MediaLibraryService() {
 
     companion object {
         private const val CHANNEL_ID = "playback"
@@ -107,7 +110,7 @@ class PlaybackService : MediaSessionService() {
     private var player: ExoPlayer? = null
     private var awaitingReady = false
     private var playerLink: ServicePlayerLink? = null
-    private lateinit var session: MediaSession
+    private lateinit var session: MediaLibraryService.MediaLibrarySession
     private lateinit var notificationManager: NotificationManager
     private var notificationChangedCallback: MediaNotification.Provider.Callback? = null
     private var largeIcon: android.graphics.Bitmap? = null
@@ -283,7 +286,8 @@ class PlaybackService : MediaSessionService() {
         return if (intent?.action == null) LocalBinder() else super.onBind(intent)
     }
 
-    override fun onGetSession(controller: MediaSession.ControllerInfo): MediaSession = session
+    override fun onGetSession(controller: MediaSession.ControllerInfo):
+        MediaLibraryService.MediaLibrarySession = session
 
     /**
      * E3b — enquanto toca, nós seguramos o foreground (ver `ensureForeground`) e NÃO
@@ -342,7 +346,11 @@ class PlaybackService : MediaSessionService() {
             )
             .build()
             .also { it.addListener(playerListener) }
-        session = MediaSession.Builder(this, player!!)
+        // E6: o callback vai no CONSTRUTOR do `MediaLibrarySession.Builder` (é o único lugar
+        // que aceita `MediaLibrarySession.Callback`), e é o mesmo objeto do E3b. Não chamar
+        // `.setCallback()` aqui: o `MediaSession.Builder` base devolveria o `MediaSession`
+        // simples e a parte de biblioteca deixaria de existir.
+        session = MediaLibraryService.MediaLibrarySession.Builder(this, player!!, sessionCallback)
             .setSessionActivity(
                 PendingIntent.getActivity(
                     this,
@@ -351,7 +359,6 @@ class PlaybackService : MediaSessionService() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             )
-            .setCallback(sessionCallback)
             .build()
         setMediaNotificationProvider(pulsaNotificationProvider)
         // F1/E2: o serviço se anuncia na fachada pelo `PlayerLink`, em vez de expor
@@ -725,7 +732,19 @@ class PlaybackService : MediaSessionService() {
      * `onIsPlayingChanged` do listener cuida do resto. O STOP volta a ser no-op, como era no
      * callback legado da `MediaSessionCompat`.
      */
-    private val sessionCallback = object : MediaSession.Callback {
+    /**
+     * E6 — a árvore do Auto/Wear/Assistant, servida pela MESMA sessão e o MESMO player do app.
+     * É aqui que `setMediaItems` de um browser externo entra na nossa fila, em vez de num
+     * player separado.
+     *
+     * Fica no MESMO objeto que o [sessionCallback] de E3b, e não em um callback à parte,
+     * porque o `MediaLibrarySession.Builder` aceita um callback só: separar os dois faria o
+     * builder usar só um deles e perder o outro. `MediaLibrarySession.Callback` estende
+     * `MediaSession.Callback`, então os dois conjuntos de override convivem aqui.
+     */
+    private val libraryTree by lazy { PulsaLibraryTree(applicationContext) }
+
+    private val sessionCallback = object : MediaLibraryService.MediaLibrarySession.Callback {
         override fun onPlayerCommandRequest(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
@@ -747,6 +766,91 @@ class PlaybackService : MediaSessionService() {
 
             Player.COMMAND_STOP -> SessionResult.RESULT_ERROR_UNKNOWN
             else -> SessionResult.RESULT_SUCCESS
+        }
+
+        // --- E6: a árvore que o Auto/Wear/Assistant navegam. Fica no mesmo callback porque
+        // o `MediaLibrarySession.Builder` aceita um callback só.
+
+        override fun onGetLibraryRoot(
+            mediaSession: MediaLibraryService.MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: MediaLibraryService.LibraryParams?
+        ) = libraryTree.rootFuture(params)
+
+        override fun onGetItem(
+            mediaSession: MediaLibraryService.MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            mediaId: String
+        ) = libraryTree.itemFuture(mediaId, null)
+
+        override fun onGetChildren(
+            mediaSession: MediaLibraryService.MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: MediaLibraryService.LibraryParams?
+        ) = libraryTree.childrenFuture(parentId, page, pageSize, params)
+
+        override fun onSearch(
+            mediaSession: MediaLibraryService.MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            params: MediaLibraryService.LibraryParams?
+        ) = libraryTree.voidFuture(params)
+
+        override fun onGetSearchResult(
+            mediaSession: MediaLibraryService.MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            page: Int,
+            pageSize: Int,
+            params: MediaLibraryService.LibraryParams?
+        ) = libraryTree.searchFuture(query, page, pageSize, params)
+
+        /**
+         * O browser manda os `MediaItem` que quer tocar e o Media3 pede os completos de volta,
+         * resolvendo pelo `mediaId`. É o que faz o "tocar" do sistema cair na NOSSA fila: o
+         * item devolvido é o mesmo `MediaItem` que o app monta, então a sessão toca sem
+         * traduzir nada.
+         */
+        override fun onAddMediaItems(
+            mediaSession: MediaLibraryService.MediaLibrarySession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: MutableList<MediaItem>
+        ): ListenableFuture<MutableList<MediaItem>> {
+            val out = mediaItems.map { item ->
+                item.mediaId?.let { libraryTree.itemById(it) } ?: item
+            }
+            return Futures.immediateFuture(out.toMutableList())
+        }
+
+        /**
+         * Um browser externo (Assistant, Wear, botão do carro) pedindo "tocar isto" chega aqui,
+         * e o default do Media3 entregaria os `MediaItem` direto ao `ExoPlayer`. Isso deixaria
+         * a nossa `queue` de `Song` desatualizada: `currentSong` continuaria null e a
+         * notificação, o widget e o next/prev do app passariam a descrever a faixa errada.
+         * Então traduzimos para `Song` e seguimos pelo nosso próprio `start()`, que é quem
+         * monta a fila, prepara e publica o estado.
+         */
+        override fun onSetMediaItems(
+            mediaSession: MediaLibraryService.MediaLibrarySession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: MutableList<MediaItem>,
+            startIndex: Int,
+            startPositionMs: Long
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            val songs = mediaItems.mapNotNull { libraryTree.songFor(it.mediaId) }
+            if (songs.isEmpty()) {
+                return Futures.immediateFuture(
+                    MediaSession.MediaItemsWithStartPosition(ImmutableList.of(), 0, 0L)
+                )
+            }
+            val at = startIndex.coerceIn(0, songs.size - 1)
+            start(songs, at)
+            return Futures.immediateFuture(
+                MediaSession.MediaItemsWithStartPosition(ImmutableList.copyOf(mediaItems), at, startPositionMs)
+            )
         }
     }
 

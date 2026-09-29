@@ -91,8 +91,16 @@
 
         <service
             android:name=".playback.PlaybackService"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <!-- E6: sem estes intent-filters o serviço não aparece em "Fontes de mídia" do
+                 sistema e o Assistant não acha faixa nenhuma. `MediaLibraryService` (herda de
+                 `MediaBrowserService`) precisa das duas actions. -->
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaLibraryService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
 
         <service
             android:name=".util.UpdateService"
