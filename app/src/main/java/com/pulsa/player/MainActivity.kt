@@ -76,6 +76,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var miniRepeat: ImageView
     private lateinit var miniLike: ImageView
     private lateinit var miniVirgin: ImageView
+    private lateinit var miniRadioNext: ImageView
     private var miniSwipeDetector: GestureDetector? = null
     private var currentTag = VirginHomeFragment::class.java.simpleName
     private var playbackBind: Playback.Bind? = null
@@ -262,6 +263,8 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         miniRepeat = findViewById(R.id.mini_repeat)
         miniLike = findViewById(R.id.mini_like)
         miniVirgin = findViewById(R.id.mini_virgin)
+        miniRadioNext = findViewById(R.id.mini_radio_next)
+        miniRadioNext.setOnClickListener { Playback.next() }
         miniVirgin.setOnClickListener { virgin.toggleVirgin() }
         miniVirgin.setOnLongClickListener {
             virgin.onMiniVirginLongPress()
@@ -627,6 +630,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         miniTitle.text = song.title
         miniArtist.text = song.artist
         ArtLoader.load(song.albumId, song.path, miniArt)
+        // O botão de girar só faz sentido no rádio: em música ele pularia faixa como um
+        // "próxima" comum, que o swipe e o botão de fone já cobrem.
+        miniRadioNext.visibility = if (song.isRadio) View.VISIBLE else View.GONE
         val playing = Playback.isPlaying
         miniPlay.setImageResource(if (playing) R.drawable.ic_pause else R.drawable.ic_play)
         miniShuffle.tint(if (Playback.shuffle) R.color.primary else R.color.text_secondary)

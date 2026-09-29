@@ -43,14 +43,33 @@ object RadioStations {
 
     /**
      * Tudo que o botão de avançar deve percorrer: as padrão primeiro, depois as salvas pelo
-     * usuário e as locais automáticas, na mesma ordem da tela de rádio. Uma estação salva
-     * com a mesma URL de uma padrão entra uma vez só — a do usuário, que é a que ele nomeou.
+     * usuário e as locais automáticas, na mesma ordem da tela de rádio.
+     *
+     * A URL manda a identidade da estação, não o nome — o mesmo stream aparece no
+     * radio-browser com grafia diferente conforme a fonte. Então a comparação é por URL,
+     * normalizada, e vale entre os três grupos: uma padrão salva pelo usuário, uma local
+     * repetida na busca e a mesma URL salva duas vezes entram UMA vez só.
      */
     fun all(context: Context): List<UserStation> {
         val known = list(context) + locals(context)
-        val knownUrls = known.map { it.url }.toSet()
-        return defaults.filterNot { it.url in knownUrls } + known
+        val knownUrls = known.map { normUrl(it.url) }.toSet()
+        val uniqueKnown = LinkedHashMap<String, UserStation>()
+        for (station in known) uniqueKnown.putIfAbsent(normUrl(station.url), station)
+        return defaults.filterNot { normUrl(it.url) in knownUrls } + uniqueKnown.values
     }
+
+    /**
+     * Chave de comparação de estação: sem esquema, sem barra final, sem query.
+     *
+     * `http://a.com/stream` e `https://a.com/stream?x=1` são o mesmo stream, e sem isso a
+     * mesma rádio entrava duas vezes na sintonia — aparecendo duas vezes na fila do
+     * PlaybackService, o que fazia o botão de avançar "pular" uma sem mudar de estação.
+     */
+    private fun normUrl(url: String): String = url.trim().lowercase()
+        .removePrefix("https://")
+        .removePrefix("http://")
+        .substringBefore('?')
+        .removeSuffix("/")
 
     // --- locais automáticas (sintonia no automático) ---
 

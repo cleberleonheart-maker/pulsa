@@ -4,6 +4,7 @@ import com.pulsa.player.core.UserStation
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -38,6 +39,9 @@ class RadioActivity : AppCompatActivity() {
     private var playbackBind: Playback.Bind? = null
     private var activeStation: Station? = null
     private var errorShownFor: String? = null
+
+    /** Botão de sintonia do diálogo de adicionar, para mostrar a contagem de locais. */
+    private var tuneButton: Button? = null
     private var pendingStation: Station? = null
     private lateinit var statusText: TextView
     private lateinit var listContainer: LinearLayout
@@ -111,6 +115,7 @@ class RadioActivity : AppCompatActivity() {
         stations = RadioStations.all(this).map {
             Station(it.name, if (it.genre.isBlank()) getString(R.string.radio) else it.genre, it.url)
         }
+        syncTuneButton()
         listContainer.removeAllViews()
         rowByIndex.clear()
         buildRows()
@@ -161,6 +166,21 @@ class RadioActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * O rótulo do botão de sintonia diz quantas rádios locais já estão na lista, para o
+     * botão não parecer não fazer nada numa segunda visita — a busca substitui o grupo
+     * inteiro, então o número é o que dá pra conferir.
+     */
+    private fun syncTuneButton() {
+        tuneButton?.let { btn ->
+            btn.text = if (RadioStations.hasLocals(this)) {
+                getString(R.string.radio_tune_auto_have, RadioStations.locals(this).size)
+            } else {
+                getString(R.string.radio_tune_auto)
+            }
+        }
+    }
+
     private fun openAddDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_radio_add, null)
         val nameInput = view.findViewById<EditText>(R.id.radio_add_name)
@@ -173,9 +193,10 @@ class RadioActivity : AppCompatActivity() {
             }
             searchOnline(query)
         }
-        AlertDialog.Builder(this, Settings.accentStyle(this))
+        val dialog = AlertDialog.Builder(this, Settings.accentStyle(this))
             .setTitle(R.string.radio_add)
             .setView(view)
+            .setNeutralButton(R.string.radio_tune_auto) { d, _ -> d.dismiss(); tuneAutomatic() }
             .setPositiveButton(R.string.radio_add_save) { d, _ ->
                 val name = nameInput.text.toString().trim()
                 val url = urlInput.text.toString().trim()
@@ -187,7 +208,11 @@ class RadioActivity : AppCompatActivity() {
                 saveStation(name, url)
             }
             .setNegativeButton(R.string.cancel, null)
-            .show()
+            .create()
+        // Guarda o botão para o rótulo mostrar quantas locais já estão na sintonia.
+        tuneButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+        syncTuneButton()
+        dialog.show()
     }
 
     private fun saveStation(name: String, url: String) {
@@ -327,7 +352,11 @@ class RadioActivity : AppCompatActivity() {
             val obj = arr.optJSONObject(i) ?: continue
             val rawUrl = obj.optString("url_resolved").ifBlank { obj.optString("url") }
             if (rawUrl.isBlank() || !rawUrl.startsWith("http")) continue
-            if (!seen.add(rawUrl)) continue
+            // Mesma normalização do RadioStations.all(): o mesmo stream volta com query
+            // e barra diferentes dependendo do host, e entrava duplicado na sintonia.
+            if (!seen.add(rawUrl.trim().lowercase()
+                    .removePrefix("https://").removePrefix("http://")
+                    .substringBefore('?').removeSuffix("/"))) continue
             val name = obj.optString("name").trim()
             if (name.isEmpty()) continue
             var genre = obj.optString("tags").trim()

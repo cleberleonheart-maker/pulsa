@@ -51,6 +51,23 @@
 - [x] **Botão "Buscar novidades" no web**: recarrega a lista do celular direto do servidor
 - [x] Servidor serve o próprio web player em `/` (static) na porta 8081
 
+## Avatares (avatar_masculino / virgin_avatar)
+
+> Estado: em 2026-09 os dois foram mexidos à mão (olhos redondos, sorriso largo, paleta roxa). Ficaram bons, mas a piscada quebrou. Anotado aqui para arrumar em outro dia.
+
+- [ ] **Trocar a piscada por `scaleY` no próprio olho** (em vez da pálpebra-traço): é o jeito que o avatar do TAMI faz (`transform: scaleY(1) → scaleY(.1)`, `index.html:323`) e o motivo de lá nunca desalinhar. Um `ObjectAnimator` com `scaleY` no `<path>` do olho dispensa `blinkL`/`blinkR` e os `<target>` do `AnimatedVectorDrawable` — o desalinhamento deixa de existir por construção, em vez de se corrigir na unha
+
+### Bugs a corrigir no rework
+
+- [ ] **`avatar_masculino` não pisca mais**: os paths `blinkL`/`blinkR` foram removidos do `avatar_masculino.xml` e os `<target>` sumiram do `avatar_masculino_animated.xml` (que agora é um stub). Não quebra o build — os outros dois piscam e ele simplesmente não
+- [ ] **Pálpebras da Virgem não cobrem os olhos novos**: os olhos viraram círculos r=7 em (35,45) e (73,45), mas as pálpebras continuam as do visor antigo, meio-ajustadas. Medido: cada pálpebra vai 6px além da borda do olho para o centro do rosto (esq. x 27→48 vs. olho 28→42; dir. x 60→81 vs. olho 66→80) e a ponta fica a 13px do centro quando o raio é 7. Na hora do blink aparece um traço escuro no nariz. O arco também só desce até y 42,6 (centro 45), cobrindo o topo do olho em vez de fechar
+- [ ] **Todos ficaram roxos**: a lunar da Virgem virou `#A78BFA`, igual à coroa dela, e o olho claro sumiu junto. Se a ideia era diferenciar os três, a cor precisa voltar a ser distinta (o azul do Victor no TAMI é uma boa referência)
+
+### Ganhar do TAMI (o que o VectorDrawable não tem)
+
+- [ ] **Estados de verdade**: o TAMI tem `.playing` (dança + boca abrindo) e `.sleep` (olhos viram tracinho) via `tamiSpeakMood()`. No XML dá pra fazer com `AnimatedVectorDrawable` + `ObjectAnimator`, mas são N animações por estado, não uma
+- [ ] **Cabelo de verdade**: no TAMI é emoji com classe por personagem (`p.hair.cls`); no XML cada um teria que ser desenhado à mão
+
 ## DJ Virgin (mais natural)
 - [x] **Relembrar contexto** (4.2.5): memória persistida (`DjMemory`) — "meu telefone/whats é 99999-9999" é guardado e "qual é meu número?" é respondido; também pergunta/elembra do Bluetooth
 - [x] **Perfis de humor** (4.2.5): dormir → fila calma curta (CALM); "bombar/anima/acelera/festa" → mix enérgico (WILD); padrão → balançado
