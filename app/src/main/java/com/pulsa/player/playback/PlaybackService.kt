@@ -4,8 +4,10 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.media.AudioManager
 import android.net.Uri
@@ -16,6 +18,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.media.app.NotificationCompat.MediaStyle
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -142,6 +145,47 @@ class PlaybackService : MediaLibraryService() {
             emitProgress()
             if (isPlaying) mainHandler.postDelayed(this, 500)
         }
+    }
+
+    /**
+     * E7 — fone desconectado / cabo do carro puxado = pausa.
+     *
+     * O Android avisa por broadcast quando a saída de áudio deixa de ser o fone: é o mesmo
+     * gatilho para Bluetooth e para o AUX do carro. Sem isto a música continuava no
+     * alto-falante depois de arrancar o fone — e no carro isso significa o áudio saindo
+     * pelos alto-falantes do carro para todo mundo ouvir.
+     *
+     * Registrado por código, e não no manifest, por dois motivos: `onDestroy` precisa
+     * desregistrar (o manifest não tem como), e o `RECEIVER_NOT_EXPORTED` só existe via
+     * `ContextCompat` — o `registerReceiver` cru em API 33+ exige a flag explícita.
+     */
+    private val noisyReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            // Só interessa se está tocando de fato: o broadcast também sai quando o app
+            // pede foco e o sistema decide que o áudio vai para o alto-falante.
+            if (isPlaying) pause()
+        }
+    }
+
+    private var noisyReceiverRegistered = false
+
+    private fun registerNoisyReceiver() {
+        if (noisyReceiverRegistered) return
+        val ok = runCatching {
+            ContextCompat.registerReceiver(
+                this,
+                noisyReceiver,
+                IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        }.isSuccess
+        noisyReceiverRegistered = ok
+    }
+
+    private fun unregisterNoisyReceiver() {
+        if (!noisyReceiverRegistered) return
+        noisyReceiverRegistered = false
+        runCatching { unregisterReceiver(noisyReceiver) }
     }
 
     private val focusListener = object : AudioManager.OnAudioFocusChangeListener {
@@ -320,6 +364,7 @@ class PlaybackService : MediaLibraryService() {
         super.onCreate()
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        registerNoisyReceiver()
         createChannel()
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(
@@ -384,6 +429,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        unregisterNoisyReceiver()
         stopEightD()
         fadeInRunnable?.let { fadeHandler.removeCallbacks(it) }
         playerLink?.let { Playback.detach(it) }
