@@ -814,8 +814,12 @@ class PlaybackService : MediaLibraryService() {
          * item devolvido é o mesmo `MediaItem` que o app monta, então a sessão toca sem
          * traduzir nada.
          */
+        // `onAddMediaItems` e `onSetMediaItems` são herdados de `MediaSession.Callback`, e lá o
+        // primeiro parâmetro é `MediaSession` (não `MediaLibrarySession`, como nos callbacks de
+        // biblioteca). O Kotlin exige correspondência exata no override, então este `MediaSession`
+        // é obrigatório — foi o que compilation failed.
         override fun onAddMediaItems(
-            mediaSession: MediaLibraryService.MediaLibrarySession,
+            mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>
         ): ListenableFuture<MutableList<MediaItem>> {
@@ -834,7 +838,7 @@ class PlaybackService : MediaLibraryService() {
          * monta a fila, prepara e publica o estado.
          */
         override fun onSetMediaItems(
-            mediaSession: MediaLibraryService.MediaLibrarySession,
+            mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>,
             startIndex: Int,

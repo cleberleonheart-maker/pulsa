@@ -5,9 +5,11 @@ import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService.LibraryParams
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.pulsa.player.R
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.RadioStations
 import com.pulsa.player.data.Library
@@ -48,7 +50,7 @@ internal class PulsaLibraryTree(private val context: Context) {
             .build()
 
     /** Item tocável. O [uri] é o mesmo que o `PlaybackService` monta para a fila. */
-    private fun playable(song: Song): MediaItem {
+    private fun playable(song: Song): MediaItem? {
         val uri = song.videoId?.let { VideoLibrary.contentUri(it) }
             ?: song.radioUrl?.let(Uri::parse)
             ?: Uri.fromFile(File(song.path))
@@ -57,8 +59,9 @@ internal class PulsaLibraryTree(private val context: Context) {
             song.isRadio -> MediaMetadata.MEDIA_TYPE_RADIO_STATION
             else -> MediaMetadata.MEDIA_TYPE_MUSIC
         }
+        val mediaId = mediaIdFor(song) ?: return null
         return MediaItem.Builder()
-            .setMediaId(mediaIdFor(song))
+            .setMediaId(mediaId)
             .setUri(uri)
             .setMediaMetadata(
                 MediaMetadata.Builder()
@@ -102,9 +105,15 @@ internal class PulsaLibraryTree(private val context: Context) {
             )
             .build()
 
-    fun mediaIdFor(song: Song): String = when {
-        song.isVideo -> "video:${song.videoId}"
-        song.isRadio -> "radio:${song.radioUrl}"
+    /**
+     * `null` quando o `path` é de vídeo ou rádio mas não traz um id utilizável (ex.:
+     * `video:abc`). Sem esta guarda o id viraria a string `"video:null"`, que não resolve de
+     * volta para nenhuma faixa — o item entraria na fila e o `songFor` devolveria `null`,
+     * jogando a chamada fora.
+     */
+    fun mediaIdFor(song: Song): String? = when {
+        song.isVideo -> song.videoId?.let { "video:$it" }
+        song.isRadio -> song.radioUrl?.let { "radio:$it" }
         else -> "musica:${song.id}"
     }
 
@@ -113,17 +122,23 @@ internal class PulsaLibraryTree(private val context: Context) {
      * única mantém a assinatura de browser estável (o controller se inscreve nela).
      */
     fun root(): List<MediaItem> = ImmutableList.of(
-        folder("pulsa", "Pulsa", MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+        folder("pulsa", str(R.string.app_name), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
     )
+
+    /**
+     * Os rótulos das pastas vão por `getString`: com texto fixo em português, a árvore mostrada
+     * pelo Auto e pelo Wear sairia em português mesmo com o app em inglês.
+     */
+    private fun str(id: Int) = context.getString(id)
 
     fun childrenOf(parentId: String): ImmutableList<MediaItem> = when (parentId) {
         "pulsa" -> ImmutableList.of(
-            folder("musicas", "Músicas", MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
-            folder("favoritas", "Favoritas", MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
-            folder("radio", "Rádio", MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
-            folder("videos", "Vídeos", MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
-            folder("playlists", "Playlists", MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
-            folder("recentes", "Adicionadas recentemente", MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+            folder("musicas", str(R.string.tab_songs), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
+            folder("favoritas", str(R.string.tab_favorites), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
+            folder("radio", str(R.string.radio), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
+            folder("videos", str(R.string.tab_videos), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
+            folder("playlists", str(R.string.tab_playlists), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
+            folder("recentes", str(R.string.home_recent_title), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
         )
         "musicas", "favoritas", "recentes", "videos" -> ImmutableList.copyOf(itemsOf(parentId))
         "radio" -> ImmutableList.copyOf(
@@ -137,7 +152,7 @@ internal class PulsaLibraryTree(private val context: Context) {
         else -> if (parentId.startsWith("playlist:")) {
             val id = parentId.removePrefix("playlist:").toLongOrNull()
             if (id == null) ImmutableList.of()
-            else ImmutableList.copyOf(db.songs(id).map { playable(it) })
+            else ImmutableList.copyOf(db.songs(id).mapNotNull { playable(it) })
         } else {
             ImmutableList.of()
         }
@@ -145,17 +160,17 @@ internal class PulsaLibraryTree(private val context: Context) {
 
     private fun itemsOf(id: String): List<MediaItem> = when (id) {
         "musicas" -> if (Permissions.hasAccess(context)) {
-            Library.allSongs(context).map { playable(it) }
+            Library.allSongs(context).mapNotNull { playable(it) }
         } else {
             emptyList()
         }
         "favoritas" -> if (Permissions.hasAccess(context)) {
-            db.favorites().map { playable(it) }
+            db.favorites().mapNotNull { playable(it) }
         } else {
             emptyList()
         }
         "recentes" -> if (Permissions.hasAccess(context)) {
-            Library.recentSongs(context).map { playable(it) }
+            Library.recentSongs(context).mapNotNull { playable(it) }
         } else {
             emptyList()
         }
@@ -184,20 +199,24 @@ internal class PulsaLibraryTree(private val context: Context) {
             }
         }
         val songs = if (Permissions.hasAccess(context)) {
+            // `mapNotNull` já descarta o que não vira item, então o `take` pode ser aplicado
+            // sobre os `Song` ANTES de montar o `MediaItem`: antes ele vinha depois, o que
+            // convertia a biblioteca inteira em MediaItem para depois descartar quase tudo.
             Library.allSongs(context).filter { it.matches(needle) }
+                .take(limit).mapNotNull { playable(it) }
         } else {
             emptyList()
         }
-        add(songs.take(limit).map { playable(it) })
+        add(songs)
         if (out.size < limit && Permissions.hasAccess(context)) {
-            add(db.favorites().filter { it.matches(needle) }.map { playable(it) })
+            add(db.favorites().filter { it.matches(needle) }.mapNotNull { playable(it) })
         }
         if (out.size < limit) {
             add(RadioStations.list(context).filter { it.matches(needle) }.map { playable(it) })
         }
         if (out.size < limit && Permissions.hasVideo(context)) {
             add(VideoLibrary.all(context).filter { it.title.lowercase().contains(needle) }
-                .map { playable(it) })
+                .mapNotNull { playable(it) })
         }
         return ImmutableList.copyOf(out.values)
     }
@@ -206,22 +225,22 @@ internal class PulsaLibraryTree(private val context: Context) {
      * `null` = o browser não pode ver o item (arquivo sumiu do MediaStore). O Media3 usa isso
      * para remover do cache do browser em vez de devolver um item quebrado.
      */
-    fun itemById(mediaId: String): MediaItem? = when {
-        mediaId.startsWith("musica:") -> {
-            val id = mediaId.removePrefix("musica:").toLongOrNull() ?: return null
+    fun itemById(mediaId: String): MediaItem? {
+        if (mediaId.startsWith("musica:")) {
             if (!Permissions.hasAccess(context)) return null
-            Library.songsById(context, id).firstOrNull()?.let { playable(it) }
+            val id = mediaId.removePrefix("musica:").toLongOrNull() ?: return null
+            return Library.songsById(context, id).firstOrNull()?.let { playable(it) }
         }
-        mediaId.startsWith("video:") -> {
-            val id = mediaId.removePrefix("video:").toLongOrNull() ?: return null
+        if (mediaId.startsWith("video:")) {
             if (!Permissions.hasVideo(context)) return null
-            VideoLibrary.all(context).firstOrNull { it.id == id }?.let { playable(it) }
+            val id = mediaId.removePrefix("video:").toLongOrNull() ?: return null
+            return VideoLibrary.all(context).firstOrNull { it.id == id }?.let { playable(it) }
         }
-        mediaId.startsWith("radio:") -> {
+        if (mediaId.startsWith("radio:")) {
             val url = mediaId.removePrefix("radio:")
-            RadioStations.list(context).firstOrNull { it.url == url }?.let { playable(it) }
+            return RadioStations.list(context).firstOrNull { it.url == url }?.let { playable(it) }
         }
-        else -> null
+        return null
     }
 
     /**
@@ -236,10 +255,14 @@ internal class PulsaLibraryTree(private val context: Context) {
         if (mediaId == null) return null
         return when {
             mediaId.startsWith("musica:") -> {
+                // mesma guarda de `itemById`: um browser não pode usar o `mediaId` para ler a
+                // biblioteca com a permissão negada
+                if (!Permissions.hasAccess(context)) return null
                 val id = mediaId.removePrefix("musica:").toLongOrNull() ?: return null
                 Library.songsById(context, id).firstOrNull()
             }
             mediaId.startsWith("video:") -> {
+                if (!Permissions.hasVideo(context)) return null
                 val id = mediaId.removePrefix("video:").toLongOrNull() ?: return null
                 val video = VideoLibrary.all(context).firstOrNull { it.id == id } ?: return null
                 Song(
@@ -247,7 +270,7 @@ internal class PulsaLibraryTree(private val context: Context) {
                     title = video.title,
                     artist = "",
                     // mesmo `album` que o `VideoPlayerActivity` usa ao enfileirar um vídeo
-                    album = context.getString(com.pulsa.player.R.string.tab_videos),
+                    album = str(R.string.tab_videos),
                     albumId = 0L,
                     durationMs = video.durationMs,
                     path = Song.VIDEO_PREFIX + video.id,
@@ -281,11 +304,11 @@ internal class PulsaLibraryTree(private val context: Context) {
     // dedicado -- não faço agora porque `onGetChildren` pagina em 50 e o MediaStore local
     // responde em ms.
 
-    fun rootFuture(params: androidx.media3.session.MediaLibraryService.LibraryParams?):
+    fun rootFuture(params: LibraryParams?):
         ListenableFuture<LibraryResult<MediaItem>> =
         Futures.immediateFuture(LibraryResult.ofItem(root()[0], params))
 
-    fun itemFuture(mediaId: String, params: androidx.media3.session.MediaLibraryService.LibraryParams?):
+    fun itemFuture(mediaId: String, params: LibraryParams?):
         ListenableFuture<LibraryResult<MediaItem>> {
         val item = itemById(mediaId)
             ?: return Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE, params))
@@ -296,7 +319,7 @@ internal class PulsaLibraryTree(private val context: Context) {
         parentId: String,
         page: Int,
         pageSize: Int,
-        params: androidx.media3.session.MediaLibraryService.LibraryParams?
+        params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
         val all = childrenOf(parentId)
         val from = (page * pageSize).coerceIn(0, all.size)
@@ -305,19 +328,25 @@ internal class PulsaLibraryTree(private val context: Context) {
         return Futures.immediateFuture(LibraryResult.ofItemList(slice, params))
     }
 
+    /**
+     * A busca recomeça do zero a cada página, então o limite é o fim da página pedida e não o
+     * tamanho dela: com `pageSize * (page + 1)` o browser receberia resultados que já tinha e
+     * a varredura da biblioteca inteira rodaria uma vez por página.
+     */
     fun searchFuture(
         query: String,
         page: Int,
         pageSize: Int,
-        params: androidx.media3.session.MediaLibraryService.LibraryParams?
+        params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-        val all = search(query, pageSize * (page + 1))
+        val end = pageSize * (page + 1)
+        val all = search(query, end)
         val from = (page * pageSize).coerceIn(0, all.size)
         val to = (from + pageSize).coerceIn(from, all.size)
         return Futures.immediateFuture(LibraryResult.ofItemList(all.subList(from, to), params))
     }
 
-    fun voidFuture(params: androidx.media3.session.MediaLibraryService.LibraryParams?):
+    fun voidFuture(params: LibraryParams?):
         ListenableFuture<LibraryResult<Void>> =
         Futures.immediateFuture(LibraryResult.ofVoid(params))
 
