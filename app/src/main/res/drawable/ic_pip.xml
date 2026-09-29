@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ícone de Picture-in-Picture no traço padrão do Android: um retângulo de tela cheia
+    com um quadrado menor no canto inferior direito, que é a ideia do recurso (o vídeo
+    reduzido e o resto da tela livre). viewBox 24x24, mesmo padrão dos outros ic_* do app.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+    <!-- moldura da tela -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M19,3H5C3.9,3 3,3.9 3,5v14c0,1.1 0.9,2 2,2h14c1.1,0 2,-0.9 2,-2V5c0,-1.1 -0.9,-2 -2,-2zM19,19H5V5h14v14z" />
+    <!-- quadrado flutuante (o vídeo em PiP) -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M11,10h8v8h-8z" />
+</vector>

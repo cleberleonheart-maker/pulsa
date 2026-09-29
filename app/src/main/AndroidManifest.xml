@@ -82,7 +82,9 @@
 
         <activity
             android:name=".VideoPlayerActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
             android:exported="false" />
 
         <activity

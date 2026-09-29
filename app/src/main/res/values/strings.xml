@@ -315,6 +315,8 @@
     <string name="video_share">Compartilhar</string>
     <string name="play_video_failed">Não foi possível abrir o vídeo</string>
     <string name="video_player_error">Não foi possível reproduzir o vídeo</string>
+    <string name="video_pip">Picture-in-Picture</string>
+    <string name="video_pip_unsupported">Este aparelho não tem Picture-in-Picture</string>
     <string name="close">Fechar</string>
     <string name="more">Mais opções</string>
     <string name="profile_title">Perfil</string>

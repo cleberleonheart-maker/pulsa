@@ -372,6 +372,8 @@
     <string name="video_share">Compartir</string>
     <string name="play_video_failed">No se pudo abrir el vídeo</string>
     <string name="video_player_error">No se pudo reproducir el vídeo</string>
+    <string name="video_pip">Imagen sobre imagen</string>
+    <string name="video_pip_unsupported">Este dispositivo no admite imagen sobre imagen</string>
     <string name="close">Cerrar</string>
     <string name="more">Más opciones</string>
     <string name="profile_title">Perfil</string>

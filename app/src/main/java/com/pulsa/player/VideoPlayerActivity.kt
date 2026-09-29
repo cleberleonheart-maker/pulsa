@@ -2,9 +2,13 @@ package com.pulsa.player
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.app.PictureInPictureParams
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.SurfaceView
@@ -17,6 +21,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.Player
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Helper
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.model.Song
@@ -95,6 +100,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         playBtn = findViewById(R.id.vp_play)
 
         findViewById<ImageButton>(R.id.vp_back).setOnClickListener { finish() }
+        findViewById<ImageButton>(R.id.vp_pip).setOnClickListener { togglePip() }
         playBtn.setOnClickListener { togglePlayback() }
         findViewById<ImageButton>(R.id.vp_prev).setOnClickListener { step(-1) }
         findViewById<ImageButton>(R.id.vp_next).setOnClickListener { step(1) }
@@ -293,6 +299,83 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         handler.postDelayed(hideRunnable, HIDE_DELAY)
     }
 
+    /**
+     * Entra (ou sai) do Picture-in-Picture.
+     *
+     * O toque do botão chama [togglePip] explicitamente; o gesto do sistema (arrastar o vídeo
+     * pro canto, ou o botão do player do Android) chega por [onUserLeaveHint] /
+     * [onPictureInPictureModeChanged]. No gesto do sistema nós só *autorizamos* — quem entra
+     * de fato é o framework, senão a activity tentaria se reduzir duas vezes.
+     */
+    private fun togglePip() {
+        if (isInPictureInPictureMode) {
+            // Sai do PiP voltando a tela cheia; o vídeo segue tocando. Usa o
+            // onPictureInPictureModeChanged(boolean, Configuration) com a config real.
+            onPictureInPictureModeChanged(false, resources.configuration)
+        } else if (supportsPiP()) {
+            try {
+                enterPictureInPictureMode(pipParams())
+            } catch (e: IllegalStateException) {
+                //alguns ROMs recusam fora de fullscreen; nesse caso seguimos fullscreen
+                CrashLogger.writeLog(this, "PIP recusado: $e")
+            }
+        } else {
+            Toast.makeText(this, R.string.video_pip_unsupported, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun supportsPiP(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.N || packageManager.hasSystemFeature(
+            PackageManager.FEATURE_PICTURE_IN_PICTURE
+        )
+
+    private fun pipParams(): PictureInPictureParams {
+        // O `Video` do modelo não guarda largura/altura, então pegamos o tamanho real do
+        // vídeo que o player já decodificou. Antes do primeiro frame (ou para um áudio
+        // escapado na fila) cai no 16:9, que é o formato de vídeo mais comum e nunca
+        // deixa o PiP esticado.
+        val ratio = Playback.player?.videoSize?.let { size ->
+            if (size.width > 0 && size.height > 0) {
+                size.width.toFloat() / size.height
+            } else null
+        } ?: (16f / 9f)
+        return PictureInPictureParams.Builder()
+            .setAspectRatio(
+                android.util.Rational(
+                    (ratio * 1000).toInt().coerceIn(420, 2390),
+                    1000
+                )
+            )
+            .build()
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        // Autoriza o sistema a reduzir quando o usuário sair (botão home/recente). Só
+        // quando está em vídeo tocando — para o resto do app não muda nada.
+        if (videos.isNotEmpty() && Playback.isPlaying && supportsPiP()) {
+            try {
+                setPictureInPictureParams(pipParams())
+            } catch (e: IllegalStateException) {
+                CrashLogger.writeLog(this, "PIP params recusado: $e")
+            }
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPipMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPipMode, newConfig)
+        if (isInPipMode) {
+            // Esconde as barras: em PiP só o vídeo deve aparecer.
+            hideControls()
+        } else {
+            // Voltou a tela cheia — reanexar o surface e mostrar as barras de novo.
+            handler.removeCallbacks(hideRunnable)
+            Playback.player?.setVideoSurfaceView(surfaceView)
+            render()
+            if (Playback.isPlaying) scheduleHide()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         if (videos.isNotEmpty() && !finished) {
@@ -306,6 +389,13 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     override fun onPause() {
         handler.removeCallbacks(hideRunnable)
         if (Playback.listener === this) Playback.listener = null
+        // Em PiP a activity fica em pausa mas o vídeo TEM de continuar tocando. Por isso o
+        // pause e o clear do surface são pulados quando estamos no modo PiP — pausar aqui
+        // mataria justamente o recurso que o usuário pediu.
+        if (isInPictureInPictureMode) {
+            super.onPause()
+            return
+        }
         Playback.player?.clearVideoSurfaceView(surfaceView)
         if (videos.isNotEmpty()) {
             autoplay = Playback.isPlaying
