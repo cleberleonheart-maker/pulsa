@@ -8,7 +8,7 @@
 
     <!--
         PlayerView em vez de SurfaceView cru: ele cuida da superficie E da legenda
-        (a SubtitleView e interna a ela). Uma SubtitleView solta nao tem setPlayer --
+        (a SubtitleView e interna a ela). Uma SubtitleView solta nao tem setPlayer;
         so a PlayerView sabe qual decoder de legenda acoplar ao player.
         `use_controller=false` porque esta tela ja tem as barras proprias (vp_top/vp_bottom)
         e dois controles sobrepostos brigariam pelo toque.
