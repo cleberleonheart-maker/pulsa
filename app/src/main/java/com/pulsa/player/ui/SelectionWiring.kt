@@ -40,7 +40,9 @@ object SelectionWiring {
         actionIcon: Int = R.drawable.ic_delete,
         actionLabel: Int = R.string.delete_selected,
         onAction: (List<Song>, () -> Unit) -> Unit,
-        reload: () -> Unit
+        reload: () -> Unit,
+        /** Segunda ação da barra (F2b: adicionar à fila). Sem isso, só a de apagar. */
+        onExtraAction: ((List<Song>) -> Unit)? = null
     ): SelectionBar? {
         val selection = ItemSelection()
         adapter?.selection = selection
@@ -62,6 +64,17 @@ object SelectionWiring {
                     // o botão não respondeu — e cancelar o diálogo não desfaz nada, porque
                     // a lista não mudou.
                     selection.clear()
+                }
+            },
+            extraAction = onExtraAction?.let { callback ->
+                {
+                    val songs = adapter?.songs.orEmpty().filter { it.id in selection.snapshot() }
+                    if (songs.isEmpty()) {
+                        selection.clear()
+                    } else {
+                        callback(songs)
+                        selection.clear()
+                    }
                 }
             }
         )

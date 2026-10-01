@@ -89,6 +89,7 @@
     <string name="play_from_menu">Play now</string>
     <string name="add_to_playlist">Add to playlist</string>
     <string name="add_to_playlist_title">Add to playlist</string>
+    <string name="add_to_queue">Add to queue</string>
     <string name="new_playlist">New playlist</string>
     <string name="new_playlist_title">New playlist</string>
     <string name="playlist_name_hint">Playlist name</string>
@@ -372,7 +373,8 @@
     <string name="favorites_count">%1$s favorite song(s)</string>
     <string name="video_play">Play</string>
     <string name="video_share">Share</string>
-    <string name="video_add_to_queue">Add to queue</string>
+    <string name="video_added_queue_count">%1$d song(s) in the queue</string>
+    <string name="already_in_queue">This song is already in the queue</string>
     <string name="video_added_to_queue">%1$d video(s) in the queue</string>
     <string name="video_already_in_queue">This video is already in the queue</string>
     <string name="play_video_failed">Could not open the video</string>

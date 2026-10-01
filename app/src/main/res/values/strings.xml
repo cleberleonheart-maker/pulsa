@@ -92,6 +92,7 @@
     <string name="play_from_menu">Tocar agora</string>
     <string name="add_to_playlist">Adicionar à playlist</string>
     <string name="add_to_playlist_title">Adicionar à playlist</string>
+    <string name="add_to_queue">Adicionar à fila</string>
     <string name="new_playlist">Nova playlist</string>
     <string name="new_playlist_title">Nova playlist</string>
     <string name="playlist_name_hint">Nome da playlist</string>
@@ -329,7 +330,8 @@
     <string name="favorites_count">%1$s música(s) favorita(s)</string>
     <string name="video_play">Reproduzir</string>
     <string name="video_share">Compartilhar</string>
-    <string name="video_add_to_queue">Adicionar à fila</string>
+    <string name="video_added_queue_count">%1$d música(s) na fila</string>
+    <string name="already_in_queue">Essa música já está na fila</string>
     <string name="video_added_to_queue">%1$d vídeo(s) na fila</string>
     <string name="video_already_in_queue">Esse vídeo já está na fila</string>
     <string name="play_video_failed">Não foi possível abrir o vídeo</string>

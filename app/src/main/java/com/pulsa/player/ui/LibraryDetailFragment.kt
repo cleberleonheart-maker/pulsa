@@ -51,7 +51,8 @@ class LibraryDetailFragment : Fragment() {
         adapter = a
         selectionBar = SelectionWiring.setUpSelection(this, view, a,
             onAction = { songs, reload -> SongActions.confirmDeleteMany(requireContext(), songs, reload) },
-            reload = { load() })
+            reload = { load() },
+            onExtraAction = { songs -> SongActions.enqueue(requireContext(), songs) })
         view.findViewById<RecyclerView>(R.id.list).apply {
             layoutManager = LinearLayoutManager(context)
             adapter = a

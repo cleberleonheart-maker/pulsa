@@ -54,7 +54,10 @@ class SongsTabFragment : Fragment() {
         adapter = a
         selectionBar = SelectionWiring.setUpSelection(this, view, a,
             onAction = { songs, reload -> SongActions.confirmDeleteMany(requireContext(), songs, reload) },
-            reload = { load() })
+            reload = { load() },
+            // F2b: a mesma segunda ação dos vídeos — juntar no fim da fila sem trocar o
+            // que está tocando.
+            onExtraAction = { songs -> SongActions.enqueue(requireContext(), songs) })
         list?.apply {
             layoutManager = LinearLayoutManager(this@SongsTabFragment.context)
             adapter = a

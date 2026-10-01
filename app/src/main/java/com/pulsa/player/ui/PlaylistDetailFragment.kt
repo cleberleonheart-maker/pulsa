@@ -64,7 +64,10 @@ class PlaylistDetailFragment : Fragment() {
             actionIcon = R.drawable.ic_remove_circle,
             actionLabel = R.string.remove_from_playlist,
             onAction = { songs, reload -> confirmRemoveMany(songs, reload) },
-            reload = { load() }
+            reload = { load() },
+            // F2b: a fila é outra coisa que se faz com uma playlist inteira, e não tem nada
+            // a ver com o botão principal — que dali continua sendo "tirar da playlist".
+            onExtraAction = { songs -> SongActions.enqueue(requireContext(), songs) }
         )
         view.findViewById<RecyclerView>(R.id.list).apply {
             layoutManager = LinearLayoutManager(context)
