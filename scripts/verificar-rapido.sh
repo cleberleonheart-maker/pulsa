@@ -72,7 +72,20 @@ for pat in (f"kotlin-stdlib/{kv}/*/kotlin-stdlib-{kv}.jar",
             f"kotlin-compiler-embeddable/{kv}/*/*.jar"):
     cp += sorted(glob.glob(os.path.join(k, pat)))
 
-# classes.jar dos AARs já transformados pelo Gradle
+# classes.jar dos AARs já transformados pelo Gradle.
+# Só a versão mais alta de cada artefato, pelo mesmo motivo do bloco de baixo: o
+# transforms guarda recyclerview 1.0.0/1.1.0/1.3.2 lado a lado, e quem entra primeiro
+# ganha — o compilador passava a resolver `bindingAdapterPosition` (que só existe da
+# 1.2.0 para cima) contra a 1.1.0 e reportava "unresolved reference" em código que o
+# Gradle compila sem reclamar. Erro falso que esconde erro vero.
+import re
+def chave_versao(v):
+    nums = []
+    for parte in v.replace("-", ".").split("."):
+        nums.append(int(parte) if parte.isdigit() else 0)
+    return nums
+
+transformados = {}
 for base in (os.path.expanduser("~/.gradle/caches/transforms-3"),
              os.path.expanduser("~/.gradle/caches/transforms-4")):
     if not os.path.isdir(base):
@@ -81,10 +94,19 @@ for base in (os.path.expanduser("~/.gradle/caches/transforms-3"),
         t = os.path.join(base, d, "transformed")
         if not os.path.isdir(t):
             continue
-        for root, _, files in os.walk(t):
-            for f in files:
-                if f == "classes.jar":
-                    cp.append(os.path.join(root, f))
+        for nome in os.listdir(t):
+            achado = re.match(r"^(.*?)-(\d[\w.\-]*)$", nome)
+            if not achado:
+                continue
+            artefato, versao = achado.group(1), achado.group(2)
+            jar = os.path.join(t, nome, "jars", "classes.jar")
+            if not os.path.exists(jar):
+                continue
+            atual = transformados.get(artefato)
+            if atual is None or chave_versao(versao) > chave_versao(atual[0]):
+                transformados[artefato] = (versao, jar)
+for _, (_, jar) in sorted(transformados.items()):
+    cp.append(jar)
 
 # módulos que são .jar direto (media3-exoplayer, lifecycle, gms, kotlinx...).
 # Só a versão mais alta de cada artefato: duas versões no classpath fazem o compilador
