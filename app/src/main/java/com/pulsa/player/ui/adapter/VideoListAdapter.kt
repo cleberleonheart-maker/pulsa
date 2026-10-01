@@ -16,6 +16,7 @@ import com.pulsa.player.R
 import com.pulsa.player.model.Video
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.ui.ItemSelection
 import java.util.LinkedHashMap
 
 class VideoListAdapter(
@@ -35,6 +36,47 @@ class VideoListAdapter(
                 field = value
                 notifyDataSetChanged()
             }
+        }
+
+    /**
+     * Se a lista está em modo seleção, para distinguir "mudei um item" de "entrei ou saí
+     * do modo". Dentro do modo só a linha tocada muda; sair dele muda todas, porque o
+     * círculo e o menu de três pontinhos somem em todas de uma vez.
+     */
+    private var inSelectionMode = false
+
+    /**
+     * O adapter escuta a seleção, e não só consulta.
+     *
+     * Quem **desenha** a marcação é ele; a barra só conta. Se o adapter não fosse
+     * avisado, marcar um vídeo mudaria o número no topo e a linha continuaria com o
+     * fundo e o círculo de sempre — nada na tela diria o que está selecionado.
+     */
+    private val selectionListener = object : ItemSelection.Listener {
+        override fun onSelectionChanged(selection: ItemSelection, touched: Long?) {
+            val active = selection.isActive
+            if (active != inSelectionMode) {
+                inSelectionMode = active
+                notifyDataSetChanged()
+                return
+            }
+            val pos = touched?.let { id -> videos.indexOfFirst { it.id == id } } ?: -1
+            if (pos >= 0) notifyItemChanged(pos)
+        }
+    }
+
+    /**
+     * Seleção múltipla, ou null na tela que não tem. Por tela, não no adapter: o mesmo
+     * adapter serve a lista de vídeos e a busca do PeerTube. Ver [ItemSelection].
+     */
+    var selection: ItemSelection? = null
+        set(value) {
+            if (field === value) return
+            field?.removeListener(selectionListener)
+            field = value
+            value?.addListener(selectionListener)
+            inSelectionMode = value?.isActive == true
+            notifyDataSetChanged()
         }
 
     private val thumbCache =
@@ -61,6 +103,7 @@ class VideoListAdapter(
         private val title: TextView = itemView.findViewById(R.id.video_title)
         private val meta: TextView = itemView.findViewById(R.id.video_meta)
         private val menu: ImageView = itemView.findViewById(R.id.video_menu)
+        private val check: ImageView = itemView.findViewById(R.id.video_check)
         private val color = itemView.context.getColor(R.color.surface_variant)
 
         fun bind(video: Video, position: Int) {
@@ -68,11 +111,30 @@ class VideoListAdapter(
             val size = Helper.formatBytes(video.sizeBytes)
             meta.text = "${Helper.formatDuration(video.durationMs)} • $size"
 
-            val selected = video.id == highlightId
+            val sel = selection
+            val selecting = sel != null && sel.isActive
+            val checked = sel != null && sel.isSelected(video.id)
+            val playing = video.id == highlightId
+
             itemView.setBackgroundResource(
-                if (selected) R.drawable.bg_song_selected else R.drawable.bg_song_normal
+                when {
+                    checked -> R.drawable.bg_song_checked
+                    playing -> R.drawable.bg_song_selected
+                    else -> R.drawable.bg_song_normal
+                }
             )
-            title.alpha = if (selected) 1f else 0.75f
+            title.alpha = if (playing || checked) 1f else 0.75f
+
+            check.visibility = if (selecting) View.VISIBLE else View.GONE
+            if (checked) {
+                check.setImageResource(R.drawable.ic_check)
+                check.setBackgroundResource(R.drawable.bg_check_on)
+            } else {
+                check.setImageResource(R.drawable.ic_check_circle_off)
+                // 0 e nao null: `setBackgroundResource` nao aceita null em Kotlin, e 0
+                // limpa o fundo, que e o que o item desmarcado quer.
+                check.setBackgroundResource(0)
+            }
 
             thumb.setImageDrawable(null)
             thumb.setBackgroundColor(color)
@@ -93,11 +155,23 @@ class VideoListAdapter(
             }
             itemView.setOnClickListener {
                 val pos = bindingAdapterPosition
-                if (pos != RecyclerView.NO_POSITION) {
+                if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
+                val s = selection
+                if (s != null && s.isActive) {
+                    s.toggle(video.id)
+                } else {
                     highlightId = video.id
                     onClick(videos[pos], pos)
                 }
             }
+            itemView.setOnLongClickListener {
+                selection?.start(video.id)
+                // Consome o toque: sem isto o `setOnClickListener` dispara logo em
+                // seguida e o item entra e sai da seleção no mesmo gesto.
+                true
+            }
+            // O menu age em um item só, e em modo seleção a barra age em todos os marcados.
+            menu.visibility = if (selecting) View.GONE else View.VISIBLE
             menu.setOnClickListener {
                 val pos = bindingAdapterPosition
                 if (pos != RecyclerView.NO_POSITION) onMenu(videos[pos], pos)

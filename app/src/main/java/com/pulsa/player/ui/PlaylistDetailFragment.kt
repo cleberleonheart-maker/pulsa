@@ -22,6 +22,7 @@ class PlaylistDetailFragment : Fragment() {
 
     private var playlistId: Long = -1L
     private var adapter: SongListAdapter? = null
+    private var selectionBar: SelectionBar? = null
     private var headerTitle: TextView? = null
     private var headerSubtitle: TextView? = null
     private var loading = false
@@ -54,6 +55,16 @@ class PlaylistDetailFragment : Fragment() {
             }
         )
         adapter = a
+        // Aqui a ação NÃO apaga o arquivo: sai da playlist e deixa a música no aparelho.
+        // Apagar o arquivo por engano aqui seria o pior resultado possível — a pessoa
+        // organizes uma playlist e perde as músicas do disco sem ter pedido isso.
+        selectionBar = SelectionWiring.setUpSelection(
+            this, view, a,
+            actionIcon = R.drawable.ic_remove_circle,
+            actionLabel = R.string.remove_from_playlist,
+            onAction = { songs, reload -> confirmRemoveMany(songs, reload) },
+            reload = { load() }
+        )
         view.findViewById<RecyclerView>(R.id.list).apply {
             layoutManager = LinearLayoutManager(context)
             adapter = a
@@ -93,6 +104,7 @@ class PlaylistDetailFragment : Fragment() {
                 loading = false
                 if (isAdded) {
                     adapter?.songs = songs
+                    selectionBar?.setAvailable(songs.map { it.id })
                     adapter?.highlightId = Playback.currentSong?.id
                     if (db.isAutoAdd(playlistId)) {
                         headerSubtitle?.text = getString(R.string.auto_count, Helper.trackCount(songs.size, requireContext().resources))
@@ -113,6 +125,40 @@ class PlaylistDetailFragment : Fragment() {
                 PlaylistDb.get(requireContext()).removeSong(playlistId, song.id)
                 load()
                 dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /**
+     * Confirma e tira várias músicas da playlist de uma vez.
+     *
+     * Um diálogo só para o lote, como no resto do app. Cada `removeSong` é um `DELETE` no
+     * Room; num lote isso não pode ser feito na thread da UI, e a `PlaylistDb` é a mesma
+     * instância que o resto do app usa, então o `ThreadPool` evita competir por ela.
+     */
+    private fun confirmRemoveMany(songs: List<com.pulsa.player.model.Song>, reload: () -> Unit) {
+        if (songs.isEmpty()) return
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(R.string.remove_from_playlist)
+            .setMessage(getString(R.string.remove_songs_confirm, songs.size))
+            .setPositiveButton(R.string.remove_from_playlist) { dialog, _ ->
+                dialog.dismiss()
+                val ids = songs.map { it.id }
+                ThreadPool.post {
+                    val db = PlaylistDb.get(requireContext().applicationContext)
+                    ids.forEach { db.removeSong(playlistId, it) }
+                    ThreadPool.onUi {
+                        if (isAdded) {
+                            android.widget.Toast.makeText(
+                                requireContext(),
+                                getString(R.string.removed_songs, ids.size),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                            reload()
+                        }
+                    }
+                }
             }
             .setNegativeButton(R.string.cancel, null)
             .show()

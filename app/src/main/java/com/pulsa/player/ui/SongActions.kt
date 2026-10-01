@@ -94,16 +94,51 @@ object SongActions {
             .setMessage(context.getString(R.string.delete_song_confirm, song.title))
             .setPositiveButton(R.string.delete) { d, _ ->
                 d.dismiss()
-                MusicDeleter.delete(context, song) { ok ->
-                    android.widget.Toast.makeText(
-                        context,
-                        if (ok) R.string.song_deleted else R.string.delete_failed,
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                    if (ok) onDeleted?.invoke()
+                MusicDeleter.delete(context, song) { outcome ->
+                    report(context, outcome, 1)
+                    if (outcome is MusicDeleter.Outcome.Deleted) onDeleted?.invoke()
                 }
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    /**
+     * Confirma e apaga várias músicas de uma vez, vinda da seleção múltipla da lista.
+     *
+     * O `MediaStore` aceita todas as URIs num pedido só, então o diálogo do sistema aparece
+     * **uma vez** para o lote inteiro — senão 30 músicas seriam 30 confirmações.
+     */
+    fun confirmDeleteMany(context: Context, songs: List<Song>, onDeleted: (() -> Unit)?) {
+        if (songs.isEmpty()) return
+        if (songs.size == 1) {
+            confirmDelete(context, songs[0], onDeleted)
+            return
+        }
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.delete_songs)
+            .setMessage(context.getString(R.string.delete_songs_confirm, songs.size))
+            .setPositiveButton(R.string.delete) { d, _ ->
+                d.dismiss()
+                MusicDeleter.delete(context, songs) { outcome ->
+                    report(context, outcome, songs.size)
+                    if (outcome is MusicDeleter.Outcome.Deleted) onDeleted?.invoke()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /** Avisa o resultado, em uma linha só para o singular e para o lote. */
+    private fun report(context: Context, outcome: MusicDeleter.Outcome, count: Int) {
+        val res = when (outcome) {
+            is MusicDeleter.Outcome.Deleted ->
+                if (count == 1) R.string.song_deleted else R.string.songs_deleted
+            // Cancelar não é erro. Dizer "permissão negada" aqui foi o que fez parecer que
+            // o app estava quebrado quando o usuário só disse não.
+            is MusicDeleter.Outcome.Cancelled -> R.string.delete_cancelled
+            is MusicDeleter.Outcome.Failed -> R.string.delete_failed
+        }
+        android.widget.Toast.makeText(context, res, android.widget.Toast.LENGTH_SHORT).show()
     }
 }

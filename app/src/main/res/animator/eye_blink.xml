@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Piscar encolhendo o proprio olho em scaleY, como o avatar do Lingo
+    (src/components/avatar.tsx) e do TAMI (tami-blink). Nao existe palpebra
+    desenhada por cima, entao nao ha nada para acertar na unha: o desalinhamento
+    que quebrava a Virgin simplesmente deixa de existir. O alvo e o <group> que
+    envolve o olho, porque o AnimatedVectorDrawable so anima scaleX/scaleY em
+    grupo (em path so aceita alpha/pathData/trim*).
+
+    Ritmo copiado do Lingo: ciclo de 4200ms, fecha em 0.92, 60ms fechando,
+    110ms abrindo. Group alvo precisa de pivot no centro do olho.
+-->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="4200"
+    android:propertyName="scaleY"
+    android:repeatCount="infinite"
+    android:valueFrom="1"
+    android:valueTo="1"
+    android:valueType="floatType">
+    <propertyValuesHolder android:propertyName="scaleY">
+        <keyframe android:fraction="0" android:value="1" />
+        <keyframe android:fraction="0.92" android:value="1" />
+        <keyframe android:fraction="0.935" android:value="0.12" />
+        <keyframe android:fraction="0.962" android:value="1" />
+        <keyframe android:fraction="1" android:value="1" />
+    </propertyValuesHolder>
+</objectAnimator>

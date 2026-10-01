@@ -501,6 +501,25 @@ object Settings {
     fun geminiOn(context: Context): Boolean =
         prefs(context).getBoolean("gemini_on", false)
 
+    /**
+     * Instância do PeerTube usada na busca de vídeo (F2).
+     *
+     * Federado não é sinônimo de permanente: instância pública muda de nome, cai ou começa a
+     * responder 403, e quem busca vídeo do PeerTube é justamente quem quer o link direto que
+     * o YouTube esconde. Por isso é configurável, e o valor é normalizado na gravação para
+     * não depender de o usuário digitar o esquema.
+     */
+    fun peerTubeInstance(context: Context): String =
+        com.pulsa.player.data.PeerTube.normalizeInstance(
+            prefs(context).getString("peertube_instance", "").orEmpty()
+        )
+
+    fun setPeerTubeInstance(context: Context, value: String) {
+        prefs(context).edit()
+            .putString("peertube_instance", com.pulsa.player.data.PeerTube.normalizeInstance(value))
+            .apply()
+    }
+
     fun setResumeOn(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("resume_on", value).apply()
     }

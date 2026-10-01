@@ -44,7 +44,19 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/videos_stream_btn"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/video_stream_open"
+            android:textSize="13sp"
+            app:icon="@drawable/ic_link"
+            app:iconSize="18dp" />
     </LinearLayout>
+
+    <include layout="@layout/view_selection_bar" />
 
     <FrameLayout
         android:layout_width="match_parent"

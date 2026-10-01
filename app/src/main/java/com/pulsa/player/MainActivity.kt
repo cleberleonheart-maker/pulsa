@@ -49,6 +49,8 @@ import com.pulsa.player.core.Changelog
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.dj.MainVirgin
 import com.pulsa.player.dj.TamiRadio
+import com.pulsa.player.media.MusicDeleter
+import com.pulsa.player.media.VideoDeleter
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.core.MotionControls
 import com.pulsa.player.core.Permissions
@@ -95,6 +97,32 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             MusicEditor.onWriteRequestResult(result.resultCode == RESULT_OK)
         }
 
+    /**
+     * Exclusão de música vinda do menu da faixa (Excluir).
+     *
+     * Do Android 11 em diante o app não apaga direto arquivo que não criou, e o
+     * `resolver.delete` virava "permissão negada" para o usuário. O pedido precisa passar
+     * pela confirmação do sistema, e isso exige uma Activity — o `SongActions` é um
+     * `object` sem Activity, então o launcher mora aqui e é entregue ao `MusicDeleter`.
+     */
+    private val songDeleteLauncher: ActivityResultLauncher<IntentSenderRequest> =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            MusicDeleter.onDeleteRequestResult(result.resultCode == RESULT_OK)
+        }
+
+    /**
+     * Exclusão de VÍDEO em lote, vinda da seleção múltipla da aba Vídeos.
+     *
+     * Precisa do seu próprio launcher porque o `PendingIntent` do sistema não carrega de
+     * volta qual app pediu o quê: dois `registerForActivityResult` para o mesmo contract
+     * receberiam o resultado um no lugar do outro, e o `MusicDeleter` acabaria limpando
+     * as playlists de músicas que ninguém mandou apagar.
+     */
+    private val videoDeleteLauncher: ActivityResultLauncher<IntentSenderRequest> =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            VideoDeleter.onDeleteRequestResult(result.resultCode == RESULT_OK)
+        }
+
     private val virginDeleteLauncher: ActivityResultLauncher<IntentSenderRequest> =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             virgin.onDeleteRequestResult(result.resultCode == RESULT_OK)
@@ -132,6 +160,14 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Telemetry.log(this, "MAIN onCreate ENTRADA")
+        // Exclusão de música pelo menu da faixa depende deste launcher para a confirmação
+        // do sistema; ligado antes de qualquer tela, porque o SongActions só é um `object`.
+        MusicDeleter.attachLauncher { sender ->
+            songDeleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
+        }
+        VideoDeleter.attachLauncher { sender ->
+            videoDeleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
+        }
         if (!Account.loggedIn(this)) {
             super.onCreate(savedInstanceState)
             startActivity(
@@ -394,6 +430,15 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         Telemetry.log(this, "MAIN onResume")
         CrashLogger.writeLog(this, "MARK: onResume")
         if (!mainViewsReady) return
+        // O slot do `Playback.listener` é único e a Activity de baixo nem sempre é parada: no
+        // PiP de vídeo ela só é pausada, e a VideoPlayerActivity toma o slot no onResume e o
+        // devolve como `null` no onPause/onStop. Nesse caminho o `onStart` da MainActivity
+        // NÃO roda de novo, então ninguém ficava com o slot e todo `notifySong` era
+        // descartado — a mini player congelava na faixa antiga enquanto o áudio (e a
+        // notificação, que leem `currentSong` direto) seguiam certos. Revindicar aqui
+        // conserta: quando esta tela está em foreground é ela que tem o slot.
+        Playback.listener = this
+        syncMiniPlayer()
         syncToolbar()
         MotionControls.attachIfEnabled(
             this,
@@ -626,7 +671,17 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     private fun syncMiniPlayer() {
         if (!mainViewsReady) return
-        val song = Playback.currentSong ?: return
+        val song = Playback.currentSong
+        if (song == null) {
+            // Antes ficava com o texto da faixa anterior e a barra aparecia de novo por causa
+            // do `syncToolbar`. Limpar aqui evita o flash da música velha quando a fila volta.
+            miniTitle.text = ""
+            miniArtist.text = ""
+            miniArt.setImageDrawable(null)
+            miniRadioNext.visibility = View.GONE
+            miniPlayer.visibility = View.GONE
+            return
+        }
         miniTitle.text = song.title
         miniArtist.text = song.artist
         ArtLoader.load(song.albumId, song.path, miniArt)

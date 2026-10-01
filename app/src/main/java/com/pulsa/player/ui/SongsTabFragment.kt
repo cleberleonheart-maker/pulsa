@@ -28,6 +28,7 @@ class SongsTabFragment : Fragment() {
     private var emptyText: TextView? = null
     private var emptyAction: View? = null
     private var adapter: SongListAdapter? = null
+    private var selectionBar: SelectionBar? = null
     private var loading = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -50,6 +51,9 @@ class SongsTabFragment : Fragment() {
             onMenu = { song -> SongActions.show(requireContext(), song, onDeleted = { load() }) }
         )
         adapter = a
+        selectionBar = SelectionWiring.setUpSelection(this, view, a,
+            onAction = { songs, reload -> SongActions.confirmDeleteMany(requireContext(), songs, reload) },
+            reload = { load() })
         list?.apply {
             layoutManager = LinearLayoutManager(this@SongsTabFragment.context)
             adapter = a
@@ -89,6 +93,7 @@ class SongsTabFragment : Fragment() {
                 if (isAdded) {
                     headerContainer?.visibility = View.GONE
                     adapter?.songs = ordered
+                    selectionBar?.setAvailable(ordered.map { it.id })
                     adapter?.highlightId = Playback.currentSong?.id
                     if (ordered.isEmpty()) {
                         showEmpty(getString(R.string.empty_no_music), false)

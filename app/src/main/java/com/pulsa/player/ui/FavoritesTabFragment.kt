@@ -23,6 +23,7 @@ class FavoritesTabFragment : Fragment() {
     private var emptyView: View? = null
     private var emptyText: TextView? = null
     private var adapter: SongListAdapter? = null
+    private var selectionBar: SelectionBar? = null
     private var emptyAction: View? = null
     private var loading = false
 
@@ -49,6 +50,9 @@ class FavoritesTabFragment : Fragment() {
             }
         )
         adapter = a
+        selectionBar = SelectionWiring.setUpSelection(this, view, a,
+            onAction = { songs, reload -> SongActions.confirmDeleteMany(requireContext(), songs, reload) },
+            reload = { load() })
         list?.apply {
             layoutManager = LinearLayoutManager(this@FavoritesTabFragment.context)
             adapter = a
@@ -75,6 +79,7 @@ class FavoritesTabFragment : Fragment() {
                 if (isAdded) {
                     headerContainer?.visibility = View.GONE
                     adapter?.songs = songs
+                    selectionBar?.setAvailable(songs.map { it.id })
                     adapter?.highlightId = Playback.currentSong?.id
                     val empty = songs.isEmpty()
                     emptyView?.visibility = if (empty) View.VISIBLE else View.GONE

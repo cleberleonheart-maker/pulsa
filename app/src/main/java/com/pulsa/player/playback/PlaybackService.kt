@@ -32,6 +32,7 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.extractor.text.DefaultSubtitleParserFactory
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaNotification
@@ -47,6 +48,7 @@ import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.VideoLibrary
+import com.pulsa.player.media.StreamKind
 import com.pulsa.player.model.Song
 import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.dj.DjFacts
@@ -428,6 +430,17 @@ class PlaybackService : MediaLibraryService() {
                             .setAllowCrossProtocolRedirects(true)
                     )
                 )
+                    // F2: sem isto, uma legenda externa é tratada como **vídeo**. O Media3
+                    // tenta adivinhar o tipo de um arquivo de texto e erra para video/mp4, o
+                    // extractor procura moov/mdat num XML e o playback morre. O erro era mais
+                    // visível no `.vtt`, bem menos comum que `.srt`, e o sintoma era "a tela
+                    // de legenda não aparece e o vídeo trava".
+                    //
+                    // No 1.3.1 o conserto é o `DefaultSubtitleParserFactory` puro. O
+                    // `SubtitleParser.Merging` (que junta várias trilhas numa saída só) só
+                    // existe a partir da 1.4 — por isso **não** dá para usar aqui, e por isso
+                    // a escolha manual de legenda substitui as trilhas em vez de somar.
+                    .setSubtitleParserFactory(DefaultSubtitleParserFactory())
             )
             .build()
             .also { it.addListener(playerListener) }
@@ -516,9 +529,9 @@ class PlaybackService : MediaLibraryService() {
             Settings.clearQueueState(this)
             return
         }
-        if (queue.any { it.isRadio || it.isVideo }) {
-            // Rádio e vídeo não são retomáveis. Deixar a fila antiga salva seria pior que
-            // não ter nada: o próximo boot restauraria uma playlist que o usuário já trocou.
+        if (queue.any { it.isRadio || it.isVideo || it.isStream }) {
+            // Rádio, vídeo e stream não são retomáveis. Deixar a fila antiga salva seria pior
+            // que não ter nada: o próximo boot restauraria uma playlist que o usuário já trocou.
             Settings.clearQueueState(this)
             return
         }
@@ -896,11 +909,17 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun mediaItemFor(song: Song): MediaItem {
+        val streamUrl = song.streamUrl
         val uri = song.videoId?.let { VideoLibrary.contentUri(it) }
             ?: song.radioUrl?.let(Uri::parse)
+            ?: streamUrl?.let(Uri::parse)
             ?: Uri.fromFile(File(song.path))
         return MediaItem.Builder()
             .setUri(uri)
+            // F2: HLS/DASH na URL sem extensão (o Media3 1.3.1 só infere pela extensão, ver
+            // StreamKind) e nenhum mime type para arquivo local — aí o Media3 infere como
+            // sempre. `setMimeType(null)` é o mesmo que não chamar.
+            .setMimeType(streamUrl?.let { StreamKind.mimeTypeOf(it) })
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(song.title)
@@ -939,11 +958,6 @@ class PlaybackService : MediaLibraryService() {
             // idempotente, então o dobro de execução não muda nada.
             syncExternalPlaybackState(isPlaying)
         }
-
-        override fun onPlayerError(error: PlaybackException) {
-            onTrackError()
-        }
-    }
 
     /**
      * E3b — o roteamento da sessão Media3: comandos que o serviço precisa tratar com a própria
@@ -1090,7 +1104,7 @@ class PlaybackService : MediaLibraryService() {
     private var bgLastAnnounceId = -1L
 
     private fun announceInBackground(song: Song) {
-        if (song.isVideo) return
+        if (song.isVideo || song.isStream) return
         if (Playback.listener != null) return
         if (!Settings.djRadio(this) || !Settings.djVoice(this)) return
         if (song.id == bgLastAnnounceId) return

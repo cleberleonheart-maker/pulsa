@@ -24,6 +24,7 @@ import com.pulsa.player.core.ThreadPool
 class LibraryDetailFragment : Fragment() {
 
     private var adapter: SongListAdapter? = null
+    private var selectionBar: SelectionBar? = null
     private var header: View? = null
     private var headerArt: ImageView? = null
     private var headerTitle: TextView? = null
@@ -47,6 +48,9 @@ class LibraryDetailFragment : Fragment() {
             onMenu = { song -> SongActions.show(requireContext(), song, onDeleted = { load() }) }
         )
         adapter = a
+        selectionBar = SelectionWiring.setUpSelection(this, view, a,
+            onAction = { songs, reload -> SongActions.confirmDeleteMany(requireContext(), songs, reload) },
+            reload = { load() })
         view.findViewById<RecyclerView>(R.id.list).apply {
             layoutManager = LinearLayoutManager(context)
             adapter = a
@@ -99,6 +103,7 @@ class LibraryDetailFragment : Fragment() {
                 loading = false
                 if (isAdded) {
                     adapter?.songs = songs
+                    selectionBar?.setAvailable(songs.map { it.id })
                     adapter?.highlightId = Playback.currentSong?.id
                     headerSubtitle?.text = subtitleFor(songs)
                     if (songs.isEmpty()) showEmpty(getString(R.string.empty_no_music), false)
