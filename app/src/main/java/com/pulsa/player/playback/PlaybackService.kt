@@ -959,6 +959,61 @@ class PlaybackService : MediaLibraryService() {
             syncExternalPlaybackState(isPlaying)
         }
 
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            // Repetição é tratada aqui dentro (`onTrackEnded` → `player.seekTo(0)`), e o
+            // player nunca recebe `setRepeatMode`, então REPEAT não muda de faixa.
+            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) return
+            adoptPlayerIndex()
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            onTrackError()
+        }
+    }
+
+    /**
+     * O player andou para outro item sem passar pelo nosso [advanceIndex].
+     *
+     * "Tocar isto" chega de fora como `COMMAND_SEEK_TO_MEDIA_ITEM` — Android Auto, Wear,
+     * Assistant, controle do Bluetooth — e o padrão do Media3 executa `player.seekTo(i)`
+     * direto. O áudio sai da faixa A, mas `queue`/`index` continuam na A, e como
+     * `currentSong` **é** `queue[index]` (ver [currentSong]), a mini player, a tela Now
+     * Playing e o destaque da biblioteca passavam a descrever a música anterior enquanto
+     * outra tocava. Pior: o desalinhamento não se desfaz sozinho, então só voltava a ficar
+     * certo quando o app refazia a fila por outro caminho — era o "tá tocando outra mas o
+     * mini player mostra a mesma", do AUTO e do fone.
+     *
+     * A reconciliação mora no evento do player, e não no comando, porque o mesmo
+     * desalinhamento vem de qualquer transição que o player faça por conta própria. O
+     * `if (at == index) return` é o que impede o laço: `start()`/`prepareCurrent()` já
+     * publicam a faixa nova antes de o evento chegar, e nesse caso os dois já são iguais.
+     */
+    private fun adoptPlayerIndex() {
+        val p = player ?: return
+        if (queue.isEmpty()) return
+        val at = p.currentMediaItemIndex
+        if (at == index) return
+        index = at
+        val song = queue.getOrNull(at) ?: return
+        positionMs = p.currentPosition.coerceAtLeast(0L)
+        resetAbLoop()
+        // O `resume` (posição por faixa) ainda descreve a que acabou de sair; zerar faz o
+        // próximo tick gravar a nova, e sem isso o restore do próximo processo voltaria
+        // para a faixa errada — com a posição da outra.
+        clearResumeState()
+        consecutiveErrors = 0
+        publishMetadata(song)
+        refreshNotification()
+        if (!song.isRadio && !song.isVideo) LastFm.nowPlaying(applicationContext, song, song.durationMs)
+        loadLargeIcon(song)
+        announceInBackground(song)
+        Playback.notifySong(song, at)
+        saveQueueState()
+        publishState()
+        scheduleTick()
+        emitProgress()
+    }
+
     /**
      * E3b — o roteamento da sessão Media3: comandos que o serviço precisa tratar com a própria
      * lógica (próxima/anterior refazem a fila no ExoPlayer; um `seekToNext` do sistema depois
