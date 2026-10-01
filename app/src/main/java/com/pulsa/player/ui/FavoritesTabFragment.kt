@@ -69,10 +69,12 @@ class FavoritesTabFragment : Fragment() {
     fun load() {
         if (view == null) return
         if (loading) return
+        // contexto pego na UI: requireContext() na thread do pool lancava e matava o processo
+        val app = context?.applicationContext ?: return
         loading = true
         ThreadPool.post {
             val songs = try {
-                PlaylistDb.get(requireContext()).favorites()
+                PlaylistDb.get(app).favorites()
             } catch (t: Throwable) {
                 emptyList()
             }

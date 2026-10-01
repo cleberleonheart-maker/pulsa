@@ -58,10 +58,11 @@ class PlaylistsTabFragment : Fragment() {
     private fun load() {
         if (view == null) return
         if (loading) return
+        val app = context?.applicationContext ?: return
         loading = true
         ThreadPool.post {
             val playlists = try {
-                PlaylistDb.get(requireContext()).playlists()
+                PlaylistDb.get(app).playlists()
             } catch (t: Throwable) {
                 emptyList()
             }

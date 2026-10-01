@@ -79,8 +79,9 @@ class ArtistTimelineFragment : Fragment() {
             factsCard?.visibility = View.VISIBLE
         }
 
+        val app = context?.applicationContext ?: return
         ThreadPool.post {
-            val songs = Library.songsByArtist(requireActivity().applicationContext, name)
+            val songs = Library.songsByArtist(app, name)
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
                 renderTimeline(songs)

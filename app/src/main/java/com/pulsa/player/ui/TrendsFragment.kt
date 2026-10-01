@@ -33,8 +33,8 @@ class TrendsFragment : Fragment() {
             requireContext(), com.google.android.material.R.attr.colorPrimary, R.color.primary
         )
         heatmap?.setAccent(accent, ContextCompat.getColor(requireContext(), R.color.neon_border_soft))
+        val app = context?.applicationContext ?: return
         ThreadPool.post {
-            val app = requireActivity().applicationContext
             val data = DjLearn.heatmap(app)
             val songs = Library.allSongs(app)
             val byId = HashMap<Long, Song>().apply { songs.forEach { put(it.id, it) } }

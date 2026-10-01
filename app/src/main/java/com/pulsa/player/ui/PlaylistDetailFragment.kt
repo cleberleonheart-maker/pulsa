@@ -150,8 +150,9 @@ class PlaylistDetailFragment : Fragment() {
             .setPositiveButton(R.string.remove_from_playlist) { dialog, _ ->
                 dialog.dismiss()
                 val ids = songs.map { it.id }
+                val app = context?.applicationContext ?: return@setPositiveButton
                 ThreadPool.post {
-                    val db = PlaylistDb.get(requireContext().applicationContext)
+                    val db = PlaylistDb.get(app)
                     ids.forEach { db.removeSong(playlistId, it) }
                     ThreadPool.onUi {
                         if (isAdded) {

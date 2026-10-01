@@ -219,13 +219,17 @@ class NowPlayingFragment : Fragment() {
     /** Carrega as letras da música atual (uma vez por troca) e mostra o painel. */
     private fun syncLyricsFor(song: com.pulsa.player.model.Song) {
         if (song.id == lyricsForSong || lyricsLoading) return
+        // requireActivity()/requireContext() lancam se o fragmento ja foi detachado, e
+        // lancados na thread do pool derrubavam o processo inteiro. O contexto e pego
+        // aqui, ainda na UI, e o trabalho so usa essa referencia.
+        val app = context?.applicationContext ?: return
         lyricsLoading = true
         val key = QueueKey.encode(song)
         lyricsForSong = song.id
         lyricsLines = emptyList()
         lyricsPanel?.visibility = View.GONE
         ThreadPool.post {
-            val result = Lyrics.resolve(song, requireActivity().applicationContext)
+            val result = Lyrics.resolve(song, app)
             ThreadPool.onUi {
                 if (!isAdded || !QueueKey.sameType(Playback.currentKey, key)) {
                     lyricsLoading = false
@@ -295,8 +299,9 @@ class NowPlayingFragment : Fragment() {
     private fun updateLikeIconFor(song: com.pulsa.player.model.Song) {
         val songId = song.id
         val key = QueueKey.encode(song)
+        val app = context?.applicationContext ?: return
         ThreadPool.post {
-            val fav = PlaylistDb.get(requireActivity().applicationContext).isFavorite(songId)
+            val fav = PlaylistDb.get(app).isFavorite(songId)
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
                 if (!QueueKey.sameType(Playback.currentKey, key)) return@onUi
@@ -309,15 +314,16 @@ class NowPlayingFragment : Fragment() {
     private fun togglerLike() {
         val song = Playback.currentSong ?: return
         val songId = song.id
+        val app = context?.applicationContext ?: return
         ThreadPool.post {
             // runCatching: o pool e o mesmo do RemoteSync, e um crash la derrubava esta
             // thread junto -- o coracao parecia "nao fazer nada" sem nenhum erro na tela.
             runCatching {
-                val db = PlaylistDb.get(requireActivity().applicationContext)
+                val db = PlaylistDb.get(app)
                 val fav = db.isFavorite(songId)
                 db.setFavorite(song, !fav)
             }.onFailure { e ->
-                CrashLogger.writeLog(requireContext(), "FAVORITAR falhou id=$songId -> $e")
+                CrashLogger.writeLog(app, "FAVORITAR falhou id=$songId -> $e")
                 ThreadPool.onUi {
                     if (isAdded) {
                         Toast.makeText(
@@ -553,9 +559,10 @@ class NowPlayingFragment : Fragment() {
 
     private fun showLyricsDialog() {
         val song = Playback.currentSong ?: return
+        val app = context?.applicationContext ?: return
         Toast.makeText(requireContext(), getString(R.string.lyrics_searching), Toast.LENGTH_SHORT).show()
         ThreadPool.post {
-            val result = Lyrics.resolve(song, requireContext().applicationContext)
+            val result = Lyrics.resolve(song, app)
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
                 if (result == null || result.lines.isEmpty()) {
