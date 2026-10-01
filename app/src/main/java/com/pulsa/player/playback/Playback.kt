@@ -56,6 +56,18 @@ object Playback {
 
     val currentSong: Song? get() = link?.currentSong
     val isPlaying: Boolean get() = link?.isPlaying ?: false
+
+    /**
+     * F2b — a chave do que está tocando, para comparar sem cair na colisão de id.
+     *
+     * Existe porque `song.id` deixou de bastar: áudio e vídeo são coleções separadas do
+     * MediaStore, cada uma numerada por conta própria, então `currentSong?.id == song.id`
+     * dá positivo para a faixa errada sempre que um vídeo e uma música compartilham o
+     * número. Os callbacks assíncronos ("a curiosidade ainda é da faixa que está
+     * tocando?") eram os mais expostos: um fetch que voltava tarde achava que a faixa tinha
+     * mudado para a música de mesmo id e descartava a fala.
+     */
+    val currentKey: String? get() = link?.currentSong?.let { QueueKey.encode(it) }
     val index: Int get() = link?.index ?: -1
     val shuffle: Boolean get() = link?.shuffle ?: false
     val repeatAll: Boolean get() = link?.repeatAll ?: true

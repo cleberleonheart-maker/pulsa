@@ -17,6 +17,7 @@ import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.playback.QueueKey
 
 class SongsTabFragment : Fragment() {
 
@@ -94,6 +95,7 @@ class SongsTabFragment : Fragment() {
                     headerContainer?.visibility = View.GONE
                     adapter?.songs = ordered
                     selectionBar?.setAvailable(ordered.map { it.id })
+                    adapter?.highlightKey = Playback.currentSong?.let { QueueKey.encode(it) }
                     adapter?.highlightId = Playback.currentSong?.id
                     if (ordered.isEmpty()) {
                         showEmpty(getString(R.string.empty_no_music), false)

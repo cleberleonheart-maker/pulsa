@@ -29,6 +29,7 @@ import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.ui.AlbumsTabFragment
 import com.pulsa.player.ui.ArtistTimelineFragment
 import com.pulsa.player.ui.ArtistsTabFragment
@@ -699,11 +700,12 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         miniRepeat.setImageResource(icon)
         miniRepeat.tint(color)
         val songId = song.id
+        val key = QueueKey.encode(song)
         ThreadPool.post {
             val fav = PlaylistDb.get(applicationContext).isFavorite(songId)
             ThreadPool.onUi {
                 if (!mainViewsReady) return@onUi
-                if (Playback.currentSong?.id != songId) return@onUi
+                if (!QueueKey.sameType(Playback.currentKey, key)) return@onUi
                 miniLike.setImageResource(if (fav) R.drawable.ic_favorite else R.drawable.ic_heart)
                 miniLike.tint(if (fav) R.color.primary else R.color.text_secondary)
             }

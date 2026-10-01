@@ -13,6 +13,7 @@ import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SongListAdapter
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.playback.QueueKey
 
 class FavoritesTabFragment : Fragment() {
 
@@ -80,6 +81,7 @@ class FavoritesTabFragment : Fragment() {
                     headerContainer?.visibility = View.GONE
                     adapter?.songs = songs
                     selectionBar?.setAvailable(songs.map { it.id })
+                    adapter?.highlightKey = Playback.currentSong?.let { QueueKey.encode(it) }
                     adapter?.highlightId = Playback.currentSong?.id
                     val empty = songs.isEmpty()
                     emptyView?.visibility = if (empty) View.VISIBLE else View.GONE

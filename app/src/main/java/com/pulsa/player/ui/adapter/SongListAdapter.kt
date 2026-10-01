@@ -11,6 +11,7 @@ import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.model.Song
 import com.pulsa.player.core.Helper
 import com.pulsa.player.ui.ItemSelection
+import com.pulsa.player.playback.QueueKey
 
 class SongListAdapter(
     private val onPlay: (Song, Int) -> Unit,
@@ -24,6 +25,23 @@ class SongListAdapter(
         }
 
     var highlightId: Long? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                notifyDataSetChanged()
+            }
+        }
+
+    /**
+     * F2b — a linha que está tocando, por **chave** e não por id.
+     *
+     * Com vídeo na fila, `song.id` sozinho acende a linha errada: o áudio de id 42 e o
+     * vídeo de id 42 são itens diferentes (o MediaStore numera as coleções por conta
+     * própria), e era isso que a linha da música acendia enquanto o vídeo tocava. A chave
+     * tipada ([QueueKey]) resolve, e [highlightId] continua existindo para quem só quer o
+     * id — as listas de música nunca disinfectant isso.
+     */
+    var highlightKey: String? = null
         set(value) {
             if (field != value) {
                 field = value
@@ -100,7 +118,15 @@ class SongListAdapter(
             val sel = selection
             val selecting = sel != null && sel.isActive
             val checked = sel != null && sel.isSelected(song.id)
-            val playing = song.id == highlightId
+            // A chave manda quando há uma: só o id acenderia a linha do áudio de id 42
+            // enquanto o vídeo de id 42 toca (F2b). Sem chave, cai no id — o comportamento
+            // de sempre para quem não tem vídeo na fila.
+            val key = highlightKey
+            val playing = if (key != null) {
+                QueueKey.sameType(QueueKey.encode(song), key)
+            } else {
+                song.id == highlightId
+            }
 
             itemView.setBackgroundResource(
                 when {

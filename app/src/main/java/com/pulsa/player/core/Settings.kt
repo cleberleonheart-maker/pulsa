@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.pulsa.player.R
+import com.pulsa.player.playback.QueueKey
 
 object Settings {
     // Ids de avatar. Ficam publicos porque as telas desenham o avatar e a voz por causa
@@ -601,33 +602,49 @@ object Settings {
      * automático era exclusivo do rádio. Numa atualização o Android mata o processo e o
      * `onDestroy` não chegava a rodar, então a fila inteira se perdia.
      *
-     * Guarda os `id`s do MediaStore em JSON, na ordem, com o índice e a posição. A faixa
-     * continua vindo do MediaStore no restore — o id é a chave, o resto é reconstruído, o
-     * que sobrevive bem a uma tag do app ter mudado de id entre versões.
+     * Guarda as chaves em JSON, na ordem, com o índice e a posição. A faixa continua vindo
+     * do MediaStore no restore — a chave é a referência, o resto é reconstruído, o que
+     * sobrevive bem a uma tag do app ter mudado de id entre versões.
+     *
+     * F2b: o `keys` é `List<String>` (chave tipada, ver [QueueKey]) e não mais `List<Long>`,
+     * porque o MediaStore numera áudio e vídeo em coleções separadas e o número sozinho não
+     * diz de que mídia o item é. A preference continua se chamando `queue_ids` para não
+     * invalidar o que já está gravado — o leitor aceita o número solto como sendo áudio.
      */
-    fun setQueueState(context: Context, ids: List<Long>, index: Int, positionMs: Long) {
-        if (ids.isEmpty()) {
+    fun setQueueState(context: Context, keys: List<String>, index: Int, positionMs: Long) {
+        if (keys.isEmpty()) {
             clearQueueState(context)
             return
         }
         prefs(context).edit()
-            .putString("queue_ids", org.json.JSONArray(ids.map { it.toString() }).toString())
+            .putString("queue_ids", org.json.JSONArray(keys).toString())
             .putInt("queue_index", index)
             .putLong("queue_position", positionMs)
             .putLong("queue_saved_at", System.currentTimeMillis())
             .apply()
     }
 
-    /** `ids` na ordem salva, o índice da faixa atual e a posição dela, em ms. */
-    fun queueState(context: Context): Triple<List<Long>, Int, Long>? {
+    /**
+     * F2b — chaves (`a:42`, `v:7`) na ordem salva, o índice da faixa atual e a posição, em ms.
+     *
+     * A chave tipada substituiu o `id` solto porque o MediaStore numera áudio e vídeo em
+     * coleções separadas: só o número não diz de que mídia o item é. A compatibilidade com o
+     * formato antigo fica no leitor — um `JSONArray` de números ainda volta, tudo como áudio,
+     * que é o que era.
+     */
+    fun queueState(context: Context): Triple<List<String>, Int, Long>? {
         val raw = prefs(context).getString("queue_ids", "") ?: ""
         if (raw.isBlank()) return null
-        val ids = runCatching {
+        val keys = runCatching {
             val arr = org.json.JSONArray(raw)
-            (0 until arr.length()).mapNotNull { arr.optString(it).toLongOrNull() }
+            (0 until arr.length()).mapNotNull { QueueKey.decode(arr.optString(it)) }
         }.getOrNull()
-        if (ids.isNullOrEmpty()) return null
-        return Triple(ids, prefs(context).getInt("queue_index", 0), prefs(context).getLong("queue_position", 0L))
+        if (keys.isNullOrEmpty()) return null
+        return Triple(
+            keys,
+            prefs(context).getInt("queue_index", 0),
+            prefs(context).getLong("queue_position", 0L)
+        )
     }
 
     fun clearQueueState(context: Context) {

@@ -23,6 +23,7 @@ import com.pulsa.player.playback.Playback
 import com.pulsa.player.audio.Ambient
 import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.core.Helper
+import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Lyrics
 import com.pulsa.player.dj.AvatarFavorites
 import com.pulsa.player.core.Settings
@@ -219,13 +220,14 @@ class NowPlayingFragment : Fragment() {
     private fun syncLyricsFor(song: com.pulsa.player.model.Song) {
         if (song.id == lyricsForSong || lyricsLoading) return
         lyricsLoading = true
+        val key = QueueKey.encode(song)
         lyricsForSong = song.id
         lyricsLines = emptyList()
         lyricsPanel?.visibility = View.GONE
         ThreadPool.post {
             val result = Lyrics.resolve(song, requireActivity().applicationContext)
             ThreadPool.onUi {
-                if (!isAdded || Playback.currentSong?.id != song.id) {
+                if (!isAdded || !QueueKey.sameType(Playback.currentKey, key)) {
                     lyricsLoading = false
                     lyricsForSong = -1L
                     return@onUi
@@ -292,11 +294,12 @@ class NowPlayingFragment : Fragment() {
 
     private fun updateLikeIconFor(song: com.pulsa.player.model.Song) {
         val songId = song.id
+        val key = QueueKey.encode(song)
         ThreadPool.post {
             val fav = PlaylistDb.get(requireActivity().applicationContext).isFavorite(songId)
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
-                if (Playback.currentSong?.id != songId) return@onUi
+                if (!QueueKey.sameType(Playback.currentKey, key)) return@onUi
                 likeView?.setImageResource(if (fav) R.drawable.ic_favorite else R.drawable.ic_heart)
                 likeView?.tint(if (fav) R.color.primary else R.color.text_secondary)
             }

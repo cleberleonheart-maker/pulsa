@@ -34,6 +34,7 @@ import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
+import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Telemetry
 
 /**
@@ -1342,6 +1343,7 @@ class DjSession(
     }
 
     private fun finalizeDelete(song: Song, alreadyDeleted: Boolean) {
+        val key = QueueKey.encode(song)
         ThreadPool.post {
             val deleted = if (alreadyDeleted) {
                 true
@@ -1351,7 +1353,7 @@ class DjSession(
             ThreadPool.onUi {
                 if (deleted) {
                     VirginMedia.removeFromPlaylists(activity.applicationContext, song)
-                    if (Playback.currentSong?.id == song.id) Playback.next()
+                    if (QueueKey.sameType(Playback.currentKey, key)) Playback.next()
                     speak(activity.getString(R.string.dj_voice_delete_done, song.title))
                     Telemetry.log(activity, "DJ Virgin delete vc ok id=${song.id}")
                 } else {

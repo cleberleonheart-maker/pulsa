@@ -20,6 +20,7 @@ import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SongListAdapter
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.playback.QueueKey
 
 class LibraryDetailFragment : Fragment() {
 
@@ -104,6 +105,7 @@ class LibraryDetailFragment : Fragment() {
                 if (isAdded) {
                     adapter?.songs = songs
                     selectionBar?.setAvailable(songs.map { it.id })
+                    adapter?.highlightKey = Playback.currentSong?.let { QueueKey.encode(it) }
                     adapter?.highlightId = Playback.currentSong?.id
                     headerSubtitle?.text = subtitleFor(songs)
                     if (songs.isEmpty()) showEmpty(getString(R.string.empty_no_music), false)

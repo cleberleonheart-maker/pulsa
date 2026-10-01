@@ -17,6 +17,7 @@ import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SongListAdapter
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.playback.QueueKey
 
 class PlaylistDetailFragment : Fragment() {
 
@@ -105,6 +106,7 @@ class PlaylistDetailFragment : Fragment() {
                 if (isAdded) {
                     adapter?.songs = songs
                     selectionBar?.setAvailable(songs.map { it.id })
+                    adapter?.highlightKey = Playback.currentSong?.let { QueueKey.encode(it) }
                     adapter?.highlightId = Playback.currentSong?.id
                     if (db.isAutoAdd(playlistId)) {
                         headerSubtitle?.text = getString(R.string.auto_count, Helper.trackCount(songs.size, requireContext().resources))

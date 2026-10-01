@@ -50,6 +50,7 @@ import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.media.StreamKind
 import com.pulsa.player.model.Song
+import com.pulsa.player.model.Video
 import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.dj.DjFacts
 import com.pulsa.player.dj.DjVoice
@@ -354,8 +355,19 @@ class PlaybackService : MediaLibraryService() {
         } ?: false
     val audioSessionId: Int get() = player?.audioSessionId ?: 0
 
-    private fun currentSongGenre(): String? =
-        runCatching { currentSong?.id?.let { Library.genreOf(applicationContext, it) } }.getOrNull()
+    /**
+     * Gênero do preset automático, e só de **áudio**.
+     *
+     * O `genreOf` consulta `MediaStore.Audio` por id, e o id de um vídeo pode ser o mesmo
+     * de uma música (cada coleção numera por conta própria): sem esta guarda o vídeo
+     * receberia o gênero da música com aquele número e o EQ mudaria junto. É o mesmo
+     * cuidado do [QueueKey] — tipo e id andam juntos.
+     */
+    private fun currentSongGenre(): String? {
+        val song = currentSong ?: return null
+        if (song.isVideo || song.isStream || song.isRadio) return null
+        return runCatching { Library.genreOf(applicationContext, song.id) }.getOrNull()
+    }
 
     inner class LocalBinder : Binder() {
         val service: PlaybackService get() = this@PlaybackService
@@ -485,21 +497,37 @@ class PlaybackService : MediaLibraryService() {
      */
     private fun restoreQueueState(): Boolean {
         if (!Settings.resumeOn(this)) return false
-        val (ids, savedIndex, savedPos) = Settings.queueState(this) ?: return false
-        if (ids.isEmpty()) return false
-        val songs = Library.songsByIds(this, ids)
+        val (keys, savedIndex, savedPos) = Settings.queueState(this) ?: return false
+        if (keys.isEmpty()) return false
+        // F2b: áudio e vídeo vêm de coleções separadas do MediaStore, cada uma numerada por
+        // conta própria. Um `songsByIds` único não resolveria a fila misturada: o id do
+        // vídeo 42 buscaria a música 42. Então cada chave vai para a biblioteca que é
+        // dela, e a ordem salva é reconstruída por cima.
+        val songIds = keys.filter { it.startsWith(QueueKey.VIDEO_PREFIX) == false }
+            .mapNotNull { it.substringAfter(':').toLongOrNull() }
+        val videoIds = keys.filter { it.startsWith(QueueKey.VIDEO_PREFIX) }
+            .mapNotNull { it.substringAfter(':').toLongOrNull() }
+        val songsById = HashMap<String, Song>(keys.size)
+        Library.songsByIds(this, songIds).forEach { songsById[QueueKey.encode(it)!!] = it }
+        val videosById = HashMap<Long, Video>(videoIds.size)
+        if (videoIds.isNotEmpty()) {
+            VideoLibrary.all(this).forEach { v -> if (videoIds.contains(v.id)) videosById[v.id] = v }
+        }
+        val songs = keys.mapNotNull { key ->
+            songsById[key] ?: videosById[key.substringAfter(':').toLongOrNull()]?.let { videoSong(it) }
+        }
         if (songs.isEmpty()) {
             // Toda a fila sumiu do MediaStore (fotos apagadas, sdcard removido). Não tenta
             // de novo em todo boot e não deixa lixo salvo para sempre.
             Settings.clearQueueState(this)
             return false
         }
-        // Ajusta o índice: com faixa apagada, a posição original apontaria para a música errada.
-        val currentId = ids.getOrNull(savedIndex.coerceIn(0, ids.lastIndex))
-        val index = currentId
-            ?.let { id -> songs.indexOfFirst { it.id == id } }
-            ?.takeIf { it >= 0 }
-            ?: 0
+        // Ajusta o índice: com faixa apagada, a posição original apontaria para a faixa errada.
+        val index = QueueKey.reanchor(keys, savedIndex, QueueKey.encodeAll(songs))
+        if (index < 0) {
+            Settings.clearQueueState(this)
+            return false
+        }
         suppressQueueSave = true
         startPaused = true
         try {
@@ -516,12 +544,36 @@ class PlaybackService : MediaLibraryService() {
     }
 
     /**
+     * F2b — o item de fila de um vídeo do MediaStore.
+     *
+     * É a **mesma** forma que a [PulsaLibraryTree.songFor] e a `VideoPlayerActivity` montam,
+     * e isso é deliberado: é o que permite a fila misturada tratar vídeo e música com o
+     * mesmo código, e o que faz um vídeo vindo do Android Auto ser idêntico a um tocado
+     * dentro do app.
+     */
+    private fun videoSong(video: Video) = Song(
+        id = video.id,
+        title = video.title,
+        artist = "",
+        album = getString(R.string.tab_videos),
+        albumId = 0L,
+        durationMs = video.durationMs,
+        path = Song.VIDEO_PREFIX + video.id,
+        year = 0
+    )
+
+    /**
      * Grava a fila atual para o próximo processo. Chamado de [saveResumeState], que por
      * sua vez roda no tick de posição — assim a fila e a posição andam juntas.
      *
-     * Rádio e vídeo ficam de fora: o rádio tem o próprio mecanismo ([setRadioResume]) e
-     * vídeo não é retomável, e guardar um id sintético nesses casos faria o restore
-     * procurar no MediaStore uma faixa que nunca existiu.
+     * **F2b: a fila é salva com chave tipada, e vídeo agora entra.** Antes ela gravava só
+     * `song.id` e apagava o estado inteiro se a fila tivesse um único vídeo — daí o "não é
+     * retomável". Com o [QueueKey] o vídeo é salvo como `v:<id>` e volta pelo
+     * `VideoLibrary`, então a fila misturada sobrevive à morte do processo.
+     *
+     * Rádio e stream continuam fora, e por um motivo que não é "não dá": os dois usam id
+     * sintético e **não têm item no MediaStore** para o restore reencontrar. O rádio tem
+     * mecanismo próprio ([setRadioResume]).
      */
     private fun saveQueueState() {
         if (suppressQueueSave) return
@@ -529,15 +581,27 @@ class PlaybackService : MediaLibraryService() {
             Settings.clearQueueState(this)
             return
         }
-        if (queue.any { it.isRadio || it.isVideo || it.isStream }) {
-            // Rádio, vídeo e stream não são retomáveis. Deixar a fila antiga salva seria pior
-            // que não ter nada: o próximo boot restauraria uma playlist que o usuário já trocou.
+        // Índice na fila **gravada**, e não na fila real: como rádio e stream são pulados,
+        // o item tocando pode estar antes ou depois de todos os que foram salvos.
+        val keys = QueueKey.encodeAll(queue)
+        if (keys.isEmpty()) {
+            // Fila só de rádio/stream. Deixar a fila antiga salva seria pior que não ter
+            // nada: o próximo boot restauraria uma playlist que o usuário já trocou.
             Settings.clearQueueState(this)
             return
         }
-        val i = index.coerceIn(0, queue.lastIndex)
+        val currentKey = QueueKey.encode(queue.getOrNull(index) ?: return)
+        if (currentKey == null) {
+            Settings.clearQueueState(this)
+            return
+        }
+        val savedIndex = keys.indexOfFirst { QueueKey.sameType(it, currentKey) }
+        if (savedIndex < 0) {
+            Settings.clearQueueState(this)
+            return
+        }
         val pos = runCatching { player?.currentPosition ?: 0L }.getOrDefault(0L)
-        Settings.setQueueState(this, queue.map { it.id }, i, pos)
+        Settings.setQueueState(this, keys, savedIndex, pos)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -723,8 +787,16 @@ class PlaybackService : MediaLibraryService() {
         saveQueueState()
     }
 
+    /**
+     * Reaplica o título/artist/album que o usuário editou, vinda do [PlaylistDb].
+     *
+     * Só para **áudio**: os overrides são guardados por `songId` e não sabem de que tipo é
+     * o item, então um vídeo com id 42 receberia o título que o usuário deu à **música** 42.
+     * A mesma colisão do [currentSongGenre], agora do lado do texto.
+     */
     fun refreshCurrentMeta() {
         val song = currentSong ?: return
+        if (song.isVideo || song.isStream || song.isRadio) return
         val meta = runCatching {
             PlaylistDb.get(this).songMeta(song.id)
         }.getOrNull() ?: return
@@ -899,7 +971,7 @@ class PlaybackService : MediaLibraryService() {
                 0L
             )
             p.prepare()
-            if (!song.isRadio && !song.isVideo) LastFm.nowPlaying(applicationContext, song, song.durationMs)
+            if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
             Playback.notifySong(song, index)
             loadLargeIcon(song)
             announceInBackground(song)
@@ -1004,7 +1076,7 @@ class PlaybackService : MediaLibraryService() {
         consecutiveErrors = 0
         publishMetadata(song)
         refreshNotification()
-        if (!song.isRadio && !song.isVideo) LastFm.nowPlaying(applicationContext, song, song.durationMs)
+        if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
         loadLargeIcon(song)
         announceInBackground(song)
         Playback.notifySong(song, at)
@@ -1227,6 +1299,10 @@ class PlaybackService : MediaLibraryService() {
     private fun restoreSavedPosition(p: ExoPlayer) {
         if (!Settings.resumeOn(this)) return
         val song = currentSong ?: return
+        // Só áudio. O `resume_song_id` é um id solto e o id de um vídeo pode ser o mesmo de
+        // uma música (coleções separadas do MediaStore): sem esta guarda, o vídeo 42
+        // buscava a posição salva da música 42 e voltava no meio de um lugar aleatório.
+        if (song.isVideo || song.isStream || song.isRadio) return
         if (song.id != Settings.resumeSongId(this)) return
         val savedPos = Settings.resumePosition(this)
         val dur = p.duration
@@ -1352,6 +1428,18 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    /**
+     * F2b — o item só de áudio, para o Last.fm.
+     *
+     * O `scrobble` era o único ponto do serviço **sem** guarda de tipo: um vídeo de 30s
+     * ouvido até a metade virava scrobble com `artist = ""` e `album = "Vídeos"`, e um
+     * stream ia pelo mesmo caminho com o id do hash da URL. O `nowPlaying` já era filtrado,
+     * mas `isVideo` sozinho deixava `isStream` passar — por isso a guarda é uma função só,
+     * chamada nos dois lugares, e o motivo fica num lugar só.
+     */
+    private fun isScrobbleable(song: Song): Boolean =
+        !song.isVideo && !song.isStream && !song.isRadio
+
     private fun saveResumeState() {
         // O `syncExternalPlaybackState(false)` chega DEPOIS do `pause()` (o Media3 entrega o
         // evento do listener via Handler) e a chamada abaixo regravaria o rádio que o pause()
@@ -1397,6 +1485,7 @@ class PlaybackService : MediaLibraryService() {
 
     private fun scrobbleCurrentIfNeeded() {
         val song = currentSong ?: return
+        if (!isScrobbleable(song)) return
         if (!Settings.lastFmKey(this).isNullOrBlank() &&
             Settings.lastFmUser(this).isNotBlank() && Settings.lastFmSession(this).isNotBlank()
         ) {
@@ -1571,14 +1660,26 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    /**
+     * F2b — a capa da notificação, e ela só existe para áudio.
+     *
+     * `isVideo` não basta mais: o stream tem `albumId = 0` e `path` começando com
+     * `stream:https://…`, então o `ArtLoader` ia abrir um `MediaMetadataRetriever` numa URL
+     * e devolver sempre `null` — um retrabalho por faixa sem resultado. E a comparação de
+     * `currentSong?.id` trocada por chave: com o id de um vídeo batendo com o de uma música,
+     * a capa da música podia virar a capa do vídeo.
+     */
     private fun loadLargeIcon(song: Song) {
-        if (song.isVideo) return
+        if (song.isVideo || song.isStream) return
+        // Chave capturada agora: no `onUi` a fila pode já ter andado, e comparar `id` direto
+        // deixaria a capa de uma faixa antiga virar a notificação da nova.
+        val key = QueueKey.encode(song) ?: return
         ThreadPool.post {
             val bmp = ArtLoader.decode(applicationContext, song.albumId, song.path)
             ThreadPool.onUi {
                 if (bmp != null) {
                     largeIcon = bmp
-                    if (currentSong?.id == song.id) {
+                    if (QueueKey.sameType(QueueKey.encode(currentSong ?: return@onUi), key)) {
                         refreshNotification()
                         PulsaWidget.refresh(applicationContext)
                     }
