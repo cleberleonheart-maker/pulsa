@@ -239,7 +239,7 @@ class RadioActivity : AppCompatActivity() {
 
     private fun searchOnline(query: String) {
         statusText.text = getString(R.string.radio_status_connecting)
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val results = try {
                 val encoded = URLEncoder.encode(query, "UTF-8")
                 val url = URL("https://de1.api.radio-browser.info/json/stations/search?name=$encoded&limit=15&hidebroken=true")
@@ -289,7 +289,7 @@ class RadioActivity : AppCompatActivity() {
     private fun tuneAutomatic() {
         val state = RadioStations.state(this)
         statusText.text = getString(R.string.radio_status_connecting)
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val found = try {
                 val url = URL(
                     "https://de1.api.radio-browser.info/json/stations/search" +

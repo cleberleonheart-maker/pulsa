@@ -59,11 +59,11 @@ object RemoteSync {
                 // favoritar, que por acaso roda no mesmo pool. Coleta-se o estado aqui, na
                 // main, e so entao o trabalho de rede vai para o pool.
                 val snapshot = runCatching { capturePlayerState() }.getOrNull()
-                ThreadPool.post {
+                ThreadPool.postNetwork {
                     try {
-                        val ctx = appContext ?: return@post
+                        val ctx = appContext ?: return@postNetwork
                         Blacklist.refreshIfStale(ctx)
-                        if (Blacklist.isBanned(ctx)) return@post
+                        if (Blacklist.isBanned(ctx)) return@postNetwork
                         if (snapshot != null) pushState(ctx, snapshot)
                         pollCommands(ctx)
                         maybePushSongs(ctx)

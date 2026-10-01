@@ -100,7 +100,7 @@ object LastFm {
         val apiSig = sign(params, Settings.lastFmSecret(context))
         params["api_sig"] = apiSig
         params["format"] = "json"
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             post(params)
         }
     }

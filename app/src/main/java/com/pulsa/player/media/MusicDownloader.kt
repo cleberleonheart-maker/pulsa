@@ -26,7 +26,7 @@ object MusicDownloader {
         name: String,
         onDone: (ok: Boolean, message: String?) -> Unit
     ) {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             var ok = false
             var message: String? = null
             try {

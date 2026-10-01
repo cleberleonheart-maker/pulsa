@@ -228,7 +228,10 @@ class NowPlayingFragment : Fragment() {
         lyricsForSong = song.id
         lyricsLines = emptyList()
         lyricsPanel?.visibility = View.GONE
-        ThreadPool.post {
+        // postNetwork, e nao post: `Lyrics.resolve` vai buscar online quando nao acha
+        // no dispositivo, e isso roda a CADA troca de musica. No pool local, segurava
+        // uma das poucas threads e atrasava a biblioteca inteira.
+        ThreadPool.postNetwork {
             val result = Lyrics.resolve(song, app)
             ThreadPool.onUi {
                 if (!isAdded || !QueueKey.sameType(Playback.currentKey, key)) {
@@ -561,7 +564,7 @@ class NowPlayingFragment : Fragment() {
         val song = Playback.currentSong ?: return
         val app = context?.applicationContext ?: return
         Toast.makeText(requireContext(), getString(R.string.lyrics_searching), Toast.LENGTH_SHORT).show()
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val result = Lyrics.resolve(song, app)
             ThreadPool.onUi {
                 if (!isAdded) return@onUi

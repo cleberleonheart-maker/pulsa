@@ -316,7 +316,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun createSession() {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val res = sessionCall("""{"create":true}""")
             runOnUiThread {
                 val code = runCatching { JSONObject(res) }.getOrNull()?.optString("code")
@@ -349,7 +349,7 @@ class SettingsActivity : AppCompatActivity() {
                     Toast.makeText(this, R.string.mirror_code_hint, Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                ThreadPool.post {
+                ThreadPool.postNetwork {
                     val res = sessionGet(code)
                     val ok = runCatching { JSONObject(res) }.getOrNull()?.optBoolean("ok", false) == true
                     runOnUiThread {
@@ -370,7 +370,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun leaveSession() {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             sessionCall("""{"leave":true}""")
             Settings.setMirrorCode(this@SettingsActivity, "")
             Settings.setMirrorHost(this@SettingsActivity, false)

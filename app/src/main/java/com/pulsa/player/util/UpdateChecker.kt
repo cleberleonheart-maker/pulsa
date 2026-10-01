@@ -77,14 +77,14 @@ object UpdateChecker {
 
     fun downloadFromSite(context: Context) {
         if (context !is android.app.Activity) return
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             Blacklist.refresh(context)
             if (Blacklist.isBanned(context)) {
                 ThreadPool.onUi {
                     if (context.isFinishing || context.isDestroyed) return@onUi
                     showBanDialog(context)
                 }
-                return@post
+                return@postNetwork
             }
             val latest = queryLatest(context)
             ThreadPool.onUi {
@@ -133,7 +133,7 @@ object UpdateChecker {
             .setView(view)
             .setCancelable(false)
             .show()
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val target = downloadFromServer(context.applicationContext, latestName, versionUrl) { pct ->
                 ThreadPool.onUi {
                     runCatching {
@@ -281,9 +281,9 @@ object UpdateChecker {
         )
 
     fun check(context: Context) {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             Blacklist.refresh(context)
-            if (Blacklist.isBanned(context)) return@post
+            if (Blacklist.isBanned(context)) return@postNetwork
             pruneAttempted(context)
             val latest = queryLatest(context)
             if (latest != null) handle(context, "${latest.code}|${latest.name}|${latest.apkUrl}")

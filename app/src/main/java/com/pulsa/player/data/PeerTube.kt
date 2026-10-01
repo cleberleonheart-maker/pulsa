@@ -83,7 +83,7 @@ object PeerTube {
             return
         }
         val root = normalizeInstance(instance)
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val result = runCatching {
                 val url = "$root/api/v1/search/videos?search=" +
                     URLEncoder.encode(q, "UTF-8") + "&count=25"
@@ -103,7 +103,7 @@ object PeerTube {
      * instância não expõe nem HLS nem MP4 utilizável (vídeo removido, ou formato exótico).
      */
     fun resolve(item: Item, onResult: (Item?) -> Unit) {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val resolved = runCatching {
                 val url = "${item.pageUrl.substringBefore("/videos/watch")}/api/v1/videos/${item.uuid}"
                 fromDetail(JSONObject(get(url)), item)
