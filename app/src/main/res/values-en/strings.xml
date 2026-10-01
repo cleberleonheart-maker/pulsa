@@ -373,7 +373,7 @@
     <string name="favorites_count">%1$s favorite song(s)</string>
     <string name="video_play">Play</string>
     <string name="video_share">Share</string>
-    <string name="video_added_queue_count">%1$d song(s) in the queue</string>
+    <string name="songs_added_to_queue">%1$d song(s) in the queue</string>
     <string name="already_in_queue">This song is already in the queue</string>
     <string name="video_added_to_queue">%1$d video(s) in the queue</string>
     <string name="video_already_in_queue">This video is already in the queue</string>

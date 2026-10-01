@@ -362,7 +362,7 @@ class VideosTabFragment : Fragment() {
     private fun showMenu(video: Video) {
         val items = arrayOf(
             getString(R.string.video_play),
-            getString(R.string.video_add_to_queue),
+            getString(R.string.add_to_queue),
             getString(R.string.share_music)
         )
         MaterialAlertDialogBuilder(requireContext())

@@ -330,7 +330,7 @@
     <string name="favorites_count">%1$s música(s) favorita(s)</string>
     <string name="video_play">Reproduzir</string>
     <string name="video_share">Compartilhar</string>
-    <string name="video_added_queue_count">%1$d música(s) na fila</string>
+    <string name="songs_added_to_queue">%1$d música(s) na fila</string>
     <string name="already_in_queue">Essa música já está na fila</string>
     <string name="video_added_to_queue">%1$d vídeo(s) na fila</string>
     <string name="video_already_in_queue">Esse vídeo já está na fila</string>

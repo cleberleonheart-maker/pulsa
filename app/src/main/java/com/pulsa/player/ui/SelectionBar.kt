@@ -23,7 +23,7 @@ class SelectionBar(
     /** Segunda ação opcional (F2b: adicionar à fila), escondida quando não vem. */
     private val extraAction: (() -> Unit)? = null,
     private val extraIcon: Int = R.drawable.ic_queue_music,
-    private val extraLabel: Int = R.string.video_add_to_queue
+    private val extraLabel: Int = R.string.add_to_queue
 ) : ItemSelection.Listener {
 
     private val bar: View = root.findViewById(R.id.selection_bar)

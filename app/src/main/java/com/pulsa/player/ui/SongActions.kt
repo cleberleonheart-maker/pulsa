@@ -85,7 +85,7 @@ object SongActions {
         if (songs.isEmpty()) return
         val added = Playback.enqueue(songs)
         val msg = if (added > 0) {
-            context.getString(R.string.video_added_queue_count, added)
+            context.getString(R.string.songs_added_to_queue, added)
         } else {
             context.getString(R.string.already_in_queue)
         }
