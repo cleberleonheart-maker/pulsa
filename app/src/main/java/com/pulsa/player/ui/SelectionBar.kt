@@ -19,12 +19,17 @@ class SelectionBar(
     private val onAction: (Set<Long>) -> Unit,
     /** Ícone da ação. Apagar o arquivo e tirar da playlist não são a mesma coisa. */
     private val actionIcon: Int = R.drawable.ic_delete,
-    private val actionLabel: Int = R.string.delete_selected
+    private val actionLabel: Int = R.string.delete_selected,
+    /** Segunda ação opcional (F2b: adicionar à fila), escondida quando não vem. */
+    private val extraAction: (() -> Unit)? = null,
+    private val extraIcon: Int = R.drawable.ic_queue_music,
+    private val extraLabel: Int = R.string.video_add_to_queue
 ) : ItemSelection.Listener {
 
     private val bar: View = root.findViewById(R.id.selection_bar)
     private val count: TextView = root.findViewById(R.id.selection_count)
     private val all: TextView = root.findViewById(R.id.selection_all)
+    private val extra: ImageView = root.findViewById(R.id.selection_extra)
     private val del: ImageView = root.findViewById(R.id.selection_delete)
     private val close: ImageView = root.findViewById(R.id.selection_close)
 
@@ -40,6 +45,17 @@ class SelectionBar(
         del.setOnClickListener {
             val ids = selection.snapshot()
             if (ids.isNotEmpty()) onAction(ids)
+        }
+        // A segunda ação é opcional e some com a barra nas telas que não passam
+        // `extraAction` — as quatro telas de música seguem com um botão só.
+        extraAction?.let { action ->
+            extra.setImageResource(extraIcon)
+            extra.contentDescription = bar.context.getString(extraLabel)
+            extra.visibility = View.VISIBLE
+            extra.setOnClickListener {
+                val ids = selection.snapshot()
+                if (ids.isNotEmpty()) action()
+            }
         }
         refresh()
     }

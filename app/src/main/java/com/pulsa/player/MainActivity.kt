@@ -737,6 +737,11 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             syncMiniPlayer()
             syncToolbar()
             virgin.announceRadioSong(song)
+            // F2b: vídeo entrou na fila misturada e virou o item atual. Sem isto o áudio sai
+            // pela mini player e a imagem não aparece em lugar nenhum — vídeo precisa de
+            // surface, e a surface só existe na tela de vídeo, que abre aqui já grudada no
+            // motor (sem `Playback.start`, para não trocar a fila).
+            if (song.isVideo || song.isStream) VideoPlayerActivity.showPlaying(this)
         }
     }
 

@@ -181,4 +181,42 @@ class QueueKeyTest {
         assertFalse(QueueKey.sameType(null, "a:1"))
         assertTrue(QueueKey.sameType("a:1", "a:1"))
     }
+
+    // --------------------------------------------------------------- filterNew
+
+    @Test
+    fun `adicionar a fila ignora o que ja esta nela`() {
+        val fila = listOf(audio(1), video(2), audio(3))
+        val novo = QueueKey.filterNew(fila, listOf(audio(1), audio(9), video(2), video(8)))
+        // 1 e 2 ja estavam; 9 (audio) e 8 (video) entraram.
+        assertEquals(listOf(audio(9), video(8)), novo)
+    }
+
+    @Test
+    fun `video repetido e audio repetida nao se confundem no filtro`() {
+        // O mesmo numero nas duas colecoes: o video 42 tem de entrar mesmo com a musica 42
+        // na fila. Comparando so por id, o video seria descartado — e o usuario nunca
+        // conseguiria misturar os dois, que e a ideia da fila unificada.
+        val fila = listOf(audio(42))
+        assertEquals(listOf(video(42)), QueueKey.filterNew(fila, listOf(video(42))))
+        assertEquals(listOf(audio(42)), QueueKey.filterNew(listOf(video(42)), listOf(audio(42))))
+    }
+
+    @Test
+    fun `filtro ignora o mesmo repetido dentro do proprio lote`() {
+        // "Adicionar 3 vídeos" com dois iguais (selecao em lote): o segundo não vira item
+        // duplicado, porque o `seen` vai crescendo conforme o lote entra.
+        val lote = listOf(video(5), video(6), video(5))
+        assertEquals(listOf(video(5), video(6)), QueueKey.filterNew(emptyList(), lote))
+    }
+
+    @Test
+    fun `radio e stream passam sempre, por nao terem chave`() {
+        // Nao ha como saber se "a mesma" radio ja esta na fila: o id e um hash do endereco e
+        // a estacao e a mesma enquanto o endereco for. Deixar passar e o comportamento
+        // esperado de "adicionar a fila" para uma estacao.
+        val fila = listOf(radio("http://r1"), stream("http://s1"))
+        val novo = QueueKey.filterNew(fila, listOf(radio("http://r1"), stream("http://s1")))
+        assertEquals(2, novo.size)
+    }
 }

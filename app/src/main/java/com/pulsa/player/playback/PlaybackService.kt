@@ -51,6 +51,7 @@ import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.media.StreamKind
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
+import com.pulsa.player.model.toSong
 import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.dj.DjFacts
 import com.pulsa.player.dj.DjVoice
@@ -551,16 +552,7 @@ class PlaybackService : MediaLibraryService() {
      * mesmo código, e o que faz um vídeo vindo do Android Auto ser idêntico a um tocado
      * dentro do app.
      */
-    private fun videoSong(video: Video) = Song(
-        id = video.id,
-        title = video.title,
-        artist = "",
-        album = getString(R.string.tab_videos),
-        albumId = 0L,
-        durationMs = video.durationMs,
-        path = Song.VIDEO_PREFIX + video.id,
-        year = 0
-    )
+    private fun videoSong(video: Video) = video.toSong(getString(R.string.tab_videos))
 
     /**
      * Grava a fila atual para o próximo processo. Chamado de [saveResumeState], que por
@@ -785,6 +777,37 @@ class PlaybackService : MediaLibraryService() {
         // cada 5s de reprodução. No restore isso é suprimido (ver suppressQueueSave) para
         // não sobrescrever a posição salva com 0 logo antes de aplicá-la.
         saveQueueState()
+    }
+
+    /**
+     * F2b — junta itens ao **fim** da fila atual, sem trocar o que está tocando.
+     *
+     * A fila unificada só funciona se der para acrescentar um vídeo à fila da música sem
+     * perder a música: [start] substitui tudo e recomeça do zero, que é o que a tela de
+     * vídeo fazia. Aqui o que está tocando continua tocando e na mesma posição — o motor
+     * só recebe os itens novos no fim da timeline.
+     *
+     * Devolve quantos entraram, para o chamador avisar quando não entrou nada (item já
+     * presente) sem precisar comparar listas.
+     */
+    fun enqueue(songs: List<Song>): Int {
+        if (songs.isEmpty()) return 0
+        val p = player ?: return 0
+        val fresh = QueueKey.filterNew(queue, songs)
+        if (fresh.isEmpty()) return 0
+        queue = queue + fresh
+        runCatching {
+            p.addMediaItems(fresh.map { mediaItemFor(it) })
+        }.onFailure {
+            // O motor recusou os itens: desfaz a fila para ela não descrever o que o
+            // player não tem. Um índice além do fim faria `currentSong` estourar.
+            queue = queue.take(queue.size - fresh.size)
+            return 0
+        }
+        // Só grava com o que o player aceitou. `saveQueueState` também é o que faz a
+        // posição do item atual não se perder: ela vem do tick, e o tick roda de 5 em 5s.
+        saveQueueState()
+        return fresh.size
     }
 
     /**

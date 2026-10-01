@@ -72,7 +72,9 @@ object SelectionWiring {
         fragment: Fragment,
         root: View,
         adapter: VideoListAdapter?,
-        reload: () -> Unit
+        reload: () -> Unit,
+        /** Segunda ação da barra (F2b: adicionar à fila). Sem isso, a barra fica só com o apagar. */
+        onExtraAction: ((List<Video>) -> Unit)? = null
     ): SelectionBar? {
         val selection = ItemSelection()
         adapter?.selection = selection
@@ -84,6 +86,18 @@ object SelectionWiring {
             } else {
                 confirmDeleteVideos(ctx, videos, reload)
                 selection.clear()
+            }
+        }, extraAction = onExtraAction?.let { callback ->
+            {
+                val videos = adapter?.videos.orEmpty().filter { it.id in selection.snapshot() }
+                if (videos.isEmpty()) {
+                    selection.clear()
+                } else {
+                    callback(videos)
+                    // Limpa na hora, como na ação de apagar: a lista não mudou, então deixar
+                    // marcado só faz a barra continuar no lugar sem motivo.
+                    selection.clear()
+                }
             }
         })
     }

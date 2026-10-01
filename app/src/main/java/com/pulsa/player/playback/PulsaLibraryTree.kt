@@ -16,6 +16,7 @@ import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.model.Song
+import com.pulsa.player.model.toSong
 import java.io.File
 
 /**
@@ -265,17 +266,9 @@ internal class PulsaLibraryTree(private val context: Context) {
                 if (!Permissions.hasVideo(context)) return null
                 val id = mediaId.removePrefix("video:").toLongOrNull() ?: return null
                 val video = VideoLibrary.all(context).firstOrNull { it.id == id } ?: return null
-                Song(
-                    id = video.id,
-                    title = video.title,
-                    artist = "",
-                    // mesmo `album` que o `VideoPlayerActivity` usa ao enfileirar um vídeo
-                    album = str(R.string.tab_videos),
-                    albumId = 0L,
-                    durationMs = video.durationMs,
-                    path = Song.VIDEO_PREFIX + video.id,
-                    year = 0
-                )
+                // Mesmo `album` que o resto do app usa ao enfileirar um vídeo (F2b):
+                // a conversão mora em `Video.toSong` para não divergir entre si.
+                video.toSong(str(R.string.tab_videos))
             }
             mediaId.startsWith("radio:") -> {
                 val url = mediaId.removePrefix("radio:")

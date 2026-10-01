@@ -48,6 +48,22 @@
         android:textColor="@color/text_primary"
         android:textSize="13sp" />
 
+    <!--
+        Segunda ação opcional (F2b: adicionar à fila). Escondida por padrão: só a tela que
+        tem a ação passa os parâmetros, e as outras quatro seguem com o botão só de apagar.
+    -->
+    <ImageView
+        android:id="@+id/selection_extra"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/video_add_to_queue"
+        android:padding="8dp"
+        android:src="@drawable/ic_queue_music"
+        android:tint="@color/primary"
+        android:visibility="gone" />
+
     <ImageView
         android:id="@+id/selection_delete"
         android:layout_width="38dp"

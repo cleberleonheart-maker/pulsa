@@ -34,6 +34,7 @@ import com.pulsa.player.media.SubtitleConfig
 import com.pulsa.player.media.Subtitles
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
+import com.pulsa.player.model.toSong
 import com.pulsa.player.playback.Playback
 import kotlin.math.abs
 
@@ -56,6 +57,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         private const val EXTRA_STREAM_URL = "stream_url"
         private const val EXTRA_STREAM_TITLE = "stream_title"
         private const val EXTRA_STREAM_CAPTIONS = "stream_captions"
+        private const val EXTRA_ATTACH = "video_attach"
         private const val HIDE_DELAY = 3000L
 
         /**
@@ -105,6 +107,32 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             }
             context.startActivity(intent)
         }
+
+        /**
+         * F2b — mostra em tela cheia o vídeo **que já está tocando** na fila única.
+         *
+         * É o caminho do vídeo que entrou pela fila (adicionar à fila, Android Auto,
+         * controle do sistema) e chegou em "next" enquanto a música tocava: sem isto o
+         * áudio do vídeo saía pela mini player e a imagem nunca aparecia, porque imagem
+         * precisa de [androidx.media3.ui.PlayerView] e ela só existe nesta tela.
+         *
+         * A diferença para [start] é que **a fila não é tocada**: [start] monta a fila de
+         * vídeo e chama `Playback.start`, que substitui tudo. Aqui a tela só gruda no motor,
+         * por isso a guarda [onScreen] — sem ela, cada `onSongChanged` com vídeo abriria
+         * outra instância da tela em cima da anterior.
+         */
+        @Volatile
+        var onScreen = false
+
+        fun showPlaying(context: Context) {
+            if (onScreen) return
+            runCatching {
+                context.startActivity(
+                    Intent(context, VideoPlayerActivity::class.java)
+                        .putExtra(EXTRA_ATTACH, true)
+                )
+            }
+        }
     }
 
     private lateinit var playerView: androidx.media3.ui.PlayerView
@@ -145,6 +173,17 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
     /** Trilhas que o PeerTube declarou no detalhe do vídeo, se o stream veio de lá. */
     private var streamCaptions: List<PeerTube.Caption> = emptyList()
+
+    /**
+     * F2b — a tela só vai **assistir** ao que já está tocando na fila única.
+     *
+     * Nesse modo nada do que a tela faz pode mexer na fila: nem o [startVideos] no
+     * `Playback.start`, nem o `onDestroy` devolvendo a fila da música (aqui a fila é a mesma
+     * que estava tocando, e "restaurá-la" seria recarregar do zero a faixa que estava no
+     * minuto 34). Fechar a tela devolve para a mini player com o vídeo **ainda tocando**,
+     * que é o comportamento que o usuário espera de um player.
+     */
+    private var attached = false
 
     /**
      * Seletor de arquivo do sistema para a legenda.
@@ -265,6 +304,38 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             true
         }
 
+        // F2b: terceiro modo de entrada — a tela gruda no que a fila já está tocando. Vem
+        // primeiro porque os outros dois modos sempre trazem id ou URL; sem nenhum deles e
+        // com o extra presente, é um vídeo que chegou pelo "next" da fila única.
+        attached = intent.getBooleanExtra(EXTRA_ATTACH, false)
+        if (attached) {
+            val song = Playback.currentSong
+            if (song?.isVideo != true && song?.isStream != true) {
+                // Chegou aqui tarde demais (o vídeo já pulou para a música) ou o extra veio
+                // sem nada tocando. Sair em silêncio: a mini player está certa e uma tela de
+                // vídeo preta não ajuda ninguém.
+                finish()
+                return
+            }
+            onScreen = true
+            // Quem chama isto é o "next" da fila, então normalmente já está tocando. Se
+            // chegou pausado (a pessoa pausou e o vídeo virou o item atual de outro jeito),
+            // forçar o play aqui desmentiria o estado do motor na cara dela.
+            autoplay = Playback.isPlaying
+            // A "fila de vídeo" desta tela é a fila inteira do motor: os controles de
+            // next/prev precisam saber o tamanho real, e `videoSongs` é o que vários pontos
+            // usam para decidir se há vídeo tocando.
+            videoSongs = Playback.queue
+            index = Playback.index.coerceAtLeast(0)
+            if (song.isStream) {
+                streamUrl = song.streamUrl
+                streamTitle = song.title
+            }
+            videos = VideoLibrary.all(this).filter { videoSongs.any { s -> s.videoId == it.id } }
+            attachToPlaying()
+            return
+        }
+
         @Suppress("DEPRECATION")
         val ids = intent.getSerializableExtra(EXTRA_IDS) as? ArrayList<Long> ?: arrayListOf()
         val byId = VideoLibrary.all(this).associateBy { it.id }
@@ -301,18 +372,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
                 return
             }
             index = (intent.getIntExtra(EXTRA_INDEX, 0)).coerceIn(0, videos.lastIndex)
-            videoSongs = videos.map {
-                Song(
-                    id = it.id,
-                    title = it.title,
-                    artist = "",
-                    album = getString(R.string.tab_videos),
-                    albumId = 0L,
-                    durationMs = it.durationMs,
-                    path = Song.VIDEO_PREFIX + it.id,
-                    year = 0
-                )
-            }
+            videoSongs = videos.map { it.toSong(getString(R.string.tab_videos)) }
         }
 
         // Guarda o que estava tocando para devolver na saída — o motor é único, então lançar
@@ -330,6 +390,13 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
     private fun startVideos() {
         if (videoSongs.isEmpty()) return
+        // F2b: no modo anexo quem manda é a fila única do app — a tela só mostra. Chamar
+        // `Playback.start` aqui recomeçaria a fila de vídeo do zero e apagaria a música que
+        // está depois dela na linha do tempo.
+        if (attached) {
+            render()
+            return
+        }
         // O vídeo anda como fila normal do motor: repeat-all, sem shuffle nem repeat-one,
         // para "next" avançar em vez de repetir/embaralhar o próprio vídeo.
         Playback.setShuffle(false)
@@ -337,6 +404,22 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         Playback.setRepeatOne(false)
         Playback.start(videoSongs, index)
         render()
+    }
+
+    /**
+     * F2b — anexa a tela ao motor sem tocar em nada: [PlayerView] no player, listener na
+     * activity e desenho do estado atual.
+     *
+     * Separado do [startVideos] porque aqui não há fila para montar. O listener é o mesmo
+     * slot único do resto do app, então é esta tela que passa a desenhar — inclusive se o
+     * usuário fechar e outro vídeo entrar no "next" enquanto ela estiver aberta.
+     */
+    private fun attachToPlaying() {
+        Playback.listener = this
+        playerView.player = Playback.player
+        Playback.currentSong?.let { if (it.isVideo) applySubtitle(it) }
+        render()
+        showControls()
     }
 
     private fun currentVideoTitle(): String {
@@ -375,13 +458,18 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         // criação da tela, então quem já pulei de vídeo e voltasse pelo gesto cairia aqui
         // com o número antigo e o item do fim voltaria a "dar a volta" no lugar errado.
         val current = Playback.index
-        // Stream tem um item só: "next" no fim volta do começo em vez de não fazer nada, que
-        // é o que o gesto de arrastar espera de um item só.
-        if (delta > 0 && current >= videoSongs.lastIndex) {
-            Playback.seekTo(0)
-            Playback.play()
-            showControls()
-            return
+        // F2b: no modo anexo a fila é a fila única do app, e "dar a volta" aqui significaria
+        // saltar do fim da playlist para o começo — que é o repeat que o motor já faz. O
+        // next/prev sai direto para o motor, sem o atalho do item único.
+        if (!attached) {
+            // Stream tem um item só: "next" no fim volta a começo em vez de não fazer nada, que
+            // é o que o gesto de arrastar espera de um item só.
+            if (delta > 0 && current >= videoSongs.lastIndex) {
+                Playback.seekTo(0)
+                Playback.play()
+                showControls()
+                return
+            }
         }
         // O `delta` precisa chegar ao motor. Antes o "voltar" — botão e gesto de arrastar
         // para a esquerda — caía no `Playback.next()` abaixo, que só avança: voltar andava
@@ -391,7 +479,14 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     }
 
     override fun onSongChanged(song: Song?, index: Int) {
-        if (song?.isVideo != true && song?.isStream != true) return
+        if (song?.isVideo != true && song?.isStream != true) {
+            // F2b: no modo anexo a fila é misturada, então o item atual deixa de ser vídeo
+            // com frequência — o vídeo acabou e a música seguinte entrou. A tela só serve
+            // para vídeo: ficar aberta com a área preta enquanto a música toca é pior do
+            // que voltar para o app, que é para onde a pessoa vai de qualquer jeito.
+            if (attached) finish()
+            return
+        }
         render()
         // Cada video tem sua legenda: reavalia no START, senão a legenda do video
         // anterior ficaria desenhada no seguinte (e alguns nem tem legenda nenhuma).
@@ -419,7 +514,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         val ctx = applicationContext
         val mediaId = song.id
         ThreadPool.post {
-            val attached = runCatching {
+            val withTrack = runCatching {
                 val base = player.currentMediaItem ?: return@runCatching null
                 // Base sem legenda: a convenção primeiro, e a config por cima.
                 val withAuto = Subtitles.attach(ctx, base) ?: base
@@ -428,10 +523,10 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             ThreadPool.onUi {
                 if (isFinishing || isDestroyed) return@onUi
                 if (player.currentMediaItem?.localConfiguration?.uri != before) return@onUi
-                // `attached` pode ser o mesmo item (sem legenda nenhuma) — nesse caso não
+                // `withTrack` pode ser o mesmo item (sem legenda nenhuma) — nesse caso não
                 // troca nada, para não reiniciar a decodificação à toa.
-                if (attached == null || attached == player.currentMediaItem) return@onUi
-                player.replaceMediaItem(player.currentMediaItemIndex, attached)
+                if (withTrack == null || withTrack == player.currentMediaItem) return@onUi
+                player.replaceMediaItem(player.currentMediaItemIndex, withTrack)
                 updateSubtitleLabel()
             }
         }
@@ -829,7 +924,10 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             return
         }
         playerView.player = null
-        if (videoSongs.isNotEmpty()) {
+        // F2b: no modo anexo a tela é só um visor da fila, e a fila continua sozinha. Pausar
+        // aqui mataria a música que está tocando por baixo da fila misturada — e "saiu da
+        // tela do vídeo" é justamente o gesto de voltar para o app, não um pedido de pausa.
+        if (videoSongs.isNotEmpty() && !attached) {
             autoplay = Playback.isPlaying
             Playback.pause()
         }
@@ -856,6 +954,14 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         playerView.player = null
         playbackBind?.let { Playback.release(it) }
         playbackBind = null
+        // F2b: o modo anexo não mexe em shuffle/repeat nem devolve fila — quem toca é a fila
+        // única do app e o repeat dela é o do usuário. Mexer aqui trocaria o repeat de quem
+        // estava ouvindo música só por ter aberto a tela do vídeo.
+        if (attached) {
+            onScreen = false
+            super.onDestroy()
+            return
+        }
         Playback.setShuffle(prevShuffle)
         Playback.setRepeatAll(prevRepeatAll)
         Playback.setRepeatOne(prevRepeatOne)

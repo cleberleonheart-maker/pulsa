@@ -36,6 +36,7 @@ interface PlayerLink {
     fun reapplyDanceParams()
     fun refreshCurrentMeta()
     fun start(songs: List<Song>, startIndex: Int)
+    fun enqueue(songs: List<Song>): Int
     fun play()
     fun toggle()
     fun pause()
@@ -86,6 +87,7 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
     override fun reapplyDanceParams() = service.applyDanceParamsForRefresh()
     override fun refreshCurrentMeta() = service.refreshCurrentMeta()
     override fun start(songs: List<Song>, startIndex: Int) = service.start(songs, startIndex)
+    override fun enqueue(songs: List<Song>): Int = service.enqueue(songs)
     override fun play() = service.play()
     override fun toggle() = service.toggle()
     override fun pause() = service.pause()

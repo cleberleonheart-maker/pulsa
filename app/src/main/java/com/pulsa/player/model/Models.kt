@@ -64,6 +64,31 @@ data class Video(
     val sizeBytes: Long
 )
 
+/**
+ * F2b — o [Video] como item de fila.
+ *
+ * Este `Song` é o que o motor toca e o que a fila persiste, então a construção precisa ser
+ * **uma** só: ela aparecia escrita em três lugares ([PlaybackService.videoSong],
+ * [PulsaLibraryTree] e [VideoPlayerActivity]) e um deles mudar sozinho quebrava a
+ * correspondência — o mesmo vídeo restoring com `path` diferente do original não voltava
+ * (a chave do [com.pulsa.player.playback.QueueKey] é o par tipo+id, mas o `path` é o que o
+ * motor abre).
+ *
+ * `albumLabel` vem de fora porque o texto é recurso (`R.string.tab_videos`) e o model não
+ * tem `Context`. `artist` fica vazio de propósito: vídeo do MediaStore não tem artista, e
+ * inventar um faria a notificação e o EQ tratarem vídeo como música.
+ */
+fun Video.toSong(albumLabel: String): Song = Song(
+    id = id,
+    title = title,
+    artist = "",
+    album = albumLabel,
+    albumId = 0L,
+    durationMs = durationMs,
+    path = Song.VIDEO_PREFIX + id,
+    year = 0
+)
+
 data class SongMeta(
     val songId: Long,
     val title: String,

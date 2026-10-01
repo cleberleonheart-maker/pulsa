@@ -74,6 +74,29 @@ object QueueKey {
     fun sameType(a: String?, b: String?): Boolean = a != null && a == b
 
     /**
+     * F2b — o que realmente entrou na fila ao "adicionar à fila".
+     *
+     * Um item só entra se ainda não estiver lá, e a comparação é por chave: o vídeo de id
+     * 42 e a música de id 42 são itens diferentes, então os dois podem estar na fila. Por
+     * `id` o vídeo seria descartado por causa de uma música — e o inverso também.
+     *
+     * Rádio e stream não têm chave, então passam sempre: são um item só do seu endereço, e
+     * ninguém espera que a mesma rádio entre duas vezes na fila.
+     */
+    fun filterNew(existing: List<Song>, candidates: List<Song>): List<Song> {
+        val seen = existing.mapNotNull { encode(it) }.toMutableSet()
+        val out = ArrayList<Song>(candidates.size)
+        for (song in candidates) {
+            val key = encode(song)
+            if (key != null) {
+                if (!seen.add(key)) continue
+            }
+            out.add(song)
+        }
+        return out
+    }
+
+    /**
      * Reancora o índice salvo depois do restore.
      *
      * A fila salva pode ter perdido itens: foto apagada do MediaStore, sdcard removido. O

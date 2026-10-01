@@ -205,6 +205,14 @@ object Playback {
         link?.start(songs, startIndex)
     }
 
+    /**
+     * F2b — junta ao fim da fila sem trocar o que está tocando.
+     *
+     * Devolve `0` quando nada entrou (fila vazia do motor ainda, ou todos os itens já
+     * estavam na fila) para o chamador poder avisar.
+     */
+    fun enqueue(songs: List<Song>): Int = link?.enqueue(songs) ?: 0
+
     /** Retoma a reprodução (E5: a tela de vídeo volta do segundo plano e o motor estava pausado). */
     fun play() {
         link?.play()

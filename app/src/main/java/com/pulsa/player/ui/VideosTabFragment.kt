@@ -27,7 +27,9 @@ import com.pulsa.player.core.Settings
 import com.pulsa.player.data.PeerTube
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.media.StreamKind
+import com.pulsa.player.playback.Playback
 import com.pulsa.player.model.Video
+import com.pulsa.player.model.toSong
 import com.pulsa.player.ui.adapter.PeerTubeAdapter
 import com.pulsa.player.ui.adapter.VideoListAdapter
 import com.pulsa.player.core.Permissions
@@ -59,7 +61,9 @@ class VideosTabFragment : Fragment() {
             onMenu = { video, _ -> showMenu(video) }
         )
         adapter = a
-        selectionBar = SelectionWiring.setUpSelection(this, view, a) { load() }
+        selectionBar = SelectionWiring.setUpSelection(this, view, a, { load() }) { videos ->
+            addToQueue(videos)
+        }
         list?.apply {
             layoutManager = LinearLayoutManager(this@VideosTabFragment.context)
             adapter = a
@@ -358,6 +362,7 @@ class VideosTabFragment : Fragment() {
     private fun showMenu(video: Video) {
         val items = arrayOf(
             getString(R.string.video_play),
+            getString(R.string.video_add_to_queue),
             getString(R.string.share_music)
         )
         MaterialAlertDialogBuilder(requireContext())
@@ -365,11 +370,37 @@ class VideosTabFragment : Fragment() {
             .setItems(items) { dialog, which ->
                 when (which) {
                     0 -> openPlayer(video, -1)
-                    1 -> share(video)
+                    1 -> addToQueue(listOf(video))
+                    2 -> share(video)
                 }
                 dialog.dismiss()
             }
             .show()
+    }
+
+    /**
+     * F2b — junta vídeo(s) ao fim da fila, sem trocar o que está tocando.
+     *
+     * "Adicionar à fila" é o caminho que **não** passa pela tela de vídeo: aquele continua
+     * substituindo a fila da música e depois devolvendo-a na saída, porque precisa da tela
+     * cheia para tocar. Aqui o vídeo entra na fila única e a música segue tocando — é o que
+     * faz a fila ser de fato misturada.
+     *
+     * O aviso é o do número que o motor aceitou, não o do que foi pedido: pedir de novo um
+     * vídeo que já está na fila devolve zero e [Playback.enqueue] não duplica. Confundir os
+     * dois fazia o app dizer "1 vídeo na fila" sem ter feito nada.
+     */
+    private fun addToQueue(videos: List<Video>) {
+        val ctx = context ?: return
+        if (videos.isEmpty()) return
+        val songs = videos.map { it.toSong(getString(R.string.tab_videos)) }
+        val added = Playback.enqueue(songs)
+        val msg = if (added > 0) {
+            getString(R.string.video_added_to_queue, added)
+        } else {
+            getString(R.string.video_already_in_queue)
+        }
+        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
     }
 
     private fun share(video: Video) {
