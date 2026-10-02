@@ -3,6 +3,7 @@ package com.pulsa.player.ui
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -565,7 +566,17 @@ class NowPlayingFragment : Fragment() {
         val app = context?.applicationContext ?: return
         Toast.makeText(requireContext(), getString(R.string.lyrics_searching), Toast.LENGTH_SHORT).show()
         ThreadPool.postNetwork {
+            val inicio = SystemClock.elapsedRealtime()
             val result = Lyrics.resolve(song, app)
+            // Sem isto, "não achou" e "demorou e desistiu" eram indistinguíveis: a tela
+            // mostrava "Buscando letras..." e nada mais, e o log não dizia qual dos dois
+            // foi. Agora o motivo e o tempo ficam registrados para o próximo teste.
+            CrashLogger.writeLog(
+                app,
+                "MARK: letra id=${song.id} '${song.title}' fonte=${result?.source} " +
+                    "linhas=${result?.lines?.size ?: 0} em ${SystemClock.elapsedRealtime() - inicio}ms " +
+                    "path=${song.path}"
+            )
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
                 if (result == null || result.lines.isEmpty()) {
