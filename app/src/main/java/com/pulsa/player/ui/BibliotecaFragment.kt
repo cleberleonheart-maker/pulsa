@@ -9,7 +9,7 @@ import com.pulsa.player.R
 
 /**
  * Aba "Biblioteca": hub com chips (Álbuns, Artistas, Favoritas, Playlists,
- * Vídeos) que trocam o fragmento interno — esqueleto novo, seções em vez de
+ * Vídeos, Baixados) que trocam o fragmento interno — esqueleto novo, seções em vez de
  * uma tab deslizante de texto.
  */
 class BibliotecaFragment : Fragment() {
@@ -20,6 +20,7 @@ class BibliotecaFragment : Fragment() {
         const val SECTION_FAVORITES = "favorites"
         const val SECTION_PLAYLISTS = "playlists"
         const val SECTION_VIDEOS = "videos"
+        const val SECTION_DOWNLOADS = "downloads"
         var pending = SECTION_ALBUMS
     }
 
@@ -28,7 +29,8 @@ class BibliotecaFragment : Fragment() {
         SECTION_ARTISTS to R.id.bibl_chip_artists,
         SECTION_FAVORITES to R.id.bibl_chip_favorites,
         SECTION_PLAYLISTS to R.id.bibl_chip_playlists,
-        SECTION_VIDEOS to R.id.bibl_chip_videos
+        SECTION_VIDEOS to R.id.bibl_chip_videos,
+        SECTION_DOWNLOADS to R.id.bibl_chip_downloads
     )
 
     private var strip: ViewGroup? = null
@@ -69,6 +71,7 @@ class BibliotecaFragment : Fragment() {
             SECTION_FAVORITES -> FavoritesTabFragment()
             SECTION_PLAYLISTS -> PlaylistsTabFragment()
             SECTION_VIDEOS -> VideosTabFragment()
+            SECTION_DOWNLOADS -> DownloadsTabFragment()
             else -> AlbumsTabFragment()
         }
         childFragmentManager.beginTransaction()

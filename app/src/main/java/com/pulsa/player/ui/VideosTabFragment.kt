@@ -26,6 +26,8 @@ import com.pulsa.player.VideoPlayerActivity
 import com.pulsa.player.core.Settings
 import com.pulsa.player.data.PeerTube
 import com.pulsa.player.data.VideoLibrary
+import com.pulsa.player.media.DownloadService
+import com.pulsa.player.media.DownloadStore
 import com.pulsa.player.media.StreamKind
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.model.Video
@@ -246,9 +248,71 @@ class VideosTabFragment : Fragment() {
         }
     }
 
+    /**
+     * Coloca o vídeo na fila de download.
+     *
+     * Igual ao [playPeerTube], o item da busca não tem stream: precisa do endpoint do vídeo
+     * para descobrir o MP4. Mas aqui o destino não é o [streamUrl] e sim o
+     * `downloadUrl`, porque baixar o HLS gravaria só o manifesto (ver [PeerTube.Item.downloadUrl]).
+     */
+    private fun downloadPeerTube(ctx: Context, item: PeerTube.Item, dialog: AlertDialog?) {
+        if (DownloadStore.byId(item.uuid)?.isDone() == true) {
+            Toast.makeText(ctx, R.string.download_already, Toast.LENGTH_SHORT).show()
+            dialog?.dismiss()
+            return
+        }
+        val ready = item.downloadUrl
+        if (ready != null) {
+            dialog?.dismiss()
+            startDownload(ctx, item, ready)
+            return
+        }
+        Toast.makeText(ctx, R.string.peertube_resolving, Toast.LENGTH_SHORT).show()
+        PeerTube.resolve(item) { resolved ->
+            if (!isAdded) return@resolve
+            val url = resolved?.downloadUrl
+            if (url == null) {
+                Toast.makeText(ctx, R.string.download_not_available, Toast.LENGTH_LONG).show()
+                return@resolve
+            }
+            dialog?.dismiss()
+            startDownload(ctx, resolved, url)
+        }
+    }
+
+    private fun startDownload(ctx: Context, item: PeerTube.Item, url: String) {
+        DownloadStore.ensureLoaded(ctx)
+        val ext = runCatching {
+            val path = Uri.parse(url).path.orEmpty()
+            val e = path.substringAfterLast('.', "").lowercase()
+            if (e.length in 2..4 && e.all { it.isLetterOrDigit() }) e else "mp4"
+        }.getOrDefault("mp4")
+        // O nome do arquivo é o UUID e não o título: título tem `/`, acentos e emoji, e
+        // vira `%20`/`..` no caminho. O título continua salvo no JSON para a lista.
+        val fileName = "${item.uuid}.$ext"
+        DownloadService.enqueue(
+            context = ctx,
+            id = item.uuid,
+            title = item.title,
+            url = url,
+            pageUrl = item.pageUrl,
+            fileName = fileName
+        )
+        val jaNaFila = DownloadStore.byId(item.uuid)?.isActive() == true
+        Toast.makeText(
+            ctx,
+            if (jaNaFila) R.string.download_start_queued else R.string.download_start_running,
+            Toast.LENGTH_SHORT
+        ).show()
+        BibliotecaFragment.pending = BibliotecaFragment.SECTION_DOWNLOADS
+    }
+
     private fun showPeerTubeMenu(ctx: Context, item: PeerTube.Item, parent: AlertDialog?) {
+        // "Baixar" em segundo: tocar é o que se faz 9 de 10 vezes com um resultado, e
+        // apagar é a ação que o usuário procura quando quer o vídeo no aparelho.
         val labels = arrayOf(
             getString(R.string.video_play),
+            getString(R.string.peertube_download),
             getString(R.string.peertube_open_browser),
             getString(R.string.peertube_copy_link)
         )
@@ -257,8 +321,9 @@ class VideosTabFragment : Fragment() {
             .setItems(labels) { d, which ->
                 when (which) {
                     0 -> playPeerTube(ctx, item, parent)
-                    1 -> openExternal(ctx, item.pageUrl, "text/html")
-                    2 -> copyToClipboard(ctx, item.pageUrl)
+                    1 -> downloadPeerTube(ctx, item, parent)
+                    2 -> openExternal(ctx, item.pageUrl, "text/html")
+                    3 -> copyToClipboard(ctx, item.pageUrl)
                 }
                 d.dismiss()
             }

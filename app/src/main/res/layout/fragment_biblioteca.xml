@@ -43,6 +43,11 @@
                 android:id="@+id/bibl_chip_videos"
                 style="@style/Widget.Pulsa.TabItem"
                 android:text="@string/tab_videos" />
+
+            <TextView
+                android:id="@+id/bibl_chip_downloads"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/downloads_tab" />
         </LinearLayout>
     </HorizontalScrollView>
 

@@ -65,6 +65,16 @@ object PeerTube {
         val thumbnail: String?,
         val streamUrl: String? = null,
         val isHls: Boolean = false,
+        /**
+         * MP4 progressivo, separado do [streamUrl] de propósito.
+         *
+         * Tocar e baixar querem coisas diferentes. Tocar prefere HLS porque sobe e desce de
+         * qualidade sozinho; baixar precisa de **um arquivo só**, e um `master.m3u8` são
+         * links para dezenas de segmentos. Baixar o `streamUrl` de um vídeo com HLS gravaria
+         * um `.m3u8` de poucos kilobytes, marcareia "baixado" e a reprodução offline abriria
+         * uma tela preta — o pior resultado possível, porque parece download concluído.
+         */
+        val downloadUrl: String? = null,
         /** Instância onde a busca foi feita — base do `thumbnailPath` relativo. */
         val instanceRoot: String = DEFAULT_INSTANCE,
         /** Legendas da API. Vazio na maioria dos vídeos: só quem enviou legenda tem. */
@@ -230,6 +240,9 @@ object PeerTube {
         return fallback.copy(
             streamUrl = hls ?: fileUrl,
             isHls = hls != null,
+            // Só o MP4 serve para baixar; `fileUrl` vazio significa "sem progressivo" e
+            // vira `null` aqui, em vez de o download cair num HLS por engano.
+            downloadUrl = fileUrl.ifBlank { null },
             durationSec = obj.optInt("duration", fallback.durationSec),
             thumbnail = thumbnailOf(obj, fallback.instanceRoot) ?: fallback.thumbnail,
             captions = captionsOf(obj, fallback.instanceRoot)
