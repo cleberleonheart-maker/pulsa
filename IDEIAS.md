@@ -278,3 +278,16 @@
   nenhuma resposta na tela. Agora a varredura tem orçamento de 2,5 s, a pasta da música vai
   até 4 níveis e as raízes públicas só 1 (o storage externo inteiro saiu da busca), a
   extensão é filtrada antes do `isFile`, e o log registra fonte, linhas e tempo.
+
+### Validado no aparelho (APK 137)
+
+- Baixar pelo menu da busca do PeerTube → a fila roda e o item chega em **Baixado**.
+- Tocar na linha abre o vídeo **com o Wi-Fi desligado**: o app entrega só o `file://`,
+  sem fonte remota para o player cair, então é offline de verdade.
+
+### Ainda sem teste
+
+- **Continuar** (o `Range` com o `.part`): cancelar no meio e retomar é o caminho com mais
+  chance de gerar arquivo corrompido sem erro visível.
+- **Apagar** e **Cancelar**, e a notificação de foreground na troca de faixa.
+- Vídeo que só tem HLS: deve avisar "não tem MP4 para baixar" em vez de baixar algo inútil.
