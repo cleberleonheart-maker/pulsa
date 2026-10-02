@@ -76,6 +76,9 @@ object Playback {
     val currentSong: Song? get() = link?.currentSong
     val isPlaying: Boolean get() = link?.isPlaying ?: false
 
+    /** F2b — `false` quando o motor está pausado por decisão de quem está usando. */
+    val pausedDeliberately: Boolean get() = link?.pausedDeliberately ?: false
+
     /**
      * F2b — a chave do que está tocando, para comparar sem cair na colisão de id.
      *

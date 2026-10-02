@@ -579,6 +579,20 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     /** Abre a tela de reprodução própria (usado pela home e pelo mini player). */
     fun openNowPlaying() {
+        // F2b: com um vídeo no item atual, a NowPlaying é a tela ERRADA. Ela mostra a arte
+        // grande e os controles de música, mas não tem superfície de vídeo — o áudio do
+        // vídeo saía e a imagem nunca aparecia, com a miniatura do vídeo no lugar da tela.
+        //
+        // Não dá para consertar só redirecionando dentro do `onSongChanged` da
+        // NowPlayingActivity (que era o caminho do vídeo que *virou* o item atual): aqui o
+        // vídeo já é o item atual quando a tela abre, então nenhuma troca de faixa dispara
+        // nada e o redirecionamento nunca acontecia. A decisão é no clique, com o motor já
+        // no estado em que vai ficar.
+        val song = Playback.currentSong
+        if (song != null && (song.isVideo || song.isStream)) {
+            VideoPlayerActivity.showPlaying(this)
+            return
+        }
         startActivity(Intent(this, NowPlayingActivity::class.java))
     }
 

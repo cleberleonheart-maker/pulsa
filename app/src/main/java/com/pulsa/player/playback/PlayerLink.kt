@@ -19,6 +19,9 @@ import com.pulsa.player.model.Song
 interface PlayerLink {
     val currentSong: Song?
     val isPlaying: Boolean
+
+    /** F2b — `false` quando o motor está pausado por decisão de quem está usando. */
+    val pausedDeliberately: Boolean
     val index: Int
     val shuffle: Boolean
     val repeatAll: Boolean
@@ -73,6 +76,7 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
 
     override val currentSong: Song? get() = service.currentSong
     override val isPlaying: Boolean get() = service.isPlaying
+    override val pausedDeliberately: Boolean get() = service.pausedDeliberately
     override val index: Int get() = service.index
     override val shuffle: Boolean get() = service.shuffle
     override val repeatAll: Boolean get() = service.repeatAll

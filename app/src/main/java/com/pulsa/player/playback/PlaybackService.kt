@@ -343,6 +343,19 @@ class PlaybackService : MediaLibraryService() {
     val isPlaying: Boolean get() = player?.isPlaying == true
 
     /**
+     * F2b — a pausa foi pedida por alguém, ou é só o motor entre uma faixa e outra?
+     *
+     * `isPlaying` vale `false` por dois motivos bem diferentes: a pessoa parou (e quer
+     * continuar parado) ou o Media3 está no meio de uma troca de item, onde ele ainda não
+     * voltou a tocar. Quem precisa distinguir é a tela de vídeo, que decide se toca ao
+     * abrir: usar o `isPlaying` sozinho deixava o vídeo **pausado** quando ele tinha acabado
+     * de virar o item atual por "next", que é justamente como a fila misturada funciona.
+     *
+     * A flag já existia para o resume do rádio; aqui é o mesmo sinal, com outro consumidor.
+     */
+    val pausedDeliberately: Boolean get() = pauseWasDeliberate
+
+    /**
      * E4 — "tem som pra tocar": playWhenReady + READY/BUFFERING. O `Player.isPlaying` cai para
      * `false` durante `isLoading`/rebuffer, e stream de rádio re-buffereia o tempo todo (música
      * local quase nunca). O foreground NÃO pode ler esse flicker no background: com ele o

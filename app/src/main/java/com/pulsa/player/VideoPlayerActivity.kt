@@ -407,7 +407,13 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             // Quem chama isto é o "next" da fila, então normalmente já está tocando. Se
             // chegou pausado (a pessoa pausou e o vídeo virou o item atual de outro jeito),
             // forçar o play aqui desmentiria o estado do motor na cara dela.
-            autoplay = Playback.isPlaying
+            //
+            // F2b: `isPlaying` sozinho não separava "a pessoa parou" de "o Media3 ainda
+            // não voltou a tocar depois de trocar de faixa". O vídeo que acabou de virar o
+            // item atual cai na segunda — e a tela abria mostrando o vídeo **pausado**, que
+            // é o jeito normal de um vídeo aparecer na fila misturada. `pausedDeliberately`
+            // distingue as duas: só a pausa de verdade impede o play.
+            autoplay = Playback.isPlaying || !Playback.pausedDeliberately
             // A "fila de vídeo" desta tela é a fila inteira do motor: os controles de
             // next/prev precisam saber o tamanho real, e `videoSongs` é o que vários pontos
             // usam para decidir se há vídeo tocando.
