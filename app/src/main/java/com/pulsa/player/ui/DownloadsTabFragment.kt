@@ -94,7 +94,10 @@ class DownloadsTabFragment : Fragment() {
     private fun play(item: DownloadStore.Item) {
         val ctx = context ?: return
         if (!item.isDone()) {
-            toast(R.string.downloads_running)
+            // Tocar numa linha que ainda está baixando não pode abrir o player: o arquivo
+            // não existe ainda. Um aviso e nada mais deixava a tela sem resposta, e o que o
+            // usuário quer nesse momento é cancelar ou continuar — então abre o menu.
+            menu(item)
             return
         }
         val file = DownloadStore.fileFor(ctx, item)

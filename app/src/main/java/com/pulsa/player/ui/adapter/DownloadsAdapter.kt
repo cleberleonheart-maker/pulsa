@@ -60,9 +60,31 @@ class DownloadsAdapter(
     override fun onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) {
         if (payloads.contains(PAYLOAD_PROGRESS)) {
             bindProgress(holder, items[position])
+            // O clique é religado aqui também, e não só o texto. Capturar o `item` no
+            // `bind` foi o que produziu "a linha diz Baixado e o toque diz Baixando":
+            // ao terminar, o `bytes` também mudava, então esta via rápida era usada, o
+            // texto passava para "Baixado" e o clique continuava segurando a cópia antiga,
+            // com status RUNNING — e o player recusava abrir o arquivo que já estava lá.
+            hookClicks(holder)
             return
         }
         super.onBindViewHolder(holder, position, payloads)
+    }
+
+    /** Item **atual** da posição, ou `null` se a lista mexeu entre o desenho e o toque. */
+    fun itemAt(position: Int): DownloadStore.Item? = items.getOrNull(position)
+
+    private fun hookClicks(holder: VH) {
+        holder.itemView.setOnClickListener {
+            val pos = holder.bindingAdapterPosition
+            if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
+            itemAt(pos)?.let(onClick)
+        }
+        holder.menu.setOnClickListener {
+            val pos = holder.bindingAdapterPosition
+            if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
+            itemAt(pos)?.let(onMenu)
+        }
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
@@ -80,8 +102,7 @@ class DownloadsAdapter(
 
         // Só um arquivo pronto toca. Tentar abrir uma fila ou um falhado daria tela preta.
         holder.play.visibility = if (item.isDone()) View.VISIBLE else View.INVISIBLE
-        holder.itemView.setOnClickListener { onClick(item) }
-        holder.menu.setOnClickListener { onMenu(item) }
+        hookClicks(holder)
         holder.itemView.alpha = if (item.isDone()) 1f else 0.85f
     }
 
