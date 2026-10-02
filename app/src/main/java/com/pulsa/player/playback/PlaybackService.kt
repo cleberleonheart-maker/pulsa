@@ -356,17 +356,26 @@ class PlaybackService : MediaLibraryService() {
     val pausedDeliberately: Boolean get() = pauseWasDeliberate
 
     /**
-     * E4 — "tem som pra tocar": playWhenReady + READY/BUFFERING. O `Player.isPlaying` cai para
-     * `false` durante `isLoading`/rebuffer, e stream de rádio re-buffereia o tempo todo (música
-     * local quase nunca). O foreground NÃO pode ler esse flicker no background: com ele o
-     * `onUpdateNotification` cai no super, o manager do Media3 decide que "acabou" e faz
-     * `stopForeground(true)`/`stopSelf` — era o rádio morrendo junto com o app.
+     * E4 — o foreground NÃO pode ler o `playbackState`.
+     *
+     * Esta condição já passou por duas versões. A primeira era `Player.isPlaying`, que cai
+     * para `false` durante rebuffer — e stream de rádio re-bufera o tempo todo. A segunda,
+     * a que está aqui, aceitava só `READY` e `BUFFERING`, o que consertou o rebuffer mas
+     * criou o "a música continua e mãos livres aparecem, só a notificação some": **entre uma
+     * faixa e outra** o motor passa por `STATE_ENDED` e `STATE_IDLE`, nenhum dos dois está
+     * na lista, e o `onUpdateNotification` caía no `super` — que deixa o Media3 decidir que
+     * "acabou" e chamar `stopForeground(true)`. Com vídeo e música dividindo a fila (F2b)
+     * isso piorou, porque trocar de vídeo para música passa por estados que só o vídeo
+     * produz.
+     *
+     * O que segura o foreground é a **intenção** de quem está usando, não o estado do
+     * motor: `playWhenReady` continua `true` durante toda a transição. E o que faz a
+     * notificação cair é o `pause()`, não o fim do estado: fila acabando é
+     * `onTrackEnded` → `pause()`, e erro repetido é `onTrackError` → `pause()`, os dois
+     * derrubando `playWhenReady`. Sem fila não há o que segurar.
      */
-    val playingLike: Boolean
-        get() = player?.let { p ->
-            p.playWhenReady &&
-                (p.playbackState == Player.STATE_READY || p.playbackState == Player.STATE_BUFFERING)
-        } ?: false
+    val holdingForeground: Boolean
+        get() = player?.playWhenReady == true && queue.isNotEmpty()
     val audioSessionId: Int get() = player?.audioSessionId ?: 0
 
     /**
@@ -406,20 +415,24 @@ class PlaybackService : MediaLibraryService() {
      * deixamos o `MediaSessionService` decidir por conta própria: a decisão dele depende do
      * controller interno (playWhenReady + STATE_READY) e, com o app em background, ele oscila
      * e chama `stopForeground(true)`, o que remove a nossa notificação da bandeja (foi exatamente
-     * o sintoma: "a música continua e mãos livres aparecem, só a notificação some"). Pausado,
+     * o sintoma: "a música continua e mãos livres aparecem, só a notificação som"). Pausado,
      * o `super` cuida do resto.
+     *
+     * O critério é [holdingForeground], e não o estado do motor: deixar o `super` decidir
+     * nos estados de transição (o que ele não distingue de "acabou") era o que sumia com a
+     * notificação entre uma faixa e outra.
      */
     override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
         val song = currentSong
         if (startInForegroundRequired) {
-            if (playingLike && song != null) {
+            if (holdingForeground && song != null) {
                 ensureForeground(song)
             } else {
                 super.onUpdateNotification(session, true)
             }
             return
         }
-        if (playingLike && song != null) {
+        if (holdingForeground && song != null) {
             ensureForeground(song)
         } else {
             super.onUpdateNotification(session, false)
