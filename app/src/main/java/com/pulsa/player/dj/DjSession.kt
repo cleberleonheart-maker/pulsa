@@ -217,7 +217,10 @@ class DjSession(
                 }
                 suppressNextLearnSkip = false
                 if (newId >= 0L) {
-                    DjLearn.recordPlay(app, newId)
+                    // O `play_log` é gravado pelo motor ([PlaybackService.notePlay]) para
+                    // toda troca de faixa, e não só quando a cabine está aberta. Registrar
+                    // aqui também contaria o mesmo toque duas vezes na cabine, e as
+                    // tendências apareceriam com o dobro das reproduções.
                     DjSessionMemory.notePlayed(newId)
                 }
                 learnId = newId

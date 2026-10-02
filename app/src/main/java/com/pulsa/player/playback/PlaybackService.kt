@@ -62,6 +62,7 @@ import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.RadioStations
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.dj.DjLearn
 import java.io.File
 import kotlin.random.Random
 
@@ -945,6 +946,9 @@ class PlaybackService : MediaLibraryService() {
         index = -1
         positionMs = 0L
         consecutiveErrors = 0
+        // Sem isto, parar e tocar a mesma música logo em seguida não contava nada: o
+        // guarda de `notePlay` ainda lembrava do `id` anterior.
+        learnedId = -1L
         Settings.clearRadioResume(this)
         // Parada deliberada: não faz sentido a fila salva reaparecer no próximo boot.
         Settings.clearQueueState(this)
@@ -1061,6 +1065,7 @@ class PlaybackService : MediaLibraryService() {
             applyDanceParams()
             Playback.notifySpeedChanged(effectiveSpeed())
             if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
+            notePlay(song)
             Playback.notifySong(song, index)
             loadLargeIcon(song)
             announceInBackground(song)
@@ -1149,6 +1154,35 @@ class PlaybackService : MediaLibraryService() {
      * `if (at == index) return` é o que impede o laço: `start()`/`prepareCurrent()` já
      * publicam a faixa nova antes de o evento chegar, e nesse caso os dois já são iguais.
      */
+    /**
+     * F2 — registra o toque no log de aprendizado.
+     *
+     * Isto morava dentro do `if (djActive)` da cabine do DJ, e por isso as "Tendências
+     * Locais" só-enchiam para quem usava a cabine: quem ouve música direto — tocando da
+     * lista, pela mini player, pelo botão de próximo — nunca chegava ao `play_log`, e a
+     * tela ficava vazia para sempre com o "toque mais músicas" mesmo depois de horas de
+     * música. O registro é do motor, não da tela que deu o comando.
+     *
+     * Só entra áudio de biblioteca. Vídeo, stream e rádio dividem a fila (F2b) e não são a
+     * música da pessoa; pior, o `id` deles pode bater com o de um áudio — o MediaStore
+     * numera as coleções por conta própria — e a tendência passaria a contar um toque na
+     * música errada.
+     */
+    private fun notePlay(song: Song?) {
+        val s = song ?: return
+        if (s.isVideo || s.isStream || s.isRadio) return
+        if (s.path.isBlank()) return
+        val id = s.id
+        if (id < 0L || id == learnedId) return
+        learnedId = id
+        val app = applicationContext
+        // Gravação de banco fora da main: `prepareCurrent` roda no meio da troca de faixa.
+        ThreadPool.post { DjLearn.recordPlay(app, id) }
+    }
+
+    /** Último `id` já registrado no aprendizado; evita contar o mesmo toque duas vezes. */
+    private var learnedId = -1L
+
     private fun adoptPlayerIndex() {
         val p = player ?: return
         if (queue.isEmpty()) return
@@ -1166,6 +1200,7 @@ class PlaybackService : MediaLibraryService() {
         publishMetadata(song)
         refreshNotification()
         if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
+        notePlay(song)
         loadLargeIcon(song)
         announceInBackground(song)
         Playback.notifySong(song, at)
