@@ -44,6 +44,9 @@ interface PlayerLink {
     fun next()
     fun prev()
     fun seekTo(ms: Long)
+
+    /** F2: velocidade escolhida pelo usuário para vídeo (o serviço soma o modo dance). */
+    fun setVideoSpeed(value: Float)
     fun setShuffle(value: Boolean)
     fun setRepeatAll(value: Boolean)
     fun setRepeatOne(value: Boolean)
@@ -85,6 +88,7 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
     override fun currentArt(): Bitmap? = service.currentArt()
     override fun refreshFx() = service.refreshFx()
     override fun reapplyDanceParams() = service.applyDanceParamsForRefresh()
+    override fun setVideoSpeed(value: Float) = service.setVideoSpeed(value)
     override fun refreshCurrentMeta() = service.refreshCurrentMeta()
     override fun start(songs: List<Song>, startIndex: Int) = service.start(songs, startIndex)
     override fun enqueue(songs: List<Song>): Int = service.enqueue(songs)

@@ -380,6 +380,9 @@
     <string name="video_player_error">No se pudo reproducir el vídeo</string>
     <string name="video_pip">Imagen sobre imagen</string>
     <string name="video_pip_unsupported">Este dispositivo no admite imagen sobre imagen</string>
+    <string name="video_rewind_15">Retroceder 15 segundos</string>
+    <string name="video_forward_15">Avanzar 15 segundos</string>
+    <string name="video_speed">Velocidad de reproducción</string>
     <string name="close">Cerrar</string>
     <string name="more">Más opciones</string>
     <string name="profile_title">Perfil</string>

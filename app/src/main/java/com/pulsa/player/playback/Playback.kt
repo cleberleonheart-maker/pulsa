@@ -9,7 +9,10 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.media3.common.Player
+import com.pulsa.player.core.Settings
 import com.pulsa.player.model.Song
+import com.pulsa.player.playback.PlaybackSpeeds.VALUES
+import kotlin.math.abs
 
 /**
  * A fachada do playback. É o **único** lugar do app que sabe que existe um motor de música.
@@ -31,9 +34,25 @@ object Playback {
 
         /** Falha ao tocar a faixa atual (E4: a tela de rádio usa para mostrar erro/retry). */
         fun onTrackError(song: Song?) {}
+
+        /** F2: a velocidade efetiva mudou (usuário mexeu, ou a faixa mudou de tipo). */
+        fun onSpeedChanged(speed: Float) {}
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    /**
+     * O contexto da aplicação, para o [Settings] de velocidade.
+     *
+     * Fica guardado aqui porque a tela de vídeo só tem a `Activity`, e `Settings` é
+     * process-wide. `internal` para não virar mais API pública da fachada.
+     */
+    internal var appContext: Context? = null
+
+    private fun nextSpeed(atual: Float): Float {
+        val i = VALUES.indexOfFirst { abs(it - atual) < 0.01f }
+        return VALUES[(i + 1).mod(VALUES.size)]
+    }
 
     /**
      * O motor, quando ele está vivo. Preenchido pelo próprio [PlaybackService] no `onCreate`
@@ -243,6 +262,29 @@ object Playback {
         link?.seekTo(ms)
     }
 
+    /** F2: soma a uma posição, clampado nas pontas. `Playback` não tem duração. */
+    fun seekBy(ms: Long, durationMs: Long) {
+        if (durationMs <= 0L) return
+        seekTo((position + ms).coerceIn(0L, durationMs))
+    }
+
+    /**
+     * F2: velocidad do video, em Passos. Persiste e reaplica no motor.
+     *
+     * Recebe o valor **escolhido**, nao o efetivo: quem guarda o passo da lista e a tela.
+     */
+    fun cycleVideoSpeed(): Float {
+        val l = link ?: return 1f
+        val atual = Settings.videoSpeed(appContext ?: return 1f)
+        val proximo = nextSpeed(atual)
+        l.setVideoSpeed(proximo)
+        return proximo
+    }
+
+    fun setVideoSpeed(value: Float) {
+        link?.setVideoSpeed(value)
+    }
+
     fun setShuffle(value: Boolean) {
         link?.setShuffle(value)
     }
@@ -305,5 +347,16 @@ object Playback {
     fun notifyTrackError(song: Song?) {
         val l = listener ?: return
         onMain { l.onTrackError(song) }
+    }
+
+    /**
+     * F2 — a velocidade que está valendo **agora**, já com o modo dance somado.
+     *
+     * A tela de vídeo precisa do número efetivo, não do escolhido: com o dance ligado
+     * o botão marcava 1,5x e a tela mostrava 1,68x, o que parece bug de arredondamento.
+     */
+    fun notifySpeedChanged(speed: Float) {
+        val l = listener ?: return
+        onMain { l.onSpeedChanged(speed) }
     }
 }

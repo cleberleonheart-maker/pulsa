@@ -381,6 +381,9 @@
     <string name="video_player_error">Could not play the video</string>
     <string name="video_pip">Picture-in-Picture</string>
     <string name="video_pip_unsupported">This device does not support Picture-in-Picture</string>
+    <string name="video_rewind_15">Rewind 15 seconds</string>
+    <string name="video_forward_15">Forward 15 seconds</string>
+    <string name="video_speed">Playback speed</string>
     <string name="close">Close</string>
     <string name="more">More options</string>
     <string name="profile_title">Profile</string>

@@ -338,6 +338,9 @@
     <string name="video_player_error">Não foi possível reproduzir o vídeo</string>
     <string name="video_pip">Picture-in-Picture</string>
     <string name="video_pip_unsupported">Este aparelho não tem Picture-in-Picture</string>
+    <string name="video_rewind_15">Voltar 15 segundos</string>
+    <string name="video_forward_15">Avançar 15 segundos</string>
+    <string name="video_speed">Velocidade de reprodução</string>
     <string name="video_stream_open">Abrir stream</string>
     <string name="video_stream_title">Tocar stream de vídeo</string>
     <string name="video_stream_url_hint">Link do vídeo (https://…)</string>

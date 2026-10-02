@@ -477,6 +477,9 @@ class PlaybackService : MediaLibraryService() {
         // sem connectar — por isso o registro mora aqui e não no `bindService`.
         playerLink = ServicePlayerLink(this)
         Playback.attach(playerLink!!)
+        // F2: a fachada precisa do contexto para ler/gravar a velocidade escolhida, e só
+        // o serviço tem um `Context` de verdade (a tela de vídeo tem a Activity, que morre).
+        Playback.appContext = applicationContext
         if (queue.isEmpty()) {
             // Processo renasceu com rádio no ar (ex.: encerrado no gesto): volta a tocar.
             runCatching { restoreRadioResume() }
@@ -638,10 +641,40 @@ class PlaybackService : MediaLibraryService() {
         player?.let { p ->
             runCatching {
                 p.setPlaybackParameters(
-                    PlaybackParameters(Settings.danceSpeed(this), Settings.dancePitch(this))
+                    PlaybackParameters(
+                        effectiveSpeed(),
+                        // O pitch do modo dance só faz sentido em áudio: aplicar 1.06 em
+                        // vídeo não muda o tom de nada e só gasta CPU.
+                        if (currentSong?.isVideo == true || currentSong?.isStream == true) 1f
+                        else Settings.dancePitch(this)
+                    )
                 )
             }
         }
+    }
+
+    /**
+     * F2 — a velocidade que vai para o motor.
+     *
+     * O modo dance (1,12x) e a velocidade do usuário **multiplicam**, e não competem:
+     * escolher 2x no vídeo tem que dar 2x mesmo com o dance ligado. Para áudio é só o
+     * dance, porque a velocidade é controle de vídeo — aplicá-la em música deixaria
+     * toda faixa em 1,5x sem o usuário ter pedido isso para a música.
+     */
+    private fun effectiveSpeed(): Float {
+        val dance = Settings.danceSpeed(this)
+        val song = currentSong
+        val isVideoish = song?.isVideo == true || song?.isStream == true
+        if (!isVideoish) return dance
+        return (dance * Settings.videoSpeed(this)).coerceIn(0.25f, 4.0f)
+    }
+
+    /** F2 — muda a velocidade do vídeo e persiste para a próxima faixa. */
+    fun setVideoSpeed(value: Float) {
+        val v = value.coerceIn(0.5f, 2.0f)
+        Settings.setVideoSpeed(this, v)
+        applyDanceParams()
+        Playback.notifySpeedChanged(effectiveSpeed())
     }
 
     fun applyDanceParamsForRefresh() {
@@ -994,6 +1027,13 @@ class PlaybackService : MediaLibraryService() {
                 0L
             )
             p.prepare()
+            // F2: a velocidade é do **item**, não do player. `setMediaItems` recria a
+            // timeline, então sem isto um vídeo que chegava pela fila da música entrava
+            // em 1x mesmo com 1,5x escolhido — e `onPlayerReady` (que chama
+            // `applyDanceParams`) só roda depois do `prepare` começar, tarde demais para
+            // a primeira troca de faixa.
+            applyDanceParams()
+            Playback.notifySpeedChanged(effectiveSpeed())
             if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
             Playback.notifySong(song, index)
             loadLargeIcon(song)

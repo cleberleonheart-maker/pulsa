@@ -27,6 +27,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Helper
+import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.PeerTube
 import com.pulsa.player.data.VideoLibrary
@@ -36,6 +37,7 @@ import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.model.toSong
 import com.pulsa.player.playback.Playback
+import com.pulsa.player.playback.PlaybackSpeeds
 import kotlin.math.abs
 
 /**
@@ -65,6 +67,9 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
         /** Salto do toque duplo: 10 s, o mesmo que o YouTube usa. */
         private const val SEEK_STEP_MS = 10_000L
+
+        /** Salto dos botões: 15 s, o outro valor do YouTube. */
+        private const val SEEK_15_MS = 15_000L
 
         /**
          * Id sintético do item de stream, derivado da URL.
@@ -152,6 +157,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var seekBar: SeekBar
     private lateinit var playBtn: ImageButton
     private lateinit var subtitleBtn: android.widget.TextView
+    private lateinit var speedView: TextView
     
     private var videos: List<Video> = emptyList()
     private var videoSongs: List<Song> = emptyList()
@@ -281,6 +287,14 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         playBtn.setOnClickListener { togglePlayback() }
         findViewById<ImageButton>(R.id.vp_prev).setOnClickListener { step(-1) }
         findViewById<ImageButton>(R.id.vp_next).setOnClickListener { step(1) }
+
+        // F2: saltos de 15s. São passos de *tempo*, então ficam perto do play/pause —
+        // é onde o dedo já está, e é a operação mais usada depois de pausa.
+        findViewById<ImageButton>(R.id.vp_rewind).setOnClickListener { seekBy(-SEEK_15_MS) }
+        findViewById<ImageButton>(R.id.vp_forward).setOnClickListener { seekBy(SEEK_15_MS) }
+
+        speedView = findViewById(R.id.vp_speed)
+        speedView.setOnClickListener { cycleSpeed() }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seek: SeekBar, progress: Int, fromUser: Boolean) {
@@ -566,7 +580,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         return true
     }
 
-    /** Fim do arrasto: o que o dedo deixou éommado vira a posição real do motor. */
+    /** Fim do arrasto: o que o dedo deixou vira a posição real do motor. */
     private fun commitScrub() {
         if (!scrubbing) return
         scrubbing = false
@@ -576,6 +590,28 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         // A barra some sozinha de novo: um arrasto é uma consulta de tempo, não um
         // pedido para deixar a interface aberta.
         scheduleHide()
+    }
+
+    /**
+     * F2 — botão de velocidade. Percorre os passos de [PlaybackSpeeds] e persiste.
+     *
+     * O rótulo mostra o valor **escolhido**, não o efetivo: com o modo dance ligado o
+     * efetivo é 1,12x maior, e mostrar esse número aqui faria o botão pular passos que
+     * ninguém pediu (1x → 1,4x). O que o usuário escolheu é o que ele reconhece.
+     */
+    private fun cycleSpeed() {
+        val escolhido = Playback.cycleVideoSpeed()
+        speedView.text = PlaybackSpeeds.label(escolhido)
+        // Os controles precisam aparecer, senão o número troca sozinho e parece não ter
+        // acontecido nada.
+        showControls()
+    }
+
+    override fun onSpeedChanged(speed: Float) {
+        // A faixa mudou de tipo (música → vídeo na fila misturada) ou o dance mudou: o
+        // botão reflete o que está valendo agora.
+        if (!::speedView.isInitialized) return
+        speedView.text = PlaybackSpeeds.label(speed)
     }
 
     override fun onSongChanged(song: Song?, index: Int) {
@@ -1001,6 +1037,13 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         super.onResume()
         // Volta a manter a tela acesa: o onStop limpa a flag ao sair (inclusive para o PiP).
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // F2: o rótulo da velocidade é lido do `Settings`, então precisa ser reposto ao
+        // voltar para a tela — inclusive quando ela foi aberta em modo anexo por um
+        // vídeo que já estava tocando a 1,5x, e nesse caso abriram-se os controles com
+        // "1x" por baixo de um vídeo correndo a 1,5x.
+        if (::speedView.isInitialized) {
+            speedView.text = PlaybackSpeeds.label(Settings.videoSpeed(this))
+        }
         // A condição é `videoSongs`, não `videos`: stream (F2) não tem id do MediaStore, então
         // `videos` fica vazio e esta tela nunca anexava o player — o áudio saía (o player toca
         // sozinho, sem surface) e o vídeo não, porque não havia nem `PlayerView.player`

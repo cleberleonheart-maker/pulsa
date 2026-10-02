@@ -293,6 +293,20 @@ object Settings {
     fun dancePitch(context: Context): Float =
         if (audioQuality(context) == QUALITY_DANCE) DANCE_PITCH else 1f
 
+    /**
+     * F2 — velocidade escolhida pelo usuário, só para vídeo/stream.
+     *
+     * Fica em `Settings` porque a tela de vídeo pode ser fechada e reaberta a qualquer
+     * momento: sem persistir, o botão marcava 1,5x e o vídeo voltava a 1x assim que a
+     * fila mudasse de faixa.
+     */
+    fun videoSpeed(context: Context): Float =
+        prefs(context).getFloat("video_speed", 1f).coerceIn(0.5f, 2.0f)
+
+    fun setVideoSpeed(context: Context, value: Float) {
+        prefs(context).edit().putFloat("video_speed", value.coerceIn(0.5f, 2.0f)).apply()
+    }
+
     fun qualityLabelRes(quality: String): Int = when (quality) {
         QUALITY_AUTO -> R.string.quality_auto
         QUALITY_BASS -> R.string.quality_bass

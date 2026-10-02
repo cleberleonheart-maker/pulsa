@@ -145,6 +145,16 @@
             android:paddingVertical="8dp">
 
             <ImageButton
+                android:id="@+id/vp_rewind"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/video_rewind_15"
+                android:padding="10dp"
+                android:src="@drawable/ic_replay_15"
+                android:tint="@color/white" />
+
+            <ImageButton
                 android:id="@+id/vp_prev"
                 android:layout_width="52dp"
                 android:layout_height="52dp"
@@ -174,6 +184,37 @@
                 android:padding="10dp"
                 android:src="@drawable/ic_skip_next"
                 android:tint="@color/white" />
+
+            <ImageButton
+                android:id="@+id/vp_forward"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/video_forward_15"
+                android:padding="10dp"
+                android:src="@drawable/ic_forward_15"
+                android:tint="@color/white" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="6dp">
+
+            <TextView
+                android:id="@+id/vp_speed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:minWidth="52dp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:text="1x"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>
