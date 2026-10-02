@@ -92,6 +92,28 @@ class SongListAdapter(
             notifyDataSetChanged()
         }
 
+    /**
+     * Marca uma linha como "tocando agora" — **os dois campos, sempre juntos**.
+     *
+     * Isto é a correção do fundo preso na música anterior. [bind] só olha o [highlightId]
+     * quando o [highlightKey] é nulo, e o `highlightKey` é preenchido uma vez, no
+     * `load()` da tela. Tocar uma música atualizava só o id: a chave continuava com a faixa
+     * antiga, `bind` preferia a chave, e o fundo em `bg_song_selected` ficava na música
+     * anterior mesmo com a nova tocando. Por isso os dois são escritos juntos aqui, e não
+     * em dois lugares diferentes.
+     *
+     * Rádio e stream não têm chave (`QueueKey.encode` devolve `null`), e aí o `bind` cai
+     * no id — que é o comportamento de sempre para esses, e o mesmo que o `load()` faz.
+     */
+    private fun markPlaying(song: Song) {
+        // Só um aviso quando nenhum dos dois mudou: os `set` já notificam, e eles são
+        // escritos juntos para não redesenhar a lista duas vezes no mesmo toque.
+        val key = QueueKey.encode(song)
+        if (highlightId == song.id && highlightKey == key) return
+        highlightId = song.id
+        highlightKey = key
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_song, parent, false)
         return VH(view)
@@ -157,7 +179,7 @@ class SongListAdapter(
                 if (s != null && s.isActive) {
                     s.toggle(song.id)
                 } else {
-                    highlightId = song.id
+                    markPlaying(song)
                     onPlay(song, pos)
                 }
             }

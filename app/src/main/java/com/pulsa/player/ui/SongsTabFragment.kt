@@ -19,7 +19,7 @@ import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.playback.QueueKey
 
-class SongsTabFragment : Fragment() {
+class SongsTabFragment : Fragment(), HighlightSync {
 
     private var headerContainer: View? = null
     private var headerTitle: TextView? = null
@@ -98,8 +98,7 @@ class SongsTabFragment : Fragment() {
                     headerContainer?.visibility = View.GONE
                     adapter?.songs = ordered
                     selectionBar?.setAvailable(ordered.map { it.id })
-                    adapter?.highlightKey = Playback.currentSong?.let { QueueKey.encode(it) }
-                    adapter?.highlightId = Playback.currentSong?.id
+                    syncHighlight()
                     if (ordered.isEmpty()) {
                         showEmpty(getString(R.string.empty_no_music), false)
                     } else {
@@ -117,4 +116,15 @@ class SongsTabFragment : Fragment() {
     }
 
     fun title(): String = requireContext().getString(R.string.tab_songs)
+
+    /**
+     * Reposiciona o "tocando agora" depois que a faixa mudou fora da lista (mini player,
+     * notificação, próximo/anterior). Quem preenche no `load()` é o mesmo caminho.
+     */
+    override fun syncHighlight() {
+        val cur = Playback.currentSong
+        adapter?.highlightKey = cur?.let { QueueKey.encode(it) }
+        adapter?.highlightId = cur?.id
+    }
+
 }

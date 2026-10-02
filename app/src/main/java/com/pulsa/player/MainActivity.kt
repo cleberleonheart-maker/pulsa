@@ -35,6 +35,7 @@ import com.pulsa.player.ui.ArtistTimelineFragment
 import com.pulsa.player.ui.ArtistsTabFragment
 import com.pulsa.player.ui.BibliotecaFragment
 import com.pulsa.player.ui.FavoritesTabFragment
+import com.pulsa.player.ui.HighlightSync
 import com.pulsa.player.ui.LibraryDetailFragment
 import com.pulsa.player.ui.PlaylistDetailFragment
 import com.pulsa.player.ui.PlaylistDialog
@@ -751,12 +752,29 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             syncMiniPlayer()
             syncToolbar()
             virgin.announceRadioSong(song)
+            // A faixa mudou fora da lista: o fundo de "tocando agora" andou para a música
+            // antiga e ficava lá até a lista recarregar. As telas que mostram o destaque se
+            // avisam por conta própria — veja [HighlightSync].
+            syncListHighlight()
             // F2b: vídeo entrou na fila misturada e virou o item atual. Sem isto o áudio sai
             // pela mini player e a imagem não aparece em lugar nenhum — vídeo precisa de
             // surface, e a surface só existe na tela de vídeo, que abre aqui já grudada no
             // motor (sem `Playback.start`, para não trocar a fila).
             if (song.isVideo || song.isStream) VideoPlayerActivity.showPlaying(this)
         }
+    }
+
+    /**
+     * Avisa a lista visível de que a faixa mudou.
+     *
+     * Percorre o fragmento de topo **e** os filhos: álbum, artista, playlist e favoritas
+     * são filhos da Biblioteca, e é lá que a lista fica quando o usuário troca de faixa pela
+     * mini player — justamente com a lista aberta na tela.
+     */
+    private fun syncListHighlight() {
+        val root = supportFragmentManager.findFragmentById(R.id.fragment_container) ?: return
+        (root as? HighlightSync)?.syncHighlight()
+        root.childFragmentManager.fragments.forEach { (it as? HighlightSync)?.syncHighlight() }
     }
 
     override fun onPlayStateChanged(isPlaying: Boolean) {
