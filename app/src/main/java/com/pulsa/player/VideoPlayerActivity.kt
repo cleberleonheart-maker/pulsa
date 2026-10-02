@@ -60,6 +60,12 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         private const val EXTRA_ATTACH = "video_attach"
         private const val HIDE_DELAY = 3000L
 
+        /** Quanto o dedo anda antes de o arrasto virar seek (px). */
+        private const val SCRUB_TOUCH_SLOP = 24f
+
+        /** Salto do toque duplo: 10 s, o mesmo que o YouTube usa. */
+        private const val SEEK_STEP_MS = 10_000L
+
         /**
          * Id sintético do item de stream, derivado da URL.
          *
@@ -167,6 +173,21 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     private var dragging = false
     private var autoplay = true
     private var finished = false
+
+    /**
+     * F2 — arrasto de seek (scrub).
+     *
+     * [scrubbing] vale enquanto o dedo está na tela depois de passar do [SCRUB_TOUCH_SLOP];
+     * [scrubStart] é a posição do motor no primeiro pixel do gesto, e é ela — não a posição
+     * corrente, que continua andando durante o arrasto — que serve de origem. Sem isso o
+     * cursor "escapa" do dedo quando o vídeo está tocando.
+     */
+    private var scrubbing = false
+    private var scrubStart = 0L
+    private var scrubDuration = 0L
+
+    private val scrubWidth: Float
+        get() = findViewById<View>(R.id.vp_root)?.width?.toFloat() ?: 0f
 
     /** Texto do botão de legenda: "CC" quando há uma trilha, "CC 2" quando há várias. */
     private var currentTrackLabel = ""
@@ -280,27 +301,69 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
         val detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapUp(e: MotionEvent): Boolean {
-                toggleControls()
+                // Só o arrasto e o toque duplo fazem algo aqui. Mostrar os controles no
+                // `onSingleTapUp` brigava com o `onSingleTapConfirmed`: um toque duplo
+                // mostrava a barra e, logo em seguida, o salto a escondia de novo.
                 return true
             }
 
-            override fun onFling(
+            /**
+             * F2: arrastar na horizontal **avança o tempo**, que é o que se espera de um
+             * player de vídeo. Antes esse gesto trocava de faixa — e era o gesto mais usado
+             * da tela, então "voltar 10 segundos" era impossível.
+             *
+             * Next/prev continuam existindo, mas por toque duplo nas bordas (que é o padrão
+             * do YouTube) e pelos botões: são ações de faixa, e pular de faixa por um arrasto
+             * sem querer é pior do que não ter.
+             */
+            override fun onScroll(
                 e1: MotionEvent?,
                 e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
+                distanceX: Float,
+                distanceY: Float
             ): Boolean {
-                val dx = e2.x - (e1?.x ?: e2.x)
-                val dy = e2.y - (e1?.y ?: e2.y)
-                if (abs(dx) > abs(dy) && abs(dx) > 60 && abs(velocityX) > 400) {
-                    step(if (dx < 0) -1 else 1)
-                    return true
+                if (e1 == null) return false
+                val dx = e1.x - e2.x
+                val dy = e1.y - e2.y
+                // Só horizontal, e só quando ainda não começou: o vertical é do sistema.
+                if (abs(dy) > abs(dx)) return false
+                if (!scrubbing) {
+                    if (abs(dx) < SCRUB_TOUCH_SLOP) return false
+                    scrubbing = true
+                    // Congela o cursor: sem isso a posição segue correndo por baixo do dedo e
+                    // o texto de tempo mostra um número que não é o que está sendo arrastado.
+                    handler.removeCallbacks(hideRunnable)
+                    scrubDuration = seekBar.max.toLong()
+                    scrubStart = Playback.position
                 }
-                return false
+                val total = scrubDuration.coerceAtLeast(1L)
+                val delta = (dx * total / scrubWidth).toLong()
+                val alvo = (scrubStart + delta).coerceIn(0L, total)
+                seekBar.progress = alvo.toInt()
+                currentText.text = Helper.formatDuration(alvo)
+                return true
+            }
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                val w = scrubWidth
+                if (w > 0f) {
+                    // Bordas de 1/3 da tela: toque duplo à esquerda volta, à direita avança.
+                    // No meio, o toque duplo não tem ação — aí vale o toque simples.
+                    when {
+                        e.x < w / 3f -> return seekBy(-SEEK_STEP_MS)
+                        e.x > w * 2f / 3f -> return seekBy(SEEK_STEP_MS)
+                    }
+                }
+                toggleControls()
+                return true
             }
         })
         findViewById<View>(R.id.vp_root).setOnTouchListener { _, e ->
+            // O `onScroll` do detector já reposiciona a barra a cada pixel; o `ACTION_UP`
+            // é o que entrega a posição ao motor, porque durante o arrasto ela é só
+            // pré-visualização — o vídeo não deve pular 40 vezes enquanto o dedo anda.
             detector.onTouchEvent(e)
+            if (e.actionMasked == MotionEvent.ACTION_UP) commitScrub()
             true
         }
 
@@ -476,6 +539,43 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         // para a frente e o gesto parecia não ter efeito nenhum.
         if (delta > 0) Playback.next() else Playback.prev()
         showControls()
+    }
+
+    /**
+     * F2 — salto fixo de tempo, usado pelo toque duplo nas bordas.
+     *
+     * Clampa nas pontas: em 3 s de vídeo, "voltar 10" não pode virar posição negativa
+     * nem travar o motor.
+     */
+    private fun seekBy(deltaMs: Long): Boolean {
+        // `Playback` não expõe a duração; a barra é quem já recebeu a duração real do
+        // motor em `onProgress`, e é a mesma que o usuário está vendo.
+        val dur = seekBar.max.toLong()
+        if (dur <= 0L) return false
+        val alvo = (Playback.position + deltaMs).coerceIn(0L, dur)
+        Playback.seekTo(alvo)
+        // Os controles precisam aparecer, senão o salto acontece sem feedback nenhum e
+        // parece que o toque não fez nada.
+        showControls()
+        currentText.text = Helper.formatDuration(alvo)
+        Toast.makeText(
+            this,
+            if (deltaMs > 0) "+${deltaMs / 1000}s" else "${deltaMs / 1000}s",
+            Toast.LENGTH_SHORT
+        ).show()
+        return true
+    }
+
+    /** Fim do arrasto: o que o dedo deixou éommado vira a posição real do motor. */
+    private fun commitScrub() {
+        if (!scrubbing) return
+        scrubbing = false
+        val alvo = seekBar.progress.toLong()
+        Playback.seekTo(alvo)
+        currentText.text = Helper.formatDuration(alvo)
+        // A barra some sozinha de novo: um arrasto é uma consulta de tempo, não um
+        // pedido para deixar a interface aberta.
+        scheduleHide()
     }
 
     override fun onSongChanged(song: Song?, index: Int) {
@@ -749,7 +849,10 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     }
 
     override fun onProgress(positionMs: Long, durationMs: Long) {
-        if (dragging) return
+        // `scrubbing` é o arrasto do dedo; `dragging` é o SeekBar. Os dois precisam
+        // segurar o cursor, senão o progresso que chega a cada tique repõe a barra no
+        // meio do gesto e o dedo "briga" com o vídeo.
+        if (dragging || scrubbing) return
         if (durationMs > 0L) {
             seekBar.max = durationMs.toInt()
             durationText.text = Helper.formatDuration(durationMs)
