@@ -94,6 +94,16 @@
             android:padding="12dp"
             android:src="@drawable/ic_pip"
             android:tint="@color/white" />
+
+        <ImageButton
+            android:id="@+id/vp_rotate"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/video_rotate"
+            android:padding="12dp"
+            android:src="@drawable/ic_rotate"
+            android:tint="@color/white" />
     </LinearLayout>
 
     <LinearLayout

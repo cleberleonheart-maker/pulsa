@@ -384,6 +384,7 @@
     <string name="video_rewind_15">Rewind 15 seconds</string>
     <string name="video_forward_15">Forward 15 seconds</string>
     <string name="video_speed">Playback speed</string>
+    <string name="video_rotate">Rotate screen</string>
     <string name="close">Close</string>
     <string name="more">More options</string>
     <string name="profile_title">Profile</string>

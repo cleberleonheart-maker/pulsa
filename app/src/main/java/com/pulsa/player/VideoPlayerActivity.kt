@@ -2,6 +2,7 @@ package com.pulsa.player
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
@@ -296,6 +297,14 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         speedView = findViewById(R.id.vp_speed)
         speedView.setOnClickListener { cycleSpeed() }
 
+        findViewById<ImageButton>(R.id.vp_rotate).setOnClickListener { toggleOrientation() }
+
+        // F2 — os controles nascem do tamanho da tela atual, e a activity não é recriada
+        // ao girar (o manifest declara configChanges de orientation justamente para o
+        // vídeo não reiniciar). Sem isto, girar deixaria os botões de 48dp minúsculos
+        // numa tela de 2400px de largura.
+        applyOrientation(resources.configuration.orientation)
+
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seek: SeekBar, progress: Int, fromUser: Boolean) {
                 if (fromUser) currentText.text = Helper.formatDuration(progress.toLong())
@@ -578,6 +587,88 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             Toast.LENGTH_SHORT
         ).show()
         return true
+    }
+
+    /**
+     * F2 — gira a tela entre retrato e paisagem.
+     *
+     * `SCREEN_ORIENTATION_USER` (e não `SENSOR`) porque o botão precisa ** inverter** o que
+     * o usuário está fazendo: com sensor, girar o aparelho de novo desfaria o botão na hora.
+     * E `LANDSCAPE` fixo, não o descape do sensor, para o vídeo não virar de cabeça para
+     * baixo quando o aparelho for segurado deitado.
+     *
+     * Não há `ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED` no meio do caminho: sair do
+     * estado travado é o que devolve a rotação automática, e é o que o botão de fechar
+     * precisa fazer ao voltar para a música.
+     */
+    private fun toggleOrientation() {
+        val paisagem = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        requestedOrientation = if (paisagem) {
+            ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+        }
+    }
+
+    /**
+     * F2 — a activity sobrevive à rotação (configChanges no manifest), então o layout não
+     * é re-inflado. Aqui é que a tela se adapta: alvos maiores e barras mais finas em
+     * paisagem, onde a barra de status e a de navegação comem as pontas da tela.
+     *
+     * Paisagem **não** vira um layout diferente: os mesmos botões, maiores. Duas cópias
+     * do layout divergem na primeira alteração de um controle, e o vertical já funciona
+     * bem.
+     */
+    private fun applyOrientation(orientation: Int) {
+        val paisagem = orientation == Configuration.ORIENTATION_LANDSCAPE
+        val lado = if (paisagem) 64.dp else 48.dp
+        for (id in intArrayOf(
+            R.id.vp_back, R.id.vp_pip, R.id.vp_rotate, R.id.vp_prev, R.id.vp_next,
+            R.id.vp_rewind, R.id.vp_forward, R.id.vp_play
+        )) {
+            findViewById<View>(id)?.let { b ->
+                b.layoutParams = b.layoutParams.apply { width = lado; height = lado }
+            }
+        }
+        // Em paisagem a barra de status ocupa a ponta, então o padding fixo de 8dp
+        // deixava o botão de voltar colado no notch. some com ela nos dois casos, que é
+        // o que o inset-aware faz sozinho.
+        topBar.setPadding(0, 0, if (paisagem) 8.dp else 16.dp, 0)
+        // O rodapé é onde o polegar fica, então em paisagem ele precisa de respiro da
+        // barra de navegação — sem isso o "próximo" cai embaixo do gesto do sistema.
+        bottomBar.setPadding(0, 0, 0, if (paisagem) 20.dp else 0)
+        titleView.textSize = if (paisagem) 18f else 16f
+        applyImmersive(paisagem)
+    }
+
+    /**
+     * F2 — em paisagem as barras do sistema viram duas faixas pretas nas pontas da tela,
+     * e num celular deitado elas comem altura, que é a dimensão que falta. Esconder as
+     * duas é o que dá a tela inteira para o vídeo, que é o motivo de girar.
+     *
+     * Em retrato as barras voltam: retrato é o jeito de navegar o app, e esconder a de
+     * navegação ali tira o botão "voltar" sem dar nada em troca.
+     *
+     * `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE` (e não o default) para que um arrasto
+     * traga a barra de volta temporariamente em vez de prendê-la na tela.
+     */
+    private fun applyImmersive(paisagem: Boolean) {
+        val controller = androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
+        if (paisagem) {
+            controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior =
+                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            controller.show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    private val Int.dp: Int
+        get() = (this * resources.displayMetrics.density).toInt()
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyOrientation(newConfig.orientation)
     }
 
     /** Fim do arrasto: o que o dedo deixou vira a posição real do motor. */
@@ -1044,6 +1135,11 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         if (::speedView.isInitialized) {
             speedView.text = PlaybackSpeeds.label(Settings.videoSpeed(this))
         }
+        // F2: ao voltar do background o sistema pode ter trazido as barras de volta (um
+        // arrasto do usuário esconde-as só temporariamente), e o vídeo ficaria espremido
+        // de novo sem ninguém ter pedido. Reaplica a orientação em vez de confiar no
+        // estado que ficou.
+        applyOrientation(resources.configuration.orientation)
         // A condição é `videoSongs`, não `videos`: stream (F2) não tem id do MediaStore, então
         // `videos` fica vazio e esta tela nunca anexava o player — o áudio saía (o player toca
         // sozinho, sem surface) e o vídeo não, porque não havia nem `PlayerView.player`
@@ -1112,6 +1208,15 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         Playback.setRepeatAll(prevRepeatAll)
         Playback.setRepeatOne(prevRepeatOne)
         if (leftForMusic) {
+            // F2: a rotação é travada por `setRequestedOrientation` enquanto esta tela
+            // existe, e a activity **não** morre ao girar (configChanges), então a trava
+            // sobrevive à rotação — que é o objetivo. Mas a trava também sobreviveria à
+            // activity: sem desfazer aqui, a próxima tela do app abriria deitada por ter
+            // herdado a orientação pedida por uma tela que já foi embora.
+            //
+            // Só no caminho "voltar para a música": fechar o PiP mantém a trava, porque
+            // a activity volta a abrir em tela cheia e o vídeo continua tocando.
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             // Só o "voltar" da tela cheia devolve a fila da música. Fechar o PiP é o
             // contrário: o usuário quer CONTINUAR no vídeo.
             if (resumePlaying && resumeQueue.isNotEmpty()) {

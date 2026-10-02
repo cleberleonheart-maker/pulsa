@@ -341,6 +341,7 @@
     <string name="video_rewind_15">Voltar 15 segundos</string>
     <string name="video_forward_15">Avançar 15 segundos</string>
     <string name="video_speed">Velocidade de reprodução</string>
+    <string name="video_rotate">Girar a tela</string>
     <string name="video_stream_open">Abrir stream</string>
     <string name="video_stream_title">Tocar stream de vídeo</string>
     <string name="video_stream_url_hint">Link do vídeo (https://…)</string>
