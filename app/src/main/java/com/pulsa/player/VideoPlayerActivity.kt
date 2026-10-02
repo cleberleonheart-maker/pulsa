@@ -494,6 +494,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         Playback.setShuffle(false)
         Playback.setRepeatAll(true)
         Playback.setRepeatOne(false)
+        onScreen = true
         Playback.start(videoSongs, index)
         render()
     }
@@ -1205,8 +1206,13 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         // F2b: o modo anexo não mexe em shuffle/repeat nem devolve fila — quem toca é a fila
         // única do app e o repeat dela é o do usuário. Mexer aqui trocaria o repeat de quem
         // estava ouvindo música só por ter aberto a tela do vídeo.
+        //
+        // `onScreen` é zerado **antes** dos dois retornos: ele é a trava contra uma segunda
+        // tela de vídeo, e valem os dois modos de entrada. Marcando só no anexo, um vídeo
+        // aberto pela biblioteca deixava a trava livre, e o `showPlaying` do `onSongChanged`
+        // podia abrir outra tela de vídeo por cima desta.
+        onScreen = false
         if (attached) {
-            onScreen = false
             super.onDestroy()
             return
         }
@@ -1225,7 +1231,25 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             // Só o "voltar" da tela cheia devolve a fila da música. Fechar o PiP é o
             // contrário: o usuário quer CONTINUAR no vídeo.
-            if (resumePlaying && resumeQueue.isNotEmpty()) {
+            //
+            // F2b: "devolve a fila da música" só faz sentido quando HÁ uma. O vídeo é
+            // aberto pela biblioteca com `Playback.start`, que substitui a fila do motor,
+            // e a fila anterior é guardada em `resumeQueue` para voltar no fim. Quando nada
+            // estava tocando, essa fila guardada está vazia — e a ramificação de baixo caía
+            // no `Playback.stop()`, que derrubava o vídeo junto. Resultado: sair do vídeo
+            // deixava o app em silêncio, sem mini player, como se nada estivesse tocando,
+            // mesmo com o vídeo na tela.
+            //
+            // Sem fila para devolver, o certo é o comportamento do modo anexo: o vídeo
+            // continua na mini player (o áudio tocando, a miniatura no quadrado), e tocar
+            // nele reabre a tela de vídeo.
+            //
+            // Só toca se não foi uma pausa pedida: quem parou o vídeo e depois saiu quer
+            // que ele continue parado na mini player, não que o app volte a fazer barulho
+            // sozinho.
+            if (resumeQueue.isEmpty()) {
+                if (!Playback.pausedDeliberately) Playback.play()
+            } else if (resumePlaying) {
                 Playback.start(resumeQueue, resumeIndex.coerceAtLeast(0))
             } else {
                 Playback.stop()
