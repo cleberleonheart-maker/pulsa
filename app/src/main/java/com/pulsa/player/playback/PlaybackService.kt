@@ -1535,6 +1535,19 @@ class PlaybackService : MediaLibraryService() {
         // acabou de limpar, ressuscitando a estação no próximo restoreRadioResume.
         if (pauseWasDeliberate) return
         saveQueueState()
+        // F2b — `currentSong` **é** `queue[index]`, e o `index` muda no `advanceIndex`
+        // antes do motor sair da faixa anterior. Nesse intervalo `currentPosition` ainda é
+        // o da música que acabou de terminar, então a gravação passava a guardar o par
+        // trocado: id da música nova com o tempo da antiga.
+        //
+        // Depois o `restoreSavedPosition` via só o id, achava que aquela posição era da
+        // música nova e fazia o seek — e ela entrava no meio. Era exatamente no fim natural
+        // da faixa, que é quando o `onTrackEnded` chama `clearResumeState()` e um tick
+        // na sequência imediato regrava tudo errado.
+        //
+        // `awaitingReady` cobre a janela inteira: ele é ligado no `prepareCurrent` e
+        // desligado no `onPlayerReady`, e não existe posição confiável entre os dois.
+        if (awaitingReady) return
         val song = currentSong ?: return
         if (!Settings.resumeOn(this)) return
         if (song.isVideo) return
