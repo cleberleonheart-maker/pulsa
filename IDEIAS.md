@@ -249,3 +249,32 @@
 - [ ] **Permissões e política**: `MANAGE_EXTERNAL_STORAGE`/acesso total de arquivos e `FOREGROUND_SERVICE_MICROPHONE`pedem justificativa; o `build.yml` só assina release, mas publicar na Play exige ficha de dados e política de privacidade
 - [x] **Rádio em `.m3u8`**: **corrigido** — `media3-exoplayer-hls` está declarado (`build.gradle.kts:80`), então o Módulo HLS do ExoPlayer não falta mais. **O que ainda falta** é a detecção explícita: `mediaItemFor()` (`PlaybackService.kt:898-912`) monta o `MediaItem` só com `setUri`, sem `MimeTypes.APPLICATION_M3U8`, então quem decide é a heurística de extensão do próprio Media3. É exatamente o mesmo trabalho que falta para o F2 de HLS/DASH
 - [ ] **Sync atual depende de rede cleartext e servidor de pé**: a F5 assume um servidor real (VPS/túnel) e não só LAN; testar em 4G é obrigatório antes de vender como "nuvem"
+
+## F2 — Download Center dos vídeos do PeerTube
+
+- **Baixar direto da lista**: ação no menu do resultado da busca, sem abrir o player.
+- **Aba "Baixados"** na Biblioteca: progresso, tamanho, cancelar, continuar, apagar.
+- **Offline de verdade**: baixa o MP4 progressivo (`downloadUrl`), não o `streamUrl`.
+  O `streamUrl` prefere HLS porque sobe e desce de qualidade, mas um `master.m3u8`
+  são links para segmentos: baixá-lo gravava um arquivo de poucos KB marcado como
+  "baixado" e a reprodução offline abria uma tela preta.
+- **Serviço em foreground** com fila de 2 threads, fora do pool compartilhado: download
+  é transferência longa e ocuparia as threads de rede (é o que faz rádio e letra
+  sumirem), e um `post` solto morre com o processo sem segurar o foreground.
+- **Retomada por `Range`** a partir do `.part`; `200` em vez de `206` descarta o parcial
+  e recomeça, para não colar bytes na frente de um arquivo válido.
+
+### Bugs corrigidos junto
+
+- **Selecionado ficava na música anterior**: o `bind` usava o `highlightKey` quando ela
+  existia, e a chave era preenchida só no `load()`. Tocar uma música atualizava apenas o
+  `highlightId`, então a chave continuava com a faixa antiga e o fundo `bg_song_selected`
+  ficava preso na anterior. Agora o clique escreve os dois campos juntos (`markPlaying`),
+  e as telas implementam `HighlightSync`, avisadas pela Activity a cada troca de faixa —
+  antes, mudar pela mini player deixava a lista no mesmo estado errado.
+- **"Buscando letras..." não voltava nunca** quando não havia `.lrc` na pasta: a busca
+  local percorria `/sdcard` recursivo pontuando até 2000 arquivos, com um `stat` por
+  entrada, e a busca online (LRCLIB) só começava depois disso — dezenas de segundos sem
+  nenhuma resposta na tela. Agora a varredura tem orçamento de 2,5 s, a pasta da música vai
+  até 4 níveis e as raízes públicas só 1 (o storage externo inteiro saiu da busca), a
+  extensão é filtrada antes do `isFile`, e o log registra fonte, linhas e tempo.
