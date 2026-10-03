@@ -1521,11 +1521,15 @@ class PlaybackService : MediaLibraryService() {
             currentSong?.let { ensureForeground(it) }
             // Mãos-livres acompanha a reprodução: liga ao tocar, desliga ao pausar.
             com.pulsa.player.dj.Hotword.startIfNeeded(this)
-        } else if (!isVideoOrStream(currentSong)) {
+        } else if (!com.pulsa.player.dj.Hotword.somethingToListen()) {
             // Pausar VÍDEO não desliga o microfone. Desligar era certo para a música
             // (mic desligado = app quieto), mas no vídeo o pause é justamente o estado
             // em que se dá o comando seguinte: pausar matava a única via de dizer
             // "continua o filme", e sem ela o vídeo ficava preso parado.
+            //
+            // `somethingToListen()` é a MESMA definição que `Hotword.startIfNeeded` e
+            // `HotwordService.staying` usam. Cada um tinha a sua cópia, e corrigir um
+            // deixava os outros dois cobrando `Playback.isPlaying`.
             com.pulsa.player.dj.Hotword.stopIfRunning(this)
         }
         refreshNotification()

@@ -135,12 +135,15 @@ class HotwordService : Service() {
         stopSelf()
     }
 
-    // O serviço só faz sentido com o toggle ligado, música tocando e microfone liberado.
+    // O serviço só faz sentido com o toggle ligado, microfone liberado e algo para
+    // ouvir — e "algo para ouvir" inclui vídeo pausado, que é onde se diz "continua o
+    // filme". Antes isto era `Playback.isPlaying` puro e o serviço se matava sozinho no
+    // primeiro `keepAlive` depois do pause.
     private fun staying(): Boolean =
-        Settings.hotword(this) && Playback.isPlaying && micGranted()
+        Settings.hotword(this) && Hotword.somethingToListen() && micGranted()
 
     private fun checkAlive() {
-        // Se algo mudou (pausou a musica, tirou o toggle, sem destino) para o servico.
+        // Se algo mudou (tirou o toggle, sem destino, vídeo saiu da fila) para o servico.
         if (!staying() || !HotwordBridge.hasTarget()) {
             stopNow()
             return
