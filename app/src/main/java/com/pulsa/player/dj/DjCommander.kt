@@ -169,8 +169,13 @@ object DjCommander {
                 norm.contains("volta para o") || norm.contains("volta ao"))
 
     private fun videoBackMatch(norm: String): Boolean =
-        videoWord(norm) &&
-            (videoSeekBackWord(norm) ||
+        // "atras"/"pra tras"/"para tras" na branch sem [videoWord]: nao existe comando de
+        // musica com essas palavras, e sem videoWord a frase "virgin, manda pra tras"
+        // cairia em prev por causa do "volta" generico la embaixo. So a palavra de
+        // direcao e liberada assim; "volta"/"recua" continuam exigindo citar o filme,
+        // porque "volta" puro e trilha anterior de musica.
+        videoSeekBackWord(norm) ||
+            (videoWord(norm) &&
                 (norm.contains("volta") || norm.contains("voltar") || norm.contains("volte") ||
                     norm.contains("recua") || norm.contains("recuar") || norm.contains("back")))
 

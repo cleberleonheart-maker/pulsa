@@ -89,6 +89,25 @@ class DjCommanderTest {
     }
 
     @Test
+    fun video_back_sem_citar_o_filme() {
+        // "atrás" não é palavra de comando de música, então "manda pra trás" não precisa
+        // dizer o nome do vídeo para não cair em prev pelo "volta" genérico.
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, manda pra tras")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, manda pra trás")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta pra tras")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta atras")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta para tras")))
+        // Limite conhecido, e é o teste que trava ele: "volta 30 segundos" sem citar o que é
+        // fica com a música, porque "volta" puro é trilha anterior. Só a palavra de
+        // direção ("atrás") dispensa citar o filme; número de segundos não.
+        assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta 30 segundos")))
+        // Abrir a tela continua funcionando sem citar o que abrir: "volta pro filme" e
+        // "volta pra trás" só se separam pela palavra de direção.
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, volta pro filme")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, volta ao video")))
+    }
+
+    @Test
     fun action_video_pause() {
         assertEquals("video_pause", DjCommander.action(DjCommander.norm("virgin, pausa o filme")))
         assertEquals("video_pause", DjCommander.action(DjCommander.norm("virgin, para o video")))
