@@ -20,7 +20,9 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
+import com.pulsa.player.VideoPlayerActivity
 import com.pulsa.player.audio.Ambient
+import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Profile
 import com.pulsa.player.core.Settings
@@ -65,6 +67,9 @@ class MainVirgin(
         const val EXTRA_ALARM_AMBIENT = "virgin_alarm_ambient"
         private const val RESUME_LISTENER_DELAY_MS = 800L
 
+        /** F2 · Vídeo por voz: o quanto "volta o filme" recua quando não há 30s na frase. */
+        private const val VIDEO_BACK_MS = 30_000L
+
         /** Janela unica de escuta da Virgin na tela, antes de fechar sozinha. */
         private const val VIRGIN_WINDOW_MS = 6000L
         private const val CHAIN_DELAY_MS = 1800L
@@ -72,7 +77,10 @@ class MainVirgin(
         private const val AMBIENT_DUCK_FACTOR = 0.2f
         private val HANDS_FREE_BLOCKED = setOf(
             "scan", "duplicates", "pendrive", "delete", "confirm", "cancel",
-            "visualizer", "skin", "karaoke"
+            "visualizer", "skin", "karaoke",
+            // Abrir a tela de vídeo é pedir uma tela. Pausar e recuar no vídeo continuam
+            // liberados: é o caso de mão-livre que mais importa (vídeo no carro, no sofá).
+            "video_open"
         )
     }
 
@@ -603,6 +611,43 @@ class MainVirgin(
         return " " + say(R.string.dj_voice_avoid_note, n)
     }
 
+    /**
+     * F2 · Vídeo por voz. Só vale com o vídeo **no motor**: a posição de vídeo não é salva
+     * (`PlaybackService` pula vídeo no save e no restore, porque id de vídeo e id de música
+     * dividem o mesmo espaço do MediaStore), então "continua o filme" só alcança o que ainda
+     * está na fila. Fora disso a Virgin avisa, em vez de abrir uma tela de vídeo preta.
+     *
+     * `isStream` entra junto porque o stream (HLS/DASH do PeerTube) é o mesmo item na fila
+     * e a mesma tela — é ele que faz o download do vídeo ser offline de verdade.
+     */
+    private fun videoPlaying(): Song? =
+        Playback.currentSong?.takeIf { it.isVideo || it.isStream }
+
+    private fun virgVideoOpen() {
+        val song = videoPlaying()
+        if (song == null) {
+            virginSpeak(say(R.string.dj_voice_video_none))
+            return
+        }
+        virginSpeak(say(R.string.dj_voice_video_open, song.title))
+        // `showPlaying` já é no-op se a tela está no ar, e abre em modo anexo: não troca a
+        // fila nem mexe em shuffle/repeat, que é o que o F2b deixou para a entrada pela
+        // biblioteca.
+        VideoPlayerActivity.showPlaying(activity)
+    }
+
+    private fun virgVideoBack() {
+        if (videoPlaying() == null) {
+            virginSpeak(say(R.string.dj_voice_video_none))
+            return
+        }
+        // `Playback` não expõe a duração (o `seekBy` dela exige uma), então o clamp é só no
+        // zero. Recuar 30 s de um vídeo de 4 minutos não corre risco de estourar a ponta.
+        val alvo = (Playback.position - VIDEO_BACK_MS).coerceAtLeast(0L)
+        Playback.seekTo(alvo)
+        virginSpeak(say(R.string.dj_voice_video_back, Helper.formatDuration(alvo)))
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -811,6 +856,16 @@ class MainVirgin(
             "alarm" -> virgAlarmSet(DjCommander.alarmQuery(norm))
             "alarm_cancel" -> virgAlarmCancel()
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
+            "video_open" -> virgVideoOpen()
+            "video_back" -> virgVideoBack()
+            "video_pause" -> {
+                if (videoPlaying() == null) {
+                    virginSpeak(say(R.string.dj_voice_video_none))
+                } else if (Playback.isPlaying) {
+                    Playback.pause()
+                    virginSpeak(say(R.string.dj_voice_pause))
+                }
+            }
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong
                 if (action == "dislike" && cur != null) {

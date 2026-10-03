@@ -23,6 +23,8 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.DjActivity
 import com.pulsa.player.R
+import com.pulsa.player.VideoPlayerActivity
+import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
@@ -70,6 +72,9 @@ class DjSession(
         private const val RESUME_LISTENER_DELAY_MS = 800L
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
+
+        /** F2 · Vídeo por voz: o quanto "volta o filme" recua quando não há 30s na frase. */
+        private const val VIDEO_BACK_MS = 30_000L
     }
 
     private val launcher = launchers
@@ -553,6 +558,36 @@ class DjSession(
         }
     }
 
+    /**
+     * F2 · Vídeo por voz. Mesma regra da Virgin da tela principal: só vale com o vídeo no
+     * motor, porque a posição de vídeo não é salva (o `PlaybackService` pula vídeo no save e
+     * no restore — id de vídeo e id de música dividem o mesmo espaço do MediaStore).
+     */
+    private fun videoPlaying(): Song? =
+        Playback.currentSong?.takeIf { it.isVideo || it.isStream }
+
+    private fun virgVideoOpen() {
+        val song = videoPlaying()
+        if (song == null) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        speak(say(R.string.dj_voice_video_open, song.title))
+        // `showPlaying` já é no-op se a tela está no ar, e abre em modo anexo: não troca a
+        // fila nem mexe em shuffle/repeat.
+        VideoPlayerActivity.showPlaying(activity)
+    }
+
+    private fun virgVideoBack() {
+        if (videoPlaying() == null) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        val alvo = (Playback.position - VIDEO_BACK_MS).coerceAtLeast(0L)
+        Playback.seekTo(alvo)
+        speak(say(R.string.dj_voice_video_back, Helper.formatDuration(alvo)))
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -835,6 +870,17 @@ class DjSession(
             }
             "mixwith" -> {
                 startMixWithArtist(DjCommander.mixArtist(norm))
+            }
+            "video_open" -> virgVideoOpen()
+            "video_back" -> virgVideoBack()
+            "video_pause" -> {
+                if (videoPlaying() == null) {
+                    speak(say(R.string.dj_voice_video_none))
+                } else if (Playback.isPlaying) {
+                    djVoice?.stop()
+                    Playback.pause()
+                    speak(say(R.string.dj_voice_pause))
+                }
             }
             "skip" -> {
                 val cur = Playback.currentSong

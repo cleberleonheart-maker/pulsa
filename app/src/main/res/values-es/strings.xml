@@ -399,7 +399,6 @@
     <string name="downloads_continue">Continuar</string>
     <string name="downloads_cancel">Cancelar</string>
     <string name="downloads_delete">Borrar</string>
-    <string name="downloads_playing_offline">Reproduciendo sin conexión</string>
     <string name="download_start_queued">En cola para descargar</string>
     <string name="download_not_available">Este vídeo no tiene MP4 para descargar</string>
     <string name="download_already">Ya está en las descargas</string>
@@ -502,6 +501,9 @@
     <string name="dj_voice_resume_searching">Déjame ver dónde nos quedamos...</string>
     <string name="dj_voice_resume">¡Volví! Reproduciendo %1$s, de %2$s, desde donde te quedaste.</string>
     <string name="dj_voice_resume_none">No encontré dónde paraste la última vez. ¡Pídeme que toque una canción y arranco ahora mismo!</string>
+    <string name="dj_voice_video_none">No hay ningún video sonando ahora.</string>
+    <string name="dj_voice_video_open">Abriendo %1$s.</string>
+    <string name="dj_voice_video_back">Volví a %1$s.</string>
     <string name="dj_voice_mix">¡Claro! Preparando un mix nuevo para ti.</string>
     <string name="dj_voice_fav">¡Marcada como favorita!</string>
     <string name="dj_voice_month_favs">¡Vamos! Reproduciendo %d favoritas de este mes.</string>

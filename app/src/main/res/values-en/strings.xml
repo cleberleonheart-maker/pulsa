@@ -400,7 +400,6 @@
     <string name="downloads_continue">Resume</string>
     <string name="downloads_cancel">Cancel</string>
     <string name="downloads_delete">Delete</string>
-    <string name="downloads_playing_offline">Playing offline</string>
     <string name="download_start_queued">Queued for download</string>
     <string name="download_not_available">This video has no MP4 to download</string>
     <string name="download_already">Already downloaded</string>
@@ -503,6 +502,9 @@
     <string name="dj_voice_resume_searching">Let me see where we left off...</string>
     <string name="dj_voice_resume">Back! Playing %1$s, by %2$s, from where you stopped.</string>
     <string name="dj_voice_resume_none">I couldn\'t find where you stopped last time. Ask me to play a song and I\'ll start right now!</string>
+    <string name="dj_voice_video_none">There\'s no video playing right now.</string>
+    <string name="dj_voice_video_open">Opening %1$s.</string>
+    <string name="dj_voice_video_back">Back to %1$s.</string>
     <string name="dj_voice_mix">Sure! Preparing a new mix for you.</string>
     <string name="dj_voice_fav">Marked as favorite!</string>
     <string name="dj_voice_month_favs">Let\'s go! Playing %d of this month\'s favorites.</string>

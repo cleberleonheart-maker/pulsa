@@ -70,6 +70,45 @@ class DjCommanderTest {
     }
 
     @Test
+    fun action_video_open() {
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, continua o filme")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, mostra o video")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, abre o video")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, retoma o filme")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, volta pro filme")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, abre o episodio")))
+    }
+
+    @Test
+    fun action_video_back() {
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta 30 segundos do filme")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta pra tras no video")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, recua o filme")))
+        // Acento: "vídeo" só bate depois do `norm`.
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("Virgin, volta o vídeo")))
+    }
+
+    @Test
+    fun action_video_pause() {
+        assertEquals("video_pause", DjCommander.action(DjCommander.norm("virgin, pausa o filme")))
+        assertEquals("video_pause", DjCommander.action(DjCommander.norm("virgin, para o video")))
+    }
+
+    @Test
+    fun video_nao_rouba_comando_da_musica() {
+        // O gate `videoWord` é o que impede "volta"/"pausa"/"continua" de virarem comando
+        // de vídeo no meio de uma música — a Virgin falaria de vídeo sem existir vídeo.
+        assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta")))
+        assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta a anterior")))
+        assertEquals("pause", DjCommander.action(DjCommander.norm("virgin, pausa")))
+        assertEquals("play", DjCommander.action(DjCommander.norm("virgin, continua")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, volta pra musica")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, retoma a musica")))
+        // "pula" no vídeo continua sendo skip, não retrocesso: sem palavra de trás, é pulo.
+        assertEquals("skip", DjCommander.action(DjCommander.norm("virgin, pula o filme")))
+    }
+
+    @Test
     fun ambient_volume_up() {
         assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("virgin, chuva mais alta"))?.up)
         assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("aumenta a chuva"))?.up)
