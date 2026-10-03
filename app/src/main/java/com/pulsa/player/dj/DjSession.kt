@@ -591,7 +591,10 @@ class DjSession(
 
     private fun virgVideoBack() {
         if (videoPlaying() == null) {
-            speak(say(R.string.dj_voice_video_none))
+            // Sem vídeo, a palavra de direção sozinha é a faixa anterior de sempre: ver
+            // `virgVideoBack` em MainVirgin, que tem o mesmo porquê.
+            speak(say(R.string.dj_voice_prev))
+            Playback.prev()
             return
         }
         val alvo = (Playback.position - VIDEO_BACK_MS).coerceAtLeast(0L)

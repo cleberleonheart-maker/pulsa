@@ -671,7 +671,13 @@ class MainVirgin(
 
     private fun virgVideoBack() {
         if (videoPlaying() == null) {
-            virginSpeak(say(R.string.dj_voice_video_none))
+            // Sem vídeo, "volta pra trás" é o que sempre foi: faixa anterior. A palavra de
+            // direção sozinha chega aqui sem citar o filme, e responder "não tem vídeo
+            // tocando" seria devolver um "não" para quem só queria voltar uma faixa. A
+            // decisão fica no handler porque `DjCommander` só vê texto: ele não sabe o que
+            // está tocando para escolher.
+            virginSpeak(say(R.string.dj_voice_prev))
+            Playback.prev()
             return
         }
         // `Playback` não expõe a duração (o `seekBy` dela exige uma), então o clamp é só no

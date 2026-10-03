@@ -127,6 +127,17 @@ class DjCommanderTest {
     }
 
     @Test
+    fun video_back_sem_video_cai_em_prev_no_handler() {
+        // O parser devolve `video_back` para a palavra de direção sozinha, e quem desvia
+        // para a faixa anterior é o handler (`virgVideoBack`), que é quem sabe o que está
+        // tocando. Este teste trava essa divisão: o fallback está em
+        // MainVirgin/DjSession, não no DjCommander.
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta atras da musica")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, para tras")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, deixa pra tras")))
+    }
+
+    @Test
     fun video_nao_rouba_comando_da_musica() {
         // O gate `videoWord` é o que impede "volta"/"pausa"/"continua" de virarem comando
         // de vídeo no meio de uma música — a Virgin falaria de vídeo sem existir vídeo.
