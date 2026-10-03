@@ -200,6 +200,7 @@ class DownloadService : Service() {
             var redirects = 0
             var response: Int
             var startingAt = 0L
+            var totalAnunciado = 0L
             // `conn` é um `val` de escopo do `try` e não o `var connection` de antes: uma
             // `var` capturada e reassignada no laço de redirect perde o smart cast, e o
             // compilador passa a pedir `?.` em cada `contentLength`.
@@ -209,6 +210,18 @@ class DownloadService : Service() {
                 response = aberta.responseCode
                 if (response == HttpURLConnection.HTTP_PARTIAL && part.length() > 0L) {
                     startingAt = part.length()
+                    totalAnunciado = totalFromRange(aberta)
+                    // `206` não garante que seja o **mesmo** arquivo: o dono pode ter
+                    // reenviado o vídeo, e aí o servidor honestamente devolve o pedaço novo
+                    // a partir do offset pedido. Emendar as duas versões dá um MP4 que
+                    // passa em toda checagem de tamanho e só falha na hora de tocar — e
+                    // falha longe do ponto do erro. Size diferente entre a tentativa
+                    // anterior e agora é a assinatura disso.
+                    val anterior = original.total
+                    if (anterior > 0L && totalAnunciado > 0L && totalAnunciado != anterior) {
+                        part.delete()
+                        startingAt = 0L
+                    }
                     conn = aberta
                     break
                 }
@@ -216,6 +229,7 @@ class DownloadService : Service() {
                 // Range (ou o arquivo mudou). Anexar nesse caso produziria um arquivo
                 // corrompido, então o parcial é descartado e o download recomeça.
                 if (part.length() > 0L) part.delete()
+                totalAnunciado = 0L
                 if (response in 300..399 && redirects < MAX_REDIRECTS) {
                     val next = aberta.getHeaderField("Location")
                         ?: throw IllegalStateException("redirect sem Location")
@@ -230,9 +244,14 @@ class DownloadService : Service() {
             if (response !in 200..299) throw IllegalStateException("HTTP $response")
 
             // Com `206` o `Content-Length` é só o resto do arquivo; somar com o que já
-            // temos é o que faz a barra chegar a 100% em vez de estourar.
+            // temos é o que faz a barra chegar a 100% em vez de estourar. O `Content-Range`
+            // é melhor ainda, porque traz o total real em vez de reconstruí-lo por soma.
             val restante = conn.contentLength.toLong().takeIf { it > 0L } ?: -1L
-            val total = if (startingAt > 0L && restante > 0L) startingAt + restante else restante
+            val total = when {
+                totalAnunciado > 0L -> totalAnunciado
+                startingAt > 0L && restante > 0L -> startingAt + restante
+                else -> restante
+            }
 
             DownloadStore.put(
                 this,
@@ -312,6 +331,15 @@ class DownloadService : Service() {
 
     private fun isCancelled(id: String): Boolean =
         synchronized(cancelled) { cancelled.contains(id) }
+
+    /**
+     * Total real do arquivo em uma resposta `206`, lido do `Content-Range: bytes a-b/total`.
+     * Devolve `0` quando o servidor não manda o cabeçalho.
+     */
+    private fun totalFromRange(conn: HttpURLConnection): Long =
+        runCatching {
+            conn.getHeaderField("Content-Range")?.substringAfterLast('/')?.trim()?.toLongOrNull() ?: 0L
+        }.getOrDefault(0L)
 
     private fun open(url: String, from: Long): HttpURLConnection {
         val c = URL(url).openConnection() as HttpURLConnection

@@ -109,8 +109,12 @@ class DownloadsTabFragment : Fragment() {
         }
         // `Uri.fromFile` e não a string crua: o `VideoPlayerActivity` entrega a URL para o
         // Media3, e um caminho sem esquema é tratado como texto, não como arquivo.
+        //
+        // O caminho vai no título de propósito, para a tela de vídeo mostrar de onde o
+        // arquivo veio. O aviso de "Assistindo offline" que estava aqui mentia: ele
+        // aparecia no instante em que o player era aberto, sem esperar a reprodução
+        // começar, então confirmava uma coisa que ainda não tinha acontecido.
         VideoPlayerActivity.startStream(ctx, Uri.fromFile(file).toString(), item.title)
-        toast(R.string.downloads_playing_offline)
     }
 
     private fun menu(item: DownloadStore.Item) {

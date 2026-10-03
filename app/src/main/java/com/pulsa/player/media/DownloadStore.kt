@@ -116,7 +116,11 @@ object DownloadStore {
         } catch (t: Throwable) {
             emptyList()
         }
-        @Synchronized {
+        // `synchronized(items)` e não `@Synchronized { }`: a anotação só vale em função, e
+        // num bloco o compilador aceita com aviso — mas sem travar nada. `ensureLoaded` roda
+        // na main enquanto uma thread de download pode estar em `put`, e limpar a lista
+        // fora do lock perderia a gravação que acabou de chegar.
+        synchronized(items) {
             items.clear()
             items.addAll(parsed)
         }
