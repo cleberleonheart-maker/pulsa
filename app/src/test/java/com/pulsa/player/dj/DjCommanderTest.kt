@@ -71,12 +71,25 @@ class DjCommanderTest {
 
     @Test
     fun action_video_open() {
-        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, continua o filme")))
         assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, mostra o video")))
         assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, abre o video")))
-        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, retoma o filme")))
         assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, volta pro filme")))
         assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, abre o episodio")))
+    }
+
+    @Test
+    fun action_video_play() {
+        // "continua"/"retoma"/"toca" RETOMAM, não abrem tela: `showPlaying` chama
+        // `startActivity`, que do fundo o Android 10+ bloqueia, então abrir a tela ao
+        // fundo só produzia a resposta "Abrindo X" sem abrir nada.
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, continua o filme")))
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, retoma o filme")))
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, toca o filme")))
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, continua o video")))
+        // Acento: só bate depois do `norm`.
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("Virgin, continua o vídeo")))
+        // "continua" sem citar o que é continua sendo o play da música.
+        assertEquals("play", DjCommander.action(DjCommander.norm("virgin, continua")))
     }
 
     @Test

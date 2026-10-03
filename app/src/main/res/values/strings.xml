@@ -503,6 +503,7 @@
     <string name="dj_voice_resume_none">Não encontrei quando você parou da última vez. Me peça para tocar uma música e eu começo agora!</string>
     <string name="dj_voice_video_none">Não tem vídeo tocando agora.</string>
     <string name="dj_voice_video_open">Abrindo %1$s.</string>
+    <string name="dj_voice_video_play">Continuando %1$s.</string>
     <string name="dj_voice_video_back">Voltei para %1$s.</string>
     <string name="dj_voice_mix">Claro! Preparando um mix novo para você.</string>
     <string name="dj_voice_fav">Marcada como favorita!</string>
@@ -586,7 +587,8 @@
     <string name="dj_commands_weekly">"Virgin, resumo da minha semana / o que ouvi essa semana" — resumo semanal falado</string>
     <string name="dj_commands_alarm">"Virgin, me acorda às 7h (com chuva)" — despertador com som de fundo</string>
     <string name="dj_commands_sleeptimer">"Virgin, para em 20 minutos" — sleep timer falado</string>
-    <string name="dj_commands_video">"Virgin, continua o filme / mostra o vídeo" — abre a tela do vídeo que está tocando</string>
+    <string name="dj_commands_video">"Virgin, continua o filme / retoma o filme" — volta a tocar o vídeo, com o app fechado</string>
+    <string name="dj_commands_video_open">"Virgin, mostra o vídeo / volta pro filme" — abre a tela do vídeo que está tocando</string>
     <string name="dj_commands_video_back">"Virgin, volta 30 segundos do filme / pausa o filme" — mexe no vídeo sem tocar na tela</string>
     <string name="dj_scene_malhar">pra malhar</string>
     <string name="dj_scene_estudar">pra estudar</string>

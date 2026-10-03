@@ -566,6 +566,17 @@ class DjSession(
     private fun videoPlaying(): Song? =
         Playback.currentSong?.takeIf { it.isVideo || it.isStream }
 
+    /** Retoma o vídeo sem pedir tela: `showPlaying` do fundo é bloqueado pelo Android 10+. */
+    private fun virgVideoPlay() {
+        val song = videoPlaying()
+        if (song == null) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        Playback.play()
+        speak(say(R.string.dj_voice_video_play, song.title))
+    }
+
     private fun virgVideoOpen() {
         val song = videoPlaying()
         if (song == null) {
@@ -871,6 +882,7 @@ class DjSession(
             "mixwith" -> {
                 startMixWithArtist(DjCommander.mixArtist(norm))
             }
+            "video_play" -> virgVideoPlay()
             "video_open" -> virgVideoOpen()
             "video_back" -> virgVideoBack()
             "video_pause" -> {

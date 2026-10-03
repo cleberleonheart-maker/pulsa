@@ -504,6 +504,7 @@
     <string name="dj_voice_resume_none">I couldn\'t find where you stopped last time. Ask me to play a song and I\'ll start right now!</string>
     <string name="dj_voice_video_none">There\'s no video playing right now.</string>
     <string name="dj_voice_video_open">Opening %1$s.</string>
+    <string name="dj_voice_video_play">Resuming %1$s.</string>
     <string name="dj_voice_video_back">Back to %1$s.</string>
     <string name="dj_voice_mix">Sure! Preparing a new mix for you.</string>
     <string name="dj_voice_fav">Marked as favorite!</string>

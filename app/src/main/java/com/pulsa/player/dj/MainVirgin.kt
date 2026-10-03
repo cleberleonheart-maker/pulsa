@@ -642,6 +642,21 @@ class MainVirgin(
     private fun videoPlaying(): Song? =
         Playback.currentSong?.takeIf { it.isVideo || it.isStream }
 
+    /**
+     * Retoma o vídeo sem pedir tela nenhuma. É o que "continua o filme" tem que fazer:
+     * `showPlaying` chama `startActivity`, que do fundo o Android 10+ bloqueia, então
+     * abrir a tela ao fundo só produzia a resposta "Abrindo X" sem abrir nada.
+     */
+    private fun virgVideoPlay() {
+        val song = videoPlaying()
+        if (song == null) {
+            virginSpeak(say(R.string.dj_voice_video_none))
+            return
+        }
+        Playback.play()
+        virginSpeak(say(R.string.dj_voice_video_play, song.title))
+    }
+
     private fun virgVideoOpen() {
         val song = videoPlaying()
         if (song == null) {
@@ -875,6 +890,7 @@ class MainVirgin(
             "alarm" -> virgAlarmSet(DjCommander.alarmQuery(norm))
             "alarm_cancel" -> virgAlarmCancel()
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
+            "video_play" -> virgVideoPlay()
             "video_open" -> virgVideoOpen()
             "video_back" -> virgVideoBack()
             "video_pause" -> {

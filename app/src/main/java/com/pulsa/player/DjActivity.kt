@@ -253,7 +253,8 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
             R.string.dj_commands_dynq to R.drawable.ic_queue_music,
             R.string.dj_commands_decade to R.drawable.ic_album,
             R.string.dj_commands_ambient_vol to R.drawable.ic_ambient,
-            R.string.dj_commands_video to R.drawable.ic_videocam,
+            R.string.dj_commands_video to R.drawable.ic_play_circle,
+            R.string.dj_commands_video_open to R.drawable.ic_videocam,
             R.string.dj_commands_video_back to R.drawable.ic_replay_15,
             R.string.dj_commands_hello to R.drawable.ic_mic
         )

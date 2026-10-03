@@ -160,11 +160,21 @@ object DjCommander {
     private fun videoSeekBackWord(norm: String): Boolean =
         norm.contains("atras") || norm.contains("pra tras") || norm.contains("para tras")
 
+    /**
+     * Retomar o vídeo ([video_play]) é separado de abrir a tela ([video_open]) porque só o
+     * segundo pede Activity — e `startActivity` a partir do fundo é bloqueado pelo Android
+     * 10+. Por isso "continua o filme" ao fundo respondia "Abrindo X" e não abria nada: o
+     * comando era o errado para o que o usuário quer. Retomar só mexe no motor, e vale de
+     * qualquer lugar, inclusive com o app fechado.
+     */
+    private fun videoPlayMatch(norm: String): Boolean =
+        videoWord(norm) &&
+            (norm.contains("continua") || norm.contains("continuar") || norm.contains("retoma") ||
+                norm.contains("retomar") || norm.contains("retome") || norm.contains("toca"))
+
     private fun videoOpenMatch(norm: String): Boolean =
         videoWord(norm) && !videoSeekBackWord(norm) &&
-            (norm.contains("continua") || norm.contains("toca") || norm.contains("toque") ||
-                norm.contains("abre") || norm.contains("abrir") || norm.contains("mostra") ||
-                norm.contains("retoma") || norm.contains("retomar") ||
+            (norm.contains("abre") || norm.contains("abrir") || norm.contains("mostra") ||
                 norm.contains("volta pro") || norm.contains("volta pra") ||
                 norm.contains("volta para o") || norm.contains("volta ao"))
 
@@ -597,6 +607,10 @@ object DjCommander {
         // "pausa" e "continua" são palavras de música muito mais usadas, e um comando de
         // vídeo que chega depois nunca seria alcançado. O [videoWord] é o que impede o
         // contrário — roubar a música quando ela está tocando.
+        // `video_play` ANTES de `video_open`: "continua o filme" retoma, não abre tela.
+        // "toca" também é o play da música (mais abaixo), então o `videoWord` é o que
+        // separa os dois.
+        videoPlayMatch(norm) -> "video_play"
         videoOpenMatch(norm) -> "video_open"
         videoBackMatch(norm) -> "video_back"
         videoPauseMatch(norm) -> "video_pause"
