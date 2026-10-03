@@ -79,9 +79,8 @@ class MainVirgin(
             "scan", "duplicates", "pendrive", "delete", "confirm", "cancel",
             "visualizer", "skin", "karaoke"
             // `video_open` NÃO fica bloqueado: era o único jeito de voltar para a tela do
-            // vídeo depois que ela fecha sozinha, e no carro é justamente quando se usa
-            // "volta pro filme". Travar o comando só entregava o filme parado, sem
-            // comando para retomá-lo.
+            // vídeo depois que ela fecha sozinha. Travar o comando só entregava o vídeo
+            // parado, e sem comando para retomá-lo — que é o que "continua o filme" faz.
         )
     }
 
