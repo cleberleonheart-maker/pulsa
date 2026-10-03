@@ -287,7 +287,12 @@
 
 ### Ainda sem teste
 
-- **Continuar** (o `Range` com o `.part`): cancelar no meio e retomar é o caminho com mais
-  chance de gerar arquivo corrompido sem erro visível.
+- **Continuar** (o `Range` com o `.part`): cancelar no meio e retomar continua **sem
+  teste no aparelho**. O modo de corrupção que mais assustava — emendar duas versões
+  diferentes do mesmo vídeo num MP4 que passa em toda checagem de tamanho e só falha na
+  hora de tocar — **está fechado**: o total real vem do `Content-Range` e, quando difere
+  do total da tentativa anterior, o `.part` é descartado e o download recomeça
+  (`media/DownloadService.kt`). O que falta é exercitar o caminho feliz do `206`.
 - **Apagar** e **Cancelar**, e a notificação de foreground na troca de faixa.
-- Vídeo que só tem HLS: deve avisar "não tem MP4 para baixar" em vez de baixar algo inútil.
+- Vídeo que só tem HLS: o aviso de "não tem MP4 para baixar" **existe**
+  (`ui/VideosTabFragment.kt`, `download_not_available`), mas nunca foi visto no aparelho.
