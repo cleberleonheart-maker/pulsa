@@ -86,7 +86,7 @@ class HotwordService : Service() {
                 if (!HotwordBridge.deliver(text)) stopNow()
             }
         ) {
-            windowEnded()
+            _ -> windowEnded()
         }
         windowOpen = true
         listener?.start(LISTEN_WINDOW_MS)

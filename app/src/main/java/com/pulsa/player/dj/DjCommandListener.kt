@@ -40,7 +40,7 @@ class DjCommandListener(
     context: Context,
     private val mode: MicMode = MicMode.CONTINUOUS,
     private val onResult: (text: String) -> Unit,
-    private val onClosed: (() -> Unit)? = null
+    private val onClosed: ((expired: Boolean) -> Unit)? = null
 ) {
     private val appContext = context.applicationContext
     private val locale: Locale = Locale.getDefault()
@@ -67,14 +67,23 @@ class DjCommandListener(
     private val cycle = MicCycle(mode, MicBackoff(FIRST_RETRY_MS, MAX_RETRY_MS))
     private val retryRunnable = Runnable { restart() }
 
+    /**
+     * A janela de [ONE_SHOT] acabou, e não a escuta: parou porque alguém chamou [stop]
+     * para responder um comando. A diferença é o que separa "terminou a sessão" de "já
+     * tem a próxima marcada", e precisa ser dita no instante do fechamento — quem decide
+     * o que fazer lê isso depois, quando o estado já mudou.
+     */
+    private var windowExpired = false
+
     /** Fecha sozinho quando o tempo da janela de [ONE_SHOT] acaba. */
-    private val windowRunnable = Runnable { stop() }
+    private val windowRunnable = Runnable { windowExpired = true; stop() }
     private var closedCallbackRun = false
 
     private fun runClosed() {
         if (closedCallbackRun) return
         closedCallbackRun = true
-        onClosed?.invoke()
+        onClosed?.invoke(windowExpired)
+        windowExpired = false
     }
 
     init {
@@ -176,7 +185,11 @@ class DjCommandListener(
         listening = true
         cycle.reset()
         windowRetryMs = 500L
-        windowed = windowMs > 0
+        windowed = windowMs > 0L
+        // Cada janela nasce sem expiração: se a anterior expirou com `wasListening` já
+        // falso, `runClosed` não rodou e o `true` sobraria para a janela seguinte, que
+        // fecharia de propósito e se anunciaria como fim de janela.
+        windowExpired = false
         if (windowed) {
             mainHandler.removeCallbacks(windowRunnable)
             mainHandler.postDelayed(windowRunnable, windowMs)

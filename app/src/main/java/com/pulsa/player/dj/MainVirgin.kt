@@ -275,7 +275,20 @@ class MainVirgin(
             activity,
             MicMode.ONE_SHOT,
             onResult = { handleCommand(it) },
-            onClosed = { ThreadPool.onUi { virginWindowClosed() } }
+            onClosed = { expired ->
+                // `expired` é lido aqui, no mesmo instante em que a janela fechou, e não
+                // depois na fila da UI. A versão anterior decidia olhando `virginSpeechPaused`
+                // já na fila: toda resposta curta ("voltando", "tocando") terminava de falar
+                // antes do callback rodar, o estado parecia o de fim de janela e a Virgin se
+                // desligava. Era o "fecha depois de voltar ou avançar".
+                if (expired && !activity.isFinishing && !activity.isDestroyed) {
+                    // Fim de janela sem ouvir nada: a Virgin ficava ligada SEM microfone
+                    // (`virginOn` `true`, ícone aceso, nenhuma janela aberta). O toque
+                    // seguinte no ícone é toggle, e com `virginOn` `true` ele desligava
+                    // tudo em vez de reabrir a janela — o "dou dois toques e ela some".
+                    ThreadPool.onUi { stopVirgin(silent = true) }
+                }
+            }
         )
         val cur = Playback.currentSong
         val msg = if (cur != null) {
@@ -295,27 +308,6 @@ class MainVirgin(
         if (!silent) virginSpeak(activity.getString(R.string.dj_voice_goodbye))
         virginVoice?.stop()
         Hotword.startIfNeeded(activity)
-    }
-
-    /**
-     * A janela de [VIRGIN_WINDOW_MS] fechou.
-     *
-     * Duas saídas possíveis, e elas precisam ser separadas: fechad por `virginSpeak`
-     * respondendo um comando, ou fechad por tempo sem ouvir nada. Na primeira a próxima
-     * janela já está agendada em [doResumeVirginListener] e desligar aqui mataria a
-     * sessão no primeiro comando.
-     *
-     * Na segunda a Virgin ficava ligada **sem microfone**: `virginOn` continuava `true`,
-     * o ícone continuava aceso e nenhuma janela abria. O toque seguinte no ícone, que é
-     * toggle (`toggleVirgin`), via `stopVirgin` e desligava tudo — era o "dou dois toques
-     * e ela some", e depois disso nenhum comando era reconhecido porque o microfone já
-     * tinha ido. `virginSpeechPaused` é o que distingue as duas: só a Virgin falando a
-     * deixa `true`.
-     */
-    private fun virginWindowClosed() {
-        if (activity.isFinishing || activity.isDestroyed) return
-        if (virginSpeechPaused) return
-        stopVirgin(silent = true)
     }
 
     private fun pauseVirginSpeech() {
