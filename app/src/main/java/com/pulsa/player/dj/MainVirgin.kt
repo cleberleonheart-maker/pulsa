@@ -77,10 +77,11 @@ class MainVirgin(
         private const val AMBIENT_DUCK_FACTOR = 0.2f
         private val HANDS_FREE_BLOCKED = setOf(
             "scan", "duplicates", "pendrive", "delete", "confirm", "cancel",
-            "visualizer", "skin", "karaoke",
-            // Abrir a tela de vídeo é pedir uma tela. Pausar e recuar no vídeo continuam
-            // liberados: é o caso de mão-livre que mais importa (vídeo no carro, no sofá).
-            "video_open"
+            "visualizer", "skin", "karaoke"
+            // `video_open` NÃO fica bloqueado: era o único jeito de voltar para a tela do
+            // vídeo depois que ela fecha sozinha, e no carro é justamente quando se usa
+            // "volta pro filme". Travar o comando só entregava o filme parado, sem
+            // comando para retomá-lo.
         )
     }
 

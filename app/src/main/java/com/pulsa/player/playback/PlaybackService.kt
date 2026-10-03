@@ -690,9 +690,7 @@ class PlaybackService : MediaLibraryService() {
      */
     private fun effectiveSpeed(): Float {
         val dance = Settings.danceSpeed(this)
-        val song = currentSong
-        val isVideoish = song?.isVideo == true || song?.isStream == true
-        if (!isVideoish) return dance
+        if (!isVideoOrStream(currentSong)) return dance
         return (dance * Settings.videoSpeed(this)).coerceIn(0.25f, 4.0f)
     }
 
@@ -1523,11 +1521,17 @@ class PlaybackService : MediaLibraryService() {
             currentSong?.let { ensureForeground(it) }
             // Mãos-livres acompanha a reprodução: liga ao tocar, desliga ao pausar.
             com.pulsa.player.dj.Hotword.startIfNeeded(this)
-        } else {
+        } else if (!isVideoOrStream(currentSong)) {
+            // Pausar VÍDEO não desliga o microfone. Desligar era certo para a música
+            // (mic desligado = app quieto), mas no vídeo o pause é justamente o estado
+            // em que se dá o comando seguinte: pausar matava a única via de dizer
+            // "continua o filme", e sem ela o vídeo ficava preso parado.
             com.pulsa.player.dj.Hotword.stopIfRunning(this)
         }
         refreshNotification()
     }
+
+    private fun isVideoOrStream(song: Song?): Boolean = song?.isVideo == true || song?.isStream == true
 
     fun currentArt(): android.graphics.Bitmap? = largeIcon
 
