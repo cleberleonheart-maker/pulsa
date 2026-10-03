@@ -45,7 +45,7 @@ object MirrorSync {
     private val tick = object : Runnable {
         override fun run() {
             if (!running) return
-            ThreadPool.post { runCatching { step() } }
+            ThreadPool.postNetwork { runCatching { step() } }
             handler.postDelayed(this, INTERVAL_MS)
         }
     }

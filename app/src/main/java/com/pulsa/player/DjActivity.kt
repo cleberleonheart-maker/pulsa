@@ -1,13 +1,9 @@
 package com.pulsa.player
 
 import android.animation.ValueAnimator
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
-import android.os.IBinder
 import android.view.KeyEvent
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -26,7 +22,6 @@ import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.dj.DjSession
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.playback.PlaybackService
 import com.pulsa.player.audio.Ambient
 import com.pulsa.player.core.Settings
 
@@ -46,8 +41,8 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     private var avatarView: android.view.View? = null
     private var avatarBob: ValueAnimator? = null
 
-    private var bound = false
     private var triggered = false
+    private var playbackBind: Playback.Bind? = null
 
     private val session by lazy {
         DjSession(
@@ -82,27 +77,13 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
             session.onPendriveTreeResult(uri)
         }
 
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Playback.service = (service as PlaybackService.LocalBinder).service
-            bound = true
-            render()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            Playback.service = null
-            bound = false
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setTheme(Settings.accentStyle(this))
         setContentView(R.layout.activity_dj)
 
         val toolbar = findViewById<MaterialToolbar>(R.id.dj_toolbar)
-        toolbar.title = getString(R.string.dj_title) + " — " +
-            getString(if (Settings.masculineAvatar(this)) R.string.dj_voice_name_male else R.string.dj_voice_name)
+        toolbar.title = getString(R.string.dj_title) + " — " + Settings.assistantName(this)
         toolbar.setNavigationOnClickListener { finish() }
 
         artA = findViewById(R.id.dj_art_a)
@@ -179,23 +160,17 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     override fun onStart() {
         super.onStart()
         Playback.listener = this
-        val playbackIntent = Intent(this, PlaybackService::class.java)
-        runCatching { applicationContext.startService(playbackIntent) }
-        applicationContext.bindService(
-            playbackIntent,
-            connection,
-            Context.BIND_AUTO_CREATE
-        )
+        // F1/E2: a ligação é da fachada. O `render()` continua sendo chamado na hora (como
+        // era) e de novo quando a ligação fecha, que é quando os controles têm estado.
+        playbackBind = Playback.connect(this) { render() }
         render()
     }
 
     override fun onStop() {
         session.stopForBackground()
         if (Playback.listener === this) Playback.listener = null
-        if (bound) {
-            bound = false
-            runCatching { applicationContext.unbindService(connection) }
-        }
+        playbackBind?.let { Playback.release(it) }
+        playbackBind = null
         super.onStop()
     }
 
@@ -278,6 +253,9 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
             R.string.dj_commands_dynq to R.drawable.ic_queue_music,
             R.string.dj_commands_decade to R.drawable.ic_album,
             R.string.dj_commands_ambient_vol to R.drawable.ic_ambient,
+            R.string.dj_commands_video to R.drawable.ic_play_circle,
+            R.string.dj_commands_video_open to R.drawable.ic_videocam,
+            R.string.dj_commands_video_back to R.drawable.ic_replay_15,
             R.string.dj_commands_hello to R.drawable.ic_mic
         )
         val accent = ContextCompat.getColor(this, R.color.primary)

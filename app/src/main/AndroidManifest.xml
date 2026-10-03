@@ -13,6 +13,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -82,7 +83,9 @@
 
         <activity
             android:name=".VideoPlayerActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
             android:exported="false" />
 
         <activity
@@ -90,9 +93,22 @@
             android:exported="false" />
 
         <service
-            android:name=".playback.PlaybackService"
+            android:name=".media.DownloadService"
             android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />
+            android:foregroundServiceType="dataSync" />
+
+        <service
+            android:name=".playback.PlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <!-- E6: sem estes intent-filters o serviço não aparece em "Fontes de mídia" do
+                 sistema e o Assistant não acha faixa nenhuma. `MediaLibraryService` (herda de
+                 `MediaBrowserService`) precisa das duas actions. -->
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaLibraryService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
 
         <service
             android:name=".util.UpdateService"

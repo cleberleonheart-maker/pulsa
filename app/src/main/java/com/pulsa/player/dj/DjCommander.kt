@@ -147,6 +147,53 @@ object DjCommander {
             norm.contains("retoma") || norm.contains("retomar") ||
             norm.contains("recomeca") || norm.contains("recomecar")
 
+    /**
+     * F2 · Vídeo por voz. `norm` já tirou o acento, então é "video" e nunca "vídeo".
+     */
+    private fun videoWord(norm: String): Boolean =
+        norm.contains("filme") || norm.contains("video") || norm.contains("episodio")
+
+    /**
+     * "volta pra tras" é retrocesso no tempo; "volta pro filme" é voltar para a tela.
+     * Separar as duas coisas aqui evita que "volta pro filme" caia no retrocesso de 30 s.
+     */
+    private fun videoSeekBackWord(norm: String): Boolean =
+        norm.contains("atras") || norm.contains("pra tras") || norm.contains("para tras")
+
+    /**
+     * Retomar o vídeo ([video_play]) é separado de abrir a tela ([video_open]) porque só o
+     * segundo pede Activity — e `startActivity` a partir do fundo é bloqueado pelo Android
+     * 10+. Por isso "continua o filme" ao fundo respondia "Abrindo X" e não abria nada: o
+     * comando era o errado para o que o usuário quer. Retomar só mexe no motor, e vale de
+     * qualquer lugar, inclusive com o app fechado.
+     */
+    private fun videoPlayMatch(norm: String): Boolean =
+        videoWord(norm) &&
+            (norm.contains("continua") || norm.contains("continuar") || norm.contains("retoma") ||
+                norm.contains("retomar") || norm.contains("retome") || norm.contains("toca"))
+
+    private fun videoOpenMatch(norm: String): Boolean =
+        videoWord(norm) && !videoSeekBackWord(norm) &&
+            (norm.contains("abre") || norm.contains("abrir") || norm.contains("mostra") ||
+                norm.contains("volta pro") || norm.contains("volta pra") ||
+                norm.contains("volta para o") || norm.contains("volta ao"))
+
+    private fun videoBackMatch(norm: String): Boolean =
+        // "atras"/"pra tras"/"para tras" na branch sem [videoWord]: nao existe comando de
+        // musica com essas palavras, e sem videoWord a frase "virgin, manda pra tras"
+        // cairia em prev por causa do "volta" generico la embaixo. So a palavra de
+        // direcao e liberada assim; "volta"/"recua" continuam exigindo citar o filme,
+        // porque "volta" puro e trilha anterior de musica.
+        videoSeekBackWord(norm) ||
+            (videoWord(norm) &&
+                (norm.contains("volta") || norm.contains("voltar") || norm.contains("volte") ||
+                    norm.contains("recua") || norm.contains("recuar") || norm.contains("back")))
+
+    private fun videoPauseMatch(norm: String): Boolean =
+        videoWord(norm) &&
+            (norm.contains("pausa") || norm.contains("pausar") || norm.contains("para") ||
+                norm.contains("parar") || norm.contains("pare") || norm.contains("stop"))
+
     private fun playedYesterdayMatch(norm: String): Boolean =
         norm.contains("que toquei ontem") || norm.contains("toquei ontem") ||
             norm.contains("cantei ontem") || norm.contains("ouvi ontem") ||
@@ -556,6 +603,17 @@ object DjCommander {
         onlyArtist(norm) != null -> "only"
         mixArtist(norm) != null -> "mixwith"
         norm.contains("mix") || norm.contains("mistura") || norm.contains("mixa") -> "mix"
+        // F2 · Vídeo por voz. Fica ACIMA de skip/next/prev/pause/play de propósito: "volta",
+        // "pausa" e "continua" são palavras de música muito mais usadas, e um comando de
+        // vídeo que chega depois nunca seria alcançado. O [videoWord] é o que impede o
+        // contrário — roubar a música quando ela está tocando.
+        // `video_play` ANTES de `video_open`: "continua o filme" retoma, não abre tela.
+        // "toca" também é o play da música (mais abaixo), então o `videoWord` é o que
+        // separa os dois.
+        videoPlayMatch(norm) -> "video_play"
+        videoOpenMatch(norm) -> "video_open"
+        videoBackMatch(norm) -> "video_back"
+        videoPauseMatch(norm) -> "video_pause"
         norm.contains("odia") || norm.contains("odeio") || norm.contains("nao gostei") -> "dislike"
         norm.contains("pula") || norm.contains("pular") || norm.contains("pule") ||
             norm.contains("skip") -> "skip"

@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Victor. Mesma construcao do avatar do Lingo (id "es"): esfera clara, olho oval
+    13x16 com glint, bochecha e meio-sorriso, piscada encolhendo o olho em
+    scaleY (@animator/eye_blink).
+
+    Paleta azul com adereco laranja, que e a do Lingo/TAMI — antes a cabeca era
+    roxa identica a da Virgin, e os dois so se distinguiam de perto.
+    O bone era o 🧢 do Lingo; aqui ele continua desenhado em path, porque
+    VectorDrawable nao renderiza emoji.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -6,7 +16,7 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Halo de luz (bloom frio atrás da cabeça) -->
+    <!-- Halo de luz (bloom frio atras da cabeca) -->
     <path
         android:pathData="M50,60m-46,0a46,46 0 1 1 92,0a46,46 0 1 1 -92,0Z">
         <aapt:attr name="android:fillColor">
@@ -15,13 +25,13 @@
                 android:centerX="0.5"
                 android:centerY="0.5"
                 android:gradientRadius="46"
-                android:startColor="#33A78BFA"
-                android:centerColor="#14A78BFA"
-                android:endColor="#007C62E0" />
+                android:startColor="#334FC3F7"
+                android:centerColor="#1481D4FA"
+                android:endColor="#004FC3F7" />
         </aapt:attr>
     </path>
 
-    <!-- Cabeça: esfera retrô "noite púrpura" (highlight gelo -> azul -> violeta) -->
+    <!-- Cabeca: esfera "ceu limpo" (branco -> azul claro -> azul) -->
     <path
         android:pathData="M54,2a52,52 0 1 1 0,104a52,52 0 1 1 0,-104Z">
         <aapt:attr name="android:fillColor">
@@ -30,54 +40,67 @@
                 android:centerX="0.34"
                 android:centerY="0.26"
                 android:gradientRadius="90"
-                android:startColor="#E9D5FF"
-                android:centerColor="#A78BFA"
-                android:endColor="#7C62E0" />
+                android:startColor="#E3F2FF"
+                android:centerColor="#81D4FA"
+                android:endColor="#4FC3F7" />
         </aapt:attr>
     </path>
 
-    <!-- Boné do Victor: coroa (sem cabelo) -->
+    <!-- Bone do Victor: coroa (sem cabelo) -->
     <path
-        android:fillColor="#1D1640"
+        android:fillColor="#FF9E40"
         android:pathData="M26,32 C24,11 34,4 54,4 C74,4 84,11 82,32 C76,29 70,27 54,27 C38,27 32,29 26,32 Z" />
 
-    <!-- Aba do boné (acima dos olhos) -->
+    <!-- Aba do bone (acima dos olhos) -->
     <path
-        android:fillColor="#2A2060"
+        android:fillColor="#E07C0C"
         android:pathData="M20,27 C40,31 68,31 88,27 C88,31 86,33 82,35 C64,37 44,37 26,35 C22,33 20,31 20,27 Z" />
 
-    <!-- Botão no topo da coroa -->
+    <!-- Botao no topo da coroa -->
     <path
-        android:fillColor="#A78BFA"
+        android:fillColor="#FFE0BF"
         android:pathData="M54,8m-2.6,0a2.6,2.6 0 1 1 5.2,0a2.6,2.6 0 1 1 -5.2,0Z" />
 
-    <!-- Olhos redondos fofos -->
-    <path
-        android:fillColor="#0B0820"
-        android:pathData="M35,45m-7,0a7,7 0 1 1 14,0a7,7 0 1 1 -14,0Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M33.2,43.4m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+    <!-- Olho esquerdo (13x16, centro 34.5,50) — encolhe em scaleY pra piscar -->
+    <group
+        android:name="eyeL"
+        android:pivotX="34.5"
+        android:pivotY="50">
+        <path
+            android:fillColor="#33113A"
+            android:pathData="M34.5,50m-6.5,0a6.5,8 0 1 1 13,0a6.5,8 0 1 1 -13,0Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.95"
+            android:pathData="M32,45m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+    </group>
 
-    <path
-        android:fillColor="#0B0820"
-        android:pathData="M73,45m-7,0a7,7 0 1 1 14,0a7,7 0 1 1 -14,0Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M71.2,43.4m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+    <!-- Olho direito (centro 73.5,50) -->
+    <group
+        android:name="eyeR"
+        android:pivotX="73.5"
+        android:pivotY="50">
+        <path
+            android:fillColor="#33113A"
+            android:pathData="M73.5,50m-6.5,0a6.5,8 0 1 1 13,0a6.5,8 0 1 1 -13,0Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.95"
+            android:pathData="M71,45m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+    </group>
 
-    <!-- Bochechas -->
+    <!-- Bochechas (laranja no Victor, como no Lingo) -->
     <path
-        android:fillColor="#59FF4A5E"
-        android:pathData="M17.3,67.6a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
+        android:fillColor="#73FF9640"
+        android:pathData="M25,63m-9,0a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
     <path
-        android:fillColor="#59FF4A5E"
-        android:pathData="M72.7,67.6a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
+        android:fillColor="#73FF9640"
+        android:pathData="M83,63m-9,0a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
 
     <!-- Sorriso largo e curvo -->
     <path
-        android:pathData="M39,71Q54,86 69,71"
-        android:strokeColor="#0B0820"
+        android:pathData="M44,65.5Q54,73 64,65.5"
+        android:strokeColor="#33113A"
         android:strokeLineCap="round"
-        android:strokeWidth="4.2" />
+        android:strokeWidth="3.2" />
 </vector>

@@ -34,10 +34,7 @@ class DjVoice(context: Context, languageTag: String? = null) {
         private val chosenVoices = HashMap<String, Voice>()
     }
 
-    fun currentName(): String {
-        val male = Settings.masculineAvatar(appContext)
-        return appContext.getString(if (male) R.string.dj_voice_name_male else R.string.dj_voice_name)
-    }
+    fun currentName(): String = Settings.assistantName(appContext)
 
     fun init(onReady: (Boolean) -> Unit) {
         if (tts != null) {
@@ -58,7 +55,11 @@ class DjVoice(context: Context, languageTag: String? = null) {
     }
 
     private fun pitch(): Float =
-        if (Settings.masculineAvatar(appContext)) 0.82f else 1.25f
+        when (Settings.avatarStyle(appContext)) {
+            Settings.VICTOR -> 0.82f
+            Settings.VERA -> 1.02f
+            else -> 1.25f
+        }
 
     private fun applyVoice() {
         val voice = resolveVoice(targetLocale)

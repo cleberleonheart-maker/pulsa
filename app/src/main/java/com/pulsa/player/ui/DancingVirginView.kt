@@ -32,11 +32,31 @@ class DancingVirginView @JvmOverloads constructor(
     /** Força um gênero específico; null segue o avatar ativo em [Settings]. */
     private var requestedMale: Boolean? = null
 
+    /** Força um avatar específico (Settings.VIRGIN/VICTOR/VERA); null segue o ativo. */
+    private var requestedStyle: Int? = null
+
     var forceMale: Boolean?
         get() = requestedMale
         set(value) {
             if (requestedMale == value) return
             requestedMale = value
+            if (value != null) {
+                requestedStyle = if (value) Settings.VICTOR else Settings.VIRGIN
+            }
+            if (isAttachedToWindow) refreshAvatar()
+        }
+
+    /** Escolhe um dos tres avatares; null volta a seguir o avatar ativo em [Settings]. */
+    var forceStyle: Int?
+        get() = requestedStyle
+        set(value) {
+            if (requestedStyle == value) return
+            requestedStyle = value
+            requestedMale = when (value) {
+                Settings.VICTOR -> true
+                Settings.VIRGIN -> false
+                else -> null
+            }
             if (isAttachedToWindow) refreshAvatar()
         }
 
@@ -63,8 +83,12 @@ class DancingVirginView @JvmOverloads constructor(
     }
 
     private fun refreshAvatar() {
-        val male = forceMale ?: Settings.masculineAvatar(context)
-        val res = if (male) R.drawable.avatar_masculino_animated else R.drawable.virgin_avatar_animated
+        val style = forceStyle ?: Settings.avatarStyle(context)
+        val res = when (style) {
+            Settings.VICTOR -> R.drawable.avatar_masculino_animated
+            Settings.VERA -> R.drawable.avatar_vera_animated
+            else -> R.drawable.virgin_avatar_animated
+        }
         val fresh = resources.getDrawable(res, null) as AnimatedVectorDrawable
         avatar?.stop()
         avatar = fresh

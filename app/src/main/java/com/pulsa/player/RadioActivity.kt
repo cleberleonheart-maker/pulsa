@@ -4,6 +4,7 @@ import com.pulsa.player.core.UserStation
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -13,11 +14,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import com.pulsa.player.model.Song
+import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.RadioStations
@@ -37,31 +35,14 @@ class RadioActivity : AppCompatActivity() {
         val url: String
     )
 
-    private val defaultStations = listOf(
-        Station("Itaramã FM 97.1", "Hits / Litoral Gaúcho", "https://player.voxhd.com.br/proxy/7716"),
-        Station("Rádio Pampa FM 97.5", "Notícias", "http://cast4.audiostream.com.br:8653/aac"),
-        Station("Rádio Grenal 95.9", "Esportes", "https://grenal.audiostream.com.br:20000/aac"),
-        Station("Rádio Campeira FM", "Gaúcha / Sertanejo", "https://servidor34-3.brlogic.com:8164/live?source=website"),
-        Station("Rádio Nativa", "Sertanejo", "http://centova17.ciclanohost.com.br:8085/stream.mp3"),
-        Station("Mix FM Porto Alegre", "Pop / Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MIXFM_POAAAC.aac"),
-        Station("Antena 1 Porto Alegre", "Smooth Jazz", "https://antenaone.crossradio.com.br/stream/1"),
-        Station("Caiçara (Porto Alegre)", "MPB", "http://cast4.audiostream.com.br:8654/mp3"),
-        Station("104 FM (Porto Alegre)", "Pop / MPB", "http://cast4.audiostream.com.br:8651/mp3"),
-        Station("Torres FM 101.1", "Pop / Litoral", "https://cast4.audiostream.com.br:2661/mp3"),
-        Station("Eldorado FM", "Pop / Contemporânea", "https://cast4.audiostream.com.br:2652/mp3"),
-        Station("Antena 1 São Paulo 94.7", "Pop / Smooth Jazz", "http://antena1.newradio.it/stream?ext=.mp3"),
-        Station("89 FM A Rádio Rock", "Rock", "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_89FM_ADP.aac?dist=site-89fm"),
-        Station("Nova Brasil FM", "MPB", "https://playerservices.streamtheworld.com/api/livestream-redirect/NOVABRASIL_SPAAC.aac"),
-        Station("Bossa Nova Brazil", "Bossa Nova", "http://54.38.43.201:8009/stream-128kmp3-BossaNovaBrazil"),
-        Station("Rádio Cidade 102.9", "Rock Clássico", "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOCIDADEAAC.aac"),
-        Station("Alpha FM 101.7", "Light / Adult", "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_ALPHAFM_ADP.aac"),
-        Station("Bossa Jazz Brasil", "Jazz / MPB", "https://centova5.transmissaodigital.com:20104/live"),
-        Station("Rádio Itatiaia 95.7", "Notícias / Esportes", "https://8903.brasilstream.com.br/stream")
-    )
 
-    private var player: ExoPlayer? = null
-    private var currentUrl: String? = null
-    private var loading = false
+    private var playbackBind: Playback.Bind? = null
+    private var activeStation: Station? = null
+    private var errorShownFor: String? = null
+
+    /** Botão de sintonia do diálogo de adicionar, para mostrar a contagem de locais. */
+    private var tuneButton: Button? = null
+    private var pendingStation: Station? = null
     private lateinit var statusText: TextView
     private lateinit var listContainer: LinearLayout
     private val rowByIndex = mutableListOf<View>()
@@ -78,13 +59,63 @@ class RadioActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.btn_radio_back).setOnClickListener { finish() }
         rebuildList()
-        setStatusStopped()
+        renderStatus()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        playbackBind = Playback.connect(this) {
+            pendingStation?.let { flushPending(it) }
+            renderStatus()
+            highlightActive()
+        }
+    }
+
+    override fun onStop() {
+        if (Playback.listener === playbackListener) Playback.listener = null
+        playbackBind?.let { Playback.release(it) }
+        playbackBind = null
+        super.onStop()
+    }
+
+    /** E4: o rádio agora toca no mesmo motor do app; esta tela só dirige a fachada. */
+    private val playbackListener = object : Playback.Listener {
+        override fun onSongChanged(song: Song?, index: Int) {
+            syncActiveFromPlayback()
+        }
+
+        override fun onPlayStateChanged(isPlaying: Boolean) {
+            renderStatus()
+            highlightActive()
+        }
+
+        override fun onProgress(positionMs: Long, durationMs: Long) = Unit
+
+        override fun onTrackError(song: Song?) {
+            errorShownFor = song?.radioUrl
+            renderStatus()
+            if (!isFinishing && !isDestroyed) {
+                Toast.makeText(this@RadioActivity, R.string.radio_error, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Playback.listener = playbackListener
+        syncActiveFromPlayback()
+        renderStatus()
+        highlightActive()
     }
 
     private fun rebuildList() {
-        stations = defaultStations + RadioStations.list(this).map {
+        // `RadioStations.all` traz as padrão E as salvas, na ordem em que o botão de avançar
+        // percorre no `PlaybackService`. As duas telas precisam ver a mesma lista, senão avançar
+        // sai da estação que a tela acabou de mostrar.
+        stations = RadioStations.all(this).map {
             Station(it.name, if (it.genre.isBlank()) getString(R.string.radio) else it.genre, it.url)
         }
+        syncTuneButton()
         listContainer.removeAllViews()
         rowByIndex.clear()
         buildRows()
@@ -135,6 +166,21 @@ class RadioActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * O rótulo do botão de sintonia diz quantas rádios locais já estão na lista, para o
+     * botão não parecer não fazer nada numa segunda visita — a busca substitui o grupo
+     * inteiro, então o número é o que dá pra conferir.
+     */
+    private fun syncTuneButton() {
+        tuneButton?.let { btn ->
+            btn.text = if (RadioStations.hasLocals(this)) {
+                getString(R.string.radio_tune_auto_have, RadioStations.locals(this).size)
+            } else {
+                getString(R.string.radio_tune_auto)
+            }
+        }
+    }
+
     private fun openAddDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_radio_add, null)
         val nameInput = view.findViewById<EditText>(R.id.radio_add_name)
@@ -147,9 +193,10 @@ class RadioActivity : AppCompatActivity() {
             }
             searchOnline(query)
         }
-        AlertDialog.Builder(this, Settings.accentStyle(this))
+        val dialog = AlertDialog.Builder(this, Settings.accentStyle(this))
             .setTitle(R.string.radio_add)
             .setView(view)
+            .setNeutralButton(R.string.radio_tune_auto) { d, _ -> d.dismiss(); tuneAutomatic() }
             .setPositiveButton(R.string.radio_add_save) { d, _ ->
                 val name = nameInput.text.toString().trim()
                 val url = urlInput.text.toString().trim()
@@ -161,7 +208,12 @@ class RadioActivity : AppCompatActivity() {
                 saveStation(name, url)
             }
             .setNegativeButton(R.string.cancel, null)
-            .show()
+            .create()
+        dialog.show()
+        // getButton() só devolve o botão DEPOIS do show() — antes disso o AlertDialog
+        // ainda não inflou a barra de botões e retorna null sempre.
+        tuneButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+        syncTuneButton()
     }
 
     private fun saveStation(name: String, url: String) {
@@ -177,7 +229,7 @@ class RadioActivity : AppCompatActivity() {
             .setPositiveButton(R.string.delete) { d, _ ->
                 d.dismiss()
                 RadioStations.remove(this, station.url)
-                if (currentUrl == station.url) stop()
+                if (activeStation?.url == station.url) Playback.toggle()
                 Toast.makeText(this, R.string.radio_removed, Toast.LENGTH_SHORT).show()
                 rebuildList()
             }
@@ -187,7 +239,7 @@ class RadioActivity : AppCompatActivity() {
 
     private fun searchOnline(query: String) {
         statusText.text = getString(R.string.radio_status_connecting)
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val results = try {
                 val encoded = URLEncoder.encode(query, "UTF-8")
                 val url = URL("https://de1.api.radio-browser.info/json/stations/search?name=$encoded&limit=15&hidebroken=true")
@@ -203,7 +255,7 @@ class RadioActivity : AppCompatActivity() {
                 } finally {
                     conn.disconnect()
                 }
-                parseSearchResults(body)
+                parseStations(body, 10)
             } catch (e: Exception) {
                 CrashLogger.writeLog(this, "RADIO busca falhou $query -> $e")
                 null
@@ -224,7 +276,75 @@ class RadioActivity : AppCompatActivity() {
         }
     }
 
-    private fun parseSearchResults(body: String): List<UserStation> {
+    /**
+     * Sintonia no automático: busca as rádios do estado e devolve para a sintonia girar por
+     * elas, somando às que já estavam no app — nenhuma das existentes é removida.
+     *
+     * Filtra por **estado**, e não por cidade, por um motivo medido: no radio-browser a maior
+     * parte das estações tem o campo `city` vazio, e buscar por `city=Porto Alegre` e
+     * `city=Canoas` devolve exatamente a mesma lista — incluindo "Jovem Pan - Florianópolis"
+     * e "Alpha FM - São Paulo". Por estado o filtro acerta. Também não dá para usar
+     * `bygeo` (o scanner por distância, que seria a sintonia mais fiel): o endpoint responde 404.
+     */
+    private fun tuneAutomatic() {
+        val state = RadioStations.state(this)
+        statusText.text = getString(R.string.radio_status_connecting)
+        ThreadPool.postNetwork {
+            val found = try {
+                val url = URL(
+                    "https://de1.api.radio-browser.info/json/stations/search" +
+                        "?state=${URLEncoder.encode(state, "UTF-8")}" +
+                        "&countrycode=BR&limit=60&hidebroken=true" +
+                        "&order=clickcount&reverse=true"
+                )
+                val conn = (url.openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 10000
+                    readTimeout = 10000
+                    requestMethod = "GET"
+                    setRequestProperty("User-Agent", "PulsaRadio/3.42 (Android)")
+                }
+                val body = try {
+                    val reader = BufferedReader(conn.inputStream.reader(Charsets.UTF_8))
+                    reader.use { it.readText() }
+                } finally {
+                    conn.disconnect()
+                }
+                parseStations(body, 60)
+            } catch (e: Exception) {
+                CrashLogger.writeLog(this, "RADIO sintonia $state falhou -> $e")
+                null
+            }
+            ThreadPool.onUi {
+                if (isFinishing || isDestroyed) return@onUi
+                setStatusStopped()
+                if (found.isNullOrEmpty()) {
+                    Toast.makeText(
+                        this@RadioActivity,
+                        R.string.radio_tune_fail,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@onUi
+                }
+                RadioStations.saveLocals(this, found)
+                rebuildList()
+                Toast.makeText(
+                    this@RadioActivity,
+                    getString(R.string.radio_tune_done, found.size),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    /**
+     * Parser do radio-browser, usado tanto pela busca por nome quanto pela sintonia
+     * automática — os dois endpoints devolvem o mesmo formato.
+     *
+     * Descarta URL quebrada/não-http e nome vazio, e remove duplicata por URL. O estado entra
+     * no rótulo porque a lista é do estado inteiro: sem isso a tela mostra "Atlântida - ATL" e
+     * o usuário não sabe de onde é.
+     */
+    private fun parseStations(body: String, limit: Int): List<UserStation> {
         if (body.isBlank()) return emptyList()
         val out = mutableListOf<UserStation>()
         val arr = JSONArray(body)
@@ -233,16 +353,20 @@ class RadioActivity : AppCompatActivity() {
             val obj = arr.optJSONObject(i) ?: continue
             val rawUrl = obj.optString("url_resolved").ifBlank { obj.optString("url") }
             if (rawUrl.isBlank() || !rawUrl.startsWith("http")) continue
-            if (!seen.add(rawUrl)) continue
+            // Mesma normalização do RadioStations.all(): o mesmo stream volta com query
+            // e barra diferentes dependendo do host, e entrava duplicado na sintonia.
+            if (!seen.add(rawUrl.trim().lowercase()
+                    .removePrefix("https://").removePrefix("http://")
+                    .substringBefore('?').removeSuffix("/"))) continue
             val name = obj.optString("name").trim()
             if (name.isEmpty()) continue
             var genre = obj.optString("tags").trim()
-            val country = obj.optString("country").trim()
-            if (country.isNotEmpty()) {
-                genre = if (genre.isEmpty()) country else "$genre · $country"
-            }
+            val st = obj.optString("state").trim()
+            val city = obj.optString("city").trim()
+            val local = listOf(city, st).filter { it.isNotEmpty() }.joinToString("/")
+            if (local.isNotEmpty()) genre = if (genre.isEmpty()) local else "$genre · $local"
             out += UserStation(name, genre, rawUrl)
-            if (out.size >= 10) break
+            if (out.size >= limit) break
         }
         return out
     }
@@ -263,109 +387,89 @@ class RadioActivity : AppCompatActivity() {
 
     private fun toggleStation(idx: Int) {
         val station = stations[idx]
-        if (currentUrl == station.url && player != null) {
-            stop()
+        val current = Playback.currentSong
+        // Normaliza a URL: a lista pode trazer a mesma estação com esquema/query diferente
+        // da que está tocando (o usuário salvou `http://` de uma que vinha `https://`), e a
+        // comparação exata fazia o clique reiniciar a rádio em vez de pausar.
+        val playingUrl = current?.radioUrl
+        if (current?.isRadio == true && playingUrl != null &&
+            RadioStations.normUrl(playingUrl) == RadioStations.normUrl(station.url)
+        ) {
+            Playback.toggle()
             return
         }
         startStation(station)
     }
 
     private fun startStation(station: Station) {
-        stop()
-        currentUrl = station.url
-        loading = true
+        activeStation = station
+        errorShownFor = null
+        pendingStation = station
         setStatusConnecting()
-        highlightRow(station.url)
+        highlightActive()
+        if (Playback.isReady) flushPending(station)
+    }
 
-        try {
-            val exo = ExoPlayer.Builder(this)
-                .setAudioAttributes(AudioAttributes.DEFAULT, true)
-                .build()
-            exo.setMediaItem(MediaItem.fromUri(station.url))
-            exo.playWhenReady = true
-            exo.addListener(object : Player.Listener {
-                override fun onPlaybackStateChanged(state: Int) {
-                    if (player !== exo) return
-                    when (state) {
-                        Player.STATE_READY -> {
-                            loading = false
-                            CrashLogger.writeLog(this@RadioActivity, "RADIO PRONTO ${station.name} ${station.url}")
-                            ThreadPool.onUi {
-                                if (currentUrl == station.url) setStatusLive(station.name)
-                            }
-                        }
-                        Player.STATE_ENDED -> {
-                            if (currentUrl == station.url) {
-                                ThreadPool.onUi {
-                                    if (currentUrl == station.url) stop()
-                                }
-                            }
-                        }
-                    }
-                }
+    private fun flushPending(station: Station) {
+        if (pendingStation?.url != station.url) return
+        pendingStation = null
+        activeStation = station
+        errorShownFor = null
+        Playback.start(listOf(songFor(station)), 0)
+        renderStatus()
+    }
 
-                override fun onPlayerError(error: PlaybackException) {
-                    CrashLogger.writeLog(
-                        this@RadioActivity,
-                        "RADIO ERRO ${station.name} ${station.url} -> code=${error.errorCodeName} msg=${error.message}"
-                    )
-                    ThreadPool.onUi {
-                        if (currentUrl != station.url) return@onUi
-                        stop()
-                        if (!isFinishing && !isDestroyed) {
-                            Toast.makeText(this@RadioActivity, R.string.radio_error, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            })
-            player = exo
-            exo.prepare()
-            CrashLogger.writeLog(this, "RADIO iniciando ${station.name} ${station.url}")
-        } catch (e: Exception) {
-            CrashLogger.writeLog(this, "RADIO excecao ${station.name} $e")
-            try {
-                player?.release()
-            } catch (_: Exception) {
+    private fun songFor(station: Station) = Song(
+        id = (station.url.hashCode() and 0x7fffffff).toLong(),
+        title = station.name,
+        artist = station.genre,
+        album = getString(R.string.radio),
+        albumId = 0L,
+        durationMs = 0L,
+        path = Song.RADIO_PREFIX + station.url,
+        year = 0
+    )
+
+    private fun syncActiveFromPlayback() {
+        val current = Playback.currentSong
+        if (current?.isRadio == true) {
+            activeStation = stations.firstOrNull {
+                RadioStations.normUrl(it.url) == RadioStations.normUrl(current.radioUrl ?: "")
+            } ?: Station(
+                current.title, current.artist, current.radioUrl ?: ""
+            )
+            errorShownFor = null
+        }
+    }
+
+    private fun renderStatus() {
+        val station = activeStation
+        when {
+            station == null -> {
+                if (isFinishing || isDestroyed) return
+                setStatusStopped()
             }
-            player = null
-            ThreadPool.onUi {
-                if (currentUrl == station.url) {
-                    stop()
-                    setStatusError()
-                }
+            errorShownFor == station.url -> {
+                if (isFinishing || isDestroyed) return
+                setStatusError()
+            }
+            Playback.isPlaying -> setStatusLive(station.name)
+            else -> {
+                if (isFinishing || isDestroyed) return
+                setStatusStopped()
             }
         }
     }
 
-    private fun stop() {
-        try {
-            if (loading) CrashLogger.writeLog(this, "RADIO parado durante conexao url=$currentUrl")
-        } catch (_: Exception) {
-        }
-        loading = false
-        val exo = player
-        player = null
-        currentUrl = null
-        if (exo != null) {
-            try {
-                exo.stop()
-            } catch (_: Exception) {
-            }
-            try {
-                exo.release()
-            } catch (_: Exception) {
-            }
-        }
-        highlightRow(null)
-        if (!isFinishing && !isDestroyed) setStatusStopped()
-    }
-
-    private fun highlightRow(activeUrl: String?) {
+    private fun highlightActive() {
+        val activeUrl = activeStation?.url
         stations.forEachIndexed { idx, station ->
-            val row = rowByIndex[idx]
+            val row = rowByIndex.getOrNull(idx) ?: return@forEachIndexed
             val btn = row.findViewById<ImageButton>(R.id.radio_row_btn)
             val icon = row.findViewById<ImageView>(R.id.radio_row_icon)
-            if (station.url == activeUrl) {
+            if (activeUrl != null &&
+                RadioStations.normUrl(station.url) == RadioStations.normUrl(activeUrl) && Playback.isPlaying
+            ) {
                 btn.setImageResource(R.drawable.ic_pause)
                 btn.contentDescription = getString(R.string.radio_pause)
                 icon.tint(R.color.primary)
@@ -398,7 +502,6 @@ class RadioActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        stop()
         AnimatedBackground.stop()
         super.onDestroy()
     }

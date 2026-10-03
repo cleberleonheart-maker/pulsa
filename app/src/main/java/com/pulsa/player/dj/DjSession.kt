@@ -23,6 +23,8 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.DjActivity
 import com.pulsa.player.R
+import com.pulsa.player.VideoPlayerActivity
+import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
@@ -34,6 +36,7 @@ import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
+import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Telemetry
 
 /**
@@ -69,6 +72,9 @@ class DjSession(
         private const val RESUME_LISTENER_DELAY_MS = 800L
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
+
+        /** F2 · Vídeo por voz: o quanto "volta o filme" recua quando não há 30s na frase. */
+        private const val VIDEO_BACK_MS = 30_000L
     }
 
     private val launcher = launchers
@@ -216,7 +222,10 @@ class DjSession(
                 }
                 suppressNextLearnSkip = false
                 if (newId >= 0L) {
-                    DjLearn.recordPlay(app, newId)
+                    // O `play_log` é gravado pelo motor ([PlaybackService.notePlay]) para
+                    // toda troca de faixa, e não só quando a cabine está aberta. Registrar
+                    // aqui também contaria o mesmo toque duas vezes na cabine, e as
+                    // tendências apareceriam com o dobro das reproduções.
                     DjSessionMemory.notePlayed(newId)
                 }
                 learnId = newId
@@ -549,6 +558,50 @@ class DjSession(
         }
     }
 
+    /**
+     * F2 · Vídeo por voz. Mesma regra da Virgin da tela principal: só vale com o vídeo no
+     * motor, porque a posição de vídeo não é salva (o `PlaybackService` pula vídeo no save e
+     * no restore — id de vídeo e id de música dividem o mesmo espaço do MediaStore).
+     */
+    private fun videoPlaying(): Song? =
+        Playback.currentSong?.takeIf { it.isVideo || it.isStream }
+
+    /** Retoma o vídeo sem pedir tela: `showPlaying` do fundo é bloqueado pelo Android 10+. */
+    private fun virgVideoPlay() {
+        val song = videoPlaying()
+        if (song == null) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        Playback.play()
+        speak(say(R.string.dj_voice_video_play, song.title))
+    }
+
+    private fun virgVideoOpen() {
+        val song = videoPlaying()
+        if (song == null) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        speak(say(R.string.dj_voice_video_open, song.title))
+        // `showPlaying` já é no-op se a tela está no ar, e abre em modo anexo: não troca a
+        // fila nem mexe em shuffle/repeat.
+        VideoPlayerActivity.showPlaying(activity)
+    }
+
+    private fun virgVideoBack() {
+        if (videoPlaying() == null) {
+            // Sem vídeo, a palavra de direção sozinha é a faixa anterior de sempre: ver
+            // `virgVideoBack` em MainVirgin, que tem o mesmo porquê.
+            speak(say(R.string.dj_voice_prev))
+            Playback.prev()
+            return
+        }
+        val alvo = (Playback.position - VIDEO_BACK_MS).coerceAtLeast(0L)
+        Playback.seekTo(alvo)
+        speak(say(R.string.dj_voice_video_back, Helper.formatDuration(alvo)))
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -758,7 +811,7 @@ class DjSession(
         host.refreshMicUi(true, false)
         Playback.setMicListening(true)
         commandListener?.destroy()
-        commandListener = DjCommandListener(activity) { handleCommand(it) }
+        commandListener = DjCommandListener(activity, onResult = { handleCommand(it) })
         commandListener?.start()
         speak(activity.getString(R.string.dj_mic_hint))
     }
@@ -831,6 +884,18 @@ class DjSession(
             }
             "mixwith" -> {
                 startMixWithArtist(DjCommander.mixArtist(norm))
+            }
+            "video_play" -> virgVideoPlay()
+            "video_open" -> virgVideoOpen()
+            "video_back" -> virgVideoBack()
+            "video_pause" -> {
+                if (videoPlaying() == null) {
+                    speak(say(R.string.dj_voice_video_none))
+                } else if (Playback.isPlaying) {
+                    djVoice?.stop()
+                    Playback.pause()
+                    speak(say(R.string.dj_voice_pause))
+                }
             }
             "skip" -> {
                 val cur = Playback.currentSong
@@ -1342,6 +1407,7 @@ class DjSession(
     }
 
     private fun finalizeDelete(song: Song, alreadyDeleted: Boolean) {
+        val key = QueueKey.encode(song)
         ThreadPool.post {
             val deleted = if (alreadyDeleted) {
                 true
@@ -1351,7 +1417,7 @@ class DjSession(
             ThreadPool.onUi {
                 if (deleted) {
                     VirginMedia.removeFromPlaylists(activity.applicationContext, song)
-                    if (Playback.currentSong?.id == song.id) Playback.next()
+                    if (QueueKey.sameType(Playback.currentKey, key)) Playback.next()
                     speak(activity.getString(R.string.dj_voice_delete_done, song.title))
                     Telemetry.log(activity, "DJ Virgin delete vc ok id=${song.id}")
                 } else {

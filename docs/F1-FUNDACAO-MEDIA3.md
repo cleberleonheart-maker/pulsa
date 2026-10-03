@@ -62,7 +62,40 @@ Quem usa, e quanto (medido no código):
 - `ui/VirginHomeFragment.kt`, `ui/SongsTabFragment.kt`, `ui/PlaylistDetailFragment.kt`, `ui/TrendsFragment.kt`, `ui/SongActions.kt` — `start(...)`
 - `sync/MirrorSync.kt` — pause/play do "ouvir juntos"
 - `DjActivity.kt`, `MainActivity.kt` — fazem `startService` + `bindService` e setam `Playback.service`
-- `SettingsActivity.kt:3x` e `widget/PulsaWidget.kt` — **puxam `Playback.service` direto**, fora do objeto
+- `SettingsActivity.kt` (4: 133, 141, 546, 547) e `widget/PulsaWidget.kt` (20, 29) — **puxam `Playback.service` direto**, fora do objeto
+
+### 3.1 Auditoria do contrato em 5.9.3 (E0, 27/09)
+
+A lista de §3 **continua válida**: `Playback.kt` tem exatamente os 12 estados, os 17
+comandos e o `Listener` listados, nada foi acrescentado desde o 5.8.1. O que mudou é o
+**tamanho do acoplamento** e o **número de furos** que a fachada vai ter de fechar:
+
+| Medida | 5.9.3 |
+|---|---|
+| Arquivos que chamam `Playback.*` | 29 |
+| Call sites `Playback.*` | ~250 |
+| `MainVirgin` / `DjSession` / `NowPlayingFragment` | 66 / 59 / 32 |
+| Acessos a `Playback.service` fora do objeto | 14, em 6 arquivos (12 externos + 2 dentro do próprio `PlaybackService`) |
+
+Furos que a fachada precisa fechar **antes** de trocar o motor (não estão em §3 porque já
+nasceram vazando):
+
+1. `PlaybackService.applyDanceParamsForRefresh()` — `SettingsActivity.kt:547`. Não existe no
+   objeto `Playback`: quem chama a Config precisa do serviço para religar os efeitos depois
+   de trocar Equalizer/BassBoost. **Tem que entrar na fachada** (ex.: `Playback.refreshFx()`
+   fazendo isso, ou um `setAudioFxMode` novo).
+2. `PlaybackService.currentArt(): Bitmap` — `widget/PulsaWidget.kt:20,29`. O widget monta o
+   `RemoteViews` com a capa. Uma fachada sobre `MediaController` não devolve `Bitmap`; ou o
+   widget passa a pedir a capa pelo mesmo caminho que a tela Now Playing usa, ou a
+   `currentArt` vira um método do serviço acessível por um handle explícito.
+3. `Playback.service != null` como "o app já subiu?" — `MainVirgin.kt:1223` faz *polling* de
+   8 × 250 ms esperando o bind. Com `MediaController` (conexão assíncrona) esse padrão
+   continua válido, mas a fachada precisa de um equivalente honesto — senão o alarme da
+   Virgin perde o `start` e a música não toca.
+
+Nenhuma alteração de `Playback` é permitida sem mexer nesses 12 pontos e nos ~250 call sites
+ao mesmo tempo. É por isso que E2 troca **a conexão**, não o motor.
+
 
 ## 4. Arquitetura alvo
 
@@ -86,6 +119,9 @@ PulsaLibrary : MediaLibraryService   (árvore: Músicas / Rádio / Vídeos / Pod
 
 Decisões:
 - **A fachada `Playback` vira `PulsaPlayback` sobre `MediaController`** e passa a funcionar mesmo com o app morto (Estado salvo/reconectado). Nenhum consumidor precisa mudar.
+  > **Corrigido na prática (E2–E3b):** a fachada ficou como está — só deixa de conhecer o serviço
+  > e passa a falar com o motor pela conexão. Ler posição continua por `Playback` (cache local),
+  > não por round-trip de `MediaController`; a sessão Media3 vive dentro do mesmo serviço.
 - **Um `ExoPlayer` só**, com `ExoPlayer.Builder().setAudioAttributes(..., handleAudioFocus = false)` — o foco de áudio continua gerenciado à mão pelo serviço, porque a Virgin precisa de *duck* e *pause sob perda de foco transitória* (`PlaybackService.kt:108-145`), comportamento que o `handleAudioFocus` padrão não reproduz.
 - **Fila unificada já nasce aqui**: `MediaItem` com `mediaId` estável (`song:<id>`, `radio:<url>`, `video:<id>`), o que é pré-requisito do "Fila universal" e do `MediaLibraryService`.
 - **Crossfade** deixa de ser `setVolume` em `Handler` e passa a ser `ExoPlayer` com `setVolume` controlado por `Player.Listener` no `onMediaItemTransition` — mesma sensação, menos código.
@@ -105,12 +141,33 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 - Manter `minSdk 23` (Media3 1.3 e Room 2.6 suportam) e `compileSdk 34`.
 - Compilar e rodar os testes: a meta do passo é **zero mudança de comportamento**.
 
-**E2 · Fachada com MediaController (1 dia)**
-- Criar `playback/PulsaSessionService : MediaSessionService` com um `ExoPlayer` e a sessão, sem migrar a música ainda.
-- Criar `playback/PulsaPlayback.kt` (ou adaptar `Playback.kt`) com a API de §3 implementada sobre `MediaController` + `PlayerHolder` (conexão assíncrona, re-conecta em `onStart` do serviço).
-- `Playback.service` deixa de existir: `SettingsActivity` e `PulsaWidget` passam a usar a fachada (mexer só nesses dois pontos).
-- Migrar `MainActivity`/`DjActivity` do `bindService` manual para a fachada.
-- **Validação:** app abre, toca, notificação funciona, DJ continua, widget funciona. Motor ainda é o `MediaPlayer` (modo legado dentro do serviço) — só a *conexão* mudou.
+**E2 · Fachada com a conexão (1 dia) — FEITO 27/09, `2a591d1`, CI verde**
+- Escopo real, diferente do rascunho original: **só a conexão**, não a sessão. Criar a
+  `MediaSessionService` aqui mostraria um segundo item nos controles do sistema, vazio e sem
+  som, ao lado da notificação atual — ou seja, mudança de comportamento, que é a única coisa
+  que este passo não pode trazer. A sessão entra no E3, quando o `ExoPlayer` for o motor de
+  verdade e a sessão tiver o que controlar.
+- `playback/PlayerLink.kt`: o "PlayerHolder" do plano. `PlayerLink` é o contrato com o motor;
+  `ServicePlayerLink` repassa 1:1 o `MediaPlayer` legado. No E3 entra a implementação sobre
+  `MediaController` — e nem a fachada nem os 29 consumidores mudam.
+- `playback/Playback.kt`: `Playback.service` **deixou de existir**. A fachada é o único lugar do
+  app que sabe que existe um motor. Os 29 arquivos que já chamavam `Playback` não mudaram.
+- `Playback.connect(context) { avisa quando ligou }` devolve um `Bind`; `Playback.release(bind)`
+  desfaz. Substituiu os dois `ServiceConnection` duplicados (MainActivity e DjActivity) e
+  corrigiu de passagem o flag `bound` do DjActivity, que só virava no callback e portanto
+  vazava o bind quando a tela saía antes de a ligação fechar.
+- Os três furos de §3.1 fecharam: `Playback.isReady` (no lugar de `Playback.service != null`,
+  em `MainActivity:422` e no polling da Virgin depois do alarme), `Playback.reapplyDanceParams()`
+  (no lugar de `applyDanceParamsForRefresh()`) e `Playback.currentArt()` (no lugar do `Bitmap`
+  lido do serviço). O widget parou de conhecer o serviço: pede as intenções à fachada.
+- **Preservado de propósito:** quem se anuncia na fachada é o próprio `PlaybackService` no
+  `onCreate`, e não o `bindService`, e o motor continua valendo depois do `unbind`. É disso que
+  o widget depende — um `BroadcastReceiver` não conecta nada e ainda assim desenha a faixa
+  tocando. Refazer isso é tarefa do E3, quando a sessão passa a ser dona do player.
+- **Validação:** 11 arquivos compilam, as 6 suítes passam (68 testes) e o CI da PR #1 ficou
+  verde. A contagem de bind não tem teste unitário (precisa de `Context` e `bindService` de
+  verdade) — por isso o checklist do E0 no aparelho é a rede deste passo.
+
 
 **E3 · Música no ExoPlayer (2–3 dias) — o passo crítico**
 - `MediaItem` por `Song`; `setMediaItems(items, index, positionMs)`.
@@ -120,16 +177,137 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 - Loop A/B no `emitProgress` continua, lendo `player.currentPosition` (o cache local da facade).
 - **Validação:** o checklist do E0 inteiro, com atenção especial a EQ/8D/crossfade.
 
+> **E3 · Execução real (28/09) — E3a feito, E3b feito e validado no aparelho**
+>
+> **E3a — motor no serviço (FEITO, `6b9bfb1`, CI verde):** `PlaybackService` agora cria um
+> `ExoPlayer` próprio no `onCreate` (com `audioAttributes` e `handleAudioFocus = false`), sem a
+> sessão. Cada `prepareCurrent` enfileira a fila inteira em `setMediaItems`; efeitos (EQ,
+> visualizador), A/B, sleep mix e 8D realocados no `Player.Listener`; a fachada e os consumidores
+> não mudaram (o `LocalBinder` repassa os mesmos métodos).
+>
+> **E3b — sessão Media3 no lugar da `MediaSessionCompat` (FEITO, `9470e6b`, CI verde):**
+> - Descoberta-chave na tag 1.3.1 (`MediaSessionService.onBind`): com *action nula* — que é como
+>   o `Playback.connect` faz `bindService` — o base devolve `null` e o sistema chama `onNullBinding`,
+>   matando a conexão que mantém a fachada/estado vivos. Por isso o `onBind` foi sobrescrito:
+>   action `null` → `LocalBinder()` de sempre; qualquer outra → `super.onBind(intent)` (que devolve
+>   o `sessionBinder` de mídia). Assinatura precisa ser `IBinder?` (o base é nullable).
+> - `class PlaybackService : MediaSessionService()`, `session` criado via
+>   `MediaSession.Builder(this, player!!)`, `onGetSession` devolve a singleton. `onStartCommand`
+>   delega ao `super` depois dos `START`/`STOP`/`NEXT`/`PREV` próprios (o base já trata
+>   `ACTION_MEDIA_BUTTON` e devolve `START_STICKY` para intent nulo). `onDestroy` libera a sessão
+>   antes do player.
+> - **Comandos externos:** não há `COMMAND_PLAY`/`COMMAND_PAUSE` nesse Player — play/pause vêm
+>   como `COMMAND_PLAY_PAUSE` e o default do `Media3` executa a operação certa para o botão
+>   (idempotente). `onPlayerCommandRequest` bloqueia (`RESULT_ERROR_UNKNOWN`) `SEEK_TO_NEXT*`/
+>   `SEEK_TO_PREVIOUS*` (que virariam segundo pulo na fila recriada por `prepareCurrent`) e
+>   `COMMAND_STOP` (no-op, paridade com o legado). Bookkeeping da reprodução vem de
+>   `onIsPlayingChanged` → `syncExternalPlaybackState` (idempotente, mesmo conjunto de sempre).
+> - **Metadata:** não existe `MediaSession.setMediaMetadata`/`Player.setMediaItemMetadata` na
+>   versão — o snapshot vem dos `MediaItem`. `prepareCurrent` embute `MediaMetadata`
+>   (title/artist/album, sem `setDurationMs`) em cada item; `publishMetadata` vira
+>   `player.replaceMediaItem(index, ...)`.
+> - **Notificação:** o `MediaSessionService` exige provider (devolver `null` dá NPE) e sobe/desce
+>   o foreground sozinho. O provider devolve a **nossa** notificação (mesma `NOTIFICATION_ID` 10,
+>   mesmas actions, `MediaStyle().setMediaSession(session.getSessionCompatToken())`) e guarda o
+>   `Callback` para reposto após o artwork (`refreshNotification`). `ensureForeground` e o
+>   `notify` manual saíram.
+> - **Correções do test-drive (29/09):**
+>   - **Foreground segurado pela mão enquanto toca.** O `MediaSessionService` decide o foreground
+>     pelo controller interno (`playWhenReady` + `STATE_READY`); com o app em background essa
+>     decisão oscilava e ele chamava `stopForeground(true)` → o processo morria (música parava
+>     "depois de uns minutos", mãos livres e notificação iam embora; o botão do widget também
+>     parava — serviço reiniciado com fila vazia fazia `play()` no vazio). `ensureForeground(song)`
+>     voltou (startForeground próprio, id 10, `FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK` no ≥29,
+>     chamado no `publishState` tocando) e o `onUpdateNotification` foi sobrescrito: enquanto toca
+>     **não** chamamos o `super` (o manager de mídia nunca roda o teardown); pausado, o `super`
+>     cuida.
+>   - **Janela de voz não morre em erro transiente.** `DjCommandListener` com janela ativa
+>     remarca a escuta com backoff (500 ms → 3 s) em `ERROR_BUSY`/`NO_MATCH`/`SPEECH_TIMEOUT`/
+>     `CLIENT` em vez de fechar a sessão (por isso o mãos livres "ia embora" na segunda ativação
+>     quando o reconhecedor devolvia BUSY enquanto a música tocava).
+> - **Cleanup previsto (próximo passo):** remover a `MediaSessionCompat`, o `PlaybackStateCompat`
+>   escrito à mão e o `updateSessionState` — o snapshot agora sai direto do player. `exported`
+>   continua `false` (SystemUI acessa via registro do compat; publicar é tarefa do E7).
+> - **Validação do ponto atual:** `PlaybackService.kt` + `PlayerLink.kt` + `Playback.kt` +
+>   `MicBackoff.kt` + `MicCycle.kt` + `DjCommandListener.kt` compilam localmente contra o
+>   `media3-session-1.3.1.jar` (baixado do Google Maven; Maven Central dá 404 para a `androidx.media3`)
+>   pelo caminho fake no cache do Gradle; `MicCycleTest` + `MicBackoffTest` → **66 testes OK**;
+>   test-drive do usuário no aparelho (APK `pulsa-f1-e3b-124b.apk`) confirmou: música continua em
+>   background, mãos livres e notificação persistem, voz reabre após o comando.
+> - **Reminder:** a E3b removeu o `setResumePosition` do Media3 (window suspend position);
+>   `subscription`/`window` com `liveStreamPosition` embutida nos `MediaItem` compensa no rádio.
+
 **E4 · Rádio no mesmo motor (1 dia)**
 - `RadioActivity` passa a enfileirar `radio:<url>` no mesmo serviço (hoje tem `ExoPlayer` próprio em `RadioActivity.kt:281`).
 - Adicionar `media3-exoplayer-hls` já resolve o bug de `.m3u8` do radio-browser que hoje falha calado.
 - **Validação:** rádio continua funcionando com o app em background e a notificação passa a mostrar a estação (hoje não mostra).
+
+> **E4 · Execução real (28/09):** feito e validado local (compile + 5 suítes DJ → **62 testes OK**).
+> - `Song` ganhou `isRadio`/`radioUrl`: rádio é `path = "radio:<url>"` (`Models.kt`); `PlaybackService`
+>   faz `Uri.parse` no `mediaItemFor`, pula `LastFm.nowPlaying`/resume para rádio, e notifica erro via novo
+>   `Playback.Listener.onTrackError(song)` (default — nenhum implementador quebrou).
+> - `RadioActivity` largou o `ExoPlayer` próprio e dirige só a fachada (`Playback.start(listOf(radioSong), 0)`,
+>   mesmo segundo toque = `Playback.toggle()`). Status "Conectando…/No ar · estação/Erro" via `Playback.listener`
+>   (mesmo padrão single-slot de MainActivity/DjActivity/NowPlayingActivity, claro no `onStop`).
+> - `ExoPlayer.Builder` ganhou `DefaultMediaSourceFactory` com `DefaultHttpDataSource` (UA + redirect cross-protocol
+>   + timeouts) — streams do streamtheworld/icecast acabam com UA por baixo do pano.
+> - `.m3u8` roda porque `media3-exoplayer-hls` já existia no `build.gradle.kts` (E3); datasource novo cobre
+>   redirect http→https das URLs do radio-browser.
+> - **Reteste no aparelho (28/09, `5764e1e`): CONFIRMADO — rádio OK.** Tocar estação → fechar o app → música segue e a notificação mostra o nome da estação;
+>   trocar de estação re-conecta; `.m3u8` (Antena 1) toca; erro de stream mostra "Erro" + toast em vez de travar.
+> - **Encerrar na mão (fechar de verdade, swipe) também passou a continuar (7b9f5f1):**
+>   o portão do foreground virou `playingLike` (`playWhenReady` e `READY`/`BUFFERING`) — live stream cai para
+>   `isPlaying=false` durante `isLoading`/rebuffer, o `onUpdateNotification` caía no `super`, o manager do Media3
+>   via "acabou" e derrubava o FGS no swipe → processo morria junto (`4877f95` com `setWakeMode(NETWORK)` cobriu o
+>   CPU dormindo, mas não o FGS derrubado). Música local nunca carregava em background, por isso só o rádio sofria.
+>   Persistência dupla: `saveResumeState` grava `radio_resume` (url/título/gênero) enquanto toca e o `onCreate`
+>   restaura a estação se o processo renasceu com ela no ar; `pause()` deliberado limpa (não volta sozinho).
 
 **E5 · Vídeo no mesmo motor (1–2 dias)**
 - `MediaItem` `video:<id>` com `MimeTypes` detectado; `VideoPlayerActivity` vira só uma tela de player, sem `VideoView`.
 - Legendas: `media3-extractor` (SRT/VTT) reaproveitando o modelo de `sync/Lyrics.kt`.
 - `VideoLibrary.kt` (54 linhas) entra na árvore de mídia.
 - **Validação:** vídeo local toca com áudio junto, e a música para de invadir o vídeo.
+
+> **E5 · Execução real (28/09):** vídeo toca no MESMO motor do rádio/música — é impossível a música
+> "invadir" o vídeo porque o player é um só, e entrar no vídeo substitui a fila (nada de dois tocadores).
+> - `Song` ganhou `isVideo`/`videoId`: vídeo é `path = "video:<id>"` (`Models.kt`); o `mediaItemFor` resolve
+>   `VideoLibrary.contentUri(id)` (`content://media/external/video/media/<id>`). Pula
+>   `LastFm`/resume/`loadLargeIcon`/anúncio de voz para vídeo.
+> - **Defeito do E5 achado no aparelho (música parou de tocar + app sem resposta):** o
+>   `DefaultMediaSourceFactory` ficou só com o `DefaultHttpDataSource` do E4, que aceita SÓ
+>   http/https — a música local (`file://`) e o vídeo (`content://`) morriam com erro de fonte, e
+>   nenhuma faixa tocava. Agravou em "não está respondendo": o `onTrackError` pulava a fila
+>   INTEIRA (o limite era `queue.size`) e, como todas as faixas falhavam, remontava fila +
+>   notificação no main thread uma vez por faixa. Dois consertos: o HTTP embrulhado num
+>   `DefaultDataSource.Factory(this, ...)` (roteia `file://`/`content://` internamente, sem
+>   dependência nova — `media3-datasource` já vem com o `media3-exoplayer`) e o limite da
+>   cascata em `MAX_CONSECUTIVE_ERRORS = 3`. **Lição: toda fonte de URI que a app monta
+>   (`file://`, `content://`, http) precisa estar listada no `DefaultDataSource`, não só a
+>   última que apareceu no diff.**
+> - `VideoPlayerActivity` largou o `VideoView`: virou só tela. Anexa um `SurfaceView` (`vp_video`) ao player do
+>   serviço via novo `Playback.player` (`Player?`; exposto só para a tela de vídeo ler buffer/erro e anexar a
+>   superfície — o transporte continua pela fachada) e dirige `Playback.play/pause/next/seek/toggle`.
+> - Cada vídeo vira um `Song` na fila do motor (`Playback.start(videoSongs, index)`); com repeat-all e sem
+>   shuffle/repeat-one o "next" avança em vez de repetir; virar a fila já corta a música.
+> - Entrada guarda `resumeQueue/resumeIndex/resumePlaying` e os toggles de shuffle/repeat antes de lançar o
+>   vídeo; na saída devolve a fila (se havia música tocando) ou zera o motor com o novo `Playback.stop()`
+>   (a "parada" que a fachada não tinha — sem ela o último vídeo ficava encalhado e virava "música invadindo").
+>   `stop()` não mexe no `resume` de música salvo (vídeo nunca chega a gravá-lo).
+> - Controles/fling/toque para esconder barras continuam iguais ao `VideoView` (mesmo layout, mesmo detector);
+>   progresso/duração vêm do listener (`onProgress` do motor, emissão de 500ms).
+> - Nenhuma dependência nova: `media3-common` já traz `Player.setVideoSurfaceView/getVideoSize`; sem `media3-ui`,
+>   sem `media3-extractor` (legendas SRT/VTT ficaram de fora do corte inicial — próximo passo).
+> - Validado local: compile do conjunto explícito (16 arquivos) + **62 testes DJ OK**. PR #1, `feature/media3`.
+> - **Validado no aparelho em 28/09 com `5764e1e`:** música toca, rádio OK, vídeo OK, **8D OK**
+>   (o pan LFO sobreviveu à troca de `audioSessionId` — a armadilha nº1 desta doc), **widget OK**
+>   (o `PulsaWidget` lê o service direto, armadilha nº5, e não precisou mudar) e **o checklist do
+>   E0 inteiro** (EQ com todos os presets/automático/custom/karaokê, crossfade, A/B, sleep mix,
+>   dance, duck da Virgin, botões e o teste de morte do processo). O defeito do `DefaultDataSource`
+>   acima foi encontrado exatamente por causa do test-drive.
+>
+> **E0–E5 fechados e validados no aparelho.** O motor de playback não é mais risco: o resto da F1
+> é superfície (E6 em diante).
 
 **E6 · MediaLibraryService (1–2 dias)**
 - `playback/PulsaLibraryService : MediaLibraryService` publicando a árvore (raiz "Pulsa", filhos "Músicas", "Rádio", "Vídeos", "Playlists", "Favoritas", "Adicionadas recentemente").
@@ -167,7 +345,7 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 7. **Mídia do sistema e `MediaItem`.** `MediaItem` não aceita caminho de arquivo cru sem `Uri`/`File` válido no Android 7+; `song.path` (`Library.kt:22`) precisa virar `Uri.fromFile`/`content://` corretamente, senão dá `IllegalStateException` no `prepare`.
 8. **Crossfade com `MediaPlayer` compartilhando o foco.** Depois do E3 a sensação precisa ser igual: fade-out da atual, fade-in da nova, sem gap audível. Regra: a mesma constante `FADE_STEPS = 10` e o mesmo `crossfadeMs` (`PlaybackService.kt:50`, `214`).
 9. **Rádio e `minSdk 23`.** `media3-datasource-okhttp` e HLS funcionam em 23, mas testar num aparelho antigo (API 23–26) antes de considerar o passo pronto.
-10. **Android 14 / FGS.** `FOREGROUND_SERVICE_MEDIA_PLAYBACK` já está no manifest (linha 16) — bom. Mas `MediaSessionService` inicia foreground em `onGetSession`; se a sessão for criada sem tocar, pode aparecer notificação fantasma. Iniciar foreground só no primeiro `play()`.
+10. **Android 14 / FGS.** `FOREGROUND_SERVICE_MEDIA_PLAYBACK` já está no manifest (linha 16) — bom. Mas `MediaSessionService` inicia foreground em `onGetSession`; se a sessão for criada sem tocar, pode aparecer notificação fantasma. **Resolvido no E3b:** o provider devolve `buildIdleNotification()` enquanto `currentSong == null` — o sistema sobe a notificação de transporte do próprio Media3 (que é obrigatória), não a nossa, e ela sai quando a música toca. Iniciar foreground só no primeiro `play()` ficou desnecessário: quem decide o texto é o provider, não o serviço.
 
 ## 7. Como testar a cada passo
 

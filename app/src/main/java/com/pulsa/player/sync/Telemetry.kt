@@ -11,8 +11,8 @@ import java.net.URLEncoder
 object Telemetry {
 
     fun log(context: Context, msg: String) {
-        ThreadPool.post {
-            if (Blacklist.isBanned(context)) return@post
+        ThreadPool.postNetwork {
+            if (Blacklist.isBanned(context)) return@postNetwork
             val payload = URLEncoder.encode(msg, "UTF-8")
             val token = Settings.telemetryToken(context)
             val device = Settings.deviceId(context)
@@ -29,7 +29,7 @@ object Telemetry {
                     conn.setFixedLengthStreamingMode(payload.toByteArray().size)
                     conn.outputStream.use { it.write(payload.toByteArray()) }
                     conn.inputStream.close()
-                    return@post
+                    return@postNetwork
                 } catch (t: Throwable) {
                 }
             }

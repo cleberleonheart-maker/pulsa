@@ -130,7 +130,7 @@ class SettingsActivity : AppCompatActivity() {
             isChecked = Settings.equalizerOn(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setEqualizerOn(this@SettingsActivity, checked)
-                Playback.service?.refreshFx()
+                Playback.refreshFx()
             }
         }
 
@@ -138,7 +138,7 @@ class SettingsActivity : AppCompatActivity() {
             isChecked = Settings.audio8d(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setAudio8d(this@SettingsActivity, checked)
-                Playback.service?.refreshFx()
+                Playback.refreshFx()
             }
         }
 
@@ -146,6 +146,18 @@ class SettingsActivity : AppCompatActivity() {
             isChecked = Settings.djRadio(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setDjRadio(this@SettingsActivity, checked)
+            }
+        }
+
+        // Gestos (shake/inclinacao): o interruptor nao existia, entao `Settings.gesturesOn`
+        // ficava sempre false e o recurso era inalcancavel. Aqui so grava a escolha: quem
+        // registra o sensor e a MainActivity, no onResume, via `attachIfEnabled` — assim o
+        // callback do shake nao e sobrescrito por uma lambda vazia enquanto a tela de Ajustes
+        // esta aberta.
+        findViewById<MaterialSwitch>(R.id.gestures_switch).apply {
+            isChecked = Settings.gesturesOn(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setGesturesOn(this@SettingsActivity, checked)
             }
         }
 
@@ -304,7 +316,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun createSession() {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val res = sessionCall("""{"create":true}""")
             runOnUiThread {
                 val code = runCatching { JSONObject(res) }.getOrNull()?.optString("code")
@@ -337,7 +349,7 @@ class SettingsActivity : AppCompatActivity() {
                     Toast.makeText(this, R.string.mirror_code_hint, Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                ThreadPool.post {
+                ThreadPool.postNetwork {
                     val res = sessionGet(code)
                     val ok = runCatching { JSONObject(res) }.getOrNull()?.optBoolean("ok", false) == true
                     runOnUiThread {
@@ -358,7 +370,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun leaveSession() {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             sessionCall("""{"leave":true}""")
             Settings.setMirrorCode(this@SettingsActivity, "")
             Settings.setMirrorHost(this@SettingsActivity, false)
@@ -543,8 +555,8 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle(R.string.pick_quality)
             .setSingleChoiceItems(names, current) { dialog, which ->
                 Settings.setAudioQuality(this, keys[which])
-                Playback.service?.refreshFx()
-                Playback.service?.applyDanceParamsForRefresh()
+                Playback.refreshFx()
+                Playback.reapplyDanceParams()
                 findViewById<TextView>(R.id.quality_value).text = qualityLabel()
                 dialog.dismiss()
             }

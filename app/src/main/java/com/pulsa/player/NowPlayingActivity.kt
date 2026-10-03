@@ -56,6 +56,11 @@ class NowPlayingActivity : AppCompatActivity(), Playback.Listener {
 
     override fun onSongChanged(song: Song?, index: Int) {
         fragment()?.render()
+        // F2b: o mesmo da home — vídeo que virou o item atual precisa da tela de vídeo para
+        // ter imagem. A tela abre grudada no motor, sem trocar a fila.
+        if (song?.isVideo == true || song?.isStream == true) {
+            VideoPlayerActivity.showPlaying(this)
+        }
     }
 
     override fun onPlayStateChanged(isPlaying: Boolean) {

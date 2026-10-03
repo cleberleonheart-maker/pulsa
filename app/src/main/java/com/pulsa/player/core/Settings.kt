@@ -5,8 +5,15 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.pulsa.player.R
+import com.pulsa.player.playback.QueueKey
 
 object Settings {
+    // Ids de avatar. Ficam publicos porque as telas desenham o avatar e a voz por causa
+    // deles; o numero e gravado em prefs, entao nao pode mudar depois.
+    const val VIRGIN = 0
+    const val VICTOR = 1
+    const val VERA = 2
+
     private const val FILE = "pulsa_settings"
     private const val SECRET_FILE = "pulsa_secrets"
     private const val KEY_DEVICE_ID = "device_id"
@@ -71,6 +78,23 @@ object Settings {
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+
+    /**
+     * URI do arquivo de log espelhado no `Download`, guardado para ser reaproveitado.
+     *
+     * O CrashLogger não consegue reencontrá-lo por nome: o MediaStore acrescenta a extensão
+     * do MIME ("pulsa-erros.log" vira "pulsa-erros.log.txt") e em `MediaStore.Downloads`
+     * não dá para filtrar por `RELATIVE_PATH`. Cada busca voltava vazia e o espelho
+     * virava um arquivo novo por erro. Guardando o URI, a escrita reaproveita o mesmo.
+     */
+    fun mirrorLogUri(context: Context): String? =
+        prefs(context).getString("mirror_log_uri", null)?.takeIf { it.isNotBlank() }
+
+    fun setMirrorLogUri(context: Context, uri: String?) {
+        prefs(context).edit().apply {
+            if (uri.isNullOrBlank()) remove("mirror_log_uri") else putString("mirror_log_uri", uri)
+        }.apply()
+    }
 
     /** Prefs de dados/controle interno (não sensível). */
     fun dataPrefs(context: Context): SharedPreferences = prefs(context)
@@ -269,6 +293,20 @@ object Settings {
     fun dancePitch(context: Context): Float =
         if (audioQuality(context) == QUALITY_DANCE) DANCE_PITCH else 1f
 
+    /**
+     * F2 — velocidade escolhida pelo usuário, só para vídeo/stream.
+     *
+     * Fica em `Settings` porque a tela de vídeo pode ser fechada e reaberta a qualquer
+     * momento: sem persistir, o botão marcava 1,5x e o vídeo voltava a 1x assim que a
+     * fila mudasse de faixa.
+     */
+    fun videoSpeed(context: Context): Float =
+        prefs(context).getFloat("video_speed", 1f).coerceIn(0.5f, 2.0f)
+
+    fun setVideoSpeed(context: Context, value: Float) {
+        prefs(context).edit().putFloat("video_speed", value.coerceIn(0.5f, 2.0f)).apply()
+    }
+
     fun qualityLabelRes(quality: String): Int = when (quality) {
         QUALITY_AUTO -> R.string.quality_auto
         QUALITY_BASS -> R.string.quality_bass
@@ -375,9 +413,39 @@ object Settings {
     fun masculineAvatar(context: Context): Boolean =
         prefs(context).getBoolean("avatar_masculino", false)
 
+    /**
+     * Qual dos tres avatares esta em uso.
+     *
+     * Foi um boolean so (virgem/Victor) e virou um id de 0 a 2 por causa da Vera. O
+     * `avatar_masculino` antigo continua sendo lido/escrito no mesmo lugar por compat, e
+     * a Vera entra como um valor novo do id -- quem ja tinha o Victor como masculino
+     * continua com o Victor, sem migracao.
+     */
+    fun avatarStyle(context: Context): Int = prefs(context).getInt("avatar_style", -1).let { stored ->
+        if (stored >= 0 && stored <= 2) {
+            stored
+        } else {
+            // Sem id gravado: deriva do boolean legado.
+            if (prefs(context).getBoolean("avatar_masculino", false)) VICTOR else VIRGIN
+        }
+    }
+
+    fun setAvatarStyle(context: Context, value: Int) {
+        val safe = value.coerceIn(VIRGIN, VERA)
+        prefs(context).edit()
+            .putInt("avatar_style", safe)
+            // Mantem o flag antigo coerente, para o caso de algo legado ainda o leia.
+            .putBoolean("avatar_masculino", safe == VICTOR)
+            .apply()
+    }
+
     fun assistantName(context: Context): String =
         context.getString(
-            if (masculineAvatar(context)) R.string.dj_voice_name_male else R.string.dj_voice_name
+            when (avatarStyle(context)) {
+                VICTOR -> R.string.dj_voice_name_male
+                VERA -> R.string.dj_voice_name_vera
+                else -> R.string.dj_voice_name
+            }
         )
 
     fun setDjRadio(context: Context, value: Boolean) {
@@ -447,6 +515,25 @@ object Settings {
 
     fun geminiOn(context: Context): Boolean =
         prefs(context).getBoolean("gemini_on", false)
+
+    /**
+     * Instância do PeerTube usada na busca de vídeo (F2).
+     *
+     * Federado não é sinônimo de permanente: instância pública muda de nome, cai ou começa a
+     * responder 403, e quem busca vídeo do PeerTube é justamente quem quer o link direto que
+     * o YouTube esconde. Por isso é configurável, e o valor é normalizado na gravação para
+     * não depender de o usuário digitar o esquema.
+     */
+    fun peerTubeInstance(context: Context): String =
+        com.pulsa.player.data.PeerTube.normalizeInstance(
+            prefs(context).getString("peertube_instance", "").orEmpty()
+        )
+
+    fun setPeerTubeInstance(context: Context, value: String) {
+        prefs(context).edit()
+            .putString("peertube_instance", com.pulsa.player.data.PeerTube.normalizeInstance(value))
+            .apply()
+    }
 
     fun setResumeOn(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("resume_on", value).apply()
@@ -521,6 +608,93 @@ object Settings {
     fun resumeSongTitle(context: Context): String = prefs(context).getString("resume_title", "") ?: ""
 
     fun resumeSongArtist(context: Context): String = prefs(context).getString("resume_artist", "") ?: ""
+
+    /**
+     * Fila salva para atravessar morte de processo e atualização do app.
+     *
+     * O [resumeState] acima guarda só UMA música, e nada no boot a devolvia: o restore
+     * automático era exclusivo do rádio. Numa atualização o Android mata o processo e o
+     * `onDestroy` não chegava a rodar, então a fila inteira se perdia.
+     *
+     * Guarda as chaves em JSON, na ordem, com o índice e a posição. A faixa continua vindo
+     * do MediaStore no restore — a chave é a referência, o resto é reconstruído, o que
+     * sobrevive bem a uma tag do app ter mudado de id entre versões.
+     *
+     * F2b: o `keys` é `List<String>` (chave tipada, ver [QueueKey]) e não mais `List<Long>`,
+     * porque o MediaStore numera áudio e vídeo em coleções separadas e o número sozinho não
+     * diz de que mídia o item é. A preference continua se chamando `queue_ids` para não
+     * invalidar o que já está gravado — o leitor aceita o número solto como sendo áudio.
+     */
+    fun setQueueState(context: Context, keys: List<String>, index: Int, positionMs: Long) {
+        if (keys.isEmpty()) {
+            clearQueueState(context)
+            return
+        }
+        prefs(context).edit()
+            .putString("queue_ids", org.json.JSONArray(keys).toString())
+            .putInt("queue_index", index)
+            .putLong("queue_position", positionMs)
+            .putLong("queue_saved_at", System.currentTimeMillis())
+            .apply()
+    }
+
+    /**
+     * F2b — chaves (`a:42`, `v:7`) na ordem salva, o índice da faixa atual e a posição, em ms.
+     *
+     * A chave tipada substituiu o `id` solto porque o MediaStore numera áudio e vídeo em
+     * coleções separadas: só o número não diz de que mídia o item é. A compatibilidade com o
+     * formato antigo fica no leitor — um `JSONArray` de números ainda volta, tudo como áudio,
+     * que é o que era.
+     */
+    fun queueState(context: Context): Triple<List<String>, Int, Long>? {
+        val raw = prefs(context).getString("queue_ids", "") ?: ""
+        if (raw.isBlank()) return null
+        val keys = runCatching {
+            val arr = org.json.JSONArray(raw)
+            (0 until arr.length()).mapNotNull { QueueKey.decode(arr.optString(it)) }
+        }.getOrNull()
+        if (keys.isNullOrEmpty()) return null
+        return Triple(
+            keys,
+            prefs(context).getInt("queue_index", 0),
+            prefs(context).getLong("queue_position", 0L)
+        )
+    }
+
+    fun clearQueueState(context: Context) {
+        prefs(context).edit()
+            .remove("queue_ids")
+            .remove("queue_index")
+            .remove("queue_position")
+            .remove("queue_saved_at")
+            .apply()
+    }
+
+    // Rádio guardado para continuar tocando caso o processo renasça (E4). Só enquanto
+    // estava de fato tocando/pausado por estado "tem som"; limpo no pause deliberado.
+    fun setRadioResume(context: Context, url: String, title: String, genre: String) {
+        prefs(context).edit()
+            .putString("radio_resume_url", url)
+            .putString("radio_resume_title", title)
+            .putString("radio_resume_genre", genre)
+            .apply()
+    }
+
+    fun radioResume(context: Context): Triple<String, String, String>? {
+        val url = prefs(context).getString("radio_resume_url", "") ?: ""
+        if (url.isBlank()) return null
+        val title = prefs(context).getString("radio_resume_title", "") ?: ""
+        val genre = prefs(context).getString("radio_resume_genre", "") ?: ""
+        return Triple(url, title, genre)
+    }
+
+    fun clearRadioResume(context: Context) {
+        prefs(context).edit()
+            .remove("radio_resume_url")
+            .remove("radio_resume_title")
+            .remove("radio_resume_genre")
+            .apply()
+    }
 
     private fun isArtDir(file: java.io.File): Boolean = file.isDirectory && file.name == "art"
 

@@ -28,17 +28,17 @@ object DjRecognizer {
             ThreadPool.onUi { onResult(null, "no_token") }
             return
         }
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             try {
                 val wav = captureWav()
                 if (wav == null) {
                     ThreadPool.onUi { onResult(null, "mic_failed") }
-                    return@post
+                    return@postNetwork
                 }
                 val json = queryAudD(token, wav)
                 if (json == null) {
                     ThreadPool.onUi { onResult(null, "network") }
-                    return@post
+                    return@postNetwork
                 }
                 val status = runCatching { json.getString("status") }.getOrNull()
                 if (status == "error") {
@@ -46,19 +46,19 @@ object DjRecognizer {
                         .getOrNull() ?: runCatching { json.getJSONObject("result") }.getOrNull()
                     val code = runCatching { err?.getInt("error_code") }.getOrDefault(0)
                     ThreadPool.onUi { onResult(null, "audd_error:$code") }
-                    return@post
+                    return@postNetwork
                 }
                 val result = runCatching { json.getJSONObject("result") }.getOrNull()
                 if (result == null) {
                     ThreadPool.onUi { onResult(null, null) }
-                    return@post
+                    return@postNetwork
                 }
                 val title = runCatching { result.getString("title") }.getOrDefault("").trim()
                 val artist = runCatching { result.getString("artist") }.getOrDefault("").trim()
                 val album = runCatching { result.getString("album") }.getOrNull()?.trim()
                 if (title.isBlank()) {
                     ThreadPool.onUi { onResult(null, null) }
-                    return@post
+                    return@postNetwork
                 }
                 ThreadPool.onUi { onResult(Result(title, artist, album), null) }
             } catch (t: Throwable) {

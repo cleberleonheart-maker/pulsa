@@ -30,6 +30,10 @@ object SongActions {
         }
         val items = mutableListOf(
             context.getString(R.string.song_action_play_now),
+            // F2b: "Tocar agora" substitui a fila; esta junta no fim e deixa o que está
+            // tocando continuar. É o mesmo item que o vídeo ganhou, e o mesmo
+            // `Playback.enqueue` — por isso as duas listas estão na mesma linha do tempo.
+            context.getString(R.string.add_to_queue),
             context.getString(R.string.add_to_playlist),
             favoriteLabel,
             context.getString(R.string.share_music),
@@ -45,8 +49,9 @@ object SongActions {
             .setItems(items.toTypedArray()) { dialog, which ->
                 when (which) {
                     0 -> Playback.start(listOf(song), 0)
-                    1 -> PlaylistDialog.showAdd(context, song)
-                    2 -> {
+                    1 -> enqueue(context, listOf(song))
+                    2 -> PlaylistDialog.showAdd(context, song)
+                    3 -> {
                         val db = PlaylistDb.get(context)
                         db.setFavorite(song, !favorite)
                         android.widget.Toast.makeText(
@@ -56,17 +61,35 @@ object SongActions {
                         ).show()
                         onDeleted?.invoke()
                     }
-                    3 -> share(context, song)
-                    4 -> RingtoneSetter.setAs(context, song, RingtoneManager.TYPE_RINGTONE)
-                    5 -> RingtoneSetter.setAs(context, song, RingtoneManager.TYPE_NOTIFICATION)
-                    6 -> RingtoneSetter.setAs(context, song, RingtoneManager.TYPE_ALARM)
-                    7 -> MusicEditor.edit(context, song, onDeleted)
-                    8 -> confirmDelete(context, song, onDeleted)
+                    4 -> share(context, song)
+                    5 -> RingtoneSetter.setAs(context, song, RingtoneManager.TYPE_RINGTONE)
+                    6 -> RingtoneSetter.setAs(context, song, RingtoneManager.TYPE_NOTIFICATION)
+                    7 -> RingtoneSetter.setAs(context, song, RingtoneManager.TYPE_ALARM)
+                    8 -> MusicEditor.edit(context, song, onDeleted)
+                    9 -> confirmDelete(context, song, onDeleted)
                     else -> extra?.second?.invoke()
                 }
                 dialog.dismiss()
             }
             .show()
+    }
+
+    /**
+     * F2b — junta no fim da fila e avisa com o número que o motor aceitou.
+     *
+     * Zero não é "não deu": é a música já estar na fila ([Playback.enqueue] não duplica),
+     * e a mensagem diz isso em vez de mentir que entrou. Serve para o item do menu e para a
+     * seleção em lote, então fica aqui uma vez.
+     */
+    fun enqueue(context: Context, songs: List<Song>) {
+        if (songs.isEmpty()) return
+        val added = Playback.enqueue(songs)
+        val msg = if (added > 0) {
+            context.getString(R.string.songs_added_to_queue, added)
+        } else {
+            context.getString(R.string.already_in_queue)
+        }
+        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
     }
 
     private fun share(context: Context, song: Song) {
@@ -94,16 +117,51 @@ object SongActions {
             .setMessage(context.getString(R.string.delete_song_confirm, song.title))
             .setPositiveButton(R.string.delete) { d, _ ->
                 d.dismiss()
-                MusicDeleter.delete(context, song) { ok ->
-                    android.widget.Toast.makeText(
-                        context,
-                        if (ok) R.string.song_deleted else R.string.delete_failed,
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                    if (ok) onDeleted?.invoke()
+                MusicDeleter.delete(context, song) { outcome ->
+                    report(context, outcome, 1)
+                    if (outcome is MusicDeleter.Outcome.Deleted) onDeleted?.invoke()
                 }
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    /**
+     * Confirma e apaga várias músicas de uma vez, vinda da seleção múltipla da lista.
+     *
+     * O `MediaStore` aceita todas as URIs num pedido só, então o diálogo do sistema aparece
+     * **uma vez** para o lote inteiro — senão 30 músicas seriam 30 confirmações.
+     */
+    fun confirmDeleteMany(context: Context, songs: List<Song>, onDeleted: (() -> Unit)?) {
+        if (songs.isEmpty()) return
+        if (songs.size == 1) {
+            confirmDelete(context, songs[0], onDeleted)
+            return
+        }
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.delete_songs)
+            .setMessage(context.getString(R.string.delete_songs_confirm, songs.size))
+            .setPositiveButton(R.string.delete) { d, _ ->
+                d.dismiss()
+                MusicDeleter.delete(context, songs) { outcome ->
+                    report(context, outcome, songs.size)
+                    if (outcome is MusicDeleter.Outcome.Deleted) onDeleted?.invoke()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /** Avisa o resultado, em uma linha só para o singular e para o lote. */
+    private fun report(context: Context, outcome: MusicDeleter.Outcome, count: Int) {
+        val res = when (outcome) {
+            is MusicDeleter.Outcome.Deleted ->
+                if (count == 1) R.string.song_deleted else R.string.songs_deleted
+            // Cancelar não é erro. Dizer "permissão negada" aqui foi o que fez parecer que
+            // o app estava quebrado quando o usuário só disse não.
+            is MusicDeleter.Outcome.Cancelled -> R.string.delete_cancelled
+            is MusicDeleter.Outcome.Failed -> R.string.delete_failed
+        }
+        android.widget.Toast.makeText(context, res, android.widget.Toast.LENGTH_SHORT).show()
     }
 }

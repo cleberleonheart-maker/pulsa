@@ -30,6 +30,7 @@ class HotwordService : Service() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var listener: DjCommandListener? = null
+    private var windowOpen = false
 
     private val keepAlive = Runnable { checkAlive() }
 
@@ -47,29 +48,65 @@ class HotwordService : Service() {
             return
         }
         Hotword.running = true
-        listener = DjCommandListener(this) { text ->
-            if (!HotwordBridge.deliver(text)) stopNow()
-        }
-        listener?.start()
-        Playback.setMicListening(true)
+        // Sem microfone por padrao: a notificacao fica "esperando" e quem abre a janela de
+        // escuta e o botao "Ouvir". Abrir sozinho era o laço infinito — nao existe escuta de
+        // palavra com o ponto laranja apagado, e o usuario escolheu pedir para escutar.
+        Playback.setMicListening(false)
         mainHandler.postDelayed(keepAlive, POLL_MS)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (!staying()) {
+        if (!staying() || !HotwordBridge.hasTarget()) {
             stopNow()
             return START_NOT_STICKY
         }
+        if (intent?.action == ACTION_LISTEN) openWindow()
         return START_STICKY
     }
 
     override fun onDestroy() {
         Hotword.running = false
+        windowOpen = false
         mainHandler.removeCallbacks(keepAlive)
         listener?.destroy()
         listener = null
         Playback.setMicListening(false)
         super.onDestroy()
+    }
+
+    /**
+     * Abre a janela unica de escuta, chamada pelo botao "Ouvir" da notificacao. Abre,
+     * escuta ate [LISTEN_WINDOW_MS], fecha sozinho. Nao reabre por conta propria.
+     */
+    private fun openWindow() {
+        listener?.destroy()
+        listener = DjCommandListener(
+            this, MicMode.ONE_SHOT,
+            onResult = { text ->
+                if (!HotwordBridge.deliver(text)) stopNow()
+            }
+        ) {
+            _ -> windowEnded()
+        }
+        windowOpen = true
+        listener?.start(LISTEN_WINDOW_MS)
+        Playback.setMicListening(true)
+        refreshNotification()
+    }
+
+    /** A janela fechou (ouviu comando, silencio, ou o tempo acabou): volta a esperar. */
+    private fun windowEnded() {
+        if (!Hotword.running) return
+        windowOpen = false
+        Playback.setMicListening(false)
+        refreshNotification()
+    }
+
+    private fun refreshNotification() {
+        runCatching {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.notify(NOTIF_ID, notification(windowOpen))
+        }
     }
 
     /** Devolve false se o sistema recusou o primeiro plano: ai o servico nem deve continuar. */
@@ -79,11 +116,11 @@ class HotwordService : Service() {
             if (Build.VERSION.SDK_INT >= 29) {
                 startForeground(
                     NOTIF_ID,
-                    notification(),
+                    notification(windowOpen),
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
                 )
             } else {
-                startForeground(NOTIF_ID, notification())
+                startForeground(NOTIF_ID, notification(windowOpen))
             }
             true
         }.getOrElse {
@@ -98,12 +135,15 @@ class HotwordService : Service() {
         stopSelf()
     }
 
-    // O serviço só faz sentido com o toggle ligado, música tocando e microfone liberado.
+    // O serviço só faz sentido com o toggle ligado, microfone liberado e algo para
+    // ouvir — e "algo para ouvir" inclui vídeo pausado, que é onde se diz "continua o
+    // filme". Antes isto era `Playback.isPlaying` puro e o serviço se matava sozinho no
+    // primeiro `keepAlive` depois do pause.
     private fun staying(): Boolean =
-        Settings.hotword(this) && Playback.isPlaying && micGranted()
+        Settings.hotword(this) && Hotword.somethingToListen() && micGranted()
 
     private fun checkAlive() {
-        // Se algo mudou (pausou a musica, tirou o toggle, sem destino) para o servico.
+        // Se algo mudou (tirou o toggle, sem destino, vídeo saiu da fila) para o servico.
         if (!staying() || !HotwordBridge.hasTarget()) {
             stopNow()
             return
@@ -115,19 +155,28 @@ class HotwordService : Service() {
         ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED
 
-    private fun notification(): Notification {
+    private fun notification(listeningNow: Boolean): Notification {
         val pi = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val ouvir = PendingIntent.getService(
+            this, 1,
+            Intent(this, HotwordService::class.java).setAction(ACTION_LISTEN),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_mic)
             .setContentTitle(getString(R.string.hotword_notif_title))
-            .setContentText(getString(R.string.hotword_notif_text))
+            .setContentText(
+                if (listeningNow) getString(R.string.hotword_notif_listening)
+                else getString(R.string.hotword_notif_text)
+            )
             .setContentIntent(pi)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .addAction(R.drawable.ic_mic, getString(R.string.hotword_action_listen), ouvir)
             .build()
     }
 
@@ -149,5 +198,9 @@ class HotwordService : Service() {
         private const val CHANNEL_ID = "hotword"
         private const val NOTIF_ID = 1001
         private const val POLL_MS = 5000L
+
+        /** Janela unica de escuta do botao "Ouvir". */
+        private const val LISTEN_WINDOW_MS = 6000L
+        const val ACTION_LISTEN = "com.pulsa.player.action.LISTEN"
     }
 }

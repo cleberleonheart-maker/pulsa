@@ -18,11 +18,29 @@ object Hotword {
     @Volatile
     var running = false
 
+    /**
+     * O que o mãos-livres trata como "tem o que ouvir": tocando, **ou parado num
+     * vídeo/stream**.
+     *
+     * Vídeo pausado conta. Pausar o filme é justamente o estado em que se diz "continua o
+     * filme", e era o lugar onde o microfone morria.
+     *
+     * Esta regra já esteve escrita em três lugares — `PlaybackService.publishState`,
+     * `Hotword.startIfNeeded` e `HotwordService.staying` — e cada vez que um era corrigido
+     * os outros dois continuaram cobrando `Playback.isPlaying`, que é a única definição que
+     * não vale para vídeo. Um lugar só agora.
+     */
+    fun somethingToListen(): Boolean {
+        if (Playback.isPlaying) return true
+        val song = Playback.currentSong
+        return song?.isVideo == true || song?.isStream == true
+    }
+
     fun startIfNeeded(context: Context) {
         val ctx = context.applicationContext
         if (running) return
         if (!Settings.hotword(ctx)) return
-        if (!Playback.isPlaying) return
+        if (!somethingToListen()) return
         val micOk = ContextCompat.checkSelfPermission(
             ctx, Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED

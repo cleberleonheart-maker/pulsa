@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Vera. Terceira avatar, e a unica que ja tinha paleta propria (teal/ciano) —
+    ver src/constants/languages.ts do Lingo, id "it", de onde vem a tripla
+    #D7F9EF -> #67E8F9 -> #0E7490.
+
+    Mesma construcao dos outros dois: olho oval 13x16 com glint, bochecha e
+    meio-sorriso, piscada encolhendo o olho em scaleY (@animator/eye_blink).
+    Aqui o olho e a propria lente do oculos, entao o grupo que pisca carrega
+    lente + abridor + brilho e os tres encolhem juntos.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Halo de luz (ciano -> turquesa) -->
+    <path
+        android:pathData="M50,60m-46,0a46,46 0 1 1 92,0a46,46 0 1 1 -92,0Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:gradientRadius="46"
+                android:startColor="#3322D3EE"
+                android:centerColor="#1467E8F9"
+                android:endColor="#000E7490" />
+        </aapt:attr>
+    </path>
+
+    <!-- Cabeca: esfera retro (turquesa claro -> ciano -> teal profundo) -->
+    <path
+        android:pathData="M54,2a52,52 0 1 1 0,104a52,52 0 1 1 0,-104Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="0.34"
+                android:centerY="0.26"
+                android:gradientRadius="90"
+                android:startColor="#D7F9EF"
+                android:centerColor="#67E8F9"
+                android:endColor="#0E7490" />
+        </aapt:attr>
+    </path>
+
+    <!-- Estrela de 4 pontas no topo (sparkrate) -->
+    <path
+        android:fillColor="#ECFEFF"
+        android:pathData="M54,6 L57,15 L66,18 L57,21 L54,30 L51,21 L42,18 L51,15 Z" />
+
+    <!-- Oculos de sol (a marca da Vera), 8 graus deitatedos como no Lingo/TAMI -->
+    <group
+        android:rotation="-8"
+        android:pivotX="54"
+        android:pivotY="50">
+
+        <!-- haste esquerda -->
+        <path
+            android:fillColor="#134E4A"
+            android:pathData="M24,50L17,46L18,51L26,54Z" />
+        <!-- haste direita -->
+        <path
+            android:fillColor="#134E4A"
+            android:pathData="M83,50L90,46L89,51L81,54Z" />
+        <!-- ponte -->
+        <path
+            android:fillColor="#134E4A"
+            android:pathData="M44,48L64,48L64,51.5L44,51.5Z" />
+
+        <!-- Olho esquerdo = lente esquerda (centro 35,50) -->
+        <group
+            android:name="eyeL"
+            android:pivotX="35"
+            android:pivotY="50">
+            <path
+                android:fillColor="#0E7490"
+                android:pathData="M35,50m-11,0a11,11 0 1 1 22,0a11,11 0 1 1 -22,0Z" />
+            <path
+                android:pathData="M30,53L34,49"
+                android:strokeColor="#59B8F0FF"
+                android:strokeLineCap="round"
+                android:strokeWidth="1.8" />
+            <path
+                android:pathData="M35,56L40,51"
+                android:strokeColor="#59B8F0FF"
+                android:strokeLineCap="round"
+                android:strokeWidth="1.8" />
+            <path
+                android:fillColor="#CCFFFFFF"
+                android:pathData="M35,47.5m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+        </group>
+
+        <!-- Olho direito = lente direita (centro 73.5,50) -->
+        <group
+            android:name="eyeR"
+            android:pivotX="73.5"
+            android:pivotY="50">
+            <path
+                android:fillColor="#0E7490"
+                android:pathData="M73.5,50m-11,0a11,11 0 1 1 22,0a11,11 0 1 1 -22,0Z" />
+            <path
+                android:pathData="M68.5,53L72.5,49"
+                android:strokeColor="#59B8F0FF"
+                android:strokeLineCap="round"
+                android:strokeWidth="1.8" />
+            <path
+                android:pathData="M73.5,56L78.5,51"
+                android:strokeColor="#59B8F0FF"
+                android:strokeLineCap="round"
+                android:strokeWidth="1.8" />
+            <path
+                android:fillColor="#CCFFFFFF"
+                android:pathData="M73.5,47.5m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+        </group>
+
+        <!-- Armacao por cima das lentes -->
+        <path
+            android:pathData="M35,50m-11,0a11,11 0 1 1 22,0a11,11 0 1 1 -22,0Z"
+            android:strokeColor="#134E4A"
+            android:strokeWidth="3.4"
+            android:fillColor="#00FFFFFF" />
+        <path
+            android:pathData="M73.5,50m-11,0a11,11 0 1 1 22,0a11,11 0 1 1 -22,0Z"
+            android:strokeColor="#134E4A"
+            android:strokeWidth="3.4"
+            android:fillColor="#00FFFFFF" />
+    </group>
+
+    <!-- Bochechas -->
+    <path
+        android:fillColor="#6622D3EE"
+        android:pathData="M25,63m-9,0a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
+    <path
+        android:fillColor="#6622D3EE"
+        android:pathData="M83,63m-9,0a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
+
+    <!-- Sorriso largo e curvo -->
+    <path
+        android:pathData="M44,65.5Q54,73 64,65.5"
+        android:strokeColor="#33113A"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.2" />
+</vector>

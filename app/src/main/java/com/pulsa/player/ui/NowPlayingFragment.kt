@@ -3,6 +3,7 @@ package com.pulsa.player.ui
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,12 +17,14 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.pulsa.player.R
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.audio.Ambient
 import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.core.Helper
+import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Lyrics
 import com.pulsa.player.dj.AvatarFavorites
 import com.pulsa.player.core.Settings
@@ -168,14 +171,17 @@ class NowPlayingFragment : Fragment() {
     private fun refreshDreamTeam(songId: Long) {
         val partner = view?.findViewById<com.pulsa.player.ui.DancingVirginView>(R.id.np_virgin_dance_b) ?: return
         val single = view?.findViewById<com.pulsa.player.ui.DancingVirginView>(R.id.np_virgin_dance)
-        val male = Settings.masculineAvatar(requireContext())
+        val style = Settings.avatarStyle(requireContext())
         if (AvatarFavorites.favoriteId(requireContext()) != songId) {
-            single?.forceMale = null
+            single?.forceStyle = null
             partner.visibility = View.GONE
             return
         }
-        single?.forceMale = male
-        partner.forceMale = !male
+        // Sao tres avatares, mas o casal continua sendo dois: o ativo e o oposto
+        // classico (Virgin <-> Victor). Com a Vera no comando, ela dança com a Virgin.
+        val other = if (style == Settings.VICTOR) Settings.VIRGIN else Settings.VICTOR
+        single?.forceStyle = style
+        partner.forceStyle = other
         partner.visibility = View.VISIBLE
     }
 
@@ -214,14 +220,22 @@ class NowPlayingFragment : Fragment() {
     /** Carrega as letras da música atual (uma vez por troca) e mostra o painel. */
     private fun syncLyricsFor(song: com.pulsa.player.model.Song) {
         if (song.id == lyricsForSong || lyricsLoading) return
+        // requireActivity()/requireContext() lancam se o fragmento ja foi detachado, e
+        // lancados na thread do pool derrubavam o processo inteiro. O contexto e pego
+        // aqui, ainda na UI, e o trabalho so usa essa referencia.
+        val app = context?.applicationContext ?: return
         lyricsLoading = true
+        val key = QueueKey.encode(song)
         lyricsForSong = song.id
         lyricsLines = emptyList()
         lyricsPanel?.visibility = View.GONE
-        ThreadPool.post {
-            val result = Lyrics.resolve(song, requireActivity().applicationContext)
+        // postNetwork, e nao post: `Lyrics.resolve` vai buscar online quando nao acha
+        // no dispositivo, e isso roda a CADA troca de musica. No pool local, segurava
+        // uma das poucas threads e atrasava a biblioteca inteira.
+        ThreadPool.postNetwork {
+            val result = Lyrics.resolve(song, app)
             ThreadPool.onUi {
-                if (!isAdded || Playback.currentSong?.id != song.id) {
+                if (!isAdded || !QueueKey.sameType(Playback.currentKey, key)) {
                     lyricsLoading = false
                     lyricsForSong = -1L
                     return@onUi
@@ -288,11 +302,13 @@ class NowPlayingFragment : Fragment() {
 
     private fun updateLikeIconFor(song: com.pulsa.player.model.Song) {
         val songId = song.id
+        val key = QueueKey.encode(song)
+        val app = context?.applicationContext ?: return
         ThreadPool.post {
-            val fav = PlaylistDb.get(requireActivity().applicationContext).isFavorite(songId)
+            val fav = PlaylistDb.get(app).isFavorite(songId)
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
-                if (Playback.currentSong?.id != songId) return@onUi
+                if (!QueueKey.sameType(Playback.currentKey, key)) return@onUi
                 likeView?.setImageResource(if (fav) R.drawable.ic_favorite else R.drawable.ic_heart)
                 likeView?.tint(if (fav) R.color.primary else R.color.text_secondary)
             }
@@ -301,10 +317,27 @@ class NowPlayingFragment : Fragment() {
 
     private fun togglerLike() {
         val song = Playback.currentSong ?: return
+        val songId = song.id
+        val app = context?.applicationContext ?: return
         ThreadPool.post {
-            val db = PlaylistDb.get(requireActivity().applicationContext)
-            val fav = db.isFavorite(song.id)
-            db.setFavorite(song, !fav)
+            // runCatching: o pool e o mesmo do RemoteSync, e um crash la derrubava esta
+            // thread junto -- o coracao parecia "nao fazer nada" sem nenhum erro na tela.
+            runCatching {
+                val db = PlaylistDb.get(app)
+                val fav = db.isFavorite(songId)
+                db.setFavorite(song, !fav)
+            }.onFailure { e ->
+                CrashLogger.writeLog(app, "FAVORITAR falhou id=$songId -> $e")
+                ThreadPool.onUi {
+                    if (isAdded) {
+                        Toast.makeText(
+                            requireContext(),
+                            R.string.favorite_error,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
             ThreadPool.onUi {
                 if (isAdded) updateLikeIconFor(song)
             }
@@ -530,9 +563,20 @@ class NowPlayingFragment : Fragment() {
 
     private fun showLyricsDialog() {
         val song = Playback.currentSong ?: return
+        val app = context?.applicationContext ?: return
         Toast.makeText(requireContext(), getString(R.string.lyrics_searching), Toast.LENGTH_SHORT).show()
-        ThreadPool.post {
-            val result = Lyrics.resolve(song, requireContext().applicationContext)
+        ThreadPool.postNetwork {
+            val inicio = SystemClock.elapsedRealtime()
+            val result = Lyrics.resolve(song, app)
+            // Sem isto, "não achou" e "demorou e desistiu" eram indistinguíveis: a tela
+            // mostrava "Buscando letras..." e nada mais, e o log não dizia qual dos dois
+            // foi. Agora o motivo e o tempo ficam registrados para o próximo teste.
+            CrashLogger.writeLog(
+                app,
+                "MARK: letra id=${song.id} '${song.title}' fonte=${result?.source} " +
+                    "linhas=${result?.lines?.size ?: 0} em ${SystemClock.elapsedRealtime() - inicio}ms " +
+                    "path=${song.path}"
+            )
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
                 if (result == null || result.lines.isEmpty()) {

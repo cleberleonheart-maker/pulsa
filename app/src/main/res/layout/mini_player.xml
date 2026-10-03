@@ -102,6 +102,17 @@
             android:tint="@color/text_secondary" />
 
         <ImageView
+            android:id="@+id/mini_radio_next"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/mini_radio_next"
+            android:padding="5dp"
+            android:src="@drawable/ic_radio"
+            android:tint="@color/text_secondary"
+            android:visibility="gone" />
+
+        <ImageView
             android:id="@+id/mini_play"
             android:layout_width="40dp"
             android:layout_height="40dp"

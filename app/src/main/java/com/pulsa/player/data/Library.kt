@@ -42,6 +42,36 @@ object Library {
         )
     }
 
+    /**
+     * Carrega vários `id`s de uma vez, devolvendo na MESMA ordem em que foram pedidos.
+     *
+     * [querySongs] ordena por TRACK/TITLE, o que é certo para listar a biblioteca e errado
+     * para restaurar uma fila: a ordem salva é a ordem que o usuário montou. Por isso aqui
+     * o resultado é reordenado pelos ids recebidos, não pela query.
+     *
+     * Faixa que não existe mais (apagada do dispositivo) é omitida. Por isso o tamanho do
+     * resultado pode ser menor que o da lista: quem chama tem de reajustar o índice.
+     *
+     * A busca vai em lotes de [ID_BATCH]: um `IN` com a fila inteira estoura o limite de
+     * variáveis do SQLite (999 nas versões antigas) numa playlist grande, e a consulta
+     * voltaria vazia — a fila restaurada viria pela metade, sem erro nenhum na tela.
+     */
+    fun songsByIds(context: Context, ids: List<Long>): List<Song> {
+        if (ids.isEmpty()) return emptyList()
+        val found = HashMap<Long, Song>(ids.size)
+        for (batch in ids.chunked(ID_BATCH)) {
+            val placeholders = batch.joinToString(",") { "?" }
+            querySongs(
+                context,
+                "${MediaStore.Audio.Media._ID} IN ($placeholders) AND ${MediaStore.Audio.Media.IS_MUSIC}!=0",
+                batch.map { it.toString() }.toTypedArray()
+            ).forEach { found[it.id] = it }
+        }
+        return ids.mapNotNull { found[it] }
+    }
+
+    private const val ID_BATCH = 400
+
     private val gospelKeywords = listOf(
         "gospel", "louvor", "adora", "adorac", "adorã", "hinario", "hino", "harpa",
         "igreja", "jesus", "cristo", "deus", "fiel", "salm", "cantico", "cântico",

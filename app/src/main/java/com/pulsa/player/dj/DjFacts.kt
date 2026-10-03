@@ -76,7 +76,7 @@ object DjFacts {
             }
             remoteInFlight.add(key)
         }
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val fact = musicBrainzFact(key)
             synchronized(remoteCache) {
                 remoteCache[key] = fact ?: ""

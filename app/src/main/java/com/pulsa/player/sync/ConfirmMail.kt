@@ -21,7 +21,7 @@ object ConfirmMail {
     private fun hosts(context: Context): List<String> = Settings.serverCandidates(context)
 
     fun send(context: Context, to: String, name: String, onResult: (SendResult) -> Unit) {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val result = sendSync(context, to, name)
             Telemetry.log(context, "SENDMAIL ok=${result.ok} smtp=${result.smtpOnline} ${result.detail ?: ""}".trim())
             main.post { onResult(result) }
@@ -69,7 +69,7 @@ object ConfirmMail {
 
     /** Verifica o status do servidor de e-mail (GET /smtp/status). */
 fun smtpStatus(context: Context, onStatus: (String) -> Unit) {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             var status = "?"
             for (base in hosts(context)) {
                 try {
