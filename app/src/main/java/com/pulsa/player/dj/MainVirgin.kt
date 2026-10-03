@@ -271,7 +271,12 @@ class MainVirgin(
         // falar, quando resumeVirginSpeech chama doResumeVirginListener com a janela. Se
         // abrisse aqui, ela ouviria a própria saudação (eco) e a janela pegaria a boca dela.
         // Duck so durante a janela ou a fala, nunca permanente.
-        virginListener = DjCommandListener(activity, MicMode.ONE_SHOT, onResult = { handleCommand(it) })
+        virginListener = DjCommandListener(
+            activity,
+            MicMode.ONE_SHOT,
+            onResult = { handleCommand(it) },
+            onClosed = { ThreadPool.onUi { virginWindowClosed() } }
+        )
         val cur = Playback.currentSong
         val msg = if (cur != null) {
             activity.getString(R.string.dj_voice_track, cur.title, cur.artist)
@@ -290,6 +295,27 @@ class MainVirgin(
         if (!silent) virginSpeak(activity.getString(R.string.dj_voice_goodbye))
         virginVoice?.stop()
         Hotword.startIfNeeded(activity)
+    }
+
+    /**
+     * A janela de [VIRGIN_WINDOW_MS] fechou.
+     *
+     * Duas saídas possíveis, e elas precisam ser separadas: fechad por `virginSpeak`
+     * respondendo um comando, ou fechad por tempo sem ouvir nada. Na primeira a próxima
+     * janela já está agendada em [doResumeVirginListener] e desligar aqui mataria a
+     * sessão no primeiro comando.
+     *
+     * Na segunda a Virgin ficava ligada **sem microfone**: `virginOn` continuava `true`,
+     * o ícone continuava aceso e nenhuma janela abria. O toque seguinte no ícone, que é
+     * toggle (`toggleVirgin`), via `stopVirgin` e desligava tudo — era o "dou dois toques
+     * e ela some", e depois disso nenhum comando era reconhecido porque o microfone já
+     * tinha ido. `virginSpeechPaused` é o que distingue as duas: só a Virgin falando a
+     * deixa `true`.
+     */
+    private fun virginWindowClosed() {
+        if (activity.isFinishing || activity.isDestroyed) return
+        if (virginSpeechPaused) return
+        stopVirgin(silent = true)
     }
 
     private fun pauseVirginSpeech() {
