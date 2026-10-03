@@ -22,7 +22,14 @@ object Hotword {
         val ctx = context.applicationContext
         if (running) return
         if (!Settings.hotword(ctx)) return
-        if (!Playback.isPlaying) return
+        // Vídeo pausado conta como "toca". Pausar o filme é justamente o estado em que
+        // se diz "continua o filme", e a regra antiga recusava o mãos-livres aí — o que
+        // contradizia o `publishState`, que já não desliga o microfone quando o que para
+        // é vídeo. As duas juntas davam: app aberto com vídeo pausado mantinha o
+        // microfone, e fechar o app (que passa por `stopForBackground`) o tirava.
+        val song = Playback.currentSong
+        val videoish = song?.isVideo == true || song?.isStream == true
+        if (!Playback.isPlaying && !videoish) return
         val micOk = ContextCompat.checkSelfPermission(
             ctx, Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED
