@@ -247,6 +247,13 @@
     <string name="eq_subtitle">Aplica la calidad de audio elegida</string>
     <string name="audio_8d">Audio 8D</string>
     <string name="audio_8d_subtitle">El sonido gira a tu alrededor (mejor con audífonos)</string>
+    <string name="audio_3d">Audio 3D</string>
+    <string name="audio_3d_subtitle">Gira el sonido de verdad alrededor de tu cabeza (mejor con audífonos)</string>
+    <string name="audio_3d_depth">Intensidad</string>
+    <string name="surround">Surround</string>
+    <string name="surround_subtitle">Abre la imagen del sonido hacia afuera, como si viniera de un parlante más grande</string>
+    <string name="surround_intensity">Apertura</string>
+    <string name="spatial_level">%1$d%%</string>
     <string name="download_hint">Descarga canciones y vídeos mediante el enlace directo del archivo (mp3, flac, ogg, m4a, wav, mp4, webm). Los vídeos van a la carpeta Películas y aparecen en la pestaña Vídeos.</string>
     <string name="cache_title">Limpiar caché</string>
     <string name="cache_size">Tamaño del caché: %1$s</string>

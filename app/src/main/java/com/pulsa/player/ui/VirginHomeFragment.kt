@@ -684,7 +684,7 @@ class VirginHomeFragment : Fragment() {
             if (voice == null) {
                 voice = DjVoice(ctx, Settings.languageTag(Settings.language(ctx)))
             }
-            voice!!.init { ready -> if (ready) voice!!.speak(text, null, onDone) }
+            voice?.init { ready -> if (ready) voice?.speak(text, null, onDone) }
         }
     }
 

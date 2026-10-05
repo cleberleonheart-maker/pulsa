@@ -273,6 +273,34 @@ object Settings {
     fun audio8d(context: Context): Boolean =
         prefs(context).getBoolean("audio_8d", false)
 
+    fun setSpatial3d(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("spatial_3d", value).apply()
+    }
+
+    fun spatial3d(context: Context): Boolean =
+        prefs(context).getBoolean("spatial_3d", false)
+
+    fun setSpatial3dDepth(context: Context, value: Int) {
+        prefs(context).edit().putInt("spatial_3d_depth", value).apply()
+    }
+
+    fun spatial3dDepth(context: Context): Int =
+        prefs(context).getInt("spatial_3d_depth", 60).coerceIn(0, 100)
+
+    fun setSurround(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("spatial_surround", value).apply()
+    }
+
+    fun surround(context: Context): Boolean =
+        prefs(context).getBoolean("spatial_surround", false)
+
+    fun setSurroundIntensity(context: Context, value: Int) {
+        prefs(context).edit().putInt("spatial_surround_intensity", value).apply()
+    }
+
+    fun surroundIntensity(context: Context): Int =
+        prefs(context).getInt("spatial_surround_intensity", 50).coerceIn(0, 100)
+
     fun setHotword(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("hotword", value).apply()
     }

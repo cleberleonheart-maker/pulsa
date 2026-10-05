@@ -12,6 +12,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -58,6 +59,9 @@ class SettingsActivity : AppCompatActivity() {
                     it.readBytes().toString(Charsets.UTF_8)
                 } ?: return@registerForActivityResult
                 val applied = applyRestore(text)
+                // Sem isto o equalizador e o 3D só voltariam a valer no próximo `refreshFx()`
+                // ou na próxima vez que o serviço subisse — o usuário ouve a música igual.
+                if (applied) Playback.refreshFx()
                 Toast.makeText(
                     this,
                     if (applied) R.string.restore_done else R.string.restore_failed,
@@ -141,6 +145,51 @@ class SettingsActivity : AppCompatActivity() {
                 Playback.refreshFx()
             }
         }
+
+        // 3D e surround: os dois processam o mesmo par (L, R) dentro do `SpatialAudio`, então
+        // cada um tem o seu botão e o seu ajuste de intensidade. Os sliders só aparecem com o
+        // efeito ligado — slider de efeito desligado é ajuste de nada.
+        findViewById<MaterialSwitch>(R.id.audio_3d_switch).apply {
+            isChecked = Settings.spatial3d(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setSpatial3d(this@SettingsActivity, checked)
+                showSpatialRows()
+                Playback.refreshFx()
+            }
+        }
+
+        findViewById<MaterialSwitch>(R.id.surround_switch).apply {
+            isChecked = Settings.surround(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setSurround(this@SettingsActivity, checked)
+                showSpatialRows()
+                Playback.refreshFx()
+            }
+        }
+
+        findViewById<SeekBar>(R.id.audio_3d_depth_seek).apply {
+            progress = Settings.spatial3dDepth(this@SettingsActivity)
+            findViewById<TextView>(R.id.audio_3d_depth_value).text =
+                getString(R.string.spatial_level, progress)
+            setOnSeekBarChangeListener(sliderPersist(
+                R.id.audio_3d_depth_value,
+                onChanged = { Settings.setSpatial3dDepth(this@SettingsActivity, it) },
+                onDone = { Playback.refreshFx() }
+            ))
+        }
+
+        findViewById<SeekBar>(R.id.surround_intensity_seek).apply {
+            progress = Settings.surroundIntensity(this@SettingsActivity)
+            findViewById<TextView>(R.id.surround_intensity_value).text =
+                getString(R.string.spatial_level, progress)
+            setOnSeekBarChangeListener(sliderPersist(
+                R.id.surround_intensity_value,
+                onChanged = { Settings.setSurroundIntensity(this@SettingsActivity, it) },
+                onDone = { Playback.refreshFx() }
+            ))
+        }
+
+        showSpatialRows()
 
         findViewById<MaterialSwitch>(R.id.dj_radio_switch).apply {
             isChecked = Settings.djRadio(this@SettingsActivity)
@@ -229,6 +278,39 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun crossfadeLabel(): String {
         return getString(Settings.crossfadeLabelRes(Settings.crossfade(this)))
+    }
+
+    /**
+     * Slider de intensidade: grava na hora, mas só avisa o playback no fim do arrasto.
+     *
+     * O `SpatialAudio` lê os parâmetros a cada buffer, então o efeito acompanha o dedo sem
+     * precisar de nada do playback; o que precisa é persistir a escolha e reler os ajustes
+     * quando o dedo sai. Gravar a cada pixel seria uma escrita por frame do dedo.
+     */
+    private fun sliderPersist(
+        labelId: Int,
+        onChanged: (Int) -> Unit,
+        onDone: () -> Unit
+    ): SeekBar.OnSeekBarChangeListener = object : SeekBar.OnSeekBarChangeListener {
+        private val label: TextView by lazy { findViewById(labelId) }
+
+        override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+            if (!fromUser) return
+            onChanged(progress)
+            label.text = getString(R.string.spatial_level, progress)
+        }
+
+        override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+        override fun onStopTrackingTouch(seekBar: SeekBar?) = onDone()
+    }
+
+    /** Esconde o slider de cada efeito desligado. */
+    private fun showSpatialRows() {
+        findViewById<View>(R.id.audio_3d_depth_row).visibility =
+            if (Settings.spatial3d(this)) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.surround_intensity_row).visibility =
+            if (Settings.surround(this)) View.VISIBLE else View.GONE
     }
 
     private fun pickCrossfade() {
@@ -695,12 +777,21 @@ class SettingsActivity : AppCompatActivity() {
             put("custom_eq_on", p.getBoolean("custom_eq_on", false))
             put("custom_eq_bands", p.getString("custom_eq_bands", "0,0,0,0,0"))
         }
+        // O 3D e o surround vão juntos: um usuário que reinstalou o app perde o ajuste junto
+        // com o botão, e sem isto o som volta diferente do que ele deixou.
+        val spatial = JSONObject().apply {
+            put("spatial_3d", p.getBoolean("spatial_3d", false))
+            put("spatial_3d_depth", p.getInt("spatial_3d_depth", 60))
+            put("spatial_surround", p.getBoolean("spatial_surround", false))
+            put("spatial_surround_intensity", p.getInt("spatial_surround_intensity", 50))
+        }
         return JSONObject().apply {
             put("app", "pulsa")
             put("backupVersion", 1)
             put("learn", learn)
             put("memoryFacts", memoryFacts)
             put("eq", eq)
+            put("spatial", spatial)
         }.toString()
     }
 
@@ -720,6 +811,15 @@ class SettingsActivity : AppCompatActivity() {
                 .putBoolean("equalizer_on", eq.optBoolean("equalizer_on", false))
                 .putBoolean("custom_eq_on", eq.optBoolean("custom_eq_on", false))
                 .putString("custom_eq_bands", eq.optString("custom_eq_bands", "0,0,0,0,0"))
+                .apply()
+            changed = true
+        }
+        root.optJSONObject("spatial")?.let { spatial ->
+            Settings.dataPrefs(applicationContext).edit()
+                .putBoolean("spatial_3d", spatial.optBoolean("spatial_3d", false))
+                .putInt("spatial_3d_depth", spatial.optInt("spatial_3d_depth", 60))
+                .putBoolean("spatial_surround", spatial.optBoolean("spatial_surround", false))
+                .putInt("spatial_surround_intensity", spatial.optInt("spatial_surround_intensity", 50))
                 .apply()
             changed = true
         }

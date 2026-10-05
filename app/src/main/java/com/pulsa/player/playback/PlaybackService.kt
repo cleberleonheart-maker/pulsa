@@ -53,12 +53,15 @@ import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.model.toSong
 import com.pulsa.player.audio.AudioFx
+import com.pulsa.player.audio.SpatialAudio
+import com.pulsa.player.audio.SpatialRenderersFactory
 import com.pulsa.player.dj.DjFacts
 import com.pulsa.player.dj.DjVoice
 import com.pulsa.player.sync.LastFm
 import com.pulsa.player.widget.PulsaWidget
 import com.pulsa.player.audio.MusicVisualizer
 import com.pulsa.player.audio.SleepTimer
+
 import com.pulsa.player.core.RadioStations
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
@@ -446,7 +449,8 @@ class PlaybackService : MediaLibraryService() {
         audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         registerNoisyReceiver()
         createChannel()
-        player = ExoPlayer.Builder(this)
+        SpatialAudio.sync(this)
+        player = ExoPlayer.Builder(this, SpatialRenderersFactory(this))
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(C.USAGE_MEDIA)
@@ -656,6 +660,9 @@ class PlaybackService : MediaLibraryService() {
     }
 
     fun refreshFx() {
+        // Os parâmetros do 3D/surround são lidos a cada buffer pelo processador, então basta
+        // reler os ajustes: não precisa recriar o player nem a sessão de áudio.
+        SpatialAudio.sync(applicationContext)
         player?.let {
             if (it.audioSessionId > 0) {
                 AudioFx.apply(applicationContext, it.audioSessionId, currentSongGenre())

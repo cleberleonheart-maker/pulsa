@@ -248,6 +248,13 @@
     <string name="eq_subtitle">Applies the chosen audio quality</string>
     <string name="audio_8d">8D Audio</string>
     <string name="audio_8d_subtitle">The sound spins around you (best with headphones)</string>
+    <string name="audio_3d">3D Audio</string>
+    <string name="audio_3d_subtitle">Really spins the sound around your head (best with headphones)</string>
+    <string name="audio_3d_depth">Intensity</string>
+    <string name="surround">Surround</string>
+    <string name="surround_subtitle">Widens the sound outwards, as if it came from bigger speakers</string>
+    <string name="surround_intensity">Width</string>
+    <string name="spatial_level">%1$d%%</string>
     <string name="download_hint">Download songs and videos by direct file link (mp3, flac, ogg, m4a, wav, mp4, webm). Videos go to the Movies folder and appear in the Videos tab.</string>
     <string name="cache_title">Clear cache</string>
     <string name="cache_size">Cache size: %1$s</string>

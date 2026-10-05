@@ -189,6 +189,6 @@ object TamiRadio {
         val ctx = app ?: return
         if (text.isBlank() || !Settings.djVoice(ctx)) return
         voice ?: DjVoice(ctx, Settings.languageTag(Settings.language(ctx))).also { voice = it }
-        voice!!.init { ready -> if (ready) voice!!.speak(text) }
+        voice?.init { ready -> if (ready) voice?.speak(text) }
     }
 }
