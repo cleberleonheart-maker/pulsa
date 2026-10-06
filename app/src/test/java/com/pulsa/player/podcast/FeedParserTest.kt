@@ -488,4 +488,213 @@ class FeedParserTest {
         assertEquals("/data/a.mp3", baixado.playableUrl)
         assertTrue(baixado.downloaded)
     }
+
+    // ---- feed que o app precisa explicar --------------------------------------------
+
+    @Test
+    fun `page html nao passa por feed`() {
+        // O caso que produce "feed inválido" com mais frequência: a pessoa cola o link do
+        // site do programa (que responde 200), e não o do feed. A mensagem precisa dizer
+        // isso — "inválido" faz a pessoa tentar de novo com o mesmo endereço.
+        val html = "<!DOCTYPE html><html><head><title>Meu Podcast</title></head>" +
+            "<body><a href='/feed.xml'>RSS</a></body></html>"
+        val r = FeedParser.parseOrError(xml(html))
+        assertTrue(r.isFailure)
+        assertTrue(r.exceptionOrNull()!!.message!!.contains("página"))
+        assertNull(FeedParser.parse(xml(html)))
+    }
+
+    @Test
+    fun `ampersand solto na descricao ainda parseia`() {
+        // "&" sem entidade é o defeito de feed mais comum que existe: o DocumentBuilder é
+        // estrito e estoura, e o usuário vê apenas "feed inválido" num podcast perfectly
+        // bom. O texto tem de sobreviver inteiro, com o "&" no lugar.
+        val p = FeedParser.parse(
+            xml(
+                """
+                <rss version="2.0">
+                  <channel>
+                    <title>AT&T Talks</title>
+                    <link>https://exemplo.com/podcast</link>
+                    <description>Rock&Roll e Juan & Maria</description>
+                    <item>
+                      <title>EP 1</title>
+                      <guid>ep-1</guid>
+                      <enclosure url="https://exemplo.com/1.mp3" type="audio/mpeg" length="1"/>
+                    </item>
+                  </channel>
+                </rss>
+                """
+            )
+        )
+        assertNotNull(p)
+        assertEquals("AT&T Talks", p!!.title)
+        assertEquals("Rock&Roll e Juan & Maria", p.description)
+        assertEquals(1, p.episodes.size)
+    }
+
+    @Test
+    fun `entidade valida continua valida`() {
+        // A Soldier usa `&amp;` e `&#39;`: o reparo do "&" não pode transformar a entidade
+        // em `&amp;amp;` e mostrar "AT&amp;T" na tela do podcast.
+        val p = FeedParser.parse(
+            xml(
+                """
+                <rss version="2.0">
+                  <channel>
+                    <title>Rock &amp; Roll</title>
+                    <link>https://exemplo.com/podcast</link>
+                    <description>dono &#39; do jogo</description>
+                    <item>
+                      <title>EP 1</title>
+                      <guid>ep-1</guid>
+                      <enclosure url="https://exemplo.com/1.mp3" type="audio/mpeg" length="1"/>
+                    </item>
+                  </channel>
+                </rss>
+                """
+            )
+        )
+        assertNotNull(p)
+        assertEquals("Rock & Roll", p!!.title)
+        assertEquals("dono ' do jogo", p.description)
+    }
+
+    @Test
+    fun `BOM nao derruba o parse`() {
+        val bom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) +
+            """
+            <rss version="2.0"><channel><title>Com BOM</title>
+            <link>https://exemplo.com/podcast</link>
+            <item><title>EP 1</title><guid>ep-1</guid>
+            <enclosure url="https://exemplo.com/1.mp3" type="audio/mpeg" length="1"/>
+            </item></channel></rss>
+            """.trimIndent().toByteArray()
+        assertEquals("Com BOM", FeedParser.parse(bom)?.title)
+    }
+
+    @Test
+    fun `xml que nao presta diz o que houve`() {
+        val r = FeedParser.parseOrError(xml("<rss><channel><title>Quebrado"))
+        assertTrue(r.isFailure)
+        val msg = r.exceptionOrNull()!!.message.orEmpty()
+        assertTrue("mensagem deveria citar o XML: $msg", msg.contains("XML"))
+    }
+
+    @Test
+    fun `rss que nao e de podcast diz que falta titulo`() {
+        // RSS de notícias responde 200 e parseia: o que não existe é título/link de podcast.
+        val r = FeedParser.parseOrError(
+            xml("<rss version=\"2.0\"><channel><item><title>Notícia</title></item></channel></rss>")
+        )
+        assertTrue(r.isFailure)
+        assertNull(FeedParser.parse(xml("<rss version=\"2.0\"><channel><item><title>N</title></item></channel></rss>")))
+    }
+
+    @Test
+    fun `feed so com atom link self`() {
+        // Formato do Megaphone, uma das maiores plataformas de podcast: RSS com
+        // `<atom:link rel="self">` e **nenhum** `<link>` de texto. A regra antiga aceitava só
+        // `rel` vazio ou "alternate", então o feed era recusado como inválido — com título e
+        // episódios bons na resposta. O `self` ainda é a melhor identidade: é o mesmo
+        // endereço que a pessoa colou, que é o que a assinatura deduplica.
+        val p = FeedParser.parse(
+            xml(
+                """
+                <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+                  <channel>
+                    <atom:link href="https://feeds.megaphone.fm/ABC" rel="self"
+                               type="application/rss+xml"/>
+                    <title>Crash Dummies</title>
+                    <description>Comédia</description>
+                    <item>
+                      <title>EP 1</title>
+                      <guid>ep-1</guid>
+                      <enclosure url="https://exemplo.com/1.mp3" type="audio/mpeg" length="1"/>
+                    </item>
+                  </channel>
+                </rss>
+                """
+            )
+        )
+        assertNotNull(p)
+        assertEquals("https://feeds.megaphone.fm/ABC", p!!.feedUrl)
+        assertEquals("Crash Dummies", p.title)
+        assertEquals(1, p.episodes.size)
+    }
+
+    @Test
+    fun `link de texto do RSS ganha do self`() {
+        // Os dois convivem em alguns feeds, e o link do site é o que o app quer mostrar: o
+        // `self` é o endereço do XML.
+        val p = FeedParser.parse(
+            xml(
+                """
+                <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+                  <channel>
+                    <atom:link href="https://cdn.exemplo/feed.xml" rel="self"/>
+                    <title>Do Site</title>
+                    <link>https://exemplo.com/podcast</link>
+                    <item>
+                      <title>EP 1</title>
+                      <guid>ep-1</guid>
+                      <enclosure url="https://exemplo.com/1.mp3" type="audio/mpeg" length="1"/>
+                    </item>
+                  </channel>
+                </rss>
+                """
+            )
+        )
+        assertEquals("https://exemplo.com/podcast", p!!.feedUrl)
+    }
+
+    @Test
+    fun `corpo gzippado ainda parseia`() {
+        // Há servidor que manda gzip mesmo sem o cliente pedir Accept-Encoding, e o
+        // HttpURLConnection só descompacta quando quem pede é a gente. Aí o parser lia bytes
+        // binários e devolvia "XML malformado" para um feed perfeitamente bom.
+        val bruto = xml(
+            """
+            <rss version="2.0">
+              <channel>
+                <title>Comprimido</title>
+                <link>https://exemplo.com/podcast</link>
+                <item>
+                  <title>EP 1</title>
+                  <guid>ep-1</guid>
+                  <enclosure url="https://exemplo.com/1.mp3" type="audio/mpeg" length="1"/>
+                </item>
+              </channel>
+            </rss>
+            """
+        )
+        val out = java.io.ByteArrayOutputStream()
+        java.util.zip.GZIPOutputStream(out).use { it.write(bruto) }
+        val p = FeedParser.parseOrError(out.toByteArray())
+        assertTrue(p.isSuccess)
+        assertEquals("Comprimido", p.getOrThrow().title)
+        assertEquals(1, p.getOrThrow().episodes.size)
+    }
+
+    @Test
+    fun `resposta json e identificada`() {
+        // Colar o link da busca do iTunes em vez do do feed: a resposta é JSON, e "XML
+        // malformado" não diz o que a pessoa fez.
+        val json = "{\"resultCount\":0,\"results\":[]}".toByteArray(Charsets.UTF_8)
+        val r = FeedParser.parseOrError(json)
+        assertTrue(r.isFailure)
+        assertTrue(r.exceptionOrNull()!!.message!!.contains("JSON"))
+    }
+
+    @Test
+    fun `xml malformado mostra a causa real`() {
+        // A regressão: o `read` engolia a exceção, devolvia null, e o caminho de erro via
+        // exceptionOrNull() == null -> "erro desconhecido". A pessoa via "XML malformado:
+        // erro desconhecido", que é a frase mais inútil que o app podia imprimir.
+        val r = FeedParser.parseOrError(xml("<rss><channel><title>Quebrado"))
+        assertTrue(r.isFailure)
+        val msg = r.exceptionOrNull()!!.message!!
+        assertTrue(msg.contains("XML malformado"))
+        assertFalse(msg.contains("erro desconhecido"))
+    }
 }

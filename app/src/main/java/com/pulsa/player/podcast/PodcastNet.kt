@@ -78,9 +78,22 @@ object PodcastNet {
      * não em uma variable que o próximo chamador sobrescreve.
      */
     fun fetchFeedResult(url: String): Result<Podcast> = runCatching {
-        val podcast = FeedParser.parse(fetch(url))
-            ?: throw IllegalStateException("feed inválido")
-        podcast
+        // O motivo vem do parser, e não um "feed inválido" genérico: quem assinou quer saber
+        // se colou a página do site, se o XML veio quebrado ou se o servidor devolveu 404.
+        val body = fetch(url)
+        FeedParser.parseOrError(body).getOrElse {
+            // A segunda linha é só para o log: o começo do corpo diz na hora o que veio (JSON,
+            // HTML de verificação, metade de um XML) sem precisar baixar de novo. A tela fica
+            // com a primeira linha, que é a parte legível.
+            throw IllegalStateException("${it.message}\ncorpo=${preview(body)}", it)
+        }
+    }
+
+    /** Primeiros bytes do corpo, uma linha só, para o log de erro do feed. */
+    private fun preview(body: ByteArray): String {
+        val text = String(body, 0, minOf(body.size, 160), Charsets.UTF_8)
+            .replace("\\s+".toRegex(), " ")
+        return text + if (body.size > 160) "…" else ""
     }
 
     // ---- busca online ---------------------------------------------------------------------

@@ -29,24 +29,154 @@ object FeedParser {
      * Múltiplos feeds por requisição é o normal (YouTube e o Spotify mandam `<feed>` num
      * namespace de Atom), então um `Document` por raiz em vez de try/catch por item.
      */
-    fun parse(bytes: ByteArray): Podcast? {
-        val doc = read(bytes) ?: return null
-        // A raiz se procura por **localName**, e não por `getElementsByTagName`.
-        //
-        // `getElementsByTagName` casa pelo nome qualificado: num documento com namespace o
-        // `<rdf:RDF>` tem `nodeName == "rdf:RDF"`, então buscar por `"RDF"` não acha nada —
-        // e o `parse` caía no `<channel>` abaixo dele. O resultado era um podcast com título e
-        // link corretos e **zero episódios**, sem erro nenhum: um feed RDF que o app assinava
-        // e mostrava vazio para sempre.
-        val tags = listOf("rss", "feed", "RDF", "channel")
-        val candidates = elementsDeep(doc.documentElement)
-        val root = tags.asSequence()
-            .flatMap { tag -> candidates.filter { it.localNameOrName().equals(tag, true) } }
-            // `parseFeed` é quem decide o resto; se a primeira raiz não for de feed, tenta a
-            // próxima em vez de devolver `null` num documento válido.
-            .mapNotNull { parseFeed(it) }
-            .firstOrNull()
-        return root
+    fun parse(bytes: ByteArray): Podcast? = parseOrError(bytes).getOrNull()
+
+    /**
+     * O mesmo parse, mas **com o motivo da falha** no `Result`.
+     *
+     * Existia só o [parse], que devolvia `null`, e a tela traduzia isso em "feed inválido" —
+     * uma mensagem que não ajuda ninguém a consertar nada. As causas que aparecem no mundo
+     * real são completamente diferentes entre si:
+     *
+     * - **não é feed**: a URL responde 200 com a página HTML do programa (o usuário colou o
+     *   link do site, não o do feed) — o certo é dizer isso, senão ele tenta de novo com o
+     *   mesmo endereço;
+     * - **XML malformado**: `&` solto ou entidade não declarada na descrição. É comum, e o
+     *   [relaxedBytes] resolve na maioria dos casos;
+     * - **feed sem link nem título**: não é podcast, é RSS de outro assunto;
+     * - **erro de verdade** (memória, IO), que precisa aparecer em vez de virar "inválido".
+     */
+    fun parseOrError(bytes: ByteArray): Result<Podcast> {
+        val clean = stripBom(gunzip(bytes))
+        if (looksLikeHtml(clean)) {
+            return Result.failure(IllegalStateException("isso é uma página web, não um feed"))
+        }
+        // Colaram o link da busca, não o do feed: o iTunes responde JSON e o parser chega a
+        // tentar ler como XML. Dizer "JSON" evita que a pessoa tente o mesmo endereço outra vez.
+        if (looksLikeJson(clean)) {
+            return Result.failure(IllegalStateException("isso é uma resposta JSON, não um feed"))
+        }
+        val first = runCatching { read(clean) }
+        val second = first.exceptionOrNull()?.let { runCatching { read(relaxedBytes(clean)) } }
+        val doc = first.getOrNull() ?: second?.getOrNull()
+            ?: return Result.failure(
+                IllegalStateException(
+                    "XML malformado: " +
+                        describe(second?.exceptionOrNull() ?: first.exceptionOrNull())
+                )
+            )
+        return runCatching {
+            // A raiz se procura por **localName**, e não por `getElementsByTagName`.
+            //
+            // `getElementsByTagName` casa pelo nome qualificado: num documento com namespace o
+            // `<rdf:RDF>` tem `nodeName == "rdf:RDF"`, então buscar por `"RDF"` não acha nada —
+            // e o `parse` caía no `<channel>` abaixo dele. O resultado era um podcast com
+            // título e link corretos e **zero episódios**, sem erro nenhum: um feed RDF que o
+            // app assinava e mostrava vazio para sempre.
+            val tags = listOf("rss", "feed", "RDF", "channel")
+            val candidates = elementsDeep(doc.documentElement)
+            tags.asSequence()
+                .flatMap { tag -> candidates.filter { it.localNameOrName().equals(tag, true) } }
+                // `parseFeed` é quem decide o resto; se a primeira raiz não for de feed, tenta
+                // a próxima em vez de devolver `null` num documento válido.
+                .mapNotNull { parseFeed(it) }
+                .firstOrNull()
+        }.mapCatching { it ?: throw IllegalStateException("feed sem título nem link") }
+    }
+
+    /**
+     * Corta o BOM e afasta o XML de um `&` solto.
+     *
+     * O `DocumentBuilder` é estrito e estoura em qualquer `&` que não seja uma das cinco
+     * entidades — e descrição de episódio com "AT&T" ou "Rock&Roll" é a regra, não a exceção.
+     * Trocar por `&amp;` deixa o XML válido sem perder o texto; o que já é entidade
+     * (`&amp;`, `&#39;`) fica como está.
+     */
+    private fun relaxedBytes(bytes: ByteArray): ByteArray {
+        val text = String(bytes, Charsets.UTF_8)
+        val sb = StringBuilder(text.length + 16)
+        var i = 0
+        while (i < text.length) {
+            val c = text[i]
+            if (c == '&') {
+                val semi = text.indexOf(';', i + 1)
+                val name = if (semi in (i + 1)..(i + 12)) text.substring(i + 1, semi) else null
+                if (name != null && (name.startsWith("#") || name in KEEP_ENTITIES)) {
+                    sb.append(text, i, semi + 1)
+                    i = semi + 1
+                    continue
+                }
+                sb.append("&amp;")
+                i++
+                continue
+            }
+            // Controle que o XML proíbe (0x00-0x08 e companhia) também derruba o parser.
+            if (c.code < 0x20 && c != '\n' && c != '\r' && c != '\t') {
+                i++
+                continue
+            }
+            sb.append(c)
+            i++
+        }
+        return sb.toString().toByteArray(Charsets.UTF_8)
+    }
+
+    private val KEEP_ENTITIES = setOf("amp", "lt", "gt", "quot", "apos")
+
+    /** O BOM na cabeça do arquivo faz o parser reclamar de conteúdo antes do `<?xml`. */
+    private fun stripBom(bytes: ByteArray): ByteArray = if (
+        bytes.size >= 3 && bytes[0] == 0xEF.toByte() && bytes[1] == 0xBB.toByte() &&
+        bytes[2] == 0xBF.toByte()
+    ) {
+        bytes.copyOfRange(3, bytes.size)
+    } else {
+        bytes
+    }
+
+    private fun looksLikeHtml(bytes: ByteArray): Boolean {
+        val head = String(bytes, 0, minOf(bytes.size, 512)).trimStart().lowercase()
+        return head.startsWith("<!doctype html") || head.startsWith("<html")
+    }
+
+    private fun looksLikeJson(bytes: ByteArray): Boolean {
+        val head = String(bytes, 0, minOf(bytes.size, 512)).trimStart()
+        if (!head.startsWith("{") && !head.startsWith("[")) return false
+        val text = String(bytes, Charsets.UTF_8)
+        // `{"` ou `[{` já basta para corpo de busca; `[{}` vazio não tem rota aqui de qualquer
+        // jeito, e a resposta de verdade do iTunes sempre traz chaves.
+        return text.contains("\":") || text.contains("\": ")
+    }
+
+    /**
+     * Descompacta gzip se o corpo vier comprimido.
+     *
+     * O `HttpURLConnection` só descompacta quando **a gente** pediu `Accept-Encoding`, e não
+     * pedimos — mas há servidores que mandam gzip do mesmo jeito (redirecionamento, CDN com
+     * header forçado). Aí o parser lê bytes de página binária, falha nos dois caminhos e a
+     * pessoa vê "XML malformado" sem entender por quê. Os dois bytes mágicos `1F 8B` decidem:
+     * não sendo gzip, o corpo passa intacto.
+     */
+    private fun gunzip(bytes: ByteArray): ByteArray {
+        if (bytes.size < 2 || bytes[0] != 0x1F.toByte() || bytes[1] != 0x8B.toByte()) return bytes
+        return try {
+            java.io.ByteArrayInputStream(bytes).use { input ->
+                java.util.zip.GZIPInputStream(input).use { it.readBytes() }
+            }
+        } catch (e: Exception) {
+            // Não é gzip depois de tudo — deixa o parser reclamar do corpo original, com a
+            // mensagem real, em vez de "Not in GZIP format".
+            bytes
+        }
+    }
+
+    /** Uma linha só, porque a mensagem vai para a tela e para o log. */
+    private fun describe(t: Throwable?): String {
+        val msg = t?.message?.lineSequence()?.firstOrNull()?.trim().orEmpty()
+        return when {
+            msg.isEmpty() -> t?.javaClass?.simpleName ?: "erro desconhecido"
+            msg.length > 120 -> msg.take(120) + "…"
+            else -> msg
+        }
     }
 
     /** Todos os elementos da árvore, em profundidade — para achar a raiz por nome local. */
@@ -259,12 +389,29 @@ object FeedParser {
      * `self` é o endereço do próprio XML, que como endereço do feed faz o app guardar um
      * `.xml` e depois tentar tocar isso como áudio.
      */
+    /**
+     * O link do canal, na ordem em que ele serve para alguma coisa.
+     *
+     * O fallback para `rel="self"` não é teoria: o Megaphone — uma das maiores plataformas de
+     * podcast do mundo — publica `<atom:link rel="self">` e **nenhum** `<link>` de texto. Com
+     * a regra antiga (só `alternate` e link vazio) o feed era descartado como "feed inválido",
+     * com título e episódios perfeitamente bons na resposta. E o `self` é justamente a melhor
+     * identidade possível: é o mesmo endereço que a pessoa colou, que é o que a assinatura
+     * deduplica.
+     */
     private fun linkOf(channel: Element): String? {
-        elements(channel, "link").forEach { e ->
-            val rel = e.getAttribute("rel")
-            val href = e.getAttribute("href").trim().ifEmpty { e.textContent?.trim().orEmpty() }
-            if (href.isEmpty()) return@forEach
-            if (rel.isEmpty() || rel == "alternate") return href
+        val links = elements(channel, "link")
+        // `rel` vazio primeiro (RSS com link de texto), depois `alternate` (Atom), `self` e por
+        // fim qualquer um — um feed com só `href` não pode ser descartado por isso.
+        for (aceito in listOf("", "alternate", "self", null)) {
+            for (e in links) {
+                val rel = e.getAttribute("rel").trim()
+                if (aceito != null && !rel.equals(aceito, true)) continue
+                if (aceito == null && rel.isNotEmpty()) continue
+                val href = e.getAttribute("href").trim()
+                    .ifEmpty { e.textContent?.trim().orEmpty() }
+                if (href.isNotEmpty()) return href
+            }
         }
         return null
     }
@@ -356,7 +503,12 @@ object FeedParser {
      * arbitrário. O Android não traz `FEATURE_SECURE_PROCESSING` ligado por padrão, então
      * isto precisa ser explícito.
      */
-    private fun read(bytes: ByteArray): Document? = try {
+    /**
+     * Lê o XML. **Lança** — o `try/catch` que devolvia `null` engolia o motivo e o
+     * `parseOrError` acabava informando "erro desconhecido", que é a frase que não diz nada.
+     * Quem quer um `null` usa `runCatching` e escolhe o que reporta.
+     */
+    private fun read(bytes: ByteArray): Document {
         val f = DocumentBuilderFactory.newInstance()
         f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
         f.setFeature("http://xml.org/sax/features/external-general-entities", false)
@@ -365,9 +517,7 @@ object FeedParser {
         f.isExpandEntityReferences = false
         f.isXIncludeAware = false
         f.isNamespaceAware = true
-        f.newDocumentBuilder().parse(bytes.inputStream())
-    } catch (e: Exception) {
-        null
+        return f.newDocumentBuilder().parse(bytes.inputStream())
     }
 
     private fun child(parent: Node, name: String): Element? {

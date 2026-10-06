@@ -1,6 +1,7 @@
 package com.pulsa.player.podcast
 
 import android.content.Context
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.data.db.FeedRef
 import com.pulsa.player.data.db.PodcastDao
 import com.pulsa.player.data.db.PodcastEpisodeEntity
@@ -15,7 +16,11 @@ import com.pulsa.player.model.Song
  * Assíncrono por dentro ([refresh]) e síncrono para o resto do app, como o `PlaylistDb`: quem
  * chama já está em `ThreadPool.post`, e os testes rodam sem aparelho.
  */
-class PodcastDb(val dao: PodcastDao) {
+class PodcastDb(
+    val dao: PodcastDao,
+    /** Só para o log de erro do feed; `null` quando o `PodcastDb` foi montado à mão. */
+    val context: Context? = null
+) {
 
     /**
      * Assina um feed e devolve o id, **ou** reaproveita a assinatura que já existe.
@@ -245,6 +250,18 @@ class PodcastDb(val dao: PodcastDao) {
         val ok: Boolean get() = error.isEmpty()
     }
 
+    /**
+     * Deixa o motivo da falha no log de erros do app.
+     *
+     * Sem isso a tela mostra "feed inválido" e o log não fala nada: quem for investigar depois
+     * não tem como saber qual feed falhou nem por quê — e a única pista seria pedir para a
+     * pessoa colar o endereço de novo. `null` quando o `PodcastDb` foi montado à mão (teste).
+     */
+    fun logFeedFailure(what: String, url: String, error: String) {
+        val ctx = context ?: return
+        CrashLogger.writeLog(ctx, "PODCAST: $what $url falhou -> $error")
+    }
+
     companion object {
         @Volatile
         private var instance: PodcastDb? = null
@@ -261,7 +278,8 @@ class PodcastDb(val dao: PodcastDao) {
         fun get(context: Context): PodcastDb {
             return instance ?: synchronized(this) {
                 instance ?: PodcastDb(
-                    PulsaDatabase.get(context.applicationContext).podcastDao()
+                    PulsaDatabase.get(context.applicationContext).podcastDao(),
+                    context.applicationContext
                 ).also { instance = it }
             }
         }
@@ -294,7 +312,14 @@ object PodcastSync {
      */
     fun subscribeByUrl(db: PodcastDb, url: String): SubscribeOutcome {
         val podcast = PodcastNet.fetchFeedResult(url).getOrElse {
-            return SubscribeOutcome(0L, it.message.orEmpty().ifBlank { "feed inválido" })
+            // A tela leva só a primeira linha; o log leva tudo, inclusive o começo do corpo
+            // que o servidor devolveu — que é a parte que diz **de verdade** o que houve.
+            val full = it.message.orEmpty()
+            val message = full.lineSequence().first().ifBlank { "feed inválido" }
+            // Vai para o log de erros com a URL: sem isto a única forma de achar o problema
+            // seria pedir para a pessoa colar o endereço aqui de novo.
+            db.logFeedFailure("assinar", url, full.ifBlank { "feed inválido" })
+            return SubscribeOutcome(0L, message)
         }
         return SubscribeOutcome(db.subscribe(podcast), "")
     }
@@ -317,7 +342,9 @@ object PodcastSync {
         // falhou com 404 ser gravado com o erro do podcast seguinte, e o `last_error` da lista
         // viraria uma mistura de mensagens que não corresponde a nenhum podcast.
         val podcast = PodcastNet.fetchFeedResult(url).getOrElse {
-            val err = it.message.orEmpty().ifBlank { "feed inválido" }
+            val full = it.message.orEmpty()
+            val err = full.lineSequence().first().ifBlank { "feed inválido" }
+            db.logFeedFailure("atualizar", url, full.ifBlank { "feed inválido" })
             db.setFeedError(ref.id, err)
             return PodcastDb.RefreshResult(ref.id, 0, err)
         }
