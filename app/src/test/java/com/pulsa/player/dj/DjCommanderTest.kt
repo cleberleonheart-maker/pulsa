@@ -364,4 +364,103 @@ class DjCommanderTest {
         assertEquals("pause", DjCommander.action(DjCommander.norm("virgin, para a musica")))
         assertEquals("pause", DjCommander.action(DjCommander.norm("virgin, para")))
     }
+
+    @Test
+    fun playlist_create_action() {
+        assertEquals(
+            "playlist_new",
+            DjCommander.action(DjCommander.norm("virgin, cria uma playlist chamada batidinhas"))
+        )
+        assertEquals(
+            "playlist_new",
+            DjCommander.action(DjCommander.norm("virgin, faz uma nova playlist pra carro"))
+        )
+        assertEquals(
+            "playlist_new",
+            DjCommander.action(DjCommander.norm("virgin, cria a playlist"))
+        )
+    }
+
+    @Test
+    fun playlist_create_extracts_name() {
+        assertEquals(
+            "batidinhas",
+            DjCommander.playlistName(DjCommander.norm("cria uma playlist chamada batidinhas"))
+        )
+        assertEquals(
+            "pra carro",
+            DjCommander.playlistName(DjCommander.norm("faz uma nova playlist pra carro"))
+        )
+        assertEquals(
+            "minha lista boa",
+            DjCommander.playlistName(
+                DjCommander.norm("cria a playlist de minha lista boa, por favor")
+            )
+        )
+        assertEquals(
+            "foco",
+            DjCommander.playlistName(DjCommander.norm("create a playlist called foco"))
+        )
+    }
+
+    @Test
+    fun playlist_play_action() {
+        assertEquals(
+            "playlist_play",
+            DjCommander.action(DjCommander.norm("virgin, toca a playlist batidinhas"))
+        )
+        assertEquals(
+            "playlist_play",
+            DjCommander.action(DjCommander.norm("virgin, abre minha playlist de foco"))
+        )
+        assertEquals(
+            "batidinhas",
+            DjCommander.playlistName(DjCommander.norm("toca a playlist batidinhas"))
+        )
+    }
+
+    @Test
+    fun playlist_play_not_confused_with_daily_set() {
+        // "playlist do dia" e set diario desde sempre: nao pode virar playlist chamada "do dia".
+        assertEquals(
+            "daily_set",
+            DjCommander.action(DjCommander.norm("virgin, toca a playlist do dia"))
+        )
+        assertEquals(
+            "daily_set",
+            DjCommander.action(DjCommander.norm("toca a playlist de hoy"))
+        )
+    }
+
+    @Test
+    fun playlist_create_not_stealing_dynamic_queue() {
+        // "monta uma lista de rock" ja era fila dinamica antes de existir playlist por voz.
+        assertEquals(
+            "dynq",
+            DjCommander.action(DjCommander.norm("virgin, monta uma lista de rock"))
+        )
+        assertEquals(
+            "dynq",
+            DjCommander.action(DjCommander.norm("toca rock que nao ouco ha 2 meses"))
+        )
+    }
+
+    @Test
+    fun playlist_commands_need_the_word_playlist() {
+        assertNull(DjCommander.action(DjCommander.norm("virgin, cria uma colecao chamada batidinhas")))
+        assertNull(DjCommander.playlistName(DjCommander.norm("virgin, cria uma colecao")))
+        // Sem a palavra "playlist" continua sendo só um comando de tocar qualquer coisa.
+        assertEquals("play", DjCommander.action(DjCommander.norm("virgin, toca batidinhas")))
+    }
+
+    @Test
+    fun playlist_name_ignores_politeness_and_punctuation() {
+        assertEquals(
+            "festa",
+            DjCommander.playlistName(DjCommander.norm("cria playlist festa, por favor."))
+        )
+        // O nome é lido ("dia"), mas o comando NÃO vira playlist: quem manda é o set diário.
+        assertEquals("dia", DjCommander.playlistName(DjCommander.norm("toca a playlist do dia")))
+        assertEquals("daily_set", DjCommander.action(DjCommander.norm("toca a playlist do dia")))
+    }
 }

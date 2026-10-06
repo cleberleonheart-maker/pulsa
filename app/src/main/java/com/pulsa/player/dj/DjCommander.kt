@@ -366,6 +366,120 @@ object DjCommander {
         return t.isEmpty() || k.isEmpty() || t.contains(k) || k.contains(t)
     }
 
+    // ----- Playlists por voz ("cria a playlist X" / "toca a playlist X") -----
+    //
+// Duas regras de não-regressão:
+    //
+    // 1. "toca a playlist do dia" é o set diário (ver [dailySetMatch]), não uma playlist
+    //    chamada "do dia". Por isso [dailySetMatch] barra os dois sentidos aqui.
+    // 2. "monta uma lista de rock" já era fila dinâmica (ver [dynamicQuery], que ouve
+    //    "monta"/"fila"). Criar NÃO pode roubar esse comando: a criação exige que a frase
+    //    não seja ao mesmo tempo uma regra de fila. Tocar é diferente — lá quem decide é o
+    //    `MainVirgin`, porque depende de existir uma playlist salva com aquele nome.
+
+    private val PLAYLIST_WORDS = listOf(
+        "playlist", "play list", "playlists",
+        "lista", "listas",
+        "lista de reproducao", "lista de reproduccion", "lista de reproducción"
+    )
+
+    private val CREATE_WORDS = listOf(
+        "cria", "criar", "crio", "criando", "cria uma", "faz", "fazer", "faz uma",
+        "nova", "novo", "nova uma", "monte", "montar", "monta uma",
+        "create", "make", "new playlist",
+        "crea", "crear", "haz", "nueva"
+    )
+
+    private val OPEN_WORDS = listOf(
+        "toca", "toque", "tocar", "toca ai", "play", "abre", "abrir", "aberta", "open",
+        "empieza", "reproduce", "coloca", "bota", "manda"
+    )
+
+    /** Conectivos que aparecem entre "playlist" e o nome; o nome é o que fica depois. */
+    private val NAME_FILLER = listOf(
+        "que se chama", "que chama", "chamada", "chamando", "chame", "chamo",
+        "de nome", "com nome", "com o nome", "com a nome", "de la",
+        "intitulada", "intulado", "titulada", "titulado", "denominada",
+        "llamada", "llamando", "se llama", "called", "named",
+        "com", "de", "do", "da", "la", "el"
+    )
+
+    /** Cortesia que a VIRGIN transcreve junto e que não faz parte do nome da playlist. */
+    private val POLITE_TAIL = listOf(
+        " por favor", " porfa", " pfv", " obrigada", " obrigado", " valeu", " entao",
+        " agora", " ai", " vai", " bora", " please", " let's", " lets"
+    )
+
+    /** Posição da primeira palavra de playlist no texto, ou -1 se não houver. */
+    private fun playlistWordAt(norm: String): Int {
+        var best = -1
+        for (w in PLAYLIST_WORDS) {
+            val i = norm.indexOf(w)
+            if (i >= 0 && (best < 0 || i < best)) best = i
+        }
+        return best
+    }
+
+    private fun cleanPlaylistName(raw: String): String? {
+        var s = raw.trim().trim(',', '.', '!', '?', ' ').trim()
+        var changed = true
+        while (changed) {
+            changed = false
+            for (f in NAME_FILLER) {
+                if (s.startsWith("$f ") || s == f) {
+                    s = s.substring(f.length).trim()
+                    changed = true
+                }
+            }
+        }
+        for (t in POLITE_TAIL) {
+            if (s.endsWith(t) && s.length > t.length) {
+                s = s.dropLast(t.length).trim()
+            }
+        }
+        s = s.trim().trim(',', '.', '!', '?', ' ').trim()
+        // Uma ou duas letras não são nome de playlist, são resto da frase.
+        return if (s.length >= 2) s else null
+    }
+
+    /**
+     * O nome falado depois da palavra "playlist".
+     *
+     * "toca a playlist de morning workout" → "morning workout"; "cria a playlist chamada
+     * minha lista boa, por favor" → "minha lista boa".
+     */
+    fun playlistName(norm: String): String? {
+        val i = playlistWordAt(norm)
+        if (i < 0) return null
+        // A palavra mais longa que casa em i: "lista de reproducao" precisa ganhar de "lista".
+        val word = PLAYLIST_WORDS.filter { norm.startsWith(it, i) }.maxByOrNull { it.length } ?: return null
+        return cleanPlaylistName(norm.substring(i + word.length))
+    }
+
+    /**
+     * "virgi, cria uma playlist chamada X" / "faz uma nova playlist X".
+     *
+     * Não exige nome: uma frase sem nome ainda é um pedido de criação, e o `MainVirgin`
+     * responde pedindo o nome em vez de cair no silêncio.
+     */
+    fun playlistCreate(norm: String): Boolean {
+        if (playlistWordAt(norm) < 0) return false
+        if (dailySetMatch(norm)) return false
+        if (!CREATE_WORDS.any { norm.contains(it) }) return false
+        // Não roubar a fila dinâmica: "monta uma lista de rock" já era dynq.
+        val dyn = dynamicQuery(norm)
+        if (dyn != null && (dyn.genres.isNotEmpty() || dyn.hasRule)) return false
+        return true
+    }
+
+    /** "virgi, toca a playlist X" / "abre minha playlist X". */
+    fun playlistPlay(norm: String): Boolean {
+        if (playlistWordAt(norm) < 0) return false
+        if (dailySetMatch(norm)) return false
+        if (!OPEN_WORDS.any { norm.contains(it) }) return false
+        return playlistName(norm) != null
+    }
+
     fun dynamicQuery(norm: String): DynQuery? {
         val genres = genresOf(norm)
 
@@ -581,6 +695,12 @@ object DjCommander {
     }
 
     fun action(norm: String): String? = when {
+        // Playlists ficam no topo porque o nome da playlist pode ser qualquer palavra — até
+        // "malhar" ou "chuva" podem ser o nome de uma playlist salva. Quem tem a palavra
+        // "playlist" na frase vence; se não existir uma com esse nome, o `MainVirgin` devolve
+        // o comando para a fila dinâmica normal.
+        playlistCreate(norm) -> "playlist_new"
+        playlistPlay(norm) -> "playlist_play"
         ambientVolume(norm) != null -> "ambient_vol"
         sceneQuery(norm) != null -> "scene"
         weekMatch(norm) -> "weekly"
