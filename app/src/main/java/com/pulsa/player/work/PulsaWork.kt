@@ -16,6 +16,8 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.pulsa.player.core.Blacklist
 import com.pulsa.player.media.MusicDownloader
+import com.pulsa.player.podcast.PodcastDb
+import com.pulsa.player.podcast.PodcastSync
 import com.pulsa.player.sync.RemoteSync
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -112,7 +114,8 @@ object PulsaWork {
     }
 
     /**
-     * Uma passada de sync: lista de bloqueio, biblioteca e aprendizado do DJ.
+     * Uma passada de sync: lista de bloqueio, biblioteca, aprendizado do DJ e os feeds de
+     * podcast.
      *
      * A blacklist é consultada aqui e não em job separado porque é isto que decide se o resto
      * do sync pode rodar — um job só dela gastaria uma ida à rede a cada 15 min para nada.
@@ -124,9 +127,28 @@ object PulsaWork {
             // Barrido não adianta: o tick para de empurrar estado e de aceitar comandos, mas
             // o playback local continua — e não há como matar o processo de dentro daqui.
             if (Blacklist.isBanned(ctx)) return Result.success()
-            return if (RemoteSync.syncHeavy(ctx)) Result.success() else Result.retry()
+            val synced = RemoteSync.syncHeavy(ctx)
+            refreshPodcasts(ctx)
+            return if (synced) Result.success() else Result.retry()
         }
 
+        /**
+         * Atualiza as assinaturas de podcast (F3).
+         *
+         * **Não entra no `if` do `Result`**: um feed que dá 404 não é erro do job. O
+         * [com.pulsa.player.podcast.PodcastSync.refreshAll] grava o erro na própria assinatura e
+         * segue para o próximo feed, então o resultado é ignorado de propósito — se falhasse,
+         * este `Result.retry()` repetiria a passada inteira a cada minuto por causa de um
+         * podcast fora do ar.
+         *
+         * `Dispatchers.IO` porque aqui o caminho é bloqueante de verdade: HTTP com timeout de
+         * 15 s por feed e query do Room, que roda na thread que chamou.
+         */
+        private suspend fun refreshPodcasts(ctx: Context) {
+            withContext(Dispatchers.IO) {
+                runCatching { PodcastSync.refreshAll(PodcastDb.get(ctx)) }
+            }
+        }
     }
 
     /**

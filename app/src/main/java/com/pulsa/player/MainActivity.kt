@@ -29,6 +29,7 @@ import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.data.db.PodcastFeedRow
 import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.ui.AlbumsTabFragment
 import com.pulsa.player.ui.ArtistTimelineFragment
@@ -40,6 +41,8 @@ import com.pulsa.player.ui.LibraryDetailFragment
 import com.pulsa.player.ui.PlaylistDetailFragment
 import com.pulsa.player.ui.PlaylistDialog
 import com.pulsa.player.ui.PlaylistsTabFragment
+import com.pulsa.player.ui.PodcastDetailFragment
+import com.pulsa.player.ui.PodcastsTabFragment
 import com.pulsa.player.ui.SongsTabFragment
 import com.pulsa.player.ui.TrendsFragment
 import com.pulsa.player.ui.VideosTabFragment
@@ -523,6 +526,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             AlbumsTabFragment::class.java.simpleName -> AlbumsTabFragment()
             ArtistsTabFragment::class.java.simpleName -> ArtistsTabFragment()
             PlaylistsTabFragment::class.java.simpleName -> PlaylistsTabFragment()
+            PodcastsTabFragment::class.java.simpleName -> PodcastsTabFragment()
             else -> SongsTabFragment()
         }
     }
@@ -578,6 +582,19 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         pushDetail(PlaylistDetailFragment.forPlaylist(playlist), "playlist_detail")
     }
 
+    /** F3: abre os episódios de uma assinatura, com título, autor e capa que a lista já tem. */
+    fun openPodcast(feed: PodcastFeedRow) {
+        pushDetail(
+            PodcastDetailFragment.forPodcast(
+                feed.id,
+                feed.title?.takeIf { it.isNotBlank() } ?: getString(R.string.podcast),
+                feed.author.orEmpty(),
+                feed.artworkUrl.orEmpty()
+            ),
+            "podcast_detail"
+        )
+    }
+
     /** Abre a tela de reprodução própria (usado pela home e pelo mini player). */
     fun openNowPlaying() {
         // F2b: com um vídeo no item atual, a NowPlaying é a tela ERRADA. Ela mostra a arte
@@ -590,7 +607,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         // nada e o redirecionamento nunca acontecia. A decisão é no clique, com o motor já
         // no estado em que vai ficar.
         val song = Playback.currentSong
-        if (song != null && (song.isVideo || song.isStream)) {
+        if (song != null && song.needsVideoScreen) {
             VideoPlayerActivity.showPlaying(this)
             return
         }
@@ -760,7 +777,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             // pela mini player e a imagem não aparece em lugar nenhum — vídeo precisa de
             // surface, e a surface só existe na tela de vídeo, que abre aqui já grudada no
             // motor (sem `Playback.start`, para não trocar a fila).
-            if (song.isVideo || song.isStream) VideoPlayerActivity.showPlaying(this)
+            if (song.needsVideoScreen) VideoPlayerActivity.showPlaying(this)
         }
     }
 

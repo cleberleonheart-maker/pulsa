@@ -209,16 +209,31 @@ CP="${CP//out:/$OUT:}"
 kotlinc -cp "$CP" -d "$OUT" "${ARQUIVOS[@]}" || erro "erro de compilação"
 
 if [ "$RODAR_TESTES" = 1 ]; then
+    # O `org.json` do `android.jar` é um stub: qualquer `JSONObject()` lança `RuntimeException:
+    # Stub!`. Os testes do backup gravam e leem JSON de verdade, então a implementação real
+    # (`testImplementation("org.json:json")`) precisa vir **antes** do android.jar. É o mesmo
+    # truque do Gradle, que põe o `mockable-android.jar` no fim do classpath.
+    JSON_REAL=$(ls -1 ~/.gradle/caches/modules-2/files-2.1/org.json/json/*/*/json-*.jar 2>/dev/null | head -1)
+    [ -n "$JSON_REAL" ] || erro "org.json real não está no cache do Gradle"
+    # `OUTT` (saída dos testes) vem primeiro para o `kotlinc` achar as suítes recém-compiladas
+    # quando o `java` rodar; e é definido aqui, antes do uso, por causa do `set -u`.
+    OUTT="$WORK/test"; rm -rf "$OUTT"; mkdir -p "$OUTT"
+    CP_TESTE="$OUTT:$OUT:$JSON_REAL:$(cat "$CPFILE")"
+
     TESTES=()
     while IFS= read -r f; do TESTES+=("$f"); done < <(find app/src/test/java -name "*.kt")
-    OUTT="$WORK/test"; rm -rf "$OUTT"; mkdir -p "$OUTT"
     echo "compilando ${#TESTES[@]} teste(s)..." >&2
-    kotlinc -cp "$OUTT:$OUT:$(cat "$CPFILE")" -d "$OUTT" "${TESTES[@]}" || erro "erro de compilação dos testes"
+    # `-Xfriend-paths`: o Gradle compila a unidade de teste como módulo amigo do principal, e é
+    # por isso que um teste consegue chamar um `internal`. Sem isto o compilador aqui trata cada
+    # compilação como módulo separado e reprova o teste com "cannot access 'x': it is internal".
+    kotlinc -Xfriend-paths="$OUT" -cp "$CP_TESTE" -d "$OUTT" "${TESTES[@]}" || erro "erro de compilação dos testes"
 
     CLASSES=$(cd "$OUTT" && find . -name "*Test.class" | sed 's|^\./||; s|\.class$||; s|/|.|g')
     [ -n "$CLASSES" ] || erro "nenhuma classe de teste encontrada"
     echo "rodando: $(echo "$CLASSES" | wc -l) suíte(s)" >&2
-    java -cp "$OUTT:$OUT:$(cat "$CPFILE")" org.junit.runner.JUnitCore $CLASSES
+    # O status do JUnit precisa ser o status do script: sem isto um teste vermelho imprimia "OK"
+    # no fim e o script saía com 0 — a verificação local saía "verde" com 11 falhas.
+    java -cp "$CP_TESTE" org.junit.runner.JUnitCore $CLASSES || erro "teste falhou"
 fi
 
 echo "OK" >&2

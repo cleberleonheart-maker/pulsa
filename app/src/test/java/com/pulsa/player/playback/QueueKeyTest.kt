@@ -48,6 +48,21 @@ class QueueKeyTest {
         year = 0
     )
 
+    /**
+     * Episódio de podcast. O `id` é **negativo** de propósito, como o [com.pulsa.player.podcast.PodcastDb.toSong]
+     * produz: é o que impede o id do Room de colidir com um id do MediaStore.
+     */
+    private fun podcast(episodeId: Long, video: Boolean = false) = Song(
+        id = -episodeId,
+        title = "E$episodeId",
+        artist = "Pod",
+        album = "Pod",
+        albumId = 0L,
+        durationMs = 1_800_000L,
+        path = Song.PODCAST_PREFIX + (if (video) Song.PODCAST_VIDEO_FLAG else "") + episodeId,
+        year = 0
+    )
+
     private fun stream(url: String) = Song(
         id = url.hashCode().toLong() and 0x7fffffffffffffffL,
         title = "Stream",
@@ -208,6 +223,78 @@ class QueueKeyTest {
         // duplicado, porque o `seen` vai crescendo conforme o lote entra.
         val lote = listOf(video(5), video(6), video(5))
         assertEquals(listOf(video(5), video(6)), QueueKey.filterNew(emptyList(), lote))
+    }
+
+    // ------------------------------------------------------------------ podcast (F3)
+
+    @Test
+    fun `episodio de podcast tem chave propria`() {
+        assertEquals("e:77", QueueKey.encode(podcast(77)))
+    }
+
+    /**
+     * Regressão: `podcast:v<id>` caía no áudio com o `song.id` negativo.
+     *
+     * O `podcastId` lia `"v77"` com `toLongOrNull()`, que devolve `null`; o `when` então não
+     * tinha chave de episódio e caía no `else`, gravando `a:-77`. No restore isso virava uma
+     * busca no MediaStore por `-77` — nada — e o episódio em vídeo nunca voltava de onde parou.
+     */
+    @Test
+    fun `episodio de podcast em video nao perde o id`() {
+        val ep = podcast(77, video = true)
+        assertTrue(ep.isPodcast)
+        assertTrue(ep.isPodcastVideo)
+        assertEquals(77L, ep.podcastId)
+        assertEquals("e:77", QueueKey.encode(ep))
+    }
+
+    /** Um id do Room pode bater com o id de um vídeo do MediaStore; a chave tem que separar. */
+    @Test
+    fun `episodio e video com o mesmo id nao viram a mesma chave`() {
+        assertEquals("e:42", QueueKey.encode(podcast(42)))
+        assertEquals("v:42", QueueKey.encode(video(42)))
+    }
+
+    /** O mesmo episódio não entra na fila duas vezes. */
+    @Test
+    fun `episodio repetido e filtrado da fila`() {
+        val fila = listOf(podcast(1), podcast(2))
+        val novo = QueueKey.filterNew(fila, listOf(podcast(2), podcast(3)))
+        assertEquals(listOf(podcast(3)), novo)
+    }
+
+    /**
+     * Regressão: id negativo virava `a:-7`, e o restore buscaria no MediaStore uma música de
+     * id `-7`. Sem chave, o item é simplesmente não retomável — o mesmo tratamento de rádio.
+     */
+    @Test
+    fun `id negativo sem podcast nao vira chave de audio`() {
+        val orfao = audio(42).copy(id = -7L)
+        assertFalse(orfao.isPodcast)
+        assertNull(QueueKey.encode(orfao))
+    }
+
+    @Test
+    fun `decode entende chave de episodio`() {
+        assertEquals("e:77", QueueKey.decode("e:77"))
+        assertTrue(QueueKey.isEpisode("e:77"))
+        assertFalse(QueueKey.isEpisode("a:77"))
+        assertFalse(QueueKey.isEpisode("v:77"))
+    }
+
+    /** `e:` sozinho, sem número, não é chave de nada. */
+    @Test
+    fun `decode rejeita episodio sem id`() {
+        assertNull(QueueKey.decode("e:"))
+        assertNull(QueueKey.decode("e:abc"))
+    }
+
+    /** Reancoragem: a fila salva tinha o episódio no índice 1, e ele voltou no índice 2. */
+    @Test
+    fun `reanchor acha episodio pelo id`() {
+        val salvas = listOf("a:1", "e:42", "a:2")
+        val carregadas = listOf("a:1", "a:2", "e:42")
+        assertEquals(2, QueueKey.reanchor(salvas, 1, carregadas))
     }
 
     @Test

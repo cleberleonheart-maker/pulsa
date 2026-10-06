@@ -65,6 +65,9 @@ import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.RadioStations
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.core.CrashLogger
+import com.pulsa.player.podcast.PodcastCache
+import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.dj.DjLearn
 import java.io.File
 import kotlin.random.Random
@@ -392,7 +395,7 @@ class PlaybackService : MediaLibraryService() {
      */
     private fun currentSongGenre(): String? {
         val song = currentSong ?: return null
-        if (song.isVideo || song.isStream || song.isRadio) return null
+        if (song.isVideo || song.isStream || song.isRadio || song.isPodcast) return null
         return runCatching { Library.genreOf(applicationContext, song.id) }.getOrNull()
     }
 
@@ -652,7 +655,7 @@ class PlaybackService : MediaLibraryService() {
         player?.let {
             it.removeListener(playerListener)
             AudioFx.release()
-            MusicVisualizer.sync(applicationContext, player?.audioSessionId ?: 0)
+            MusicVisualizer.detach()
             it.release()
         }
         player = null
@@ -668,6 +671,9 @@ class PlaybackService : MediaLibraryService() {
                 AudioFx.apply(applicationContext, it.audioSessionId, currentSongGenre())
             }
         }
+        // O visualizador também é lido por voz ("virgi, desliga o visualizador"), e o `attach`
+        // sozinho só valeria na música seguinte.
+        MusicVisualizer.sync(applicationContext, player?.audioSessionId ?: 0)
         updateEightD()
     }
 
@@ -1081,8 +1087,10 @@ class PlaybackService : MediaLibraryService() {
 
     private fun mediaItemFor(song: Song): MediaItem {
         val streamUrl = song.streamUrl
+        val podcastUrl = podcastUrlOf(song)
         val uri = song.videoId?.let { VideoLibrary.contentUri(it) }
             ?: song.radioUrl?.let(Uri::parse)
+            ?: podcastUrl?.let { Uri.parse(it) }
             ?: streamUrl?.let(Uri::parse)
             ?: Uri.fromFile(File(song.path))
         return MediaItem.Builder()
@@ -1101,12 +1109,32 @@ class PlaybackService : MediaLibraryService() {
             .build()
     }
 
+    /**
+ * F3 — o endereço real de um episódio de podcast.
+     *
+     * `mediaItemFor` roda no callback do ExoPlayer, na main thread, e o `PodcastDb` é Room: uma
+     * query aqui lançaria `IllegalStateException` no exato instante de dar play. Por isso o
+     * endereço vem do [PodcastCache], que o `PodcastDb` preenche no mesmo acesso que já leu os
+     * episódios, num `ThreadPool.post`.
+     *
+     * `null` quando o episódio não está no cache: o `Uri.fromFile` abaixo receberia a string
+     * `"podcast:123"` e o player daria `onTrackError` — erro visível, que é melhor do que um
+     * `ContentResolver` abrindo caminho nenhum em silêncio.
+     */
+    private fun podcastUrlOf(song: Song): String? {
+        if (!song.isPodcast) return null
+        val episodeId = song.podcastId ?: return null
+        return PodcastCache.audioUrl(episodeId)
+    }
+
     /** Religou os efeitos na sessão de áudio do ExoPlayer (estável por instância). */
     private fun attachEffects() {
         val p = player ?: return
         val sessionId = p.audioSessionId
         if (sessionId <= 0) return
         AudioFx.apply(applicationContext, sessionId, currentSongGenre())
+        // `sync` e não `attach`: um novo `attach` ignoraria a preferência e religaria a
+        // captura que o usuário mandou desligar.
         MusicVisualizer.sync(applicationContext, sessionId)
     }
 
@@ -1432,11 +1460,43 @@ class PlaybackService : MediaLibraryService() {
         // uma música (coleções separadas do MediaStore): sem esta guarda, o vídeo 42
         // buscava a posição salva da música 42 e voltava no meio de um lugar aleatório.
         if (song.isVideo || song.isStream || song.isRadio) return
+        // F3: o episódio tem posição **no podcast**, não no `Settings`. Voltar aqui buscaria
+        // o `resume_song_id` de uma música e o episódio entraria no meio — ou, pior, não
+        // voltaria de jeito nenhum, que é o que o usuário percebe como "perdi meu lugar".
+        if (song.isPodcast) {
+            restorePodcastPosition(song, p)
+            return
+        }
         if (song.id != Settings.resumeSongId(this)) return
         val savedPos = Settings.resumePosition(this)
         val dur = p.duration
         if (dur > 0L && savedPos in 5001L..(dur - 10000)) {
             runCatching { p.seekTo(savedPos) }
+        }
+    }
+
+    /**
+     * Traz o episódio de volta de onde parou.
+     *
+     * A leitura é no `post` e o `seekTo` volta para a main, porque `seekTo` do ExoPlayer
+     * encosta em views do player e tem de rodar lá. O `index` é conferido na main para o caso
+     * de o usuário ter pulado de faixa enquanto o banco respondia — sem isso o episódio que
+     * entrou depois levaria o seek do anterior.
+     */
+    private fun restorePodcastPosition(song: Song, p: ExoPlayer) {
+        val episodeId = song.podcastId ?: return
+        val expectedKey = QueueKey.encode(song)
+        val dur = p.duration
+        ThreadPool.post {
+            val saved = runCatching {
+                PodcastDb.get(applicationContext).episode(episodeId)
+            }.getOrNull()
+            val position = saved?.positionMs ?: 0L
+            ThreadPool.onUi {
+                if (!QueueKey.sameType(Playback.currentKey, expectedKey)) return@onUi
+                if (dur <= 0L || position <= 5000L || position >= dur - 10000L) return@onUi
+                runCatching { p.seekTo(position) }
+            }
         }
     }
 
@@ -1577,7 +1637,7 @@ class PlaybackService : MediaLibraryService() {
      * chamada nos dois lugares, e o motivo fica num lugar só.
      */
     private fun isScrobbleable(song: Song): Boolean =
-        !song.isVideo && !song.isStream && !song.isRadio
+        !song.isVideo && !song.isStream && !song.isRadio && !song.isPodcast
 
     private fun saveResumeState() {
         // O `syncExternalPlaybackState(false)` chega DEPOIS do `pause()` (o Media3 entrega o
@@ -1606,8 +1666,41 @@ class PlaybackService : MediaLibraryService() {
             return
         }
         val pos = player?.currentPosition ?: 0L
-        if (pos > 0) {
-            Settings.setResumeState(this, song.id, pos, song.title, song.artist)
+        if (pos <= 0) return
+        if (song.isPodcast) {
+            // F3: o progresso do episódio vai para o podcast, não para o `Settings`.
+            //
+            // Passaria pelo `Settings.setResumeState` com o `song.id` negativo, e o
+            // `restoreSavedPosition` buscaria `songMeta(id)` e um `MediaStore` por esse número —
+            // que pertence a uma música de verdade, ou a nada. O seek voltaria para a faixa
+            // errada, ou o podcast entraria no meio.
+            savePodcastPosition(song, pos)
+            return
+        }
+        Settings.setResumeState(this, song.id, pos, song.title, song.artist)
+    }
+
+    /**
+     * Grava onde o episódio parou, e marca como ouvido quando acabou.
+     *
+     * O `id` passado ao [PodcastDb] é o do episódio, e não o `song.id` negativo: o banco é
+     * indexado pelo id local. As chaves negativas existem só para não colidirem com o
+     * MediaStore na fila.
+     *
+     * O `markFinishedIfNeeded` está no DAO com a condição no `WHERE`, e não num `if` aqui:
+     * este tick e o "marcar ouvido" da tela podem chegar no mesmo instante, e ler-depois-escrever
+     * deixaria os dois sobrescrevendo o outro.
+     */
+    private fun savePodcastPosition(song: Song, positionMs: Long) {
+        val episodeId = song.podcastId ?: return
+        ThreadPool.post {
+            runCatching {
+                val db = PodcastDb.get(applicationContext)
+                db.setPosition(episodeId, positionMs)
+                db.markFinishedIfNeeded(episodeId)
+            }.onFailure {
+                CrashLogger.writeLog(applicationContext, "PODCAST: pos do ep $episodeId falhou -> $it")
+            }
         }
     }
 

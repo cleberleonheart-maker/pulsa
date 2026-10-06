@@ -35,6 +35,15 @@ object QueueKey {
     const val VIDEO_PREFIX = "v"
 
     /**
+     * Prefixo da chave de podcast (F3).
+     *
+     * É `e` (episode) e não `p` (podcast) porque a chave é do **episódio**: um podcast assinado
+     * tem dezenas de episódios na fila ao mesmo tempo, e a chave precisa apontar para um deles.
+     * Um `p` levaria à conclusão errada de que podcast é uma faixa só.
+     */
+    const val EPISODE_PREFIX = "e"
+
+    /**
      * A chave de [song], ou `null` quando ela não é retomável — rádio e stream não têm item
      * no MediaStore para o restore reencontrar, e o rádio tem mecanismo próprio
      * ([Settings.setRadioResume]).
@@ -42,14 +51,21 @@ object QueueKey {
     fun encode(song: Song): String? = when {
         song.isRadio -> null
         song.isStream -> null
+        // O podcast vem **antes** do vídeo de propósito: um episódio em vídeo tem `path` de
+        // podcast e nunca `video:`, mas se a ordem invertesse e um dia o `videoId` aparecesse
+        // nesse caminho, a chave seria `v:` e o restore.seekaria no MediaStore pelo id do
+        // Room — abrindo um vídeo aleatório em vez do episódio.
+        song.isPodcast -> song.podcastId?.let { "$EPISODE_PREFIX:$it" }
         song.isVideo -> song.videoId?.let { "$VIDEO_PREFIX:$it" }
-        else -> "$AUDIO_PREFIX:${song.id}"
+        // `id` negativo não é id de MediaStore: isso só acontece se um episódio entrou sem id
+        // legível, e nesse caso `a:-7` faria o restore procurar no banco a música de id -7.
+        else -> if (song.id > 0L) "$AUDIO_PREFIX:${song.id}" else null
     }
 
     /**
      * O inverso de [encode].
      *
-     * Aceita `"a:42"` e `"v:42"`, e também o número solto `42` — o formato do `queue_ids`
+     * Aceita `"a:42"`, `"v:42"` e `"e:42"`, e também o número solto `42` — o formato do `queue_ids`
      * antigo, que era só `id` de áudio. Qualquer outra coisa é `null`, e o caller trata isso
      * como "esse item não voltou mais".
      */
@@ -63,9 +79,13 @@ object QueueKey {
         return when (kind) {
             AUDIO_PREFIX -> "$AUDIO_PREFIX:$id"
             VIDEO_PREFIX -> "$VIDEO_PREFIX:$id"
+            EPISODE_PREFIX -> "$EPISODE_PREFIX:$id"
             else -> null
         }
     }
+
+    /** `true` quando a chave é de episódio, para o restore da fila saber o que reencontrar. */
+    fun isEpisode(key: String): Boolean = key.startsWith("$EPISODE_PREFIX:")
 
     /** As chaves da fila na ordem, pulando o que não é retomável. */
     fun encodeAll(songs: List<Song>): List<String> = songs.mapNotNull { encode(it) }
