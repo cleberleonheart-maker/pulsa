@@ -652,7 +652,7 @@ class PlaybackService : MediaLibraryService() {
         player?.let {
             it.removeListener(playerListener)
             AudioFx.release()
-            MusicVisualizer.detach()
+            MusicVisualizer.sync(applicationContext, player?.audioSessionId ?: 0)
             it.release()
         }
         player = null
@@ -1107,7 +1107,7 @@ class PlaybackService : MediaLibraryService() {
         val sessionId = p.audioSessionId
         if (sessionId <= 0) return
         AudioFx.apply(applicationContext, sessionId, currentSongGenre())
-        MusicVisualizer.attach(sessionId)
+        MusicVisualizer.sync(applicationContext, sessionId)
     }
 
     private val playerListener = object : Player.Listener {

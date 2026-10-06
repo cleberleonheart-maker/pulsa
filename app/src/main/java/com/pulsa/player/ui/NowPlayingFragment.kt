@@ -354,6 +354,10 @@ class NowPlayingFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         SleepTimer.setListener(null)
+        // O tween do visualizador fica invalidando a cada 60ms; parado fora da tela ele só
+        // gasta bateria desenhando barras que ninguém vê. O `onResume` religa.
+        visualizerView?.stopTween()
+        shaderView?.stopTween()
     }
 
     private val sleepListener = object : SleepTimer.Listener {

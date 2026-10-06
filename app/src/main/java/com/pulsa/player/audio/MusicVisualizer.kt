@@ -1,7 +1,9 @@
 package com.pulsa.player.audio
 
+import android.content.Context
 import android.media.audiofx.Visualizer
 import android.os.HandlerThread
+import com.pulsa.player.core.Settings
 import kotlin.math.sqrt
 
 object MusicVisualizer {
@@ -15,6 +17,21 @@ object MusicVisualizer {
     private const val CAPTURE_RATE = 22000
     private var visualizer: Visualizer? = null
     private var captureThread: HandlerThread? = null
+
+    /**
+     * Liga/desliga a captura conforme a preferência, sem depender de troca de faixa.
+     *
+     * O `attach` sozinho não resolvia: "virgi, desliga o visualizador" só surtia efeito na
+     * música seguinte, e a `Visualizer` continuava consumindo a mixagem de áudio do aparelho
+     * esse tempo todo.
+     */
+    fun sync(context: Context, sessionId: Int) {
+        if (!Settings.visualizerOn(context)) {
+            detach()
+            return
+        }
+        if (sessionId > 0 && visualizer == null) attach(sessionId)
+    }
 
     fun attach(sessionId: Int) {
         detach()

@@ -164,15 +164,38 @@ private class SpatialProcessor : BaseAudioProcessor() {
         writeIndex = 0
     }
 
+    /**
+     * Rascunho do DSP, de uso exclusivo da cadeia.
+     *
+     * Sem ele o `output.put(inputBuffer)` estoura: o Media3 recicla os buffers do
+     * `AudioProcessingPipeline`, e o de entrada pode voltar a ser exatamente o objeto que o
+     * `BaseAudioProcessor` segura como saída — daí o `IllegalArgumentException: The source
+     * buffer is this buffer` que derrubava a faixa com o 3D ligado.
+     */
+    private var scratch = ByteBuffer.allocate(0)
+
     override fun queueInput(inputBuffer: ByteBuffer) {
-        val output = replaceOutputBuffer(inputBuffer.remaining())
-        output.put(inputBuffer)
+        val size = inputBuffer.remaining()
+        ensureScratch(size)
+
+        // Copia para fora antes de qualquer escrita: o buffer de entrada não pode ser tocado.
+        scratch.clear()
+        scratch.put(inputBuffer)
+        scratch.flip()
+
+        if (SpatialAudio.enabled && supported) {
+            render(scratch)
+        }
+
+        val output = replaceOutputBuffer(size)
+        output.put(scratch)
         output.flip()
-        // Este é o interruptor de verdade: sem efeito nenhum o processador vira uma cópia
-        // exata do buffer (o `replaceOutputBuffer` acima já pagou o custo, uma memcpy), e o
-        // ajuste passa a valer no próximo buffer, sem recriar o player nem esperar flush.
-        if (!SpatialAudio.enabled) return
-        render(output)
+    }
+
+    private fun ensureScratch(size: Int) {
+        if (scratch.capacity() >= size) return
+        scratch = ByteBuffer.allocate(size + FRAME_BYTES * BLOCK)
+        scratch.order(ByteOrder.nativeOrder())
     }
 
     /** Aplica o DSP no buffer em posição, amostra a amostra. */
@@ -288,6 +311,7 @@ private class SpatialProcessor : BaseAudioProcessor() {
         delayBuffer = FloatArray(0)
         delayLength = 0
         delayMask = 0
+        scratch = ByteBuffer.allocate(0)
     }
 
     private companion object {
