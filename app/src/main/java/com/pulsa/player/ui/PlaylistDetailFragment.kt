@@ -93,11 +93,20 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
         val playlistId = this.playlistId
         ThreadPool.post {
             val db = PlaylistDb.get(ctx)
-            try {
+            // O `isAutoAdd` fica aqui, na mesma thread do resto da leitura, e **não** dentro do
+            // `onUi` abaixo. O Room recusa acesso ao banco na main thread
+            // (`assertNotMainThread`), então perguntar de novo na main derrubava o app ao abrir
+            // qualquer playlist — era o "trava e fecha" que dava. Além disso a resposta já era
+            // conhecida: perguntar duas vezes não muda nada.
+            val autoAdd = try {
                 if (db.isAutoAdd(playlistId)) {
                     db.syncAutoPlaylist(ctx, playlistId, Library.allSongs(ctx))
+                    true
+                } else {
+                    false
                 }
             } catch (t: Throwable) {
+                false
             }
             val songs = try {
                 db.songs(playlistId)
@@ -110,7 +119,7 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
                     adapter?.songs = songs
                     selectionBar?.setAvailable(songs.map { it.id })
                     syncHighlight()
-                    if (db.isAutoAdd(playlistId)) {
+                    if (autoAdd) {
                         headerSubtitle?.text = getString(R.string.auto_count, Helper.trackCount(songs.size, requireContext().resources))
                     } else {
                         headerSubtitle?.text = Helper.trackCount(songs.size, requireContext().resources)
@@ -121,14 +130,25 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
         }
     }
 
+    /**
+     * Um `DELETE` por item, e o `load()` só depois.
+     *
+     * O botão do `AlertDialog` roda na main thread e o `removeSong` é query de Room: deixar
+     * ali derrubava o app ao remover uma música da playlist. O `requireContext()` também não
+     * pode ser lido de dentro do `post` (a activity pode ter sumido), então o contexto vai
+     * resolvido antes.
+     */
     private fun confirmRemove(song: com.pulsa.player.model.Song) {
+        val app = context?.applicationContext ?: return
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle(song.title)
             .setMessage(R.string.remove_song_confirm)
             .setPositiveButton(R.string.remove_from_playlist) { dialog, _ ->
-                PlaylistDb.get(requireContext()).removeSong(playlistId, song.id)
-                load()
                 dialog.dismiss()
+                ThreadPool.post {
+                    runCatching { PlaylistDb.get(app).removeSong(playlistId, song.id) }
+                    ThreadPool.onUi { if (isAdded) load() }
+                }
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
@@ -182,16 +202,27 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
                     .setTitle(R.string.add_songs_title)
                     .setMultiChoiceItems(titles.toTypedArray(), checked) { _, _, _ -> }
                     .setPositiveButton(R.string.add_songs) { dialog, _ ->
-                        var added = 0
-                        val db = PlaylistDb.get(ctx)
-                        all.forEachIndexed { i, song ->
-                            if (checked[i] && db.addSong(playlistId, song)) added++
-                        }
-                        if (added > 0) {
-                            android.widget.Toast.makeText(ctx, ctx.getString(R.string.songs_selected, added), android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                        load()
                         dialog.dismiss()
+                        // `checked` é lido na main e o insert vai para o pool: um lote de 30
+                        // músicas são 30 queries de Room, e isso na main thread trava a tela
+                        // antes mesmo de lançar a exceção.
+                        val picked = all.filterIndexed { i, _ -> checked[i] }
+                        if (picked.isEmpty()) return@setPositiveButton
+                        ThreadPool.post {
+                            var added = 0
+                            val db = PlaylistDb.get(ctx)
+                            picked.forEach { if (db.addSong(playlistId, it)) added++ }
+                            ThreadPool.onUi {
+                                if (!isAdded) return@onUi
+                                if (added > 0) {
+                                    android.widget.Toast.makeText(
+                                        ctx, ctx.getString(R.string.songs_selected, added),
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                load()
+                            }
+                        }
                     }
                     .setNegativeButton(R.string.cancel, null)
                     .show()

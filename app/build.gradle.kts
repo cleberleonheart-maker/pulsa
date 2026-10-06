@@ -21,8 +21,8 @@ android {
         applicationId = "com.pulsa.player"
         minSdk = 23
 targetSdk = 34
-        versionCode = 124
-        versionName = "5.9.3"
+        versionCode = 125
+        versionName = "5.9.4"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
@@ -89,4 +89,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     ksp("androidx.room:room-compiler:2.6.1")
     testImplementation("junit:junit:4.13.2")
+    // `org.json` do Android é stub nas unidades JVM ("not mocked"): qualquer `put` estoura.
+    // A implementação real da referência é a mesma API, então dá para exercitar o backup e o
+    // restore de verdade nos testes, em vez de ficar só no `kspDebugKotlin` passando.
+    testImplementation("org.json:json:20240303")
 }

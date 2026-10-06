@@ -70,6 +70,36 @@ object Library {
         return ids.mapNotNull { found[it] }
     }
 
+    /**
+     * Resolve por `DATA` (caminho do arquivo), que é a **única identidade de uma música que
+     * sobrevive a trocar de aparelho** — o `MediaStore._ID` é um autoincrement do banco do
+     * Android, e depois de um "Restaurar arquivos" o mesmo `/storage/emulated/0/Music/x.mp3`
+     * recebe um id completamente diferente.
+     *
+     * Por isso o backup de playlists/favoritas guarda o caminho, e não o id: um backup
+     * restaurado num outro celular não pode gravar o id da máquina de origem, sob pena de a
+     * playlist apontar para faixas de outra pessoa ou simplesmente ficar vazia sem erro
+     * nenhum na tela.
+     *
+     * Mesma ordem pedida, mesma lógica de lote de [songsByIds], mesma semântica de "quem não
+     * existe mais é omitido" — caminho que não bate com nada (apagado do cartão) simplesmente
+     * não volta, e quem restaura precisa报告显示 isso em vez de fingir que restaurou tudo.
+     */
+    fun songsByPaths(context: Context, paths: List<String>): List<Song> {
+        val wanted = paths.filter { it.isNotBlank() }.distinct()
+        if (wanted.isEmpty()) return emptyList()
+        val found = HashMap<String, Song>(wanted.size)
+        for (batch in wanted.chunked(ID_BATCH)) {
+            val placeholders = batch.joinToString(",") { "?" }
+            querySongs(
+                context,
+                "${MediaStore.Audio.Media.DATA} IN ($placeholders) AND ${MediaStore.Audio.Media.IS_MUSIC}!=0",
+                batch.toTypedArray()
+            ).forEach { found[it.path] = it }
+        }
+        return paths.mapNotNull { found[it] }
+    }
+
     private const val ID_BATCH = 400
 
     private val gospelKeywords = listOf(

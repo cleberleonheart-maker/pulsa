@@ -13,16 +13,42 @@ import com.pulsa.player.playback.Playback
 import com.pulsa.player.media.MusicDeleter
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.audio.RingtoneSetter
+import com.pulsa.player.core.ThreadPool
 
 object SongActions {
 
-    fun show(
+    /**
+ * Menu de uma música.
+ *
+ * **Por que o diálogo abre depois de [ThreadPool.post].** O rótulo do item de favorito depende
+ * do banco ("Favoritar" ou "Remover dos favoritos"), e essa leitura estava na main thread —
+ * o Room lança exceção ali. Como o mesmo padrão já era usado no [PlaylistDialog.showAdd], o
+ * diálogo abre alguns milissegundos depois do toque, com o rótulo certo. A alternativa (abrir
+ * na hora e corrigir o texto depois) mostra "Favoritar" numa música que já é favorita, que é
+ * pior do que um piscar de delay.
+ */
+fun show(
         context: Context,
         song: Song,
         extra: Pair<Int, () -> Unit>? = null,
         onDeleted: (() -> Unit)? = null
     ) {
-        val favorite = PlaylistDb.get(context).isFavorite(song.id)
+        val appCtx = context.applicationContext
+        ThreadPool.post {
+            val favorite = runCatching { PlaylistDb.get(appCtx).isFavorite(song.id) }.getOrDefault(false)
+            ThreadPool.onUi { showDialog(context, appCtx, song, favorite, extra, onDeleted) }
+        }
+    }
+
+    private fun showDialog(
+        context: Context,
+        appCtx: Context,
+        song: Song,
+        favorite: Boolean,
+        extra: Pair<Int, () -> Unit>?,
+        onDeleted: (() -> Unit)?
+    ) {
+        if (context is android.app.Activity && (context.isFinishing || context.isDestroyed)) return
         val favoriteLabel = if (favorite) {
             context.getString(R.string.favorite_remove)
         } else {
@@ -51,16 +77,7 @@ object SongActions {
                     0 -> Playback.start(listOf(song), 0)
                     1 -> enqueue(context, listOf(song))
                     2 -> PlaylistDialog.showAdd(context, song)
-                    3 -> {
-                        val db = PlaylistDb.get(context)
-                        db.setFavorite(song, !favorite)
-                        android.widget.Toast.makeText(
-                            context,
-                            if (!favorite) R.string.favorite_added else R.string.favorite_removed,
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
-                        onDeleted?.invoke()
-                    }
+                    3 -> toggleFavorite(appCtx, context, song, favorite, onDeleted)
                     4 -> share(context, song)
                     5 -> RingtoneSetter.setAs(context, song, RingtoneManager.TYPE_RINGTONE)
                     6 -> RingtoneSetter.setAs(context, song, RingtoneManager.TYPE_NOTIFICATION)
@@ -72,6 +89,34 @@ object SongActions {
                 dialog.dismiss()
             }
             .show()
+    }
+
+    /**
+     * Inverte o favorito e só então avisa.
+     *
+     * O `Toast` sai depois da escrita, e não antes: confirmar "adicionado" quando o insert
+     * falhou é a forma mais rápida de fazer o usuário confiar num estado que não existe. O
+     * `!favorite` vem do rótulo já exibido, que é a mesma leitura — inverter de novo aqui
+     * partiria de um valor possivelmente velho.
+     */
+    private fun toggleFavorite(
+        appCtx: Context,
+        context: Context,
+        song: Song,
+        favorite: Boolean,
+        onDeleted: (() -> Unit)?
+    ) {
+        ThreadPool.post {
+            runCatching { PlaylistDb.get(appCtx).setFavorite(song, !favorite) }
+            ThreadPool.onUi {
+                android.widget.Toast.makeText(
+                    context,
+                    if (!favorite) R.string.favorite_added else R.string.favorite_removed,
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                onDeleted?.invoke()
+            }
+        }
     }
 
     /**

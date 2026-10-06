@@ -46,6 +46,28 @@ object MusicDownloader {
         }
     }
 
+    /**
+     * O mesmo download, mas **na thread que já está esperando pelo resultado** — é o que o
+     * `DownloadWorker` precisa, porque o WorkManager só sabe se deu certo quando a função
+     * retorna.
+     *
+     * Dá para repetir com segurança: [saveModern] apaga a entrada `IS_PENDING` quando a
+     * cópia falha, então um retry não deixa arquivo órfão no MediaStore.
+     */
+    fun downloadBlocking(context: Context, urlText: String, name: String): Boolean =
+        runCatching { downloadToStore(context, urlText, name) != null }.getOrDefault(false)
+
+    /**
+     * O mesmo download, devolvendo o **endereço** que o MediaStore deu (`content://…`) em vez
+     * de um booleano.
+     *
+     * Quem precisa do endereço é o podcast (F3): o episódio baixado guarda o `Uri` em
+     * `file_path` para tocar offline, e um simples "deu certo" não deixaria nada com o que
+     * localizar o arquivo depois — nem para tocar, nem para apagar quando a assinatura sai.
+     */
+    fun downloadBlockingUri(context: Context, urlText: String, name: String): String? =
+        runCatching { downloadToStore(context, urlText, name)?.toString() }.getOrNull()
+
     private fun downloadToStore(context: Context, urlText: String, name: String): Uri? {
         val conn = (URL(urlText).openConnection() as HttpURLConnection).apply {
             instanceFollowRedirects = true

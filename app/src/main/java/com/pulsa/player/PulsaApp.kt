@@ -8,6 +8,7 @@ import com.pulsa.player.sync.MirrorSync
 import com.pulsa.player.sync.RemoteSync
 import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.Telemetry
+import com.pulsa.player.work.PulsaWork
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat
@@ -41,6 +42,13 @@ class PulsaApp : Application() {
         }
         try {
             MirrorSync.start(this)
+        } catch (t: Throwable) {
+        }
+        try {
+            // O tick de 3 s do RemoteSync morre com o processo; isto nao. E idempotente
+            // (ExistingPeriodicWorkPolicy.KEEP), entao chamar aqui a cada arranque nao reinicia
+            // a contagem do job.
+            PulsaWork.schedule(this)
         } catch (t: Throwable) {
         }
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->

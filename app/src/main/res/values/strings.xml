@@ -32,7 +32,62 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.9.3):
+    <string name="changelog">Novidades desta versão (5.9.4):
+→ O 3D E O SURROUND PARARAM DE QUEBRAR A MÚSICA
+• Com o efeito ligado a faixa morria no meio e o Pulsa reiniciava o som. O que acontecia é
+  que o 3D reaproveitava o mesmo pedaço de memória que já estava tocando, e o player tropeçava
+  nele. Agora o efeito tem memória só dele: a música toca do começo ao fim, inclusive quando
+  você liga o 3D ou o surround com a música já tocando.
+
+→ AS CONFIGURAÇÕES ABREM DE NOVO
+• A tela de ajustes fechava sozinha logo depois da atualização, e em alguns aparelhos ficava
+  só o preto. O fundo animado estava sendo desenhado por cima da tela e nunca era removido;
+  agora ele para quando você entra nos ajustes. Também voltou a aparecer tudo que a tela mostra:
+  se um dia faltar algum elemento, o Pulsa pula em vez de fechar, e o nome do que faltou fica no
+  log.
+
+→ O VISUALIZADOR APARECE SEM VOCÊ PEDIR
+• O visualizador ficava escondido a não ser que a faixa estivesse tocando, e sumia sozinho na
+  tela de reprodução. Agora ele fica sempre ali, no tamanho de uma faixa, e respeita o botão
+  liga/desliga: desligado, ele some e para de pegar som.
+
+→ SUAS PLAYLISTS AGUENTAM O UPGRADE
+• A lista de músicas e as favoritas passaram a usar o banco de verdade do Android (Room), que é
+  o que o resto do sistema usa. Quem tinha Pulsa instalado antes continua com tudo no lugar: o
+  app converte o banco antigo sozinho, sem reinstalar e sem perder nenhuma playlist. O caminho
+  foi testado com dados dentro de cada tabela antes de ir para o APK.
+
+→ O TRABALHO DE FUNDO VOLTA SOZINHO
+• Espelhar a biblioteca e o aprendizado da Virgin dependiam do app estar aberto: se você fechava
+  o Pulsa, aquilo simplesmente parava e só voltava quando você abria de novo — ou pior, depois
+  de reiniciar o celular. Agora isso é trabalho de verdade do sistema: o Android reexecuta, com
+  a internet disponível. O download por link nas Configurações também virou um desses: se você
+  sair da tela no meio, o download continua em vez de sumir.
+  O que continua na hora são o estado da reprodução e os comandos do controle remoto — esses
+  precisam responder em segundos, e a Virgin que comanda é ao vivo.
+
+→ AGORA DÁ PARA CRIAR PLAYLIST DO JEITO CERTO
+• O botão de criar playlist estava sumido: só dava para criar passando pelo menu de uma
+  música, ou seja, era obrigatório ter uma música na mão. Não existia forma de começar uma
+  playlist de cabeça — que é o caso mais comum. Agora tem um "+" no topo da aba Playlists, e o
+  mesmo botão aparece sozinho quando a lista está vazia.
+
+→ SEU BACKUP LEVA AS PLAYLISTS JUNTO
+• O arquivo de backup carregava o aprendizado da Virgin e os ajustes de som, mas não as suas
+  playlists, nem as favoritas, nem os nomes que você tinha corrigido à mão. Trocava de celular
+  e perdia tudo que você tinha organizado à mão. Agora vai tudo — e o restore diz o que voltou e
+  o que não voltou, em vez de um "pronto" genérico. As músicas que ainda não estão no aparelho
+  aparecem listadas pelo nome: elas não foram apagadas do backup, só ainda não chegaram aqui.
+  E como o backup funciona pelo caminho de cada arquivo, ele também sobrevive a você trocar a
+  pasta das músicas ou mexer nos arquivos.
+
+→ PLAYLIST POR VOZ
+• "Virgi, cria uma playlist chamada batidinhas" cria a playlist, e "toca a playlist
+  batidinhas" começa a tocar. Nenhuma das duas coisas existia por voz. Se você falar o nome de
+  uma playlist que não existe, a Virgin avisa e mostra quais você tem — em vez de ficar em
+  silêncio.
+
+★ DA 5.9.3
 → O APP NÃO TRAVA MAIS NA TELA DA VIRGIN
 • A mão livre ligava o microfone antes de virar serviço de primeiro plano. No Android 12+ isso
   mata o processo: o Pulsa abria, morria e voltava para a mesma tela. Agora ele entra em primeiro
@@ -87,13 +142,16 @@
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
     <string name="grant_permission">Permitir acesso</string>
-    <string name="empty_playlist">Playlist vazia. Adicione músicas pela lista ou pelo menu de cada música.</string>
+    <string name="empty_playlist">Nenhuma playlist ainda. Crie a primeira com o botão abaixo — depois é só ir adicionando músicas pelo menu de cada uma.</string>
     <string name="play">Reproduzir</string>
     <string name="play_from_menu">Tocar agora</string>
     <string name="add_to_playlist">Adicionar à playlist</string>
     <string name="add_to_playlist_title">Adicionar à playlist</string>
     <string name="add_to_queue">Adicionar à fila</string>
     <string name="new_playlist">Nova playlist</string>
+    <string name="n_playlists">%1$d playlists</string>
+    <string name="one_playlist">1 playlist</string>
+    <string name="playlist_created">Playlist criada</string>
     <string name="new_playlist_title">Nova playlist</string>
     <string name="playlist_name_hint">Nome da playlist</string>
     <string name="create">Criar</string>
@@ -369,6 +427,7 @@
     <string name="download_already">Já está nos baixados</string>
     <string name="download_start_running">Começando a baixar…</string>
     <string name="download_deleted">Download apagado</string>
+
     <string name="peertube_download">Baixar</string>
     <string name="video_stream_open">Abrir stream</string>
     <string name="video_stream_title">Tocar stream de vídeo</string>
@@ -859,6 +918,13 @@
     <string name="dj_voice_dynq_age">que você não ouvia há %1$d dias</string>
     <string name="dj_voice_dynq_plays">com menos de %1$d toques</string>
     <string name="dj_voice_dynq_skips">que você pulou menos de %1$d vezes</string>
+    <string name="dj_voice_playlist_created">Criei a playlist %1$s. É só falar "adiciona a playlist %1$s" pra guardar as músicas.</string>
+    <string name="dj_voice_playlist_exists">A playlist %1$s já existe.</string>
+    <string name="dj_voice_playlist_ask_name">Como é o nome? Fala assim: "cria uma playlist chamada batidinhas".</string>
+    <string name="dj_voice_playlist_playing">Tocando a playlist %1$s: %2$d músicas.</string>
+    <string name="dj_voice_playlist_empty">A playlist %1$s está vazia. Adiciona alguma música nela primeiro.</string>
+    <string name="dj_voice_playlist_missing">Não tenho uma playlist chamada %1$s. Tenho: %2$s.</string>
+    <string name="dj_voice_playlist_none">Você ainda não tem nenhuma playlist. Fala "cria uma playlist chamada %1$s".</string>
     <string name="dj_voice_decade_done">Bora! Montei %1$d músicas dos anos %2$s!</string>
     <string name="dj_voice_decade_none">Não achei músicas desses anos na sua biblioteca.</string>
     <string name="dj_voice_avoid_note">Deixei %1$d de fora porque você sempre pula.</string>
@@ -919,6 +985,18 @@
     <string name="backup_failed">Não foi possível salvar o backup</string>
     <string name="restore_done">Backup restaurado!</string>
     <string name="restore_failed">Arquivo inválido ou sem dados do PULSA</string>
+    <!-- Relatório do restore. Um toast de "pronto" não serve aqui: quem trocou de celular
+         precisa saber se a playlist veio inteira, pela metade, ou se o app é que não pôde
+         ler a biblioteca ainda. -->
+    <string name="restore_empty">O arquivo é do PULSA, mas não tinha nada para restaurar.</string>
+    <string name="restore_needs_permission_title">Preciso da permissão das músicas</string>
+    <string name="restore_needs_permission_body">O arquivo está inteiro, mas o PULSA ainda não pode ler a sua biblioteca para casar as músicas pelo caminho.\n\nLibere o acesso às músicas e restaure de novo.</string>
+    <string name="restore_n_playlists">%1$d playlists</string>
+    <string name="restore_n_songs">%1$d músicas nas playlists</string>
+    <string name="restore_n_favorites">%1$d favoritas</string>
+    <string name="restore_n_meta">%1$d nomes corrigidos</string>
+    <string name="restore_missing_title">%1$d músicas não estão neste aparelho:</string>
+    <string name="restore_missing_hint">\nElas não foram apagadas do backup. Só não existem aqui ainda — copie a pasta de músicas para o cartão e restaure de novo.</string>
     <string name="server_title">Servidor</string>
     <string name="server_default">Automático (rede local / padrão)</string>
     <string name="server_hint">https://seu-servidor:8081</string>

@@ -39,9 +39,22 @@ object RemoteSync {
     @Volatile
     private var running = false
     private var appContext: Context? = null
+
+    // O sync pesado roda fora daqui, em background. O lock mantem os contadores coerentes
+    // porque o WorkManager pode ter uma passada ainda em voo quando a proxima e agendada --
+    // sem ele, dois pushes da mesma biblioteca sairiam ao mesmo tempo.
+    private val heavyLock = Any()
+
+    @Volatile
     private var lastSongsPush = 0L
+
+    @Volatile
     private var lastSongsHash = ""
+
+    @Volatile
     private var lastDjSync = 0L
+
+    @Volatile
     private var lastDjPull = 0L
     private var busy = false
 
@@ -66,8 +79,6 @@ object RemoteSync {
                         if (Blacklist.isBanned(ctx)) return@postNetwork
                         if (snapshot != null) pushState(ctx, snapshot)
                         pollCommands(ctx)
-                        maybePushSongs(ctx)
-                        maybeSyncDjLearn(ctx)
                     } finally {
                         busy = false
                     }
@@ -82,6 +93,33 @@ object RemoteSync {
         running = true
         appContext = context.applicationContext
         handler.post(tick)
+    }
+
+    /**
+     * Uma passada do sync **pesado**: biblioteca e aprendizado do DJ.
+     *
+     * Fica separado do tick de 3 s de propósito. Push de biblioteca e DjLearn são dezenas de KB
+     * de JSON e eram o que dava peso ao polling; aqui rodam de 15 em 15 minutos, com o SO
+     * reexecutando mesmo com o app fechado. O tick fica só com o que o web player espera em
+     * tempo real (estado + comandos).
+     *
+     * Chamar de novo é barato e não duplica nada: [maybePushSongs] só reenvia quando o hash da
+     * biblioteca muda e o DjLearn só quando está sujo ou vencido. [lastSongsHash] só é
+     * gravado **depois** que o servidor aceitou, senão uma falha de rede na hora errada
+     * apagaria a biblioteca do espelho até o app reiniciar.
+     *
+     * @return false só quando a rede falhou de verdade, para o WorkManager repetir depois.
+     */
+    fun syncHeavy(ctx: Context): Boolean {
+        val context = ctx.applicationContext
+        // Barrido nao adianta: o tick para de empurrar estado e de aceitar comandos, mas o
+        // playback local continua -- e nao ha como matar o processo de dentro daqui.
+        if (Blacklist.isBanned(context)) return true
+        return synchronized(heavyLock) {
+            val songs = maybePushSongs(context)
+            val dj = maybeSyncDjLearn(context)
+            songs && dj
+        }
     }
 
     /** Estado do player lido na MAIN, antes de o trabalho sair para o pool. */
@@ -114,15 +152,14 @@ object RemoteSync {
         postJson(ctx, "/state", body)
     }
 
-    private fun maybePushSongs(ctx: Context) {
+    private fun maybePushSongs(ctx: Context): Boolean {
         val now = System.currentTimeMillis()
-        if (now - lastSongsPush < SONGS_MS && lastSongsHash.isNotEmpty()) return
+        if (now - lastSongsPush < SONGS_MS && lastSongsHash.isNotEmpty()) return true
         lastSongsPush = now
         val songs = Library.allSongs(ctx)
-        if (songs.isEmpty()) return
+        if (songs.isEmpty()) return true
         val hash = songsHash(songs)
-        if (hash == lastSongsHash) return
-        lastSongsHash = hash
+        if (hash == lastSongsHash) return true
         val body = JSONObject().apply {
             put("hash", hash)
             put("songs", JSONArray().apply {
@@ -137,33 +174,40 @@ object RemoteSync {
                 }
             })
         }.toString()
-        if (postJson(ctx, "/songs", body)) {
-            Telemetry.log(ctx, "SYNC songs=${songs.size}")
-        }
+        if (!postJson(ctx, "/songs", body)) return false
+        // So grava o hash depois do sucesso: se o push falhar, a proxima passada tenta de novo
+        // em vez de achar que o espelho ja esta em dia.
+        lastSongsHash = hash
+        Telemetry.log(ctx, "SYNC songs=${songs.size}")
+        return true
     }
 
     /** Empurra e puxa os dados de aprendizagem (DjLearn) pro servidor. */
-    private fun maybeSyncDjLearn(ctx: Context) {
+    private fun maybeSyncDjLearn(ctx: Context): Boolean {
+        var ok = true
         val now = System.currentTimeMillis()
         if (DjLearn.dirty || now - lastDjSync > 10 * 60_000L) {
-            pushDjLearn(ctx)
+            if (!pushDjLearn(ctx)) ok = false
         }
         if (now - lastDjPull > 5 * 60_000L) {
             lastDjPull = now
-            pullDjLearn(ctx)
+            if (!pullDjLearn(ctx)) ok = false
         }
+        return ok
     }
 
-    private fun pushDjLearn(ctx: Context) {
+    private fun pushDjLearn(ctx: Context): Boolean {
         val body = DjLearn.snapshot(ctx).toString()
         if (postJson(ctx, "/djlearn", body)) {
             DjLearn.markSynced()
             lastDjSync = System.currentTimeMillis()
             Telemetry.log(ctx, "DJLEARN push")
+            return true
         }
+        return false
     }
 
-    private fun pullDjLearn(ctx: Context) {
+    private fun pullDjLearn(ctx: Context): Boolean {
         val device = Settings.deviceId(ctx)
         for (base in hosts()) {
             try {
@@ -178,15 +222,16 @@ object RemoteSync {
                 } else ""
                 runCatching { conn.inputStream.close() }
                 if (code != 200) continue
-                if (text.isBlank()) return
+                if (text.isBlank()) return true
                 val json = JSONObject(text)
                 if (DjLearn.mergeRemote(ctx, json)) {
                     Telemetry.log(ctx, "DJLEARN pull")
                 }
-                return
+                return true
             } catch (t: Throwable) {
             }
         }
+        return false
     }
 
     private fun pollCommands(ctx: Context) {
