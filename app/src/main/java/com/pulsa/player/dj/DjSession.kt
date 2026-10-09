@@ -619,6 +619,9 @@ class DjSession(
         ThreadPool.post {
             val video = VirginMedia.findVideo(ctx, q)
             val stream = if (video == null) StreamHistory.find(ctx, q) else null
+            val vistos = if (video == null && stream == null) {
+                runCatching { VideoLibrary.all(ctx).size }.getOrDefault(-1)
+            } else 0
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 when {
@@ -636,7 +639,10 @@ class DjSession(
                             thumbnail = stream.thumbnail
                         )
                     }
-                    else -> speak(say(R.string.dj_voice_video_not_found))
+                    else -> {
+                        Telemetry.log(activity, "DJ video_by_name miss q='$q' videos=$vistos")
+                        speak(say(R.string.dj_voice_video_not_found))
+                    }
                 }
             }
         }

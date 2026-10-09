@@ -28,6 +28,7 @@ import com.pulsa.player.core.Profile
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.Library
+import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.StreamHistory
 import com.pulsa.player.media.GalleryScanner
@@ -798,6 +799,9 @@ class MainVirgin(
         ThreadPool.post {
             val video = VirginMedia.findVideo(ctx, q)
             val stream = if (video == null) StreamHistory.find(ctx, q) else null
+            val vistos = if (video == null && stream == null) {
+                runCatching { VideoLibrary.all(ctx).size }.getOrDefault(-1)
+            } else 0
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 when {
@@ -815,7 +819,10 @@ class MainVirgin(
                             thumbnail = stream.thumbnail
                         )
                     }
-                    else -> virginSpeak(say(R.string.dj_voice_video_not_found))
+                    else -> {
+                        Telemetry.log(activity, "Virgin video_by_name miss q='$q' videos=$vistos")
+                        virginSpeak(say(R.string.dj_voice_video_not_found))
+                    }
                 }
             }
         }
