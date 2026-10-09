@@ -6,6 +6,8 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.parsers.ParserConfigurationException
 
 /**
  * F3 — cobertura do [FeedParser].
@@ -696,5 +698,38 @@ class FeedParserTest {
         val msg = r.exceptionOrNull()!!.message!!
         assertTrue(msg.contains("XML malformado"))
         assertFalse(msg.contains("erro desconhecido"))
+    }
+
+    @Test
+    fun `feature que o parser do Android nao conhece nao derruba a leitura`() {
+        // No Android o `DocumentBuilderFactory` não conhece `disallow-doctype-decl` e o
+        // `setFeature` **lança** com a URL no texto do erro — que era o que virava
+        // "XML malformado: http://apache.org/xml/features/disallow-doctype-decl" ao assinar um
+        // podcast. O teste no JVM não pegava porque o Xerces conhece a feature. Aqui o factory
+        // imita o Android: `configure` tem de ignorar a feature desconhecida e ainda assim
+        // entregar um parser que funciona.
+        val real = DocumentBuilderFactory.newInstance()
+        val android = object : DocumentBuilderFactory() {
+            override fun newDocumentBuilder() = real.newDocumentBuilder()
+            override fun setAttribute(name: String?, value: Any?) { real.setAttribute(name, value) }
+            override fun getAttribute(name: String?): Any? = real.getAttribute(name)
+            override fun setFeature(name: String?, value: Boolean) {
+                if (name == "http://apache.org/xml/features/disallow-doctype-decl") {
+                    throw ParserConfigurationException(name)
+                }
+                real.setFeature(name, value)
+            }
+            override fun getFeature(name: String?): Boolean = real.getFeature(name)
+            // No Android este método **sempre** lança, mesmo com `false`.
+            override fun setXIncludeAware(state: Boolean) {
+                throw UnsupportedOperationException(
+                    "This parser does not support specification \"Unknown\" version \"0.0\""
+                )
+            }
+        }
+        FeedParser.configure(android)
+        val doc = android.newDocumentBuilder()
+            .parse("<rss><channel><title>Ok</title></channel></rss>".byteInputStream())
+        assertEquals("channel", doc.documentElement.firstChild.nodeName)
     }
 }

@@ -510,14 +510,41 @@ object FeedParser {
      */
     private fun read(bytes: ByteArray): Document {
         val f = DocumentBuilderFactory.newInstance()
-        f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-        f.setFeature("http://xml.org/sax/features/external-general-entities", false)
-        f.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-        f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-        f.isExpandEntityReferences = false
-        f.isXIncludeAware = false
-        f.isNamespaceAware = true
+        configure(f)
         return f.newDocumentBuilder().parse(bytes.inputStream())
+    }
+
+    /**
+     * Fecha XXE e ainda sobrevive ao parser do Android.
+     *
+     * `setFeature` **lança** quando o parser não conhece a feature, e o parser do Android não
+     * conhece `disallow-doctype-decl` (só o Xerces do JVM conhece — por isso o teste passava e só
+     * o aparelho quebrava, com a URL da feature virando "XML malformado"). Cada tentativa é
+     * independente: a que não existir cai fora sem derrubar a leitura, e as que existem seguem
+     * fechando XXE (o parser do Android não busca DTD externo de qualquer forma).
+     */
+    internal fun configure(f: DocumentBuilderFactory) {
+        f.tryFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+        f.tryFeature("http://xml.org/sax/features/external-general-entities", false)
+        f.tryFeature("http://xml.org/sax/features/external-parameter-entities", false)
+        f.tryFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+        f.tryFeature("http://javax.xml.XMLConstants/feature/secure-processing", true)
+        // Propriedades também são tentativas: o `setXIncludeAware` do Android **sempre** lança
+        // `UnsupportedOperationException` ("This parser does not support specification ..."),
+        // mesmo com `false` — era o segundo "XML malformado" a aparecer depois do primeiro ser
+        // resolvido. `localNameOrName` já cai no `nodeName` para prefixo, então ignorar o
+        // namespace-aware não quebra `itunes:duration`.
+        f.tryProperty { isExpandEntityReferences = false }
+        f.tryProperty { isXIncludeAware = false }
+        f.tryProperty { isNamespaceAware = true }
+    }
+
+    private fun DocumentBuilderFactory.tryFeature(name: String, value: Boolean) {
+        runCatching { setFeature(name, value) }
+    }
+
+    private inline fun DocumentBuilderFactory.tryProperty(set: DocumentBuilderFactory.() -> Unit) {
+        runCatching { set() }
     }
 
     private fun child(parent: Node, name: String): Element? {
