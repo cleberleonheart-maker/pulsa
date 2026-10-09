@@ -20,19 +20,25 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
+import com.pulsa.player.VideoPlayerActivity
 import com.pulsa.player.audio.Ambient
+import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Profile
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.Library
+import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.data.StreamHistory
 import com.pulsa.player.media.GalleryScanner
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
+import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Telemetry
+import com.pulsa.player.core.CrashLogger
 
 /**
  * Assistente por voz da tela principal (antigo bloco "Virgin" do MainActivity).
@@ -63,12 +69,21 @@ class MainVirgin(
         const val ACTION_VIRGIN_ALARM = "com.pulsa.player.action.VIRGIN_ALARM"
         const val EXTRA_ALARM_AMBIENT = "virgin_alarm_ambient"
         private const val RESUME_LISTENER_DELAY_MS = 800L
+
+        /** F2 · Vídeo por voz: o quanto "volta o filme" recua quando não há 30s na frase. */
+        private const val VIDEO_BACK_MS = 30_000L
+
+        /** Janela unica de escuta da Virgin na tela, antes de fechar sozinha. */
+        private const val VIRGIN_WINDOW_MS = 6000L
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
         private const val AMBIENT_DUCK_FACTOR = 0.2f
         private val HANDS_FREE_BLOCKED = setOf(
             "scan", "duplicates", "pendrive", "delete", "confirm", "cancel",
             "visualizer", "skin", "karaoke"
+            // `video_open` NÃO fica bloqueado: era o único jeito de voltar para a tela do
+            // vídeo depois que ela fecha sozinha. Travar o comando só entregava o vídeo
+            // parado, e sem comando para retomá-lo — que é o que "continua o filme" faz.
         )
     }
 
@@ -253,10 +268,30 @@ class MainVirgin(
         Hotword.stopIfRunning(activity)
         virginOn = true
         host.syncVirginIcon()
-        Playback.setMicListening(true)
         virginListener?.destroy()
-        virginListener = DjCommandListener(activity) { handleCommand(it) }
-        virginListener?.start()
+        // Escuta por pedido (janela unica): o microfone so abre depois que ela termina de
+        // falar, quando resumeVirginSpeech chama doResumeVirginListener com a janela. Se
+        // abrisse aqui, ela ouviria a própria saudação (eco) e a janela pegaria a boca dela.
+        // Duck so durante a janela ou a fala, nunca permanente.
+        virginListener = DjCommandListener(
+            activity,
+            MicMode.ONE_SHOT,
+            onResult = { handleCommand(it) },
+            onClosed = { expired ->
+                // `expired` é lido aqui, no mesmo instante em que a janela fechou, e não
+                // depois na fila da UI. A versão anterior decidia olhando `virginSpeechPaused`
+                // já na fila: toda resposta curta ("voltando", "tocando") terminava de falar
+                // antes do callback rodar, o estado parecia o de fim de janela e a Virgin se
+                // desligava. Era o "fecha depois de voltar ou avançar".
+                if (expired && !activity.isFinishing && !activity.isDestroyed) {
+                    // Fim de janela sem ouvir nada: a Virgin ficava ligada SEM microfone
+                    // (`virginOn` `true`, ícone aceso, nenhuma janela aberta). O toque
+                    // seguinte no ícone é toggle, e com `virginOn` `true` ele desligava
+                    // tudo em vez de reabrir a janela — o "dou dois toques e ela some".
+                    ThreadPool.onUi { stopVirgin(silent = true) }
+                }
+            }
+        )
         val cur = Playback.currentSong
         val msg = if (cur != null) {
             activity.getString(R.string.dj_voice_track, cur.title, cur.artist)
@@ -298,7 +333,9 @@ class MainVirgin(
 
     private fun doResumeVirginListener() {
         if (activity.isFinishing || activity.isDestroyed || !virginOn || virginSpeechPaused) return
-        virginListener?.start()
+        // Janela unica de escuta: abre aqui (depois da fala dela), 6s, fecha sozinha.
+        // Depois de ouvir um comando ela fala de novo e a proxima janela abre daqui mesmo.
+        virginListener?.start(VIRGIN_WINDOW_MS)
     }
 
     fun announceRadioSong(song: Song) {
@@ -346,9 +383,13 @@ class MainVirgin(
         val lang = virginLang
         val duckAmbient = Ambient.isOn() && Ambient.duckFactor() >= 1f
         if (duckAmbient) Ambient.setDuck(AMBIENT_DUCK_FACTOR)
+        // Enquanto ela fala, a musica fica baixa (e volta so no fim da fala). Nao deixar
+        // o duck permanente: era por ele que a musica ficava a 35% a sessão inteira.
+        Playback.setMicListening(true)
         voice.init { ready ->
             if (!ready || activity.isDestroyed) {
                 if (duckAmbient) Ambient.setDuck(1f)
+                Playback.setMicListening(false)
                 if (!hold) resumeVirginSpeech()
                 return@init
             }
@@ -356,6 +397,7 @@ class MainVirgin(
                 virginLastSpeechEndMs = SystemClock.elapsedRealtime()
                 if (duckAmbient) Ambient.setDuck(1f)
                 ThreadPool.onUi {
+                    Playback.setMicListening(false)
                     if (!hold) resumeVirginSpeech()
                 }
             }
@@ -530,6 +572,97 @@ class MainVirgin(
         }
     }
 
+    /**
+     * Cria uma playlist salva por voz.
+     *
+     * Grava o nome como foi falado, sem a cortesia do começo, mas com a primeira letra
+     * maiúscula — "cria uma playlist chamada batidinhas" tem que aparecer na lista como
+     * "Batidinhas", e não como " batidinhas".
+     */
+    private fun virgPlaylistCreate(norm: String) {
+        val raw = DjCommander.playlistName(norm)
+        if (raw.isNullOrBlank()) {
+            virginSpeak(say(R.string.dj_voice_playlist_ask_name, "batidinhas"))
+            return
+        }
+        val name = raw.replaceFirstChar { it.titlecase() }
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val db = PlaylistDb.get(ctx)
+            // Comparação sem acento e sem caixa: o nome falado quase nunca bate com o salvo.
+            val key = DjCommander.norm(name)
+            val existing = runCatching { db.playlists() }.getOrDefault(emptyList())
+                .firstOrNull { DjCommander.norm(it.name) == key }
+            if (existing != null) {
+                ThreadPool.onUi { virginSpeak(say(R.string.dj_voice_playlist_exists, existing.name)) }
+                return@post
+            }
+            // `createPlaylist` é INSERT de Room: ele fica **aqui**, dentro do `post`, e não no
+            // `onUi` como estava. Dizer "cria uma playlist chamada batidinhas" derrubava o app.
+            val id = runCatching { db.createPlaylist(name) }.getOrNull()
+            Telemetry.log(activity, "Virgin playlist nova \"$name\" ok=${id != null}")
+            ThreadPool.onUi {
+                virginSpeak(
+                    if (id != null) say(R.string.dj_voice_playlist_created, name)
+                    else say(R.string.dj_voice_dynq_none)
+                )
+            }
+        }
+    }
+
+    /**
+     * Toca uma playlist salva por voz.
+     *
+     * Se não existir playlist com esse nome, o comando **cai na fila dinâmica** em vez de
+     * falhar: "toca a playlist de rock" é ambíguo de propósito, e quem responde é quem sabe
+     * o que existe na biblioteca. A tela de Playlists lê do banco no [Fragment.onResume],
+     * então não há nada a recarregar aqui.
+     */
+    private fun virgPlaylistPlay(norm: String) {
+        val raw = DjCommander.playlistName(norm) ?: run {
+            virgDynamicQueue(DjCommander.dynamicQuery(norm))
+            return
+        }
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val db = PlaylistDb.get(ctx)
+            val key = DjCommander.norm(raw)
+            val playlists = runCatching { db.playlists() }.getOrDefault(emptyList())
+            val found = playlists.firstOrNull { DjCommander.norm(it.name) == key }
+            // Só as do usuário contam como "existe alguma playlist": as de sistema nascem
+            // sozinhas, e responder "você não tem nenhuma playlist" quando o app criou quatro
+            // automaticamente seria pior que cair na fila dinâmica.
+            val hasAnyPlaylist = playlists.any { !it.system }
+            if (found == null) {
+                // O que a documentação deste método promete: "se não existir playlist com esse
+                // nome, cai na fila dinâmica". Só havia uma parte disso — o fallback existia
+                // quando o nome **nem** era falado, mas não quando o nome era falado e não
+                // batia com nada. Resultado: "toca a playlist de rock" sem playlist Rock
+                // respondia "não achei", que é a resposta mais inútil possível.
+                if (!hasAnyPlaylist) {
+                    ThreadPool.onUi { virginSpeak(say(R.string.dj_voice_playlist_none, raw)) }
+                } else {
+                    virgDynamicQueue(DjCommander.dynamicQuery(norm))
+                }
+                return@post
+            }
+            val songs = runCatching { db.songs(found.id) }.getOrDefault(emptyList())
+            ThreadPool.onUi {
+                if (songs.isEmpty()) {
+                    virginSpeak(say(R.string.dj_voice_playlist_empty, found.name))
+                    return@onUi
+                }
+                Telemetry.log(activity, "Virgin playlist \"${found.name}\" n=${songs.size}")
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(false)
+                Playback.setSleepMix(false)
+                DjSessionMemory.notePlayed(songs.map { it.id })
+                Playback.start(songs, 0)
+                virginSpeak(say(R.string.dj_voice_playlist_playing, found.name, songs.size))
+            }
+        }
+    }
+
     private fun dynqReason(q: DjCommander.DynQuery): String {
         val parts = ArrayList<String>()
         q.genres.forEach {
@@ -588,6 +721,111 @@ class MainVirgin(
         val n = pool.count { it.id in learn.avoided }
         if (n == 0) return ""
         return " " + say(R.string.dj_voice_avoid_note, n)
+    }
+
+    /**
+     * F2 · Vídeo por voz. Só vale com o vídeo **no motor**: a posição de vídeo não é salva
+     * (`PlaybackService` pula vídeo no save e no restore, porque id de vídeo e id de música
+     * dividem o mesmo espaço do MediaStore), então "continua o filme" só alcança o que ainda
+     * está na fila. Fora disso a Virgin avisa, em vez de abrir uma tela de vídeo preta.
+     *
+     * `isStream` entra junto porque o stream (HLS/DASH do PeerTube) é o mesmo item na fila
+     * e a mesma tela — é ele que faz o download do vídeo ser offline de verdade.
+     */
+    private fun videoPlaying(): Song? =
+        Playback.currentSong?.takeIf { it.isVideo || it.isStream }
+
+    /**
+     * Retoma o vídeo sem pedir tela nenhuma. É o que "continua o filme" tem que fazer:
+     * `showPlaying` chama `startActivity`, que do fundo o Android 10+ bloqueia, então
+     * abrir a tela ao fundo só produzia a resposta "Abrindo X" sem abrir nada.
+     */
+    private fun virgVideoPlay() {
+        val song = videoPlaying()
+        if (song == null) {
+            virginSpeak(say(R.string.dj_voice_video_none))
+            return
+        }
+        Playback.play()
+        virginSpeak(say(R.string.dj_voice_video_play, song.title))
+    }
+
+    private fun virgVideoOpen() {
+        val song = videoPlaying()
+        if (song == null) {
+            virginSpeak(say(R.string.dj_voice_video_none))
+            return
+        }
+        virginSpeak(say(R.string.dj_voice_video_open, song.title))
+        // `showPlaying` já é no-op se a tela está no ar, e abre em modo anexo: não troca a
+        // fila nem mexe em shuffle/repeat, que é o que o F2b deixou para a entrada pela
+        // biblioteca.
+        VideoPlayerActivity.showPlaying(activity)
+    }
+
+    private fun virgVideoBack() {
+        if (videoPlaying() == null) {
+            // Sem vídeo, "volta pra trás" é o que sempre foi: faixa anterior. A palavra de
+            // direção sozinha chega aqui sem citar o filme, e responder "não tem vídeo
+            // tocando" seria devolver um "não" para quem só queria voltar uma faixa. A
+            // decisão fica no handler porque `DjCommander` só vê texto: ele não sabe o que
+            // está tocando para escolher.
+            virginSpeak(say(R.string.dj_voice_prev))
+            Playback.prev()
+            return
+        }
+        // `Playback` não expõe a duração (o `seekBy` dela exige uma), então o clamp é só no
+        // zero. Recuar 30 s de um vídeo de 4 minutos não corre risco de estourar a ponta.
+        val alvo = (Playback.position - VIDEO_BACK_MS).coerceAtLeast(0L)
+        Playback.seekTo(alvo)
+        virginSpeak(say(R.string.dj_voice_video_back, Helper.formatDuration(alvo)))
+    }
+
+    /**
+     * F2 · "Toca o filme X" — abre o vídeo **pelo nome**, não o que já está na fila.
+     *
+     * A busca é offline primeiro ([VirginMedia.findVideo], título do MediaStore) e só depois
+     * no histórico de streams ([StreamHistory.find], PeerTube/URL colada): o vídeo local é o
+     * que existe sem rede, e um stream com o mesmo nome que um arquivo baixado não deve
+     * roubar o pedido. A consulta sai da main thread porque as duas leem MediaStore/disco.
+     */
+    private fun virgVideoByName(query: String?) {
+        val q = query.orEmpty()
+        if (q.isBlank()) {
+            virginSpeak(say(R.string.dj_voice_video_none))
+            return
+        }
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            val video = VirginMedia.findVideo(ctx, q)
+            val stream = if (video == null) StreamHistory.find(ctx, q) else null
+            val vistos = if (video == null && stream == null) {
+                runCatching { VideoLibrary.all(ctx).size }.getOrDefault(-1)
+            } else 0
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                when {
+                    video != null -> {
+                        Telemetry.log(activity, "Virgin video_by_name local=${video.title}")
+                        virginSpeak(activity.getString(R.string.dj_voice_video_open, video.title))
+                        VideoPlayerActivity.start(activity, listOf(video), 0)
+                    }
+                    stream != null -> {
+                        Telemetry.log(activity, "Virgin video_by_name stream=${stream.title}")
+                        virginSpeak(activity.getString(R.string.dj_voice_video_open, stream.title))
+                        VideoPlayerActivity.startStream(
+                            activity, stream.url, stream.title,
+                            uuid = stream.uuid, pageUrl = stream.pageUrl,
+                            thumbnail = stream.thumbnail
+                        )
+                    }
+                    else -> {
+                        Telemetry.log(activity, "Virgin video_by_name miss q='$q' videos=$vistos")
+                        virginSpeak(say(R.string.dj_voice_video_not_found))
+                    }
+                }
+            }
+        }
     }
 
     private fun resumeLastSession() {
@@ -791,6 +1029,8 @@ class MainVirgin(
             }
             "only" -> virgArtistOnly(DjCommander.onlyArtist(norm))
             "dynq" -> virgDynamicQueue(DjCommander.dynamicQuery(norm))
+            "playlist_new" -> virgPlaylistCreate(norm)
+            "playlist_play" -> virgPlaylistPlay(norm)
             "decade" -> virgDecadeMix(DjCommander.decadeQuery(norm))
             "scene" -> virgScene(DjCommander.sceneQuery(norm))
             "weekly" -> virgWeekSummary()
@@ -798,6 +1038,18 @@ class MainVirgin(
             "alarm" -> virgAlarmSet(DjCommander.alarmQuery(norm))
             "alarm_cancel" -> virgAlarmCancel()
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
+            "video_by_name" -> virgVideoByName(DjCommander.videoQuery(norm))
+            "video_play" -> virgVideoPlay()
+            "video_open" -> virgVideoOpen()
+            "video_back" -> virgVideoBack()
+            "video_pause" -> {
+                if (videoPlaying() == null) {
+                    virginSpeak(say(R.string.dj_voice_video_none))
+                } else if (Playback.isPlaying) {
+                    Playback.pause()
+                    virginSpeak(say(R.string.dj_voice_pause))
+                }
+            }
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong
                 if (action == "dislike" && cur != null) {
@@ -832,12 +1084,28 @@ class MainVirgin(
             "fav" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {
-                    val db = PlaylistDb.get(activity.applicationContext)
-                    val nextValue = !db.isFavorite(cur.id)
-                    db.setFavorite(cur, nextValue)
-                    if (nextValue) DjLearn.recordLiked(activity.applicationContext, cur.id)
-                    host.syncMiniPlayer()
-                    virginSpeak(if (nextValue) DjReactions.like(reactCtx()) else DjReactions.unliked(reactCtx()))
+                    // Mesmo motivo do DjSession: `onResults` do reconhecimento chega na main,
+                    // e ler/gravar favorito ali é query de Room na main thread.
+                    val appCtx = activity.applicationContext
+                    ThreadPool.post {
+                        val nextValue = runCatching {
+                            val db = PlaylistDb.get(appCtx)
+                            val next = !db.isFavorite(cur.id)
+                            db.setFavorite(cur, next)
+                            next
+                        }.getOrElse {
+                            CrashLogger.writeLog(appCtx, "VIRGIN: favoritar por voz falhou id=${cur.id} -> $it")
+                            return@post
+                        }
+                        if (nextValue) DjLearn.recordLiked(appCtx, cur.id)
+                        ThreadPool.onUi {
+                            host.syncMiniPlayer()
+                            virginSpeak(
+                                if (nextValue) DjReactions.like(reactCtx())
+                                else DjReactions.unliked(reactCtx())
+                            )
+                        }
+                    }
                 }
             }
             "info" -> {
@@ -1217,10 +1485,10 @@ class MainVirgin(
         }
     }
 
-    /** Aguarda o PlaybackService ficar disponível (o app acabou de abrir pelo alarme). */
+    /** Aguarda o motor ficar disponível (o app acabou de abrir pelo alarme). */
     private fun playWhenBound(set: List<Song>, tries: Int) {
         if (activity.isFinishing || activity.isDestroyed) return
-        if (Playback.service != null) {
+        if (Playback.isReady) {
             Playback.setShuffle(true)
             Playback.setRepeatAll(true)
             Playback.setSleepMix(false)
@@ -1233,6 +1501,9 @@ class MainVirgin(
     private fun toggleVisualizer() {
         val on = !Settings.visualizerOn(activity)
         Settings.setVisualizerOn(activity, on)
+        // Sem isto a Virgin só redesenha a tela: a captura de áudio continuaria ligada (ou
+        // desligada) até a próxima faixa, porque o `Visualizer` vive na sessão do player.
+        Playback.refreshFx()
         host.refreshPlayerVisuals()
         virginSpeak(activity.getString(
             if (on) R.string.dj_voice_visualizer_on else R.string.dj_voice_visualizer_off
@@ -1372,12 +1643,21 @@ class MainVirgin(
         ThreadPool.post {
             val deleted = if (alreadyDeleted) true else
                 VirginMedia.deleteDuplicates(activity.applicationContext, songsCopies, videoCopiesList)
+            // A limpeza das playlists é query de Room, então fica **aqui**, dentro do `post`, e
+            // não no `onUi`. Ela estava no `onUi` embrulhada em `runCatching`: o Room lançava
+            // IllegalStateException, o `runCatching` engolia, e o resultado era silencioso — a
+            // música sumia do aparelho mas continuava em todas as playlists, invisível e
+            // impossível de diagnosticar sem o log.
+            if (deleted) {
+                runCatching {
+                    songsCopies.forEach { VirginMedia.removeFromPlaylists(activity.applicationContext, it) }
+                }.onFailure {
+                    CrashLogger.writeLog(activity.applicationContext, "VIRGIN: falha ao limpar playlists dos duplicados -> $it")
+                }
+            }
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (deleted) {
-                    runCatching {
-                        songsCopies.forEach { VirginMedia.removeFromPlaylists(activity.applicationContext, it) }
-                    }
                     if (Playback.currentSong?.let { c -> songsCopies.any { it.id == c.id } } == true) {
                         Playback.next()
                     }
@@ -1513,13 +1793,22 @@ class MainVirgin(
     }
 
     private fun completeVirginDelete(song: Song, alreadyDeleted: Boolean) {
+        val key = QueueKey.encode(song)
         ThreadPool.post {
             val deleted = if (alreadyDeleted) true else VirginMedia.deleteSong(activity.applicationContext, song)
+            // Fora do `onUi` pelo mesmo motivo dos duplicados: `removeFromPlaylists` é query de
+            // Room. Aqui nem havia `runCatching`, então apagar uma faixa pela Virgin derrubava o
+            // app — e o usuário via o sumiço da música como se o app tivesse crashado.
+            if (deleted) {
+                runCatching { VirginMedia.removeFromPlaylists(activity.applicationContext, song) }
+                    .onFailure {
+                        CrashLogger.writeLog(activity.applicationContext, "VIRGIN: falha ao limpar playlist da faixa apagada -> $it")
+                    }
+            }
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (deleted) {
-                    VirginMedia.removeFromPlaylists(activity.applicationContext, song)
-                    if (Playback.currentSong?.id == song.id) Playback.next()
+                    if (QueueKey.sameType(Playback.currentKey, key)) Playback.next()
                     virginSpeak(activity.getString(R.string.dj_voice_delete_done, song.title))
                 } else {
                     virginSpeak(activity.getString(R.string.dj_voice_delete_failed))

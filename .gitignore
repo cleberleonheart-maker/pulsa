@@ -12,3 +12,4 @@ captures/
 .namespace/
 .idea/
 .kotlin/
+__pycache__/

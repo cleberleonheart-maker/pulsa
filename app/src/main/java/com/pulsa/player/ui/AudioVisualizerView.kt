@@ -11,6 +11,7 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import com.pulsa.player.R
 import com.pulsa.player.audio.MusicVisualizer
+import com.pulsa.player.core.Settings
 
 class AudioVisualizerView @JvmOverloads constructor(
     context: Context,
@@ -101,6 +102,13 @@ class AudioVisualizerView @JvmOverloads constructor(
     }
 
     fun refresh(skin: String) {
+        // Mesmo gate do `MusicShaderView`: sem isso as barras continuam dançando depois de
+        // "virgi, desliga o visualizador", porque o `onDraw` só olha se a captura está viva.
+        if (!Settings.visualizerOn(context)) {
+            visibility = View.GONE
+            stopTween()
+            return
+        }
         visibility = View.VISIBLE
         startTween()
     }

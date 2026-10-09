@@ -2,6 +2,7 @@ package com.pulsa.player.sync
 
 import android.content.Context
 import android.os.Environment
+import android.os.SystemClock
 import com.pulsa.player.model.Song
 import org.json.JSONObject
 import java.io.File
@@ -118,13 +119,24 @@ object Lyrics {
         val albumNorm = normalize(song.album)
         var best: File? = null
         var bestScore = Int.MIN_VALUE
-        fun tryDir(dir: File?) {
+        val inicio = SystemClock.elapsedRealtime()
+
+        fun tryDir(dir: File?, profundidade: Int) {
             if (dir == null || !dir.isDirectory) return
             val baseNorm = normalize(stem(music.name))
+            var avaliados = 0
             dir.walkTopDown()
-                .filter { it.isFile && it != music && it.extension.equals("lrc", true) }
-                .take(2000)
+                // Para de descer quando o orçamento acaba: é isto que segura a busca.
+                .onEnter { SystemClock.elapsedRealtime() - inicio < LOCAL_BUDGET_MS }
+                .maxDepth(profundidade)
+                // Extensão **antes** de `isFile`: `isFile` é um `stat` por entrada, e numa
+                // varredura ampla isso é o custo inteiro da busca.
+                .filter { it.extension.equals("lrc", true) }
+                .take(MAX_LRC)
                 .forEach { lrc ->
+                    if (avaliados++ >= MAX_LRC) return@forEach
+                    if (SystemClock.elapsedRealtime() - inicio >= LOCAL_BUDGET_MS) return@forEach
+                    if (lrc == music || !lrc.isFile) return@forEach
                     val name = normalize(stem(lrc.name))
                     val score = score(name, baseNorm, titleNorm, artistNorm, albumNorm)
                     if (score > bestScore) {
@@ -133,21 +145,33 @@ object Lyrics {
                     }
                 }
         }
-        tryDir(music.parentFile)
+
+        // A pasta da música é o caso comum e vai fundo: as letras costumam ficar junto.
+        tryDir(music.parentFile, MAX_DEPTH_PASTA)
         if (bestScore <= 0) {
             val roots = listOfNotNull(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS),
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RINGTONES),
-                Environment.getExternalStorageDirectory()
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RINGTONES)
             ).distinct()
-            roots.forEach { tryDir(it) }
+            // Um nível, e não a árvore inteira. A versão anterior chamava `tryDir(it)` na
+            // raiz do armazenamento externo e percorria `/sdcard` recursivo, pontuando até
+            // 2000 arquivos: em um celular com muitas pastas isso levava dezenas de
+            // segundos, e a busca online — que vem logo depois — só começava depois disso.
+            // O sintoma era "Buscando letras..." e mais nada, sem "não encontrado" e sem
+            // diálogo, que é exatamente o que o usuário estava vendo.
+            roots.forEach { tryDir(it, 1) }
         }
         return best?.takeIf { bestScore > 0 }
     }
 
     private fun stem(name: String): String = name.substringBeforeLast('.')
+
+    /** Teto da varredura local. Passado, a busca online começa na mesma hora. */
+    private const val LOCAL_BUDGET_MS = 2_500L
+    private const val MAX_LRC = 400
+    private const val MAX_DEPTH_PASTA = 4
 
     /**
      * Pontua um .lrc candidato. 100 = mesmo nome do arquivo de música;

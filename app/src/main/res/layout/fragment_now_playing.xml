@@ -167,9 +167,8 @@
         <com.pulsa.player.ui.AudioVisualizerView
             android:id="@+id/np_visualizer"
             android:layout_width="match_parent"
-            android:layout_height="110dp"
-            android:layout_marginTop="12dp"
-            android:visibility="gone" />
+            android:layout_height="64dp"
+            android:layout_marginTop="10dp" />
 
         <LinearLayout
             android:id="@+id/np_lyrics_panel"

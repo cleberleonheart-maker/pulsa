@@ -56,6 +56,12 @@ class NowPlayingActivity : AppCompatActivity(), Playback.Listener {
 
     override fun onSongChanged(song: Song?, index: Int) {
         fragment()?.render()
+        // F2b: o mesmo da home — vídeo que virou o item atual precisa da tela de vídeo para
+        // ter imagem. A tela abre grudada no motor, sem trocar a fila. `needsVideoScreen`
+        // também cobre o episódio de podcast em vídeo (F3).
+        if (song?.needsVideoScreen == true) {
+            VideoPlayerActivity.showPlaying(this)
+        }
     }
 
     override fun onPlayStateChanged(isPlaying: Boolean) {

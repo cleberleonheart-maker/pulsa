@@ -70,6 +70,112 @@ class DjCommanderTest {
     }
 
     @Test
+    fun action_video_open() {
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, mostra o video")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, abre o video")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, volta pro filme")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, abre o episodio")))
+    }
+
+    @Test
+    fun action_video_play() {
+        // "continua"/"retoma"/"toca" RETOMAM, não abrem tela: `showPlaying` chama
+        // `startActivity`, que do fundo o Android 10+ bloqueia, então abrir a tela ao
+        // fundo só produzia a resposta "Abrindo X" sem abrir nada.
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, continua o filme")))
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, retoma o filme")))
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, toca o filme")))
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, continua o video")))
+        // Acento: só bate depois do `norm`.
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("Virgin, continua o vídeo")))
+        // "continua" sem citar o que é continua sendo o play da música.
+        assertEquals("play", DjCommander.action(DjCommander.norm("virgin, continua")))
+    }
+
+    @Test
+    fun action_video_by_name() {
+        // Com nome depois do verbo+artigo+palavra de vídeo, vira busca na biblioteca/histórico
+        // em vez de retomar o que já está tocando.
+        assertEquals("video_by_name", DjCommander.action(DjCommander.norm("virgin, toca o filme matrix")))
+        assertEquals("video_by_name", DjCommander.action(DjCommander.norm("virgin, abre o filme matrix reloaded")))
+        assertEquals("video_by_name", DjCommander.action(DjCommander.norm("virgin, mostra o video do show")))
+        // Sem nome sobra retomar/abrir: a palavra de vídeo sozinha não é um nome.
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, toca o filme")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, mostra o video")))
+    }
+
+    @Test
+    fun videoQuery_extrai_o_nome() {
+        assertEquals("matrix", DjCommander.videoQuery(DjCommander.norm("virgin, toca o filme matrix")))
+        assertEquals(
+            "matrix reloaded",
+            DjCommander.videoQuery(DjCommander.norm("virgin, abre o filme matrix reloaded"))
+        )
+        assertNull(DjCommander.videoQuery(DjCommander.norm("virgin, toca o filme")))
+        assertNull(DjCommander.videoQuery(DjCommander.norm("virgin, pausa o filme")))
+        assertNull(DjCommander.videoQuery(DjCommander.norm("virgin, pausa a musica")))
+    }
+
+    @Test
+    fun action_video_back() {
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta 30 segundos do filme")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta pra tras no video")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, recua o filme")))
+        // Acento: "vídeo" só bate depois do `norm`.
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("Virgin, volta o vídeo")))
+    }
+
+    @Test
+    fun video_back_sem_citar_o_filme() {
+        // "atrás" não é palavra de comando de música, então "manda pra trás" não precisa
+        // dizer o nome do vídeo para não cair em prev pelo "volta" genérico.
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, manda pra tras")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, manda pra trás")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta pra tras")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta atras")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta para tras")))
+        // Limite conhecido, e é o teste que trava ele: "volta 30 segundos" sem citar o que é
+        // fica com a música, porque "volta" puro é trilha anterior. Só a palavra de
+        // direção ("atrás") dispensa citar o filme; número de segundos não.
+        assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta 30 segundos")))
+        // Abrir a tela continua funcionando sem citar o que abrir: "volta pro filme" e
+        // "volta pra trás" só se separam pela palavra de direção.
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, volta pro filme")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, volta ao video")))
+    }
+
+    @Test
+    fun action_video_pause() {
+        assertEquals("video_pause", DjCommander.action(DjCommander.norm("virgin, pausa o filme")))
+        assertEquals("video_pause", DjCommander.action(DjCommander.norm("virgin, para o video")))
+    }
+
+    @Test
+    fun video_back_sem_video_cai_em_prev_no_handler() {
+        // O parser devolve `video_back` para a palavra de direção sozinha, e quem desvia
+        // para a faixa anterior é o handler (`virgVideoBack`), que é quem sabe o que está
+        // tocando. Este teste trava essa divisão: o fallback está em
+        // MainVirgin/DjSession, não no DjCommander.
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta atras da musica")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, para tras")))
+        assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, deixa pra tras")))
+    }
+
+    @Test
+    fun video_nao_rouba_comando_da_musica() {
+        // O gate `videoWord` é o que impede "volta"/"pausa"/"continua" de virarem comando
+        // de vídeo no meio de uma música — a Virgin falaria de vídeo sem existir vídeo.
+        assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta")))
+        assertEquals("prev", DjCommander.action(DjCommander.norm("virgin, volta a anterior")))
+        assertEquals("pause", DjCommander.action(DjCommander.norm("virgin, pausa")))
+        assertEquals("play", DjCommander.action(DjCommander.norm("virgin, continua")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, volta pra musica")))
+        assertEquals("resume", DjCommander.action(DjCommander.norm("virgin, retoma a musica")))
+        // "pula" no vídeo continua sendo skip, não retrocesso: sem palavra de trás, é pulo.
+        assertEquals("skip", DjCommander.action(DjCommander.norm("virgin, pula o filme")))
+    }
+
+    @Test
     fun ambient_volume_up() {
         assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("virgin, chuva mais alta"))?.up)
         assertEquals(true, DjCommander.ambientVolume(DjCommander.norm("aumenta a chuva"))?.up)
@@ -281,5 +387,104 @@ class DjCommanderTest {
         assertEquals("sleeptimer", DjCommander.action(DjCommander.norm("virgin, para em 20 min")))
         assertEquals("pause", DjCommander.action(DjCommander.norm("virgin, para a musica")))
         assertEquals("pause", DjCommander.action(DjCommander.norm("virgin, para")))
+    }
+
+    @Test
+    fun playlist_create_action() {
+        assertEquals(
+            "playlist_new",
+            DjCommander.action(DjCommander.norm("virgin, cria uma playlist chamada batidinhas"))
+        )
+        assertEquals(
+            "playlist_new",
+            DjCommander.action(DjCommander.norm("virgin, faz uma nova playlist pra carro"))
+        )
+        assertEquals(
+            "playlist_new",
+            DjCommander.action(DjCommander.norm("virgin, cria a playlist"))
+        )
+    }
+
+    @Test
+    fun playlist_create_extracts_name() {
+        assertEquals(
+            "batidinhas",
+            DjCommander.playlistName(DjCommander.norm("cria uma playlist chamada batidinhas"))
+        )
+        assertEquals(
+            "pra carro",
+            DjCommander.playlistName(DjCommander.norm("faz uma nova playlist pra carro"))
+        )
+        assertEquals(
+            "minha lista boa",
+            DjCommander.playlistName(
+                DjCommander.norm("cria a playlist de minha lista boa, por favor")
+            )
+        )
+        assertEquals(
+            "foco",
+            DjCommander.playlistName(DjCommander.norm("create a playlist called foco"))
+        )
+    }
+
+    @Test
+    fun playlist_play_action() {
+        assertEquals(
+            "playlist_play",
+            DjCommander.action(DjCommander.norm("virgin, toca a playlist batidinhas"))
+        )
+        assertEquals(
+            "playlist_play",
+            DjCommander.action(DjCommander.norm("virgin, abre minha playlist de foco"))
+        )
+        assertEquals(
+            "batidinhas",
+            DjCommander.playlistName(DjCommander.norm("toca a playlist batidinhas"))
+        )
+    }
+
+    @Test
+    fun playlist_play_not_confused_with_daily_set() {
+        // "playlist do dia" e set diario desde sempre: nao pode virar playlist chamada "do dia".
+        assertEquals(
+            "daily_set",
+            DjCommander.action(DjCommander.norm("virgin, toca a playlist do dia"))
+        )
+        assertEquals(
+            "daily_set",
+            DjCommander.action(DjCommander.norm("toca a playlist de hoy"))
+        )
+    }
+
+    @Test
+    fun playlist_create_not_stealing_dynamic_queue() {
+        // "monta uma lista de rock" ja era fila dinamica antes de existir playlist por voz.
+        assertEquals(
+            "dynq",
+            DjCommander.action(DjCommander.norm("virgin, monta uma lista de rock"))
+        )
+        assertEquals(
+            "dynq",
+            DjCommander.action(DjCommander.norm("toca rock que nao ouco ha 2 meses"))
+        )
+    }
+
+    @Test
+    fun playlist_commands_need_the_word_playlist() {
+        assertNull(DjCommander.action(DjCommander.norm("virgin, cria uma colecao chamada batidinhas")))
+        assertNull(DjCommander.playlistName(DjCommander.norm("virgin, cria uma colecao")))
+        // Sem a palavra "playlist" continua sendo só um comando de tocar qualquer coisa.
+        assertEquals("play", DjCommander.action(DjCommander.norm("virgin, toca batidinhas")))
+    }
+
+    @Test
+    fun playlist_name_ignores_politeness_and_punctuation() {
+        assertEquals(
+            "festa",
+            DjCommander.playlistName(DjCommander.norm("cria playlist festa, por favor."))
+        )
+        // O nome é lido ("dia"), mas o comando NÃO vira playlist: quem manda é o set diário.
+        assertEquals("dia", DjCommander.playlistName(DjCommander.norm("toca a playlist do dia")))
+        assertEquals("daily_set", DjCommander.action(DjCommander.norm("toca a playlist do dia")))
     }
 }

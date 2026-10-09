@@ -13,8 +13,9 @@ import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SongListAdapter
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.playback.QueueKey
 
-class FavoritesTabFragment : Fragment() {
+class FavoritesTabFragment : Fragment(), HighlightSync {
 
     private var headerContainer: View? = null
     private var headerTitle: TextView? = null
@@ -23,6 +24,7 @@ class FavoritesTabFragment : Fragment() {
     private var emptyView: View? = null
     private var emptyText: TextView? = null
     private var adapter: SongListAdapter? = null
+    private var selectionBar: SelectionBar? = null
     private var emptyAction: View? = null
     private var loading = false
 
@@ -49,6 +51,10 @@ class FavoritesTabFragment : Fragment() {
             }
         )
         adapter = a
+        selectionBar = SelectionWiring.setUpSelection(this, view, a,
+            onAction = { songs, reload -> SongActions.confirmDeleteMany(requireContext(), songs, reload) },
+            reload = { load() },
+            onExtraAction = { songs -> SongActions.enqueue(requireContext(), songs) })
         list?.apply {
             layoutManager = LinearLayoutManager(this@FavoritesTabFragment.context)
             adapter = a
@@ -63,10 +69,12 @@ class FavoritesTabFragment : Fragment() {
     fun load() {
         if (view == null) return
         if (loading) return
+        // contexto pego na UI: requireContext() na thread do pool lancava e matava o processo
+        val app = context?.applicationContext ?: return
         loading = true
         ThreadPool.post {
             val songs = try {
-                PlaylistDb.get(requireContext()).favorites()
+                PlaylistDb.get(app).favorites()
             } catch (t: Throwable) {
                 emptyList()
             }
@@ -75,7 +83,8 @@ class FavoritesTabFragment : Fragment() {
                 if (isAdded) {
                     headerContainer?.visibility = View.GONE
                     adapter?.songs = songs
-                    adapter?.highlightId = Playback.currentSong?.id
+                    selectionBar?.setAvailable(songs.map { it.id })
+                    syncHighlight()
                     val empty = songs.isEmpty()
                     emptyView?.visibility = if (empty) View.VISIBLE else View.GONE
                     emptyText?.text = getString(R.string.empty_favorites)
@@ -86,4 +95,15 @@ class FavoritesTabFragment : Fragment() {
     }
 
     fun title(): String = requireContext().getString(R.string.tab_favorites)
+
+    /**
+     * Reposiciona o "tocando agora" depois que a faixa mudou fora da lista (mini player,
+     * notificação, próximo/anterior). Quem preenche no `load()` é o mesmo caminho.
+     */
+    override fun syncHighlight() {
+        val cur = Playback.currentSong
+        adapter?.highlightKey = cur?.let { QueueKey.encode(it) }
+        adapter?.highlightId = cur?.id
+    }
+
 }

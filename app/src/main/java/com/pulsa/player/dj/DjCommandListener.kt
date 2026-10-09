@@ -11,9 +11,36 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import java.util.Locale
 
+/**
+ * Como o microfone se comporta depois de uma janela de escuta.
+ *
+ * A versao antiga abria o microfone num laço infinito enquanto a maos-livres estivesse ligada
+ * — o usuario viu isso tres vezes seguindo numeros (3s -> 2/4/8/15s), nao a estrutura. A
+ * conclusao honesta e que nao existe escuta de palavra-chave silenciosa aqui: qualquer app
+ * que "escuta a palavra" abre o microfone e o indicador do sistema acende. Entao a maos-livres
+ * virou UM_SO disparo: o microfone so abre quando voce pede, por 6s, e fecha sozinho.
+ */
+enum class MicMode {
+    /**
+     * Quem apertou o botao de microfone esta falando agora: reabre em seguida para nao
+     * perder o proximo comando da conversa. E o caso da tela do DJ.
+     */
+    CONTINUOUS,
+
+    /**
+     * Uma unica janela de escuta, pelo tempo que o chamador passa em `start()`, e depois
+     * fecha sozinha. Nao reabre em hipotese alguma. E o caso do botao "Ouvir" da notificacao
+     * de maos-livres e da escuta da Virgin na tela — o indicador de microfone so acende
+     * quando o usuario pediu, e apaga quando a janela acaba.
+     */
+    ONE_SHOT
+}
+
 class DjCommandListener(
     context: Context,
-    private val onResult: (text: String) -> Unit
+    private val mode: MicMode = MicMode.CONTINUOUS,
+    private val onResult: (text: String) -> Unit,
+    private val onClosed: ((expired: Boolean) -> Unit)? = null
 ) {
     private val appContext = context.applicationContext
     private val locale: Locale = Locale.getDefault()
@@ -28,15 +55,42 @@ class DjCommandListener(
     @Volatile
     private var reportedUnsupported = false
 
+    /** Nesta chamada o microfone está em janela [start] e deve aguentar erros transientes. */
+    private var windowed = false
+
+    /** Backoff interno para retentar durante a janela sem resetar o reconhecedor. */
+    private var windowRetryMs = 500L
+
     private val mainHandler = Handler(Looper.getMainLooper())
     private var lastStartMs = 0L
     private val minGapMs = 3000L
-    private val backoff = MicBackoff(FIRST_RETRY_MS, MAX_RETRY_MS)
+    private val cycle = MicCycle(mode, MicBackoff(FIRST_RETRY_MS, MAX_RETRY_MS))
     private val retryRunnable = Runnable { restart() }
+
+    /**
+     * A janela de [ONE_SHOT] acabou, e não a escuta: parou porque alguém chamou [stop]
+     * para responder um comando. A diferença é o que separa "terminou a sessão" de "já
+     * tem a próxima marcada", e precisa ser dita no instante do fechamento — quem decide
+     * o que fazer lê isso depois, quando o estado já mudou.
+     */
+    private var windowExpired = false
+
+    /** Fecha sozinho quando o tempo da janela de [ONE_SHOT] acaba. */
+    private val windowRunnable = Runnable { windowExpired = true; stop() }
+    private var closedCallbackRun = false
+
+    private fun runClosed() {
+        if (closedCallbackRun) return
+        closedCallbackRun = true
+        onClosed?.invoke(windowExpired)
+        windowExpired = false
+    }
 
     init {
         recognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {}
+            override fun onReadyForSpeech(params: Bundle?) {
+                windowRetryMs = 500L
+            }
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
@@ -51,16 +105,33 @@ class DjCommandListener(
                     SpeechRecognizer.ERROR_NO_MATCH,
                     SpeechRecognizer.ERROR_SPEECH_TIMEOUT,
                     SpeechRecognizer.ERROR_RECOGNIZER_BUSY,
-                    SpeechRecognizer.ERROR_CLIENT -> scheduleRetry()
-                    // Erros fatais: para de ouvir e avisa a UI uma unica vez
+                    SpeechRecognizer.ERROR_CLIENT -> {
+                        // Janela ativa (escuta por pedido): erro transiente nao pode fechar a
+                        // janela na hora — e o "tenho que apertar de novo". Com musica tocando o
+                        // reconhecedor devolve BUSY/NO_MATCH no meio da janela ou logo ao reabrir
+                        // depois da resposta da Virgin; retenta dentro do tempo da janela com
+                        // backoff ate o reconhecedor sossegar. O fim da janela (windowRunnable)
+                        // e quem realmente fecha.
+                        if (windowed && mainHandler.hasCallbacks(windowRunnable)) {
+                            mainHandler.removeCallbacks(retryRunnable)
+                            mainHandler.postDelayed(retryRunnable, windowRetryMs)
+                            windowRetryMs = (windowRetryMs * 2).coerceAtMost(MAX_WINDOW_RETRY_MS)
+                        } else {
+                            scheduleNext(heard = false)
+                        }
+                    }
+                    // Erros fatais: para de ouvir e avisa a UI uma unica vez, e fecha a janela
+                    // (senao o chamador ficaria com windowOpen/duck presos para sempre).
                     else -> {
                         listening = false
                         mainHandler.removeCallbacks(retryRunnable)
+                        mainHandler.removeCallbacks(windowRunnable)
                         mainHandler.post {
                             if (!reportedUnsupported) {
                                 reportedUnsupported = true
                                 onResult("__unsupported__")
                             }
+                            runClosed()
                         }
                     }
                 }
@@ -73,17 +144,13 @@ class DjCommandListener(
                     ?.trim()
                     ?: ""
                 if (text.isNotEmpty()) {
-                    resetBackoff()
+                    cycle.reset()
                     onResult(text)
-                    // Ouviu mesmo: reabre sem espera, senao o comando seguinte
-                    // entraria na fila e o microfone ficaria mudo por segundos.
-                    restart()
-                    return
                 }
-                // Nada reconhecido: e o caso comum com musica tocando. O
-                // backoff precisa valer aqui tambem, nao so no onError — senao o
-                // ciclo de ~3s volta (e era o que o usuario viu na 5.9.1).
-                scheduleRetry()
+                // Ouviu ou nao ouviu, a proxima janela e a politica que decide — inclusive
+                // o caso vazio, que e o comum com musica tocando (e era por via dele que o
+                // ciclo de ~3s voltava).
+                scheduleNext(heard = text.isNotEmpty())
             }
 
             override fun onPartialResults(partialResults: Bundle?) {}
@@ -91,44 +158,63 @@ class DjCommandListener(
         })
     }
 
-    /**
-     * Reabre o microfone depois de um silencio/erro, dobrando a espera a cada
-     * tentativa ate [MAX_RETRY_MS]. Vale tanto para onError quanto para
-     * onResults vazio.
-     */
-    private fun scheduleRetry() {
+    /** Abre o microfone de novo no tempo que a politica [MicCycle] mandar. Para [ONE_SHOT],
+     * a politica devolve "nunca mais" e a janela fecha sozinha. */
+    private fun scheduleNext(heard: Boolean) {
         if (!listening) return
         mainHandler.removeCallbacks(retryRunnable)
-        mainHandler.postDelayed(retryRunnable, backoff.next())
+        val wait = cycle.waitBeforeReopen(heard)
+        if (wait == null) {
+            stop()
+            return
+        }
+        if (wait <= 0L) restart() else mainHandler.postDelayed(retryRunnable, wait)
     }
 
-    private fun resetBackoff() {
-        backoff.reset()
-    }
-
-    fun start() {
+    /**
+     * Abre uma janela de escuta. [windowMs] > 0 faz o microfone fechar sozinho ao fim de
+     * [windowMs] — e o que a maos-livres e a Virgin usam para "so quando eu pedir".
+     */
+    fun start(windowMs: Long = 0L) {
         if (recognizer == null) {
             onResult("__unsupported__")
+            runClosed()
             return
         }
         reportedUnsupported = false
         listening = true
-        resetBackoff()
+        cycle.reset()
+        windowRetryMs = 500L
+        windowed = windowMs > 0L
+        // Cada janela nasce sem expiração: se a anterior expirou com `wasListening` já
+        // falso, `runClosed` não rodou e o `true` sobraria para a janela seguinte, que
+        // fecharia de propósito e se anunciaria como fim de janela.
+        windowExpired = false
+        if (windowed) {
+            mainHandler.removeCallbacks(windowRunnable)
+            mainHandler.postDelayed(windowRunnable, windowMs)
+        }
         startListening()
     }
 
     fun stop() {
+        val wasListening = listening
         listening = false
-        resetBackoff()
+        cycle.reset()
         mainHandler.removeCallbacks(retryRunnable)
+        mainHandler.removeCallbacks(windowRunnable)
         runCatching { recognizer?.cancel() }
+        if (wasListening) runClosed()
     }
 
     fun destroy() {
+        val wasListening = listening
         listening = false
         mainHandler.removeCallbacks(retryRunnable)
+        mainHandler.removeCallbacks(windowRunnable)
         runCatching { recognizer?.cancel() }
         runCatching { recognizer?.destroy() }
+        if (wasListening) runClosed()
     }
 
     private fun startListening() {
@@ -165,5 +251,8 @@ class DjCommandListener(
         /** Espera antes de reabrir o microfone quando ninguem falou nada. */
         private const val FIRST_RETRY_MS = 2000L
         private const val MAX_RETRY_MS = 15000L
+
+        /** Teto do backoff do retry dentro de uma janela de escuta por pedido. */
+        private const val MAX_WINDOW_RETRY_MS = 3000L
     }
 }

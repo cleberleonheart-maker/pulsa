@@ -32,7 +32,62 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.9.3):
+    <string name="changelog">Novidades desta versão (5.9.4):
+→ O 3D E O SURROUND PARARAM DE QUEBRAR A MÚSICA
+• Com o efeito ligado a faixa morria no meio e o Pulsa reiniciava o som. O que acontecia é
+  que o 3D reaproveitava o mesmo pedaço de memória que já estava tocando, e o player tropeçava
+  nele. Agora o efeito tem memória só dele: a música toca do começo ao fim, inclusive quando
+  você liga o 3D ou o surround com a música já tocando.
+
+→ AS CONFIGURAÇÕES ABREM DE NOVO
+• A tela de ajustes fechava sozinha logo depois da atualização, e em alguns aparelhos ficava
+  só o preto. O fundo animado estava sendo desenhado por cima da tela e nunca era removido;
+  agora ele para quando você entra nos ajustes. Também voltou a aparecer tudo que a tela mostra:
+  se um dia faltar algum elemento, o Pulsa pula em vez de fechar, e o nome do que faltou fica no
+  log.
+
+→ O VISUALIZADOR APARECE SEM VOCÊ PEDIR
+• O visualizador ficava escondido a não ser que a faixa estivesse tocando, e sumia sozinho na
+  tela de reprodução. Agora ele fica sempre ali, no tamanho de uma faixa, e respeita o botão
+  liga/desliga: desligado, ele some e para de pegar som.
+
+→ SUAS PLAYLISTS AGUENTAM O UPGRADE
+• A lista de músicas e as favoritas passaram a usar o banco de verdade do Android (Room), que é
+  o que o resto do sistema usa. Quem tinha Pulsa instalado antes continua com tudo no lugar: o
+  app converte o banco antigo sozinho, sem reinstalar e sem perder nenhuma playlist. O caminho
+  foi testado com dados dentro de cada tabela antes de ir para o APK.
+
+→ O TRABALHO DE FUNDO VOLTA SOZINHO
+• Espelhar a biblioteca e o aprendizado da Virgin dependiam do app estar aberto: se você fechava
+  o Pulsa, aquilo simplesmente parava e só voltava quando você abria de novo — ou pior, depois
+  de reiniciar o celular. Agora isso é trabalho de verdade do sistema: o Android reexecuta, com
+  a internet disponível. O download por link nas Configurações também virou um desses: se você
+  sair da tela no meio, o download continua em vez de sumir.
+  O que continua na hora são o estado da reprodução e os comandos do controle remoto — esses
+  precisam responder em segundos, e a Virgin que comanda é ao vivo.
+
+→ AGORA DÁ PARA CRIAR PLAYLIST DO JEITO CERTO
+• O botão de criar playlist estava sumido: só dava para criar passando pelo menu de uma
+  música, ou seja, era obrigatório ter uma música na mão. Não existia forma de começar uma
+  playlist de cabeça — que é o caso mais comum. Agora tem um "+" no topo da aba Playlists, e o
+  mesmo botão aparece sozinho quando a lista está vazia.
+
+→ SEU BACKUP LEVA AS PLAYLISTS JUNTO
+• O arquivo de backup carregava o aprendizado da Virgin e os ajustes de som, mas não as suas
+  playlists, nem as favoritas, nem os nomes que você tinha corrigido à mão. Trocava de celular
+  e perdia tudo que você tinha organizado à mão. Agora vai tudo — e o restore diz o que voltou e
+  o que não voltou, em vez de um "pronto" genérico. As músicas que ainda não estão no aparelho
+  aparecem listadas pelo nome: elas não foram apagadas do backup, só ainda não chegaram aqui.
+  E como o backup funciona pelo caminho de cada arquivo, ele também sobrevive a você trocar a
+  pasta das músicas ou mexer nos arquivos.
+
+→ PLAYLIST POR VOZ
+• "Virgi, cria uma playlist chamada batidinhas" cria a playlist, e "toca a playlist
+  batidinhas" começa a tocar. Nenhuma das duas coisas existia por voz. Se você falar o nome de
+  uma playlist que não existe, a Virgin avisa e mostra quais você tem — em vez de ficar em
+  silêncio.
+
+★ DA 5.9.3
 → O APP NÃO TRAVA MAIS NA TELA DA VIRGIN
 • A mão livre ligava o microfone antes de virar serviço de primeiro plano. No Android 12+ isso
   mata o processo: o Pulsa abria, morria e voltava para a mesma tela. Agora ele entra em primeiro
@@ -87,12 +142,16 @@
     <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
     <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
     <string name="grant_permission">Permitir acesso</string>
-    <string name="empty_playlist">Playlist vazia. Adicione músicas pela lista ou pelo menu de cada música.</string>
+    <string name="empty_playlist">Nenhuma playlist ainda. Crie a primeira com o botão abaixo — depois é só ir adicionando músicas pelo menu de cada uma.</string>
     <string name="play">Reproduzir</string>
     <string name="play_from_menu">Tocar agora</string>
     <string name="add_to_playlist">Adicionar à playlist</string>
     <string name="add_to_playlist_title">Adicionar à playlist</string>
+    <string name="add_to_queue">Adicionar à fila</string>
     <string name="new_playlist">Nova playlist</string>
+    <string name="n_playlists">%1$d playlists</string>
+    <string name="one_playlist">1 playlist</string>
+    <string name="playlist_created">Playlist criada</string>
     <string name="new_playlist_title">Nova playlist</string>
     <string name="playlist_name_hint">Nome da playlist</string>
     <string name="create">Criar</string>
@@ -102,6 +161,8 @@
     <string name="delete_playlist">Excluir playlist</string>
     <string name="delete_confirm">Excluir esta playlist e todas as suas músicas?</string>
     <string name="remove_from_playlist">Remover da playlist</string>
+    <string name="remove_songs_confirm">Remover %1$d músicas desta playlist? Os arquivos continuam no aparelho.</string>
+    <string name="removed_songs">%1$d removidas da playlist</string>
     <string name="delete">Excluir</string>
     <string name="add_songs">Adicionar músicas</string>
     <string name="add_songs_title">Adicionar músicas à playlist</string>
@@ -189,6 +250,13 @@
     <string name="eq_subtitle">Aplica a qualidade de áudio escolhida</string>
     <string name="audio_8d">Áudio 8D</string>
     <string name="audio_8d_subtitle">O som gira ao seu redor (melhor com fone)</string>
+    <string name="audio_3d">Áudio 3D</string>
+    <string name="audio_3d_subtitle">Gira o som em volta da cabeça, de verdade (melhor com fone)</string>
+    <string name="audio_3d_depth">Intensidade</string>
+    <string name="surround">Surround</string>
+    <string name="surround_subtitle">Abre a imagem do som para fora, como se viesse de caixa maior</string>
+    <string name="surround_intensity">Abertura</string>
+    <string name="spatial_level">%1$d%%</string>
     <string name="download_hint">Baixe músicas e vídeos pelo link direto do arquivo (mp3, flac, ogg, m4a, wav, mp4, webm). Vídeos vão para a pasta Filmes e aparecem na aba Vídeos.</string>
     <string name="cache_title">Limpar cache</string>
     <string name="cache_size">Tamanho do cache: %1$s</string>
@@ -207,6 +275,19 @@
     <string name="delete_song">Excluir música</string>
     <string name="delete_song_confirm">Excluir "%1$s" do aparelho? Essa ação não pode ser desfeita.</string>
     <string name="song_deleted">Música excluída</string>
+    <string name="delete_cancelled">Exclusão cancelada</string>
+    <string name="delete_songs">Excluir músicas</string>
+    <string name="delete_songs_confirm">Excluir %1$d músicas do aparelho? Essa ação não pode ser desfeita.</string>
+    <string name="songs_deleted">%1$d músicas excluídas</string>
+    <string name="delete_videos">Excluir vídeos</string>
+    <string name="delete_videos_confirm">Excluir %1$d vídeos do aparelho? Essa ação não pode ser desfeita.</string>
+    <string name="videos_deleted">%1$d vídeos excluídos</string>
+    <string name="delete_selected">Excluir o que está selecionado</string>
+    <string name="selection_one">1 selecionada</string>
+    <string name="selection_many">%1$d selecionadas</string>
+    <string name="selection_all">Marcar tudo</string>
+    <string name="selection_none">Desmarcar</string>
+    <string name="selection_clear">Sair da seleção</string>
     <string name="delete_failed">Não foi possível excluir a música (permissão negada)</string>
 
     <string name="login_title">Entrar</string>
@@ -234,6 +315,9 @@
     <string name="login_google_error">Não foi possível entrar com o Google</string>
     <string name="login_google_gms">O Google não está disponível neste aparelho</string>
     <string name="login_google_not_configured">Login com Google ainda não configurado</string>
+    <string name="login_google_verifying">Verificando com o Google…</string>
+    <string name="login_google_network_error">Não foi possível falar com o Google. Confira a internet.</string>
+    <string name="login_google_error_dev">Este app não está autorizado no Google. Registre a impressão digital SHA-1 %1$s em "Credenciais do OAuth" no Google Cloud.</string>
     <string name="rw_title">Pulsa Rewind</string>
     <string name="rw_tab_all">Sempre</string>
     <string name="rw_tab_30">30 dias</string>
@@ -288,6 +372,7 @@
     <string name="favorite_add">Favoritar</string>
     <string name="favorite_remove">Remover dos favoritos</string>
     <string name="favorite_added">Música favoritada</string>
+    <string name="favorite_error">Não foi possível favoritar</string>
     <string name="favorite_removed">Removida dos favoritos</string>
     <string name="empty_favorites">Nenhuma música favorita ainda. Use o menu de cada música para favoritar.</string>
 
@@ -310,8 +395,122 @@
     <string name="favorites_count">%1$s música(s) favorita(s)</string>
     <string name="video_play">Reproduzir</string>
     <string name="video_share">Compartilhar</string>
+    <string name="songs_added_to_queue">%1$d música(s) na fila</string>
+    <string name="already_in_queue">Essa música já está na fila</string>
+    <string name="video_added_to_queue">%1$d vídeo(s) na fila</string>
+    <string name="video_already_in_queue">Esse vídeo já está na fila</string>
     <string name="play_video_failed">Não foi possível abrir o vídeo</string>
     <string name="video_player_error">Não foi possível reproduzir o vídeo</string>
+    <string name="video_pip">Picture-in-Picture</string>
+    <string name="video_pip_unsupported">Este aparelho não tem Picture-in-Picture</string>
+    <string name="video_rewind_15">Voltar 15 segundos</string>
+    <string name="video_forward_15">Avançar 15 segundos</string>
+    <string name="video_speed">Velocidade de reprodução</string>
+    <string name="video_rotate">Girar a tela</string>
+    <string name="downloads_channel">Downloads</string>
+    <string name="downloads_active">Baixando</string>
+    <string name="downloads_active_count">%1$d downloads em andamento</string>
+    <string name="downloads_idle">Nenhum download em andamento</string>
+    <string name="downloads_tab">Baixados</string>
+    <string name="downloads_empty">Nada baixado ainda</string>
+    <string name="downloads_empty_hint">Abra a busca do PeerTube e use o menu do vídeo para baixar.</string>
+    <string name="downloads_queued">Na fila</string>
+    <string name="downloads_running">Baixando…</string>
+    <string name="downloads_paused">Pausado</string>
+    <string name="downloads_done">Baixado</string>
+    <string name="downloads_failed">Falhou</string>
+    <string name="downloads_cancelled">Cancelado</string>
+    <string name="downloads_continue">Continuar</string>
+    <string name="downloads_pause">Pausar</string>
+    <string name="downloads_cancel">Cancelar</string>
+    <string name="downloads_delete">Apagar</string>
+    <string name="downloads_no_space">Sem espaço no aparelho</string>
+    <string name="downloads_wifi_only">Baixar só no Wi‑Fi</string>
+    <string name="downloads_wifi_only_hint">Download grande em rede medida consome sua franquia sem aviso; quando ligado, a fila espera a rede Wi‑Fi/cabo chegar.</string>
+    <string name="download_start_queued">Na fila para baixar</string>
+    <string name="download_not_available">Este vídeo não tem MP4 para baixar</string>
+    <string name="download_already">Já está nos baixados</string>
+    <string name="download_start_running">Começando a baixar…</string>
+    <string name="download_deleted">Download apagado</string>
+
+    <!-- F3 · podcast -->
+    <string name="podcasts">Podcasts</string>
+    <string name="podcast">Podcast</string>
+    <string name="podcast_episode">Episódio</string>
+    <string name="one_podcast">1 podcast</string>
+    <string name="n_podcasts">%1$d podcasts</string>
+    <string name="podcast_one_unplayed">1 não ouvido</string>
+    <string name="podcast_n_unplayed">%1$d não ouvidos</string>
+    <string name="podcast_all_played">Tudo ouvido</string>
+    <string name="podcast_empty">Nenhum podcast assinado ainda. Busque pelo nome ou cole o endereço do feed.</string>
+    <string name="podcast_subscribe">Assinar podcast</string>
+    <string name="podcast_query_hint">Nome do podcast ou endereço do feed</string>
+    <string name="podcast_search">Buscar podcast</string>
+    <string name="podcast_search_empty">Nada encontrado. Tente outras palavras.</string>
+    <string name="podcast_search_error">A busca não respondeu. Tente de novo quando a internet voltar.</string>
+    <string name="podcast_loading">Buscando o feed…</string>
+    <string name="podcast_subscribed">Podcast assinado</string>
+    <string name="podcast_refresh">Atualizar agora</string>
+    <string name="podcast_refreshing">Atualizando…</string>
+    <string name="podcast_up_to_date">Nada novo neste podcast</string>
+    <string name="podcast_new_episodes">%1$d episódio(s) novo(s)</string>
+    <string name="podcast_unsubscribe">Cancelar assinatura</string>
+    <string name="podcast_unsubscribe_message">Sair de \"%1$s\"? Os episódios baixados também são apagados.</string>
+    <string name="podcast_no_episodes">Este podcast ainda não tem episódios. Atualize para tentar de novo.</string>
+    <string name="podcast_play_now">Tocar agora</string>
+    <string name="podcast_mark_played">Marcar como ouvido</string>
+    <string name="podcast_mark_unplayed">Marcar como não ouvido</string>
+    <string name="podcast_added_to_queue">Episódio na fila</string>
+    <string name="podcast_already_in_queue">Esse episódio já está na fila</string>
+    <string name="podcast_remaining">faltam %1$s</string>
+    <string name="podcast_download">Baixar episódio</string>
+    <string name="podcast_download_delete">Apagar download</string>
+    <string name="podcast_download_done">Episódio baixado</string>
+    <string name="podcast_downloaded">baixado</string>
+    <string name="podcast_video">vídeo</string>
+    <string name="peertube_download">Baixar</string>
+    <string name="video_stream_open">Abrir stream</string>
+    <string name="video_stream_title">Tocar stream de vídeo</string>
+    <string name="video_stream_url_hint">Link do vídeo (https://…)</string>
+    <string name="video_stream_title_hint">Nome (opcional)</string>
+    <string name="video_stream_play">Tocar</string>
+    <string name="video_stream_detected">Detectado: %1$s</string>
+    <string name="video_stream_detected_hls">HLS (.m3u8) — tocará por segmentos</string>
+    <string name="video_stream_detected_dash">DASH (.mpd) — tocará por segmentos</string>
+    <string name="video_stream_detected_progressive">Vídeo comum (arquivo único)</string>
+    <string name="video_stream_url_invalid">Esse link não é um vídeo. Cole um link http(s) direto, não a página do site.</string>
+    <string name="video_stream_url_blocked">Link de página bloqueado (YouTube, Spotify e afins). Precisa ser o link direto do arquivo de vídeo.</string>
+    <string name="stream_default_title">Stream</string>
+    <string name="peertube_search">Buscar</string>
+    <string name="peertube_title">Buscar no PeerTube</string>
+    <string name="peertube_query_hint">O que você quer assistir?</string>
+    <string name="peertube_instance">Instância: %1$s</string>
+    <string name="peertube_change_instance">Trocar instância</string>
+    <string name="peertube_empty">Nada encontrado. Tente outras palavras ou troque de instância.</string>
+    <string name="peertube_error">Não consegui falar com a instância. Ela pode estar fora do ar — troque em Ajustes.</string>
+    <string name="peertube_meta">%1$s · %2$s</string>
+    <string name="peertube_resolving">Buscando o stream…</string>
+    <string name="peertube_no_stream">Esse vídeo não tem mais stream tocável: o arquivo foi removido do servidor ou o endereço que a instância guardou está morto. Tente outro resultado.</string>
+    <string name="peertube_kind_hls">HLS</string>
+    <string name="peertube_kind_mp4">MP4</string>
+    <string name="peertube_open_browser">Abrir no navegador</string>
+    <string name="peertube_copy_link">Copiar link do vídeo</string>
+    <string name="peertube_instance_saved">Instância salva: %1$s</string>
+    <string name="peertube_instance_hint">Endereço da instância (ex.: peertube.tv)</string>
+    <string name="video_stream_browse">Buscar no PeerTube</string>
+    <string name="video_subtitle">Legenda</string>
+    <string name="video_subtitle_count">CC %1$d</string>
+    <string name="video_subtitle_off">Desligado</string>
+    <string name="video_subtitle_auto">Automático: %1$s</string>
+    <string name="video_subtitle_manual">Normal: %1$s</string>
+    <string name="video_subtitle_clear">Esquecer as que eu escolhi</string>
+    <string name="video_subtitle_from_url">Carregar por link…</string>
+    <string name="video_subtitle_from_file">Escolher arquivo no celular…</string>
+    <string name="video_subtitle_url_hint">Link do .srt ou .vtt</string>
+    <string name="video_subtitle_downloading">Baixando a legenda…</string>
+    <string name="video_subtitle_applied">Legenda aplicada</string>
+    <string name="video_subtitle_failed">Não consegui ler essa legenda. Confira se o link aponta direto para um .srt ou .vtt.</string>
+    <string name="video_subtitle_none">Esse vídeo não tem legenda carregada</string>
     <string name="close">Fechar</string>
     <string name="more">Mais opções</string>
     <string name="profile_title">Perfil</string>
@@ -364,6 +563,11 @@
     <string name="radio_add_save">Salvar estação</string>
     <string name="radio_saved">Estação salva: %1$s</string>
     <string name="radio_removed">Estação removida</string>
+    <string name="radio_tune_auto">Sintonia no automático</string>
+    <string name="radio_tune_auto_have">Sintonia (%1$d)</string>
+    <string name="radio_tune_done">%1$d rádios na sintonia</string>
+    <string name="radio_tune_fail">Não foi possível buscar rádios</string>
+    <string name="mini_radio_next">Próxima estação</string>
     <string name="radio_remove_confirm">Remover %1$s das suas estações?</string>
     <string name="radio_search_empty">Nenhuma estação encontrada com esse nome</string>
     <string name="radio_search_fail">Não foi possível buscar estações. Verifique sua conexão.</string>
@@ -387,6 +591,7 @@
     <string name="dj_no_permission">Permita o acesso à música para o DJ mixar sua biblioteca.</string>
     <string name="dj_voice_name">Virgin</string>
     <string name="dj_voice_name_male">Victor</string>
+    <string name="dj_voice_name_vera">Vera</string>
     <string name="dj_voice_on">Voz: Ligada</string>
     <string name="dj_voice_off">Voz: Desligada</string>
     <string name="dj_mic_on">Ouvindo…</string>
@@ -402,6 +607,11 @@
     <string name="dj_voice_resume_searching">Deixa eu ver onde paramos da última vez...</string>
     <string name="dj_voice_resume">Voltei! Tocando %1$s, de %2$s, de onde você parou.</string>
     <string name="dj_voice_resume_none">Não encontrei quando você parou da última vez. Me peça para tocar uma música e eu começo agora!</string>
+    <string name="dj_voice_video_none">Não tem vídeo tocando agora.</string>
+    <string name="dj_voice_video_open">Abrindo %1$s.</string>
+    <string name="dj_voice_video_play">Continuando %1$s.</string>
+    <string name="dj_voice_video_back">Voltei para %1$s.</string>
+    <string name="dj_voice_video_not_found">Não achei nenhum vídeo com esse nome.</string>
     <string name="dj_voice_mix">Claro! Preparando um mix novo para você.</string>
     <string name="dj_voice_fav">Marcada como favorita!</string>
     <string name="dj_voice_month_favs">Bora! Tocando %d favoritas desse mês.</string>
@@ -484,6 +694,9 @@
     <string name="dj_commands_weekly">"Virgin, resumo da minha semana / o que ouvi essa semana" — resumo semanal falado</string>
     <string name="dj_commands_alarm">"Virgin, me acorda às 7h (com chuva)" — despertador com som de fundo</string>
     <string name="dj_commands_sleeptimer">"Virgin, para em 20 minutos" — sleep timer falado</string>
+    <string name="dj_commands_video">"Virgin, continua o filme / retoma o filme" — volta a tocar o vídeo, com o app fechado</string>
+    <string name="dj_commands_video_open">"Virgin, mostra o vídeo / volta pro filme" — abre a tela do vídeo que está tocando</string>
+    <string name="dj_commands_video_back">"Virgin, volta 30 segundos do filme / pausa o filme" — mexe no vídeo sem tocar na tela</string>
     <string name="dj_scene_malhar">pra malhar</string>
     <string name="dj_scene_estudar">pra estudar</string>
     <string name="dj_scene_viajar">pra viajar</string>
@@ -500,11 +713,15 @@
     <string name="dj_voice_sleeptimer_set">Tranquilo! Paro a música daqui a %1$d minutos.</string>
     <string name="dj_voice_sleeptimer_done">Pronto, pausado. Boa noite!</string>
     <string name="dj_voice_sleeptimer_none">Não tem nada tocando agora pra eu pausar.</string>
+    <string name="gestures_label">Gestos</string>
+    <string name="gestures_desc">Agite o aparelho para trocar de música e incline para mudar o volume</string>
     <string name="hands_free_label">Mãos-livres</string>
     <string name="hands_free_desc">A Virgínia escuta comandos de voz enquanto a música toca, mesmo em segundo plano</string>
     <string name="hands_free_no_mic">Sem o acesso ao microfone não dá pra ficar de mãos-livres.</string>
     <string name="hotword_notif_title">Pulsa — mãos-livres ativo</string>
-    <string name="hotword_notif_text">Escutando comandos de voz enquanto a música toca</string>
+    <string name="hotword_notif_text">Esperando — toque em "Ouvir" para falar</string>
+    <string name="hotword_notif_listening">Ouvindo… fale o comando</string>
+    <string name="hotword_action_listen">Ouvir</string>
     <string name="hotword_channel">Mãos-livres</string>
     <string name="hotword_channel_desc">Aviso da escuta de comandos em segundo plano</string>
     <string name="dj_voice_hands_free_ui">Essa eu só faço com a tela aberta. Abre o app e me pede de novo.</string>
@@ -635,6 +852,7 @@
     <string name="hero_status_playing">● Tocando</string>
     <string name="hero_status_ready_m">○ Pronto</string>
     <string name="hero_status_ready_f">○ Pronta</string>
+    <string name="hero_status_ready_n">○ Pronto</string>
     <string name="hero_status_no_songs">○ Sem músicas ainda</string>
     <string name="virgin_hub_note">Cada card ativa uma função. As curiosidades da música continuam na locutora do DJ.</string>
     <string name="home_library_title">Sua biblioteca</string>
@@ -669,6 +887,7 @@
     <string name="v_avatar_switched">Agora sou %1$s.</string>
     <string name="v_avatar_speak_male">E aí, mandante? Agora eu sou %1$s, com voz e visual masculinos.</string>
     <string name="v_avatar_speak_female">Oi! Sou a %1$s de novo, com voz e visual femininos.</string>
+    <string name="v_avatar_speak_vera">Fala! Agora eu sou %1$s, com meu próprio visual e minha voz.</string>
     <string name="v_relax_msg">Pode relaxar. Deixa comigo o clima.</string>
     <string name="v_rec_off">Ative a IA da Virgin nas configurações para eu recomendar.</string>
     <string name="v_rec_thinking">Deixa eu pensar numa boa recomendação...</string>
@@ -740,6 +959,13 @@
     <string name="dj_voice_dynq_age">que você não ouvia há %1$d dias</string>
     <string name="dj_voice_dynq_plays">com menos de %1$d toques</string>
     <string name="dj_voice_dynq_skips">que você pulou menos de %1$d vezes</string>
+    <string name="dj_voice_playlist_created">Criei a playlist %1$s. É só falar "adiciona a playlist %1$s" pra guardar as músicas.</string>
+    <string name="dj_voice_playlist_exists">A playlist %1$s já existe.</string>
+    <string name="dj_voice_playlist_ask_name">Como é o nome? Fala assim: "cria uma playlist chamada batidinhas".</string>
+    <string name="dj_voice_playlist_playing">Tocando a playlist %1$s: %2$d músicas.</string>
+    <string name="dj_voice_playlist_empty">A playlist %1$s está vazia. Adiciona alguma música nela primeiro.</string>
+    <string name="dj_voice_playlist_missing">Não tenho uma playlist chamada %1$s. Tenho: %2$s.</string>
+    <string name="dj_voice_playlist_none">Você ainda não tem nenhuma playlist. Fala "cria uma playlist chamada %1$s".</string>
     <string name="dj_voice_decade_done">Bora! Montei %1$d músicas dos anos %2$s!</string>
     <string name="dj_voice_decade_none">Não achei músicas desses anos na sua biblioteca.</string>
     <string name="dj_voice_avoid_note">Deixei %1$d de fora porque você sempre pula.</string>
@@ -800,6 +1026,18 @@
     <string name="backup_failed">Não foi possível salvar o backup</string>
     <string name="restore_done">Backup restaurado!</string>
     <string name="restore_failed">Arquivo inválido ou sem dados do PULSA</string>
+    <!-- Relatório do restore. Um toast de "pronto" não serve aqui: quem trocou de celular
+         precisa saber se a playlist veio inteira, pela metade, ou se o app é que não pôde
+         ler a biblioteca ainda. -->
+    <string name="restore_empty">O arquivo é do PULSA, mas não tinha nada para restaurar.</string>
+    <string name="restore_needs_permission_title">Preciso da permissão das músicas</string>
+    <string name="restore_needs_permission_body">O arquivo está inteiro, mas o PULSA ainda não pode ler a sua biblioteca para casar as músicas pelo caminho.\n\nLibere o acesso às músicas e restaure de novo.</string>
+    <string name="restore_n_playlists">%1$d playlists</string>
+    <string name="restore_n_songs">%1$d músicas nas playlists</string>
+    <string name="restore_n_favorites">%1$d favoritas</string>
+    <string name="restore_n_meta">%1$d nomes corrigidos</string>
+    <string name="restore_missing_title">%1$d músicas não estão neste aparelho:</string>
+    <string name="restore_missing_hint">\nElas não foram apagadas do backup. Só não existem aqui ainda — copie a pasta de músicas para o cartão e restaure de novo.</string>
     <string name="server_title">Servidor</string>
     <string name="server_default">Automático (rede local / padrão)</string>
     <string name="server_hint">https://seu-servidor:8081</string>

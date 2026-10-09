@@ -147,6 +147,101 @@ object DjCommander {
             norm.contains("retoma") || norm.contains("retomar") ||
             norm.contains("recomeca") || norm.contains("recomecar")
 
+    /**
+     * F2 · Vídeo por voz. `norm` já tirou o acento, então é "video" e nunca "vídeo".
+     */
+    private fun videoWord(norm: String): Boolean =
+        norm.contains("filme") || norm.contains("video") || norm.contains("episodio")
+
+    /**
+     * "volta pra tras" é retrocesso no tempo; "volta pro filme" é voltar para a tela.
+     * Separar as duas coisas aqui evita que "volta pro filme" caia no retrocesso de 30 s.
+     */
+    private fun videoSeekBackWord(norm: String): Boolean =
+        norm.contains("atras") || norm.contains("pra tras") || norm.contains("para tras")
+
+    /**
+     * Retomar o vídeo ([video_play]) é separado de abrir a tela ([video_open]) porque só o
+     * segundo pede Activity — e `startActivity` a partir do fundo é bloqueado pelo Android
+     * 10+. Por isso "continua o filme" ao fundo respondia "Abrindo X" e não abria nada: o
+     * comando era o errado para o que o usuário quer. Retomar só mexe no motor, e vale de
+     * qualquer lugar, inclusive com o app fechado.
+     */
+    private fun videoPlayMatch(norm: String): Boolean =
+        videoWord(norm) &&
+            (norm.contains("continua") || norm.contains("continuar") || norm.contains("retoma") ||
+                norm.contains("retomar") || norm.contains("retome") || norm.contains("toca"))
+
+    private fun videoOpenMatch(norm: String): Boolean =
+        videoWord(norm) && !videoSeekBackWord(norm) &&
+            (norm.contains("abre") || norm.contains("abrir") || norm.contains("mostra") ||
+                norm.contains("volta pro") || norm.contains("volta pra") ||
+                norm.contains("volta para o") || norm.contains("volta ao"))
+
+    private fun videoBackMatch(norm: String): Boolean =
+        // "atras"/"pra tras"/"para tras" na branch sem [videoWord]: nao existe comando de
+        // musica com essas palavras, e sem videoWord a frase "virgin, manda pra tras"
+        // cairia em prev por causa do "volta" generico la embaixo. So a palavra de
+        // direcao e liberada assim; "volta"/"recua" continuam exigindo citar o filme,
+        // porque "volta" puro e trilha anterior de musica.
+        videoSeekBackWord(norm) ||
+            (videoWord(norm) &&
+                (norm.contains("volta") || norm.contains("voltar") || norm.contains("volte") ||
+                    norm.contains("recua") || norm.contains("recuar") || norm.contains("back")))
+
+    private fun videoPauseMatch(norm: String): Boolean =
+        videoWord(norm) &&
+            (norm.contains("pausa") || norm.contains("pausar") || norm.contains("para") ||
+                norm.contains("parar") || norm.contains("pare") || norm.contains("stop"))
+
+    /**
+     * F2 · Nome do vídeo depois do verbo. Devolve `null` quando não há nome — aí o comando
+     * continua sendo retomar/abrir o que já está tocando ([video_play]/[video_open]).
+     *
+     * "toca o filme Matrix" precisa virar `video_by_name` com query `matrix`. O que sobra
+     * depois de cortar verbo + artigo + palavra de vídeo **é** o nome: "do Lobo de Wall
+     * Street" fica com o "do" de propósito, porque o fuzzy match do [VirginMedia.findVideo]
+     * aceita sobra e um título sem artigo costuma casar mesmo assim.
+     */
+    fun videoQuery(norm: String): String? {
+        if (!videoWord(norm)) return null
+        // "volta pra tras no video" é retrocesso, não busca por nome: sem esta guarda o
+        // "volta pra " virava marcador e o resto ("tras no video") era lido como título.
+        if (videoSeekBackWord(norm)) return null
+        val markers = listOf(
+            "toca ", "toque ", "tocar ", "abre ", "abrir ", "mostra ", "mostrar ",
+            "continua ", "continuar ", "retoma ", "retomar ",
+            "coloca ", "manda ", "roda ", "rodar ",
+            "volta pro ", "volta pra ", "volta para o ", "volta para a ", "volta ao "
+        )
+        var rest: String? = null
+        for (m in markers) {
+            val i = norm.indexOf(m)
+            if (i >= 0) {
+                rest = norm.substring(i + m.length)
+                break
+            }
+        }
+        if (rest == null) return null
+        // Tira do começo artigo/possessivo + palavra de vídeo, em qualquer repetição:
+        // "o filme do lobo de wall street" → "do lobo de wall street". É por token, não por
+        // prefixo de string, senão um "filme" no fim (sem espaço depois) sobrevivia e virava
+        // um falso nome — e aí "mostra o video"/"volta pro filme" deixariam de ser
+        // video_play/video_open para virar busca por uma palavra que é o próprio comando.
+        val stop = setOf(
+            "o", "a", "os", "as", "um", "uma",
+            "meu", "minha", "meus", "minhas",
+            "filme", "filmes", "video", "videos", "episodio", "episodios",
+            "serie", "series", "documentario", "documentarios"
+        )
+        val tokens = rest.trim().split(' ').filter { it.isNotBlank() }
+        var start = 0
+        while (start < tokens.size && tokens[start] in stop) start++
+        return tokens.drop(start).joinToString(" ")
+            .trim(',', '.', '!', '?', ' ', '-', ':')
+            .takeIf { it.isNotBlank() }
+    }
+
     private fun playedYesterdayMatch(norm: String): Boolean =
         norm.contains("que toquei ontem") || norm.contains("toquei ontem") ||
             norm.contains("cantei ontem") || norm.contains("ouvi ontem") ||
@@ -317,6 +412,120 @@ object DjCommander {
         val t = norm(tag).replace(Regex("[^a-z0-9]"), "")
         val k = norm(keyword).replace(Regex("[^a-z0-9]"), "")
         return t.isEmpty() || k.isEmpty() || t.contains(k) || k.contains(t)
+    }
+
+    // ----- Playlists por voz ("cria a playlist X" / "toca a playlist X") -----
+    //
+// Duas regras de não-regressão:
+    //
+    // 1. "toca a playlist do dia" é o set diário (ver [dailySetMatch]), não uma playlist
+    //    chamada "do dia". Por isso [dailySetMatch] barra os dois sentidos aqui.
+    // 2. "monta uma lista de rock" já era fila dinâmica (ver [dynamicQuery], que ouve
+    //    "monta"/"fila"). Criar NÃO pode roubar esse comando: a criação exige que a frase
+    //    não seja ao mesmo tempo uma regra de fila. Tocar é diferente — lá quem decide é o
+    //    `MainVirgin`, porque depende de existir uma playlist salva com aquele nome.
+
+    private val PLAYLIST_WORDS = listOf(
+        "playlist", "play list", "playlists",
+        "lista", "listas",
+        "lista de reproducao", "lista de reproduccion", "lista de reproducción"
+    )
+
+    private val CREATE_WORDS = listOf(
+        "cria", "criar", "crio", "criando", "cria uma", "faz", "fazer", "faz uma",
+        "nova", "novo", "nova uma", "monte", "montar", "monta uma",
+        "create", "make", "new playlist",
+        "crea", "crear", "haz", "nueva"
+    )
+
+    private val OPEN_WORDS = listOf(
+        "toca", "toque", "tocar", "toca ai", "play", "abre", "abrir", "aberta", "open",
+        "empieza", "reproduce", "coloca", "bota", "manda"
+    )
+
+    /** Conectivos que aparecem entre "playlist" e o nome; o nome é o que fica depois. */
+    private val NAME_FILLER = listOf(
+        "que se chama", "que chama", "chamada", "chamando", "chame", "chamo",
+        "de nome", "com nome", "com o nome", "com a nome", "de la",
+        "intitulada", "intulado", "titulada", "titulado", "denominada",
+        "llamada", "llamando", "se llama", "called", "named",
+        "com", "de", "do", "da", "la", "el"
+    )
+
+    /** Cortesia que a VIRGIN transcreve junto e que não faz parte do nome da playlist. */
+    private val POLITE_TAIL = listOf(
+        " por favor", " porfa", " pfv", " obrigada", " obrigado", " valeu", " entao",
+        " agora", " ai", " vai", " bora", " please", " let's", " lets"
+    )
+
+    /** Posição da primeira palavra de playlist no texto, ou -1 se não houver. */
+    private fun playlistWordAt(norm: String): Int {
+        var best = -1
+        for (w in PLAYLIST_WORDS) {
+            val i = norm.indexOf(w)
+            if (i >= 0 && (best < 0 || i < best)) best = i
+        }
+        return best
+    }
+
+    private fun cleanPlaylistName(raw: String): String? {
+        var s = raw.trim().trim(',', '.', '!', '?', ' ').trim()
+        var changed = true
+        while (changed) {
+            changed = false
+            for (f in NAME_FILLER) {
+                if (s.startsWith("$f ") || s == f) {
+                    s = s.substring(f.length).trim()
+                    changed = true
+                }
+            }
+        }
+        for (t in POLITE_TAIL) {
+            if (s.endsWith(t) && s.length > t.length) {
+                s = s.dropLast(t.length).trim()
+            }
+        }
+        s = s.trim().trim(',', '.', '!', '?', ' ').trim()
+        // Uma ou duas letras não são nome de playlist, são resto da frase.
+        return if (s.length >= 2) s else null
+    }
+
+    /**
+     * O nome falado depois da palavra "playlist".
+     *
+     * "toca a playlist de morning workout" → "morning workout"; "cria a playlist chamada
+     * minha lista boa, por favor" → "minha lista boa".
+     */
+    fun playlistName(norm: String): String? {
+        val i = playlistWordAt(norm)
+        if (i < 0) return null
+        // A palavra mais longa que casa em i: "lista de reproducao" precisa ganhar de "lista".
+        val word = PLAYLIST_WORDS.filter { norm.startsWith(it, i) }.maxByOrNull { it.length } ?: return null
+        return cleanPlaylistName(norm.substring(i + word.length))
+    }
+
+    /**
+     * "virgi, cria uma playlist chamada X" / "faz uma nova playlist X".
+     *
+     * Não exige nome: uma frase sem nome ainda é um pedido de criação, e o `MainVirgin`
+     * responde pedindo o nome em vez de cair no silêncio.
+     */
+    fun playlistCreate(norm: String): Boolean {
+        if (playlistWordAt(norm) < 0) return false
+        if (dailySetMatch(norm)) return false
+        if (!CREATE_WORDS.any { norm.contains(it) }) return false
+        // Não roubar a fila dinâmica: "monta uma lista de rock" já era dynq.
+        val dyn = dynamicQuery(norm)
+        if (dyn != null && (dyn.genres.isNotEmpty() || dyn.hasRule)) return false
+        return true
+    }
+
+    /** "virgi, toca a playlist X" / "abre minha playlist X". */
+    fun playlistPlay(norm: String): Boolean {
+        if (playlistWordAt(norm) < 0) return false
+        if (dailySetMatch(norm)) return false
+        if (!OPEN_WORDS.any { norm.contains(it) }) return false
+        return playlistName(norm) != null
     }
 
     fun dynamicQuery(norm: String): DynQuery? {
@@ -534,6 +743,12 @@ object DjCommander {
     }
 
     fun action(norm: String): String? = when {
+        // Playlists ficam no topo porque o nome da playlist pode ser qualquer palavra — até
+        // "malhar" ou "chuva" podem ser o nome de uma playlist salva. Quem tem a palavra
+        // "playlist" na frase vence; se não existir uma com esse nome, o `MainVirgin` devolve
+        // o comando para a fila dinâmica normal.
+        playlistCreate(norm) -> "playlist_new"
+        playlistPlay(norm) -> "playlist_play"
         ambientVolume(norm) != null -> "ambient_vol"
         sceneQuery(norm) != null -> "scene"
         weekMatch(norm) -> "weekly"
@@ -556,6 +771,21 @@ object DjCommander {
         onlyArtist(norm) != null -> "only"
         mixArtist(norm) != null -> "mixwith"
         norm.contains("mix") || norm.contains("mistura") || norm.contains("mixa") -> "mix"
+        // F2 · Vídeo por voz. Fica ACIMA de skip/next/prev/pause/play de propósito: "volta",
+        // "pausa" e "continua" são palavras de música muito mais usadas, e um comando de
+        // vídeo que chega depois nunca seria alcançado. O [videoWord] é o que impede o
+        // contrário — roubar a música quando ela está tocando.
+        // `video_play` ANTES de `video_open`: "continua o filme" retoma, não abre tela.
+        // "toca" também é o play da música (mais abaixo), então o `videoWord` é o que
+        // separa os dois.
+        // `video_by_name` ANTES de video_play/video_open: "toca o filme Matrix" tem nome e
+        // precisa achar na biblioteca/histórico; "toca o filme" sem nome continua retomando.
+        // O [videoQuery] só devolve algo quando sobra texto depois do verbo+artigo+filme.
+        videoQuery(norm) != null -> "video_by_name"
+        videoPlayMatch(norm) -> "video_play"
+        videoOpenMatch(norm) -> "video_open"
+        videoBackMatch(norm) -> "video_back"
+        videoPauseMatch(norm) -> "video_pause"
         norm.contains("odia") || norm.contains("odeio") || norm.contains("nao gostei") -> "dislike"
         norm.contains("pula") || norm.contains("pular") || norm.contains("pule") ||
             norm.contains("skip") -> "skip"

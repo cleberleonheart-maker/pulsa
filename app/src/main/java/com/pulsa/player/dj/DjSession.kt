@@ -23,18 +23,23 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.DjActivity
 import com.pulsa.player.R
+import com.pulsa.player.VideoPlayerActivity
+import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.data.StreamHistory
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.media.GalleryScanner
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.playback.Playback
+import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Telemetry
+import com.pulsa.player.core.CrashLogger
 
 /**
  * Sessão completa da cabine do DJ (antigo bloco de lógica do DjActivity).
@@ -69,6 +74,9 @@ class DjSession(
         private const val RESUME_LISTENER_DELAY_MS = 800L
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
+
+        /** F2 · Vídeo por voz: o quanto "volta o filme" recua quando não há 30s na frase. */
+        private const val VIDEO_BACK_MS = 30_000L
     }
 
     private val launcher = launchers
@@ -216,7 +224,10 @@ class DjSession(
                 }
                 suppressNextLearnSkip = false
                 if (newId >= 0L) {
-                    DjLearn.recordPlay(app, newId)
+                    // O `play_log` é gravado pelo motor ([PlaybackService.notePlay]) para
+                    // toda troca de faixa, e não só quando a cabine está aberta. Registrar
+                    // aqui também contaria o mesmo toque duas vezes na cabine, e as
+                    // tendências apareceriam com o dobro das reproduções.
                     DjSessionMemory.notePlayed(newId)
                 }
                 learnId = newId
@@ -549,6 +560,94 @@ class DjSession(
         }
     }
 
+    /**
+     * F2 · Vídeo por voz. Mesma regra da Virgin da tela principal: só vale com o vídeo no
+     * motor, porque a posição de vídeo não é salva (o `PlaybackService` pula vídeo no save e
+     * no restore — id de vídeo e id de música dividem o mesmo espaço do MediaStore).
+     */
+    private fun videoPlaying(): Song? =
+        Playback.currentSong?.takeIf { it.isVideo || it.isStream }
+
+    /** Retoma o vídeo sem pedir tela: `showPlaying` do fundo é bloqueado pelo Android 10+. */
+    private fun virgVideoPlay() {
+        val song = videoPlaying()
+        if (song == null) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        Playback.play()
+        speak(say(R.string.dj_voice_video_play, song.title))
+    }
+
+    private fun virgVideoOpen() {
+        val song = videoPlaying()
+        if (song == null) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        speak(say(R.string.dj_voice_video_open, song.title))
+        // `showPlaying` já é no-op se a tela está no ar, e abre em modo anexo: não troca a
+        // fila nem mexe em shuffle/repeat.
+        VideoPlayerActivity.showPlaying(activity)
+    }
+
+    private fun virgVideoBack() {
+        if (videoPlaying() == null) {
+            // Sem vídeo, a palavra de direção sozinha é a faixa anterior de sempre: ver
+            // `virgVideoBack` em MainVirgin, que tem o mesmo porquê.
+            speak(say(R.string.dj_voice_prev))
+            Playback.prev()
+            return
+        }
+        val alvo = (Playback.position - VIDEO_BACK_MS).coerceAtLeast(0L)
+        Playback.seekTo(alvo)
+        speak(say(R.string.dj_voice_video_back, Helper.formatDuration(alvo)))
+    }
+
+    /**
+     * F2 · "Toca o filme X" — abre o vídeo pelo nome (local primeiro, depois histórico de
+     * streams). Mesma regra de [MainVirgin.virgVideoByName]: a consulta ao MediaStore/disco
+     * sai da main thread.
+     */
+    private fun virgVideoByName(query: String?) {
+        val q = query.orEmpty()
+        if (q.isBlank()) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            val video = VirginMedia.findVideo(ctx, q)
+            val stream = if (video == null) StreamHistory.find(ctx, q) else null
+            val vistos = if (video == null && stream == null) {
+                runCatching { VideoLibrary.all(ctx).size }.getOrDefault(-1)
+            } else 0
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                when {
+                    video != null -> {
+                        Telemetry.log(activity, "DJ video_by_name local=${video.title}")
+                        speak(activity.getString(R.string.dj_voice_video_open, video.title))
+                        VideoPlayerActivity.start(activity, listOf(video), 0)
+                    }
+                    stream != null -> {
+                        Telemetry.log(activity, "DJ video_by_name stream=${stream.title}")
+                        speak(activity.getString(R.string.dj_voice_video_open, stream.title))
+                        VideoPlayerActivity.startStream(
+                            activity, stream.url, stream.title,
+                            uuid = stream.uuid, pageUrl = stream.pageUrl,
+                            thumbnail = stream.thumbnail
+                        )
+                    }
+                    else -> {
+                        Telemetry.log(activity, "DJ video_by_name miss q='$q' videos=$vistos")
+                        speak(say(R.string.dj_voice_video_not_found))
+                    }
+                }
+            }
+        }
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -758,7 +857,7 @@ class DjSession(
         host.refreshMicUi(true, false)
         Playback.setMicListening(true)
         commandListener?.destroy()
-        commandListener = DjCommandListener(activity) { handleCommand(it) }
+        commandListener = DjCommandListener(activity, onResult = { handleCommand(it) })
         commandListener?.start()
         speak(activity.getString(R.string.dj_mic_hint))
     }
@@ -832,6 +931,19 @@ class DjSession(
             "mixwith" -> {
                 startMixWithArtist(DjCommander.mixArtist(norm))
             }
+            "video_by_name" -> virgVideoByName(DjCommander.videoQuery(norm))
+            "video_play" -> virgVideoPlay()
+            "video_open" -> virgVideoOpen()
+            "video_back" -> virgVideoBack()
+            "video_pause" -> {
+                if (videoPlaying() == null) {
+                    speak(say(R.string.dj_voice_video_none))
+                } else if (Playback.isPlaying) {
+                    djVoice?.stop()
+                    Playback.pause()
+                    speak(say(R.string.dj_voice_pause))
+                }
+            }
             "skip" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {
@@ -877,12 +989,29 @@ class DjSession(
             "fav" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {
-                    val db = PlaylistDb.get(activity.applicationContext)
-                    val nextValue = !db.isFavorite(cur.id)
-                    db.setFavorite(cur, nextValue)
-                    if (nextValue) DjLearn.recordLiked(activity.applicationContext, cur.id)
-                    Toast.makeText(activity, R.string.dj_voice_fav, Toast.LENGTH_SHORT).show()
-                    speak(if (nextValue) DjReactions.like(reactCtx()) else DjReactions.unliked(reactCtx()))
+                    // `handleCommand` vem de `SpeechRecognizer.onResults`, que o Android
+                    // entrega na main thread. Ler e gravar favorito ali era query de Room na
+                    // main — falar "favoritar" derrubava o app. O inverso é calculado no pool.
+                    val appCtx = activity.applicationContext
+                    ThreadPool.post {
+                        val nextValue = runCatching {
+                            val db = PlaylistDb.get(appCtx)
+                            val next = !db.isFavorite(cur.id)
+                            db.setFavorite(cur, next)
+                            next
+                        }.getOrElse {
+                            CrashLogger.writeLog(appCtx, "DJ: favoritar por voz falhou id=${cur.id} -> $it")
+                            return@post
+                        }
+                        if (nextValue) DjLearn.recordLiked(appCtx, cur.id)
+                        ThreadPool.onUi {
+                            Toast.makeText(activity, R.string.dj_voice_fav, Toast.LENGTH_SHORT).show()
+                            speak(
+                                if (nextValue) DjReactions.like(reactCtx())
+                                else DjReactions.unliked(reactCtx())
+                            )
+                        }
+                    }
                 }
             }
             "info" -> {
@@ -1218,12 +1347,19 @@ class DjSession(
         ThreadPool.post {
             val deleted = if (alreadyDeleted) true else
                 VirginMedia.deleteDuplicates(activity.applicationContext, songsCopies, videoCopiesList)
+            // `removeFromPlaylists` é query de Room: fica no `post`, não no `onUi`. Dentro do
+            // `onUi` e embrulhado em `runCatching`, o Room lançava e o `runCatching` engolia —
+            // o duplicado sumia do aparelho mas continuava listado nas playlists.
+            if (deleted) {
+                runCatching {
+                    songsCopies.forEach { VirginMedia.removeFromPlaylists(activity.applicationContext, it) }
+                }.onFailure {
+                    CrashLogger.writeLog(activity.applicationContext, "DJ: falha ao limpar playlists dos duplicados -> $it")
+                }
+            }
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (deleted) {
-                    runCatching {
-                        songsCopies.forEach { VirginMedia.removeFromPlaylists(activity.applicationContext, it) }
-                    }
                     if (Playback.currentSong?.let { c -> songsCopies.any { it.id == c.id } } == true) {
                         Playback.next()
                     }
@@ -1342,16 +1478,25 @@ class DjSession(
     }
 
     private fun finalizeDelete(song: Song, alreadyDeleted: Boolean) {
+        val key = QueueKey.encode(song)
         ThreadPool.post {
             val deleted = if (alreadyDeleted) {
                 true
             } else {
                 VirginMedia.deleteSong(activity.applicationContext, song)
             }
+            // Mesma razão do outro caminho: query de Room não roda dentro do `onUi`. Aqui sem
+            // `runCatching`, então apagar por voz derrubava o app em vez de só não limpar a
+            // playlist.
+            if (deleted) {
+                runCatching { VirginMedia.removeFromPlaylists(activity.applicationContext, song) }
+                    .onFailure {
+                        CrashLogger.writeLog(activity.applicationContext, "DJ: falha ao limpar playlist da faixa apagada -> $it")
+                    }
+            }
             ThreadPool.onUi {
                 if (deleted) {
-                    VirginMedia.removeFromPlaylists(activity.applicationContext, song)
-                    if (Playback.currentSong?.id == song.id) Playback.next()
+                    if (QueueKey.sameType(Playback.currentKey, key)) Playback.next()
                     speak(activity.getString(R.string.dj_voice_delete_done, song.title))
                     Telemetry.log(activity, "DJ Virgin delete vc ok id=${song.id}")
                 } else {

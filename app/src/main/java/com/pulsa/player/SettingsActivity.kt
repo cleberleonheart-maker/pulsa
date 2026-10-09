@@ -6,12 +6,14 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,10 +31,12 @@ import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.core.Changelog
 import com.pulsa.player.core.Helper
 import com.pulsa.player.sync.MirrorSync
-import com.pulsa.player.media.MusicDownloader
+import com.pulsa.player.work.PulsaWork
 import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.Telemetry
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.data.PlaylistBackup
+import com.pulsa.player.data.PlaylistDb
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -42,29 +46,45 @@ class SettingsActivity : AppCompatActivity() {
     private val backupLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
             if (uri == null) return@registerForActivityResult
-            runCatching {
-                contentResolver.openOutputStream(uri)?.use { it.write(buildBackup().toByteArray()) }
-                Toast.makeText(this, R.string.backup_done, Toast.LENGTH_SHORT).show()
-            }.onFailure {
-                Toast.makeText(this, R.string.backup_failed, Toast.LENGTH_SHORT).show()
+            // Fora da main: `PlaylistBackup.export` varre a biblioteca uma vez para traduzir os
+            // ids das correções de nome em caminho, e isso é uma consulta ao MediaStore. Com a
+            // biblioteca grande, fazer isso no callback do launcher trava a tela.
+            ThreadPool.post {
+                val json = runCatching { buildBackup().toString() }.getOrElse {
+                    ThreadPool.onUi {
+                        Toast.makeText(this, R.string.backup_failed, Toast.LENGTH_SHORT).show()
+                    }
+                    return@post
+                }
+                ThreadPool.onUi {
+                    runCatching {
+                        contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+                        Toast.makeText(this, R.string.backup_done, Toast.LENGTH_SHORT).show()
+                    }.onFailure {
+                        Toast.makeText(this, R.string.backup_failed, Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
 
     private val restoreLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@registerForActivityResult
-            runCatching {
-                val text = contentResolver.openInputStream(uri)?.use {
-                    it.readBytes().toString(Charsets.UTF_8)
-                } ?: return@registerForActivityResult
-                val applied = applyRestore(text)
-                Toast.makeText(
-                    this,
-                    if (applied) R.string.restore_done else R.string.restore_failed,
-                    Toast.LENGTH_SHORT
-                ).show()
-            }.onFailure {
-                Toast.makeText(this, R.string.restore_failed, Toast.LENGTH_SHORT).show()
+            // Fora da main pelo mesmo motivo do backup: resolver caminho → faixa é MediaStore.
+            // O restore inteiro vai junto, para o trabalho antigo (que era rápido e síncrono)
+            // não ficar metade na main e metade fora — um `Playback.refreshFx()` disparado no
+            // meio do restore mostraria o som antigo enquanto a biblioteca já mudou.
+            ThreadPool.post {
+                val applied = runCatching {
+                    val text = contentResolver.openInputStream(uri)?.use {
+                        it.readBytes().toString(Charsets.UTF_8)
+                    } ?: return@post
+                    applyRestore(text)
+                }.getOrNull() ?: return@post
+                ThreadPool.onUi {
+                    if (applied.settingsChanged) Playback.refreshFx()
+                    showRestoreReport(applied.report)
+                }
             }
         }
 
@@ -86,13 +106,11 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         findViewById<View>(R.id.btn_settings_back).setOnClickListener { finish() }
-        AnimatedBackground.apply(this)
 
         findViewById<MaterialSwitch>(R.id.bg_switch).apply {
             isChecked = Settings.animatedBg(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setAnimatedBg(this@SettingsActivity, checked)
-                AnimatedBackground.apply(this@SettingsActivity)
             }
         }
 
@@ -100,17 +118,16 @@ class SettingsActivity : AppCompatActivity() {
             isChecked = Settings.starsOn(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setStarsOn(this@SettingsActivity, checked)
-                AnimatedBackground.apply(this@SettingsActivity)
             }
         }
 
-        findViewById<TextView>(R.id.accent_value).text = accentLabel()
+        findViewById<TextView>(R.id.accent_value)?.text = accentLabel()
         findViewById<View>(R.id.accent_row).setOnClickListener { pickAccent() }
 
-        findViewById<TextView>(R.id.language_value).text = languageLabel()
+        findViewById<TextView>(R.id.language_value)?.text = languageLabel()
         findViewById<View>(R.id.language_row).setOnClickListener { pickLanguage() }
 
-        findViewById<TextView>(R.id.quality_value).text = qualityLabel()
+        findViewById<TextView>(R.id.quality_value)?.text = qualityLabel()
         findViewById<View>(R.id.quality_row).setOnClickListener { pickQuality() }
         findViewById<View>(R.id.mirror_row).setOnClickListener { mirrorMenu() }
         refreshMirrorLabel()
@@ -123,14 +140,14 @@ class SettingsActivity : AppCompatActivity() {
             restoreLauncher.launch(arrayOf("application/json"))
         }
 
-        findViewById<TextView>(R.id.crossfade_value).text = crossfadeLabel()
+        findViewById<TextView>(R.id.crossfade_value)?.text = crossfadeLabel()
         findViewById<View>(R.id.crossfade_row).setOnClickListener { pickCrossfade() }
 
         findViewById<MaterialSwitch>(R.id.eq_switch).apply {
             isChecked = Settings.equalizerOn(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setEqualizerOn(this@SettingsActivity, checked)
-                Playback.service?.refreshFx()
+                Playback.refreshFx()
             }
         }
 
@@ -138,14 +155,71 @@ class SettingsActivity : AppCompatActivity() {
             isChecked = Settings.audio8d(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setAudio8d(this@SettingsActivity, checked)
-                Playback.service?.refreshFx()
+                Playback.refreshFx()
             }
         }
+
+        // 3D e surround: os dois processam o mesmo par (L, R) dentro do `SpatialAudio`, então
+        // cada um tem o seu botão e o seu ajuste de intensidade. Os sliders só aparecem com o
+        // efeito ligado — slider de efeito desligado é ajuste de nada.
+        findViewById<MaterialSwitch>(R.id.audio_3d_switch).apply {
+            isChecked = Settings.spatial3d(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setSpatial3d(this@SettingsActivity, checked)
+                showSpatialRows()
+                Playback.refreshFx()
+            }
+        }
+
+        findViewById<MaterialSwitch>(R.id.surround_switch).apply {
+            isChecked = Settings.surround(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setSurround(this@SettingsActivity, checked)
+                showSpatialRows()
+                Playback.refreshFx()
+            }
+        }
+
+        findViewById<SeekBar>(R.id.audio_3d_depth_seek).apply {
+            progress = Settings.spatial3dDepth(this@SettingsActivity)
+            findViewById<TextView>(R.id.audio_3d_depth_value)?.text =
+                getString(R.string.spatial_level, progress)
+            setOnSeekBarChangeListener(sliderPersist(
+                R.id.audio_3d_depth_value,
+                onChanged = { Settings.setSpatial3dDepth(this@SettingsActivity, it) },
+                onDone = { Playback.refreshFx() }
+            ))
+        }
+
+        findViewById<SeekBar>(R.id.surround_intensity_seek).apply {
+            progress = Settings.surroundIntensity(this@SettingsActivity)
+            findViewById<TextView>(R.id.surround_intensity_value)?.text =
+                getString(R.string.spatial_level, progress)
+            setOnSeekBarChangeListener(sliderPersist(
+                R.id.surround_intensity_value,
+                onChanged = { Settings.setSurroundIntensity(this@SettingsActivity, it) },
+                onDone = { Playback.refreshFx() }
+            ))
+        }
+
+        showSpatialRows()
 
         findViewById<MaterialSwitch>(R.id.dj_radio_switch).apply {
             isChecked = Settings.djRadio(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setDjRadio(this@SettingsActivity, checked)
+            }
+        }
+
+        // Gestos (shake/inclinacao): o interruptor nao existia, entao `Settings.gesturesOn`
+        // ficava sempre false e o recurso era inalcancavel. Aqui so grava a escolha: quem
+        // registra o sensor e a MainActivity, no onResume, via `attachIfEnabled` — assim o
+        // callback do shake nao e sobrescrito por uma lambda vazia enquanto a tela de Ajustes
+        // esta aberta.
+        findViewById<MaterialSwitch>(R.id.gestures_switch).apply {
+            isChecked = Settings.gesturesOn(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setGesturesOn(this@SettingsActivity, checked)
             }
         }
 
@@ -176,17 +250,24 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.btn_download).setOnClickListener { startDownload() }
 
+        findViewById<MaterialSwitch>(R.id.download_wifi_switch).apply {
+            isChecked = Settings.downloadWifiOnly(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setDownloadWifiOnly(this@SettingsActivity, checked)
+            }
+        }
+
         findViewById<MaterialButton>(R.id.btn_update_site).setOnClickListener {
             UpdateChecker.downloadFromSite(this)
         }
 
-        val cacheValue = findViewById<TextView>(R.id.cache_value)
+        val cacheValue = viewOrNull<TextView>(R.id.cache_value)
         updateCacheLabel(cacheValue)
         findViewById<View>(R.id.cache_row).setOnClickListener { clearCache(cacheValue) }
 
         findViewById<View>(R.id.logout_row).setOnClickListener { confirmLogout() }
 
-        findViewById<TextView>(R.id.settings_version).apply {
+        viewOrNull<TextView>(R.id.settings_version)?.apply {
             text =
                 getString(R.string.app_version, packageManager.getPackageInfo(packageName, 0).versionName)
             setOnClickListener { Changelog.show(this@SettingsActivity) }
@@ -195,8 +276,14 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        AnimatedBackground.apply(this)
     }
+
+    override fun onResume() {
+        super.onResume()
+        window.decorView.setBackgroundResource(R.drawable.bg_aurora)
+        AnimatedBackground.stop()
+    }
+
 
     override fun onStop() {
         AnimatedBackground.stop()
@@ -219,6 +306,55 @@ class SettingsActivity : AppCompatActivity() {
         return getString(Settings.crossfadeLabelRes(Settings.crossfade(this)))
     }
 
+    /**
+     * Busca segura: devolve `null` em vez de estourar quando o id some do layout.
+     *
+     * `findViewById` devolve tipo plataforma (`TextView!`) e o Kotlin só insere o check-null no
+     * ponto do uso, então a falta do id estourava como NPE em `TextView.setText` — longe da
+     * causa. Com o id no log dá para ver o que falta em vez de adivinhar pela linha do
+     * stack trace.
+     */
+    private inline fun <reified T : View> viewOrNull(id: Int): T? {
+        val found = findViewById<T>(id)
+        if (found == null) {
+            Log.e(TAG, "view ausente no layout: " + resources.getResourceEntryName(id))
+        }
+        return found
+    }
+
+    /**
+     * Slider de intensidade: grava na hora, mas só avisa o playback no fim do arrasto.
+     *
+     * O `SpatialAudio` lê os parâmetros a cada buffer, então o efeito acompanha o dedo sem
+     * precisar de nada do playback; o que precisa é persistir a escolha e reler os ajustes
+     * quando o dedo sai. Gravar a cada pixel seria uma escrita por frame do dedo.
+     */
+    private fun sliderPersist(
+        labelId: Int,
+        onChanged: (Int) -> Unit,
+        onDone: () -> Unit
+    ): SeekBar.OnSeekBarChangeListener = object : SeekBar.OnSeekBarChangeListener {
+        private val label: TextView? by lazy { viewOrNull<TextView>(labelId) }
+
+        override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+            if (!fromUser) return
+            onChanged(progress)
+            label?.text = getString(R.string.spatial_level, progress)
+        }
+
+        override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+        override fun onStopTrackingTouch(seekBar: SeekBar?) = onDone()
+    }
+
+    /** Esconde o slider de cada efeito desligado. */
+    private fun showSpatialRows() {
+        findViewById<View>(R.id.audio_3d_depth_row).visibility =
+            if (Settings.spatial3d(this)) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.surround_intensity_row).visibility =
+            if (Settings.surround(this)) View.VISIBLE else View.GONE
+    }
+
     private fun pickCrossfade() {
         val keys = arrayOf(
             Settings.CROSSFADE_OFF,
@@ -232,7 +368,7 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle(R.string.pick_crossfade)
             .setSingleChoiceItems(names, current) { dialog, which ->
                 Settings.setCrossfade(this, keys[which])
-                findViewById<TextView>(R.id.crossfade_value).text = crossfadeLabel()
+                findViewById<TextView>(R.id.crossfade_value)?.text = crossfadeLabel()
                 dialog.dismiss()
             }
             .setNegativeButton(R.string.cancel, null)
@@ -304,7 +440,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun createSession() {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             val res = sessionCall("""{"create":true}""")
             runOnUiThread {
                 val code = runCatching { JSONObject(res) }.getOrNull()?.optString("code")
@@ -337,7 +473,7 @@ class SettingsActivity : AppCompatActivity() {
                     Toast.makeText(this, R.string.mirror_code_hint, Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                ThreadPool.post {
+                ThreadPool.postNetwork {
                     val res = sessionGet(code)
                     val ok = runCatching { JSONObject(res) }.getOrNull()?.optBoolean("ok", false) == true
                     runOnUiThread {
@@ -358,7 +494,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun leaveSession() {
-        ThreadPool.post {
+        ThreadPool.postNetwork {
             sessionCall("""{"leave":true}""")
             Settings.setMirrorCode(this@SettingsActivity, "")
             Settings.setMirrorHost(this@SettingsActivity, false)
@@ -384,14 +520,14 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun refreshMirrorLabel() {
-        val label = findViewById<TextView>(R.id.mirror_value)
+        val label = viewOrNull<TextView>(R.id.mirror_value)
         val code = Settings.mirrorCode(this)
         if (code.isBlank()) {
-            label.text = getString(R.string.mirror_subtitle)
+            label?.text = getString(R.string.mirror_subtitle)
         } else {
             val role = if (Settings.mirrorHost(this)) getString(R.string.mirror_role_host)
             else getString(R.string.mirror_role_guest)
-            label.text = getString(R.string.mirror_active, code, role)
+            label?.text = getString(R.string.mirror_active, code, role)
         }
     }
 
@@ -448,8 +584,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun refreshServerLabel() {
-        val label = findViewById<TextView>(R.id.server_value)
-        label.text = when (Settings.serverMode(this)) {
+        val label = viewOrNull<TextView>(R.id.server_value)
+        label?.text = when (Settings.serverMode(this)) {
             "online" -> getString(R.string.server_online)
             "custom" -> Settings.serverBase(this)
             else -> getString(R.string.server_default)
@@ -543,9 +679,9 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle(R.string.pick_quality)
             .setSingleChoiceItems(names, current) { dialog, which ->
                 Settings.setAudioQuality(this, keys[which])
-                Playback.service?.refreshFx()
-                Playback.service?.applyDanceParamsForRefresh()
-                findViewById<TextView>(R.id.quality_value).text = qualityLabel()
+                Playback.refreshFx()
+                Playback.reapplyDanceParams()
+                findViewById<TextView>(R.id.quality_value)?.text = qualityLabel()
                 dialog.dismiss()
             }
             .setNegativeButton(R.string.cancel, null)
@@ -564,9 +700,26 @@ class SettingsActivity : AppCompatActivity() {
             return
         }
         val finalName = name.ifEmpty { guessName(url) }
+        // Virou job do WorkManager: espera a rede, e se a tela fechar no meio o download
+        // continua -- antes era uma thread do pool que morria junto com o processo sem aviso.
+        val job = PulsaWork.download(this, url, finalName)
+        if (job == null) {
+            Toast.makeText(
+                this, getString(R.string.download_failed, finalName), Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
         Toast.makeText(this, R.string.download_started, Toast.LENGTH_SHORT).show()
-        MusicDownloader.download(this, url, finalName) { _, message ->
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        // O callback pode chegar depois desta tela fechar; o Toast usa o contexto de aplicacao
+        // para nao prender uma Activity destruida.
+        val app = applicationContext
+        PulsaWork.watchDownload(this, job) { ok, _ ->
+            val message = if (ok) {
+                app.getString(R.string.download_done, finalName)
+            } else {
+                app.getString(R.string.download_failed, finalName)
+            }
+            Toast.makeText(app, message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -591,7 +744,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun refreshGeminiKey() {
         val key = Settings.geminiKey(this)
-        findViewById<TextView>(R.id.gemini_key_value).text =
+        findViewById<TextView>(R.id.gemini_key_value)?.text =
             if (key.isBlank()) getString(R.string.gemini_key_missing)
             else getString(R.string.gemini_key_saved)
     }
@@ -623,7 +776,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun refreshRecToken() {
         val token = Settings.recToken(this)
-        findViewById<TextView>(R.id.rec_token_value).text =
+        findViewById<TextView>(R.id.rec_token_value)?.text =
             if (token.isBlank()) getString(R.string.rec_token_missing)
             else getString(R.string.rec_token_saved)
     }
@@ -651,11 +804,11 @@ class SettingsActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun updateCacheLabel(view: TextView) {
-        view.text = getString(R.string.cache_size, Helper.formatBytes(Settings.cacheSize(this)))
+    private fun updateCacheLabel(view: TextView?) {
+        view?.text = getString(R.string.cache_size, Helper.formatBytes(Settings.cacheSize(this)))
     }
 
-    private fun clearCache(valueView: TextView) {
+    private fun clearCache(valueView: TextView?) {
         val size = Settings.cacheSize(this)
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.cache_title)
@@ -683,18 +836,46 @@ class SettingsActivity : AppCompatActivity() {
             put("custom_eq_on", p.getBoolean("custom_eq_on", false))
             put("custom_eq_bands", p.getString("custom_eq_bands", "0,0,0,0,0"))
         }
+        // O 3D e o surround vão juntos: um usuário que reinstalou o app perde o ajuste junto
+        // com o botão, e sem isto o som volta diferente do que ele deixou.
+        val spatial = JSONObject().apply {
+            put("spatial_3d", p.getBoolean("spatial_3d", false))
+            put("spatial_3d_depth", p.getInt("spatial_3d_depth", 60))
+            put("spatial_surround", p.getBoolean("spatial_surround", false))
+            put("spatial_surround_intensity", p.getInt("spatial_surround_intensity", 50))
+        }
         return JSONObject().apply {
             put("app", "pulsa")
-            put("backupVersion", 1)
+            // 2 = acrescenta o bloco de biblioteca (playlists, favoritas, correções de nome).
+            // Um `pulsa-backup.json` da v1 continua restaurando normalmente: o `applyRestore`
+            // lê o bloco novo com `optJSONObject`, que devolve `null` quando ele não existe.
+            put("backupVersion", 2)
             put("learn", learn)
             put("memoryFacts", memoryFacts)
             put("eq", eq)
+            put("spatial", spatial)
+            put("library", PlaylistBackup.export(applicationContext, PlaylistDb.get(applicationContext)))
         }.toString()
     }
 
-    private fun applyRestore(text: String): Boolean {
-        val root = runCatching { JSONObject(text) }.getOrNull() ?: return false
-        if (root.optString("app") != "pulsa") return false
+    /**
+     * O que o restore devolve: mudou alguma coisa que afeta o áudio?
+     *
+     * Antes disto era um `Boolean` e o chamador fazia `if (applied) Playback.refreshFx()`.
+     * Com o bloco de biblioteca no meio, um backup só de playlists marcaria `true` e forçaria
+     * um `refreshFx()` à toa — inofensivo, mas é o tipo de coisa que finge ter efeito.
+     */
+    private data class RestoreOutcome(
+        val settingsChanged: Boolean,
+        val report: PlaylistBackup.Report
+    )
+
+    private fun applyRestore(text: String): RestoreOutcome {
+        val root = runCatching { JSONObject(text) }.getOrNull()
+            ?: return RestoreOutcome(false, PlaylistBackup.Report())
+        if (root.optString("app") != "pulsa") {
+            return RestoreOutcome(false, PlaylistBackup.Report())
+        }
         var changed = false
         root.optJSONObject("learn")?.let {
             changed = DjLearn.mergeRemote(applicationContext, it) || changed
@@ -711,6 +892,71 @@ class SettingsActivity : AppCompatActivity() {
                 .apply()
             changed = true
         }
-        return changed
+        root.optJSONObject("spatial")?.let { spatial ->
+            Settings.dataPrefs(applicationContext).edit()
+                .putBoolean("spatial_3d", spatial.optBoolean("spatial_3d", false))
+                .putInt("spatial_3d_depth", spatial.optInt("spatial_3d_depth", 60))
+                .putBoolean("spatial_surround", spatial.optBoolean("spatial_surround", false))
+                .putInt("spatial_surround_intensity", spatial.optInt("spatial_surround_intensity", 50))
+                .apply()
+            changed = true
+        }
+        // Por último, e separado do `changed` de propósito: as preferências de som acima dizem
+        // se é preciso reaplicar o audio na hora, e playlist/favorita não tem audio nenhum
+        // para reaplicar. Envolver isto no `changed` faria o `refreshFx()` disparar à toa.
+        val report = PlaylistBackup.import(
+            applicationContext,
+            PlaylistDb.get(applicationContext),
+            root.optJSONObject("library")
+        )
+        return RestoreOutcome(settingsChanged = changed, report = report)
+    }
+
+    /**
+     * Mostra o que voltou e, principalmente, o que não voltou.
+     *
+     * A tela antiga era um toast de "pronto" ou "falhou" — dois estados para um restore que
+     * tem quatro resultados possíveis: voltou tudo, voltou parte, não voltou nada porque o app
+     * não tem permissão de mídia, ou o arquivo nem era do Pulsa. Quem restaurou no celular
+     * novo precisa saber a diferença entre "minha playlist veio pela metade" e "o backup está
+     * estragado" — e essa diferença está no diálogo, não num toast que some em dois segundos.
+     */
+    private fun showRestoreReport(report: PlaylistBackup.Report) {
+        val title: Int
+        val body: String
+        if (report.mediaPermissionMissing) {
+            title = R.string.restore_needs_permission_title
+            body = getString(R.string.restore_needs_permission_body)
+        } else if (!report.changed && report.missing == 0) {
+            title = R.string.restore_done
+            body = getString(R.string.restore_empty)
+        } else {
+            title = if (report.changed) R.string.restore_done else R.string.restore_failed
+            body = restoreSummary(report)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setMessage(body)
+            .setPositiveButton(R.string.close, null)
+            .show()
+    }
+
+    private fun restoreSummary(r: PlaylistBackup.Report): String {
+        val sb = StringBuilder()
+        if (r.playlists > 0) sb.append("• ").append(getString(R.string.restore_n_playlists, r.playlists)).append('\n')
+        if (r.songs > 0) sb.append("• ").append(getString(R.string.restore_n_songs, r.songs)).append('\n')
+        if (r.favorites > 0) sb.append("• ").append(getString(R.string.restore_n_favorites, r.favorites)).append('\n')
+        if (r.metaOverrides > 0) sb.append("• ").append(getString(R.string.restore_n_meta, r.metaOverrides)).append('\n')
+        if (r.missing > 0) {
+            sb.append('\n').append(getString(R.string.restore_missing_title, r.missing)).append('\n')
+            r.missingExamples.forEach { sb.append("• ").append(it).append('\n') }
+            sb.append(getString(R.string.restore_missing_hint))
+        }
+        return sb.toString().trim()
+    }
+
+    private companion object {
+        const val TAG = "PulsaSettings"
     }
 }

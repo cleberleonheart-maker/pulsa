@@ -112,10 +112,11 @@ object MusicEditor {
                     )
                 }
             }
-            ThreadPool.onUi {
-                if (updated || dbSaved) Playback.refreshCurrentMeta()
-                onDone(updated || dbSaved)
-            }
+            // `refreshCurrentMeta` relê o override no `PlaylistDb`, então é query de Room e não pode
+            // ser chamado de dentro do `onUi`. Estava ali: editar uma música e trocar o título
+            // derrubava o app. Esta linha já está dentro do `post` do topo da função.
+            if (updated || dbSaved) Playback.refreshCurrentMeta()
+            ThreadPool.onUi { onDone(updated || dbSaved) }
         }
     }
 

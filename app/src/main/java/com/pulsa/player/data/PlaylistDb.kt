@@ -1,191 +1,123 @@
 package com.pulsa.player.data
 
-import android.content.ContentValues
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteOpenHelper
+import com.pulsa.player.data.db.FavoriteEntity
+import com.pulsa.player.data.db.PlaylistEntity
+import com.pulsa.player.data.db.PlaylistSongEntity
+import com.pulsa.player.data.db.PulsaDatabase
+import com.pulsa.player.data.db.SongMetaEntity
+import com.pulsa.player.data.db.SongRow
+import com.pulsa.player.dj.DjCommander
 import com.pulsa.player.model.Playlist
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.SongMeta
 
-class PlaylistDb private constructor(context: Context) :
-    SQLiteOpenHelper(context.applicationContext, "pulsa.db", null, 6) {
+/**
+ * Uma playlist como vai para o arquivo de backup: nome + caminho de cada faixa.
+ *
+ * Sem o id de propósito, e sem o `Song` inteiro. O id é do MediaStore e muda de aparelho; o
+ * `Song` carrega `year`/`dateAdded` que o restore não consegue honourar de qualquer jeito. O
+ * caminho é a única informação que resolve de volta numa biblioteca diferente.
+ */
+data class BackupPlaylist(val name: String, val paths: List<String>)
 
-    override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(
-            "CREATE TABLE playlists (" +
-                "_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "name TEXT NOT NULL, " +
-                "created INTEGER NOT NULL DEFAULT 0, " +
-                "auto_add INTEGER NOT NULL DEFAULT 0, " +
-                "system INTEGER NOT NULL DEFAULT 0)"
-        )
-        db.execSQL(
-            "CREATE TABLE playlist_songs (" +
-                "_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "playlist_id INTEGER NOT NULL, " +
-                "song_id INTEGER NOT NULL, " +
-                "path TEXT, " +
-                "title TEXT, " +
-                "artist TEXT, " +
-                "album TEXT, " +
-                "album_id INTEGER, " +
-                "duration INTEGER)"
-        )
-        db.execSQL(
-            "CREATE TABLE favorites (" +
-                "song_id INTEGER PRIMARY KEY, " +
-                "path TEXT, " +
-                "title TEXT, " +
-                "artist TEXT, " +
-                "album TEXT, " +
-                "album_id INTEGER, " +
-                "duration INTEGER, " +
-                "liked_at INTEGER NOT NULL DEFAULT 0)"
-        )
-        db.execSQL(
-            "CREATE TABLE song_meta (" +
-                "song_id INTEGER PRIMARY KEY, " +
-                "title TEXT, " +
-                "artist TEXT, " +
-                "album TEXT)"
-        )
-    }
+/** Uma favorita como vai para o backup: caminho + quando foi curtida. */
+data class BackupFavorite(val path: String, val likedAt: Long)
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        if (oldVersion < 2) {
-            db.execSQL("ALTER TABLE playlists ADD COLUMN auto_add INTEGER NOT NULL DEFAULT 0")
-        }
-        if (oldVersion < 3) {
-            db.execSQL(
-                "CREATE TABLE IF NOT EXISTS favorites (" +
-                    "song_id INTEGER PRIMARY KEY, " +
-                    "path TEXT, " +
-                    "title TEXT, " +
-                    "artist TEXT, " +
-                    "album TEXT, " +
-                    "album_id INTEGER, " +
-                    "duration INTEGER)"
-            )
-        }
-        if (oldVersion < 4) {
-            db.execSQL("ALTER TABLE playlists ADD COLUMN system INTEGER NOT NULL DEFAULT 0")
-        }
-        if (oldVersion < 5) {
-            db.execSQL(
-                "CREATE TABLE IF NOT EXISTS song_meta (" +
-                    "song_id INTEGER PRIMARY KEY, " +
-                    "title TEXT, " +
-                    "artist TEXT, " +
-                    "album TEXT)"
-            )
-        }
-        if (oldVersion < 6) {
-            db.execSQL("ALTER TABLE favorites ADD COLUMN liked_at INTEGER NOT NULL DEFAULT 0")
-        }
-    }
+/**
+ * Correção manual de nome como vai para o backup: caminho + os três campos corrigidos.
+ *
+ * Chaveada por caminho, como as outras duas. O `song_meta` no banco é chaveado por `songId`
+ * porque é o que o `Library.applyOverrides` consegue casar sem custo, mas no arquivo isso
+ * seria um id de outra máquina — ver [PlaylistBackup].
+ */
+data class BackupMeta(val path: String, val title: String, val artist: String, val album: String)
 
-    fun isSystem(playlistId: Long): Boolean {
-        val db = readableDatabase
-        db.query(
-            "playlists",
-            arrayOf("system"),
-            "_id = ?",
-            arrayOf(playlistId.toString()),
-            null, null, null, "1"
-        ).use { c ->
-            if (c.moveToFirst()) return c.getInt(0) == 1
-        }
-        return false
-    }
+/**
+ * Playlists, favoritas e correção de metadados, agora sobre Room.
+ *
+ * A **API pública não mudou** — os mesmos métodos, as mesmas assinaturas — porque 19 arquivos
+ * chamam isto e o ganho do Room é justamente não obrigar todos a se preocuparem com a troca. O que
+ * mudou é o motor: as quatro tabelas e o esquema são idênticos aos do `SQLiteOpenHelper`
+ * (version 6), então quem tinha playlist e favorita continua com elas.
+ *
+ * Os DAOs chamam `playlistDao`/`songDao`/etc. e não `playlists`/`songs` de propósito: existem
+ * métodos públicos com esses mesmos nomes, e o sombreamento só apareceria quando alguém
+ * plessar o nome errado num lugar longe daqui.
+ *
+ * As transações usam `runInTransaction`, e não o `withTransaction` do room-ktx: aquele é
+ * `suspend`, e esta API é síncrona por decisão própria (19 arquivos, incluindo o `onCreate` de
+ * activities, chamam na thread principal). Virar `suspend` seria reescrever todos eles.
+ */
+class PlaylistDb private constructor(context: Context) {
+
+    private val appContext = context.applicationContext
+
+    private val db: PulsaDatabase by lazy { PulsaDatabase.get(appContext) }
+
+    private val playlistDao get() = db.playlistDao()
+    private val songDao get() = db.playlistSongDao()
+    private val favoriteDao get() = db.favoriteDao()
+    private val metaDao get() = db.songMetaDao()
+
+    fun isSystem(playlistId: Long): Boolean = playlistDao.systemFlag(playlistId) == 1
 
     fun ensureSpecialPlaylists(context: Context) {
-        val db = writableDatabase
-        db.beginTransaction()
-        try {
-            val existsSystem = db.rawQuery("SELECT COUNT(*) FROM playlists WHERE system = 1", null)
-            val hasSystem = existsSystem.use { it.moveToFirst() && it.getInt(0) > 0 }
-            if (!hasSystem) {
+        db.runInTransaction {
+            if (playlistDao.countSystem() == 0) {
                 val names = arrayOf(
                     context.getString(com.pulsa.player.R.string.gospel_playlist),
                     context.getString(com.pulsa.player.R.string.variadas_playlist),
                     context.getString(com.pulsa.player.R.string.smart_new_playlist),
                     context.getString(com.pulsa.player.R.string.smart_classics_playlist)
                 )
+                val created = System.currentTimeMillis()
                 names.forEach { name ->
-                    val values = ContentValues().apply {
-                        put("name", name)
-                        put("created", System.currentTimeMillis())
-                        put("auto_add", 1)
-                        put("system", 1)
-                    }
-                    db.insert("playlists", null, values)
+                    playlistDao.insert(
+                        PlaylistEntity(
+                            name = name,
+                            created = created,
+                            autoAdd = true,
+                            system = true
+                        )
+                    )
                 }
             } else {
-                db.rawQuery("SELECT _id FROM playlists WHERE system = 1 AND auto_add = 0", null)
-                    .use { c ->
-                        while (c.moveToNext()) {
-                            val values = ContentValues().apply { put("auto_add", 1) }
-                            db.update("playlists", values, "_id = ?", arrayOf(c.getLong(0).toString()))
-                        }
-                    }
+                // As playlists de sistema nasceram com `auto_add = 0` na v4 e só passaram a
+                // preencher sozinhas depois disso. O conserto é por linha e não um UPDATE geral
+                // porque uma playlist que o usuário criou não é do sistema.
+                playlistDao.systemWithoutAutoAdd().forEach { playlistDao.setAutoAddFor(it) }
             }
-            db.setTransactionSuccessful()
-        } finally {
-            db.endTransaction()
         }
     }
 
     fun syncAutoSongs(context: Context, songs: List<Song>) {
-        val db = readableDatabase
-        val targets = mutableListOf<Pair<Long, String>>()
-        db.rawQuery(
-            "SELECT _id, name FROM playlists WHERE auto_add = 1",
-            null
-        ).use { c ->
-            while (c.moveToNext()) {
-                targets += c.getLong(0) to (c.getString(1) ?: "")
-            }
-        }
+        val targets = playlistDao.autoAddRows()
         if (targets.isEmpty()) return
         val gospelName = context.getString(com.pulsa.player.R.string.gospel_playlist)
         val variadasName = context.getString(com.pulsa.player.R.string.variadas_playlist)
         val smartNewName = context.getString(com.pulsa.player.R.string.smart_new_playlist)
         val smartClassicsName = context.getString(com.pulsa.player.R.string.smart_classics_playlist)
         val isGospel = Library.isGospel(context, songs)
-        targets.forEach { (id, name) ->
-            val filtered = when (name) {
+        targets.forEach { row ->
+            val filtered = when (row.name) {
                 gospelName -> songs.filterIndexed { i, _ -> isGospel[i] }
                 variadasName -> songs.filterIndexed { i, _ -> !isGospel[i] }
                 smartNewName -> songs.filter { it.year >= 2020 }
                 smartClassicsName -> songs.filter { it.year > 0 && it.year < 2000 }
                 else -> songs
             }
-            addAllMissingSongs(id, filtered)
+            addAllMissingSongs(row.id, filtered)
         }
     }
 
     fun syncAutoPlaylist(context: Context, playlistId: Long, songs: List<Song>) {
-        val db = readableDatabase
-        var auto = false
-        var name = ""
-        db.query(
-            "playlists",
-            arrayOf("auto_add", "name"),
-            "_id = ?",
-            arrayOf(playlistId.toString()),
-            null, null, null, "1"
-        ).use { c ->
-            if (c.moveToFirst()) {
-                auto = c.getInt(0) == 1
-                name = c.getString(1) ?: ""
-            }
-        }
-        if (!auto) return
+        val row = playlistDao.rowById(playlistId) ?: return
+        if (row.autoAdd != 1) return
         val gospelName = context.getString(com.pulsa.player.R.string.gospel_playlist)
         val variadasName = context.getString(com.pulsa.player.R.string.variadas_playlist)
         val isGospel = Library.isGospel(context, songs)
-        val filtered = when (name) {
+        val filtered = when (row.name) {
             gospelName -> songs.filterIndexed { i, _ -> isGospel[i] }
             variadasName -> songs.filterIndexed { i, _ -> !isGospel[i] }
             else -> songs
@@ -193,273 +125,213 @@ class PlaylistDb private constructor(context: Context) :
         addAllMissingSongs(playlistId, filtered)
     }
 
-    fun playlists(): List<Playlist> {
-        val out = mutableListOf<Playlist>()
-        val db = readableDatabase
-        db.rawQuery(
-            "SELECT p._id, p.name, COUNT(ps._id), p.auto_add, p.system FROM playlists p " +
-                "LEFT JOIN playlist_songs ps ON ps.playlist_id = p._id " +
-                "GROUP BY p._id ORDER BY p.system DESC, p.created ASC",
-            null
-        ).use { c ->
-            while (c.moveToNext()) {
-                out += Playlist(
-                    id = c.getLong(0),
-                    name = c.getString(1) ?: "",
-                    count = c.getInt(2),
-                    autoAdd = c.getInt(3) == 1,
-                    system = c.getInt(4) == 1
-                )
-            }
-        }
-        return out
+    fun playlists(): List<Playlist> = playlistDao.playlistsWithCount().map {
+        Playlist(
+            id = it.id,
+            name = it.name ?: "",
+            count = it.songCount ?: 0,
+            autoAdd = it.autoAdd == 1,
+            system = it.system == 1
+        )
     }
 
-    fun isAutoAdd(playlistId: Long): Boolean {
-        val db = readableDatabase
-        db.query(
-            "playlists",
-            arrayOf("auto_add"),
-            "_id = ?",
-            arrayOf(playlistId.toString()),
-            null, null, null, "1"
-        ).use { c ->
-            if (c.moveToFirst()) return c.getInt(0) == 1
-        }
-        return false
-    }
+    fun isAutoAdd(playlistId: Long): Boolean = playlistDao.autoAddFlag(playlistId) == 1
 
     fun setAutoAdd(playlistId: Long, value: Boolean) {
-        val values = ContentValues().apply { put("auto_add", if (value) 1 else 0) }
-        writableDatabase.update("playlists", values, "_id = ?", arrayOf(playlistId.toString()))
+        playlistDao.setAutoAdd(playlistId, value)
     }
 
     fun addAllMissingSongs(playlistId: Long, songs: List<Song>) {
-        val db = writableDatabase
-        db.beginTransaction()
-        try {
+        db.runInTransaction {
             songs.forEach { addSong(playlistId, it) }
-            db.setTransactionSuccessful()
-        } finally {
-            db.endTransaction()
         }
     }
 
-    fun isFavorite(songId: Long): Boolean {
-        val db = readableDatabase
-        db.query(
-            "favorites",
-            arrayOf("song_id"),
-            "song_id = ?",
-            arrayOf(songId.toString()),
-            null, null, null, "1"
-        ).use { c ->
-            return c.moveToFirst()
-        }
-    }
+    fun isFavorite(songId: Long): Boolean = favoriteDao.countOf(songId) > 0
 
     fun setFavorite(song: Song, value: Boolean) {
-        val db = writableDatabase
         if (value) {
-            val values = ContentValues().apply {
-                put("song_id", song.id)
-                put("path", song.path)
-                put("title", song.title)
-                put("artist", song.artist)
-                put("album", song.album)
-                put("album_id", song.albumId)
-                put("duration", song.durationMs)
-                put("liked_at", System.currentTimeMillis())
-            }
-            db.insertWithOnConflict("favorites", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            favoriteDao.put(
+                FavoriteEntity(
+                    songId = song.id,
+                    path = song.path,
+                    title = song.title,
+                    artist = song.artist,
+                    album = song.album,
+                    albumId = song.albumId,
+                    duration = song.durationMs,
+                    likedAt = System.currentTimeMillis()
+                )
+            )
         } else {
-            db.delete("favorites", "song_id = ?", arrayOf(song.id.toString()))
+            favoriteDao.delete(song.id)
         }
     }
 
-    fun favoritesLikedSince(sinceMs: Long): List<Song> {
-        val out = mutableListOf<Song>()
-        val db = readableDatabase
-        db.query(
-            "favorites",
-            arrayOf("song_id", "path", "title", "artist", "album", "album_id", "duration"),
-            "liked_at >= ?",
-            arrayOf(sinceMs.toString()),
-            null, null, "liked_at DESC"
-        ).use { c ->
-            while (c.moveToNext()) {
-                out += Song(
-                    id = c.getLong(0),
-                    title = c.getString(2) ?: "",
-                    artist = c.getString(3) ?: "Artista desconhecido",
-                    album = c.getString(4) ?: "Desconhecido",
-                    albumId = c.getLong(5),
-                    durationMs = c.getLong(6),
-                    path = c.getString(1) ?: "",
-                    year = 0
-                )
-            }
-        }
-        return out
-    }
+    fun favoritesLikedSince(sinceMs: Long): List<Song> = favoriteDao.likedSince(sinceMs).map(::toSong)
 
-    fun favorites(): List<Song> {
-        val out = mutableListOf<Song>()
-        val db = readableDatabase
-        db.query(
-            "favorites",
-            arrayOf("song_id", "path", "title", "artist", "album", "album_id", "duration"),
-            null, null, null, null, "song_id ASC"
-        ).use { c ->
-            while (c.moveToNext()) {
-                out += Song(
-                    id = c.getLong(0),
-                    title = c.getString(2) ?: "",
-                    artist = c.getString(3) ?: "Artista desconhecido",
-                    album = c.getString(4) ?: "Desconhecido",
-                    albumId = c.getLong(5),
-                    durationMs = c.getLong(6),
-                    path = c.getString(1) ?: "",
-                    year = 0
-                )
-            }
-        }
-        return out
-    }
+    fun favorites(): List<Song> = favoriteDao.all().map(::toSong)
 
     fun removeFavorite(songId: Long) {
-        writableDatabase.delete("favorites", "song_id = ?", arrayOf(songId.toString()))
+        favoriteDao.delete(songId)
     }
 
-    fun createPlaylist(name: String): Long {
-        val values = ContentValues().apply {
-            put("name", name.trim())
-            put("created", System.currentTimeMillis())
-        }
-        return writableDatabase.insert("playlists", null, values)
-    }
+    fun createPlaylist(name: String): Long = playlistDao.insert(
+        PlaylistEntity(name = name.trim(), created = System.currentTimeMillis())
+    )
 
     fun renamePlaylist(id: Long, name: String) {
-        val values = ContentValues().apply { put("name", name.trim()) }
-        writableDatabase.update("playlists", values, "_id = ?", arrayOf(id.toString()))
+        playlistDao.rename(id, name.trim())
     }
 
     fun deletePlaylist(id: Long) {
-        val db = writableDatabase
-        db.delete("playlist_songs", "playlist_id = ?", arrayOf(id.toString()))
-        db.delete("playlists", "_id = ?", arrayOf(id.toString()))
+        db.runInTransaction {
+            songDao.deletePlaylistSongs(id)
+            playlistDao.deletePlaylist(id)
+        }
     }
 
     fun addSong(playlistId: Long, song: Song): Boolean {
-        val db = writableDatabase
-        db.query(
-            "playlist_songs",
-            arrayOf("_id"),
-            "playlist_id = ? AND song_id = ?",
-            arrayOf(playlistId.toString(), song.id.toString()),
-            null, null, null, "1"
-        ).use { c ->
-            if (c.moveToFirst()) return false
-        }
-        val values = ContentValues().apply {
-            put("playlist_id", playlistId)
-            put("song_id", song.id)
-            put("path", song.path)
-            put("title", song.title)
-            put("artist", song.artist)
-            put("album", song.album)
-            put("album_id", song.albumId)
-            put("duration", song.durationMs)
-        }
-        db.insert("playlist_songs", null, values)
+        if (songDao.countOf(playlistId, song.id) > 0) return false
+        songDao.insert(
+            PlaylistSongEntity(
+                playlistId = playlistId,
+                songId = song.id,
+                path = song.path,
+                title = song.title,
+                artist = song.artist,
+                album = song.album,
+                albumId = song.albumId,
+                duration = song.durationMs
+            )
+        )
         return true
     }
 
     fun removeSong(playlistId: Long, songId: Long) {
-        writableDatabase.delete(
-            "playlist_songs",
-            "playlist_id = ? AND song_id = ?",
-            arrayOf(playlistId.toString(), songId.toString())
-        )
+        songDao.remove(playlistId, songId)
     }
 
     fun removeSongFromAll(songId: Long) {
-        writableDatabase.delete("playlist_songs", "song_id = ?", arrayOf(songId.toString()))
+        songDao.removeFromAll(songId)
     }
 
     fun updateSongMeta(songId: Long, title: String, artist: String, album: String) {
-        val values = ContentValues().apply {
-            put("song_id", songId)
-            put("title", title)
-            put("artist", artist)
-            put("album", album)
+        // Os três lugares andam juntos de propósito: o nome corrigido precisa aparecer na
+        // playlist, na favorita e no override, senão a correção vale em metade da biblioteca.
+        db.runInTransaction {
+            favoriteDao.updateMeta(songId, title, artist, album)
+            songDao.updateMetaEverywhere(songId, title, artist, album)
+            metaDao.put(SongMetaEntity(songId = songId, title = title, artist = artist, album = album))
         }
-        val db = writableDatabase
-        db.update("favorites", values, "song_id = ?", arrayOf(songId.toString()))
-        db.update("playlist_songs", values, "song_id = ?", arrayOf(songId.toString()))
-        db.insertWithOnConflict("song_meta", null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
     fun saveMetaOverride(songId: Long, title: String, artist: String, album: String) {
-        val values = ContentValues().apply {
-            put("song_id", songId)
-            put("title", title)
-            put("artist", artist)
-            put("album", album)
-        }
-        writableDatabase.insertWithOnConflict("song_meta", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        metaDao.put(SongMetaEntity(songId = songId, title = title, artist = artist, album = album))
     }
 
     fun clearMetaOverride(songId: Long) {
-        writableDatabase.delete("song_meta", "song_id = ?", arrayOf(songId.toString()))
+        metaDao.delete(songId)
     }
 
     fun metaOverrides(): Map<Long, SongMeta> {
         val out = HashMap<Long, SongMeta>()
-        readableDatabase.query(
-            "song_meta",
-            arrayOf("song_id", "title", "artist", "album"),
-            null, null, null, null, null
-        ).use { c ->
-            while (c.moveToNext()) {
-                out[c.getLong(0)] = SongMeta(
-                    songId = c.getLong(0),
-                    title = c.getString(1) ?: "",
-                    artist = c.getString(2) ?: "",
-                    album = c.getString(3) ?: ""
-                )
-            }
+        metaDao.all().forEach {
+            out[it.songId] = SongMeta(
+                songId = it.songId,
+                title = it.title ?: "",
+                artist = it.artist ?: "",
+                album = it.album ?: ""
+            )
         }
         return out
     }
 
     fun songMeta(songId: Long): SongMeta? = metaOverrides()[songId]
 
-    fun songs(playlistId: Long): List<Song> {
-        val out = mutableListOf<Song>()
-        val db = readableDatabase
-        db.query(
-            "playlist_songs",
-            arrayOf("song_id", "path", "title", "artist", "album", "album_id", "duration"),
-            "playlist_id = ?",
-            arrayOf(playlistId.toString()),
-            null, null, "_id ASC"
-        ).use { c ->
-            while (c.moveToNext()) {
-                out += Song(
-                    id = c.getLong(0),
-                    title = c.getString(2) ?: "",
-                    artist = c.getString(3) ?: "Artista desconhecido",
-                    album = c.getString(4) ?: "Desconhecido",
-                    albumId = c.getLong(5),
-                    durationMs = c.getLong(6),
-                    path = c.getString(1) ?: "",
-                    year = 0
+    // ---- backup -----------------------------------------------------------------------
+    //
+    // Estas quatro não são a API de usuário: existem para o `PlaylistBackup` e ficam aqui
+    // porque morar no DAO significaria alcançar o `favoriteDao`/`playlistDao` private de fora.
+    // O backup é a única coisa que precisa ler caminho + data de curtida, e precisa das duas
+    // coisas de uma vez só.
+
+    /** Playlists do usuário, com os caminhos das faixas na ordem em que ele as adicionou. */
+    fun backupPlaylists(): List<BackupPlaylist> {
+        val out = mutableListOf<BackupPlaylist>()
+        db.runInTransaction {
+            playlistDao.userPlaylistIds().forEach { id ->
+                val row = playlistDao.rowById(id) ?: return@forEach
+                out += BackupPlaylist(
+                    name = row.name ?: "",
+                    paths = songDao.pathsOf(id)
                 )
             }
         }
         return out
     }
+
+    /** Favoritas com a data real da curtida, para a "favorita do mês" não virar "de hoje". */
+    fun backupFavorites(): List<BackupFavorite> =
+        favoriteDao.allWithLikedAt().map { row ->
+            BackupFavorite(path = row.path ?: "", likedAt = row.likedAt)
+        }
+
+    /**
+     * Reaproveita a linha da favorita quando o usuário já tinha curtido, para preservar a data
+     * original em vez de carimbar "agora" — senão restaurar um backup de meses atrás faria
+     * `favoritesLikedSince` devolver as faixas antigas como se fossem novas e a "favorita do
+     * mês" ficaria errada até o fim do mês.
+     */
+    fun restoreFavorite(song: Song, likedAt: Long) {
+        val existing = favoriteDao.allWithLikedAt().firstOrNull { it.songId == song.id }
+        favoriteDao.put(
+            FavoriteEntity(
+                songId = song.id,
+                path = song.path,
+                title = song.title,
+                artist = song.artist,
+                album = song.album,
+                albumId = song.albumId,
+                duration = song.durationMs,
+                likedAt = existing?.likedAt ?: likedAt
+            )
+        )
+    }
+
+    /**
+     * Acha a playlist pelo nome, ignorando caixa e acento, ou cria uma nova.
+     *
+     * Casa por nome em vez de criar sempre: restaurar o mesmo arquivo duas vezes não pode
+     * duplicar "Batidinhas" umas vinte vezes — backup é a coisa que a pessoa reinstala e restaura
+     * mais de uma vez, e duplicar tudo silenciosamente é pior do que não fazer nada.
+     */
+    fun playlistIdForRestore(name: String): Long {
+        val clean = name.trim()
+        playlistDao.idByName(clean)?.let { return it }
+        val norm = DjCommander.norm(clean)
+        playlists().firstOrNull { !it.system && DjCommander.norm(it.name) == norm }
+            ?.let { return it.id }
+        return createPlaylist(clean)
+    }
+
+    fun songs(playlistId: Long): List<Song> = songDao.songsOf(playlistId).map(::toSong)
+
+    /**
+     * As colunas nullable viram `Long?`, e o `Cursor.getLong` de antes devolvia `0` no lugar de
+     * `NULL` — sem o `?: 0L` aqui as faixas sem álbum sumiriam da lista (id 0 não casa com
+     * nada), em vez de aparecerem como desconhecidas.
+     */
+    private fun toSong(row: SongRow) = Song(
+        id = row.songId,
+        title = row.title ?: "",
+        artist = row.artist ?: "Artista desconhecido",
+        album = row.album ?: "Desconhecido",
+        albumId = row.albumId ?: 0L,
+        durationMs = row.duration ?: 0L,
+        path = row.path ?: "",
+        year = 0
+    )
 
     companion object {
         @Volatile

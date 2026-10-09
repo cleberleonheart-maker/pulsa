@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Virgin. Mesma construcao do avatar do Lingo (src/constants/languages.ts, id
+    "en"): esfera com o gradiente em 35% 28% -> 100% 100%, olho oval 13x16 com
+    glint, bochecha e meio-sorriso, e piscada encolhendo o olho em scaleY
+    (@animator/eye_blink) em vez de palpebra desenhada por cima.
+
+    Paleta rosa/magenta, que e a do Lingo/TAMI — antes ela era roxa igual ao
+    Victor e os dois viravam indistinguiveis de longe.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -6,7 +15,7 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Halo de luz (bloom atrás da cabeça) -->
+    <!-- Halo de luz (bloom atras da cabeca) -->
     <path
         android:pathData="M50,60m-46,0a46,46 0 1 1 92,0a46,46 0 1 1 -92,0Z">
         <aapt:attr name="android:fillColor">
@@ -15,13 +24,13 @@
                 android:centerX="0.5"
                 android:centerY="0.5"
                 android:gradientRadius="46"
-                android:startColor="#33FF5A45"
-                android:centerColor="#14FF6A7A"
-                android:endColor="#00FF2E4D" />
+                android:startColor="#33FF6EC7"
+                android:centerColor="#14FF8AD0"
+                android:endColor="#00B388FF" />
         </aapt:attr>
     </path>
 
-    <!-- Cabeça: esfera retrô "pôr-do-sol" (highlight ouro -> pele quente -> magenta profundo) -->
+    <!-- Cabeca: esfera "por-do-sol" (rosa claro -> magenta -> violeta) -->
     <path
         android:pathData="M54,2a52,52 0 1 1 0,104a52,52 0 1 1 0,-104Z">
         <aapt:attr name="android:fillColor">
@@ -30,82 +39,79 @@
                 android:centerX="0.34"
                 android:centerY="0.26"
                 android:gradientRadius="90"
-                android:startColor="#E9D5FF"
-                android:centerColor="#C4B5FD"
-                android:endColor="#7C62E0" />
+                android:startColor="#FFE3F2"
+                android:centerColor="#FF8AD0"
+                android:endColor="#B388FF" />
         </aapt:attr>
     </path>
 
-    <!-- Estrelinha no topo (sparkle dourado) -->
+    <!-- Estrela de 4 pontas no topo (sparkle) -->
     <path
         android:fillColor="#FFE9C4"
         android:pathData="M54,6 L57,15 L66,18 L57,21 L54,30 L51,21 L42,18 L51,15 Z" />
 
-    <!-- Laço néon (ciano com fitas ouro) -->
+    <!-- Laco neon (mesma posicao do 🎀 do Lingo: 12° deitado, sangrando na direita) -->
     <group
         android:rotation="12"
         android:pivotX="85"
         android:pivotY="10">
         <path
-            android:fillColor="#A78BFA"
+            android:fillColor="#FF6EC7"
             android:pathData="M85,10C80,3 72,3 68,8C72,13 79,15 85,13Z" />
         <path
-            android:fillColor="#A78BFA"
+            android:fillColor="#FF6EC7"
             android:pathData="M85,10C90,3 98,3 102,8C98,13 91,15 85,13Z" />
         <path
-            android:fillColor="#A78BFA"
+            android:fillColor="#FF6EC7"
             android:pathData="M82,12L86,11L82,21L79,20Z" />
         <path
-            android:fillColor="#A78BFA"
+            android:fillColor="#FF6EC7"
             android:pathData="M87,11L90,12L91,21L88,22Z" />
         <path
-            android:fillColor="#FFE9C4"
+            android:fillColor="#FFD3EC"
             android:pathData="M85,10m-3,0a3,3 0 1 1 6,0a3,3 0 1 1 -6,0Z" />
     </group>
 
-    <!-- Olhos redondos fofos -->
-    <path
-        android:fillColor="#0B0820"
-        android:pathData="M35,45m-7,0a7,7 0 1 1 14,0a7,7 0 1 1 -14,0Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M33.2,43.4m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+    <!-- Olho esquerdo (13x16, centro 34.5,50) — encolhe em scaleY pra piscar -->
+    <group
+        android:name="eyeL"
+        android:pivotX="34.5"
+        android:pivotY="50">
+        <path
+            android:fillColor="#33113A"
+            android:pathData="M34.5,50m-6.5,0a6.5,8 0 1 1 13,0a6.5,8 0 1 1 -13,0Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.95"
+            android:pathData="M32,45m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+    </group>
 
-    <path
-        android:fillColor="#0B0820"
-        android:pathData="M73,45m-7,0a7,7 0 1 1 14,0a7,7 0 1 1 -14,0Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M71.2,43.4m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+    <!-- Olho direito (centro 73.5,50) -->
+    <group
+        android:name="eyeR"
+        android:pivotX="73.5"
+        android:pivotY="50">
+        <path
+            android:fillColor="#33113A"
+            android:pathData="M73.5,50m-6.5,0a6.5,8 0 1 1 13,0a6.5,8 0 1 1 -13,0Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.95"
+            android:pathData="M71,45m-2.5,0a2.5,2.5 0 1 1 5,0a2.5,2.5 0 1 1 -5,0Z" />
+    </group>
 
     <!-- Bochechas -->
     <path
-        android:fillColor="#59FF4A5E"
-        android:pathData="M17.3,67.6a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
+        android:fillColor="#8CFF378C"
+        android:pathData="M25,63m-9,0a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
     <path
-        android:fillColor="#59FF4A5E"
-        android:pathData="M72.7,67.6a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
+        android:fillColor="#8CFF378C"
+        android:pathData="M83,63m-9,0a9,5 0 1 0 18,0a9,5 0 1 0 -18,0Z" />
 
     <!-- Sorriso largo e curvo -->
     <path
-        android:pathData="M39,71Q54,86 69,71"
-        android:strokeColor="#0B0820"
+        android:pathData="M44,65.5Q54,73 64,65.5"
+        android:strokeColor="#33113A"
         android:strokeLineCap="round"
-        android:strokeWidth="4.2" />
-
-    <!-- Pálpebras (invisíveis; usadas pelo AnimatedVectorDrawable para piscar) -->
-    <path
-        android:name="blinkL"
-        android:pathData="M27,46C32,41.5 41,41.5 48,45.5"
-        android:strokeColor="#1A0B2E"
-        android:strokeLineCap="round"
-        android:strokeWidth="3"
-        android:strokeAlpha="0" />
-    <path
-        android:name="blinkR"
-        android:pathData="M60,45.5C67,41.5 76,41.5 81,46"
-        android:strokeColor="#1A0B2E"
-        android:strokeLineCap="round"
-        android:strokeWidth="3"
-        android:strokeAlpha="0" />
+        android:strokeWidth="3.2" />
 </vector>

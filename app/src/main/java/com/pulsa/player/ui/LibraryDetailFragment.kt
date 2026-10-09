@@ -20,10 +20,12 @@ import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SongListAdapter
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.playback.QueueKey
 
-class LibraryDetailFragment : Fragment() {
+class LibraryDetailFragment : Fragment(), HighlightSync {
 
     private var adapter: SongListAdapter? = null
+    private var selectionBar: SelectionBar? = null
     private var header: View? = null
     private var headerArt: ImageView? = null
     private var headerTitle: TextView? = null
@@ -47,6 +49,10 @@ class LibraryDetailFragment : Fragment() {
             onMenu = { song -> SongActions.show(requireContext(), song, onDeleted = { load() }) }
         )
         adapter = a
+        selectionBar = SelectionWiring.setUpSelection(this, view, a,
+            onAction = { songs, reload -> SongActions.confirmDeleteMany(requireContext(), songs, reload) },
+            reload = { load() },
+            onExtraAction = { songs -> SongActions.enqueue(requireContext(), songs) })
         view.findViewById<RecyclerView>(R.id.list).apply {
             layoutManager = LinearLayoutManager(context)
             adapter = a
@@ -99,7 +105,8 @@ class LibraryDetailFragment : Fragment() {
                 loading = false
                 if (isAdded) {
                     adapter?.songs = songs
-                    adapter?.highlightId = Playback.currentSong?.id
+                    selectionBar?.setAvailable(songs.map { it.id })
+                    syncHighlight()
                     headerSubtitle?.text = subtitleFor(songs)
                     if (songs.isEmpty()) showEmpty(getString(R.string.empty_no_music), false)
                     else showEmpty(null, false)
@@ -155,4 +162,15 @@ class LibraryDetailFragment : Fragment() {
             }
         }
     }
+
+    /**
+     * Reposiciona o "tocando agora" depois que a faixa mudou fora da lista (mini player,
+     * notificação, próximo/anterior). Quem preenche no `load()` é o mesmo caminho.
+     */
+    override fun syncHighlight() {
+        val cur = Playback.currentSong
+        adapter?.highlightKey = cur?.let { QueueKey.encode(it) }
+        adapter?.highlightId = cur?.id
+    }
+
 }

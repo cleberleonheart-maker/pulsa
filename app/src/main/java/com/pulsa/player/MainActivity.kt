@@ -1,14 +1,10 @@
 package com.pulsa.player
 
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.IBinder
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.Menu
@@ -31,18 +27,22 @@ import com.pulsa.player.model.Artist
 import com.pulsa.player.model.Playlist
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
-import com.pulsa.player.playback.PlaybackService
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.data.db.PodcastFeedRow
+import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.ui.AlbumsTabFragment
 import com.pulsa.player.ui.ArtistTimelineFragment
 import com.pulsa.player.ui.ArtistsTabFragment
 import com.pulsa.player.ui.BibliotecaFragment
 import com.pulsa.player.ui.FavoritesTabFragment
+import com.pulsa.player.ui.HighlightSync
 import com.pulsa.player.ui.LibraryDetailFragment
 import com.pulsa.player.ui.PlaylistDetailFragment
 import com.pulsa.player.ui.PlaylistDialog
 import com.pulsa.player.ui.PlaylistsTabFragment
+import com.pulsa.player.ui.PodcastDetailFragment
+import com.pulsa.player.ui.PodcastsTabFragment
 import com.pulsa.player.ui.SongsTabFragment
 import com.pulsa.player.ui.TrendsFragment
 import com.pulsa.player.ui.VideosTabFragment
@@ -54,6 +54,8 @@ import com.pulsa.player.core.Changelog
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.dj.MainVirgin
 import com.pulsa.player.dj.TamiRadio
+import com.pulsa.player.media.MusicDeleter
+import com.pulsa.player.media.VideoDeleter
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.core.MotionControls
 import com.pulsa.player.core.Permissions
@@ -81,10 +83,10 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var miniRepeat: ImageView
     private lateinit var miniLike: ImageView
     private lateinit var miniVirgin: ImageView
+    private lateinit var miniRadioNext: ImageView
     private var miniSwipeDetector: GestureDetector? = null
     private var currentTag = VirginHomeFragment::class.java.simpleName
-    private var bound = false
-    private var serviceBound = false
+    private var playbackBind: Playback.Bind? = null
     private var appliedAccent: String = Settings.ACCENT_PURPLE
     private var pendingSection: String? = null
 
@@ -98,6 +100,32 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private val writeRequest =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             MusicEditor.onWriteRequestResult(result.resultCode == RESULT_OK)
+        }
+
+    /**
+     * Exclusão de música vinda do menu da faixa (Excluir).
+     *
+     * Do Android 11 em diante o app não apaga direto arquivo que não criou, e o
+     * `resolver.delete` virava "permissão negada" para o usuário. O pedido precisa passar
+     * pela confirmação do sistema, e isso exige uma Activity — o `SongActions` é um
+     * `object` sem Activity, então o launcher mora aqui e é entregue ao `MusicDeleter`.
+     */
+    private val songDeleteLauncher: ActivityResultLauncher<IntentSenderRequest> =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            MusicDeleter.onDeleteRequestResult(result.resultCode == RESULT_OK)
+        }
+
+    /**
+     * Exclusão de VÍDEO em lote, vinda da seleção múltipla da aba Vídeos.
+     *
+     * Precisa do seu próprio launcher porque o `PendingIntent` do sistema não carrega de
+     * volta qual app pediu o quê: dois `registerForActivityResult` para o mesmo contract
+     * receberiam o resultado um no lugar do outro, e o `MusicDeleter` acabaria limpando
+     * as playlists de músicas que ninguém mandou apagar.
+     */
+    private val videoDeleteLauncher: ActivityResultLauncher<IntentSenderRequest> =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            VideoDeleter.onDeleteRequestResult(result.resultCode == RESULT_OK)
         }
 
     private val virginDeleteLauncher: ActivityResultLauncher<IntentSenderRequest> =
@@ -135,21 +163,16 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         }
     }
 
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Playback.service = (service as PlaybackService.LocalBinder).service
-            bound = true
-            syncMiniPlayer()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            Playback.service = null
-            bound = false
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         Telemetry.log(this, "MAIN onCreate ENTRADA")
+        // Exclusão de música pelo menu da faixa depende deste launcher para a confirmação
+        // do sistema; ligado antes de qualquer tela, porque o SongActions só é um `object`.
+        MusicDeleter.attachLauncher { sender ->
+            songDeleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
+        }
+        VideoDeleter.attachLauncher { sender ->
+            videoDeleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
+        }
         if (!Account.loggedIn(this)) {
             super.onCreate(savedInstanceState)
             startActivity(
@@ -281,6 +304,8 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         miniRepeat = findViewById(R.id.mini_repeat)
         miniLike = findViewById(R.id.mini_like)
         miniVirgin = findViewById(R.id.mini_virgin)
+        miniRadioNext = findViewById(R.id.mini_radio_next)
+        miniRadioNext.setOnClickListener { Playback.next() }
         miniVirgin.setOnClickListener { virgin.toggleVirgin() }
         miniVirgin.setOnLongClickListener {
             virgin.onMiniVirginLongPress()
@@ -328,14 +353,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             showTab(currentTag, fragmentFor(currentTag))
         }
 
-        val playbackIntent = Intent(this, PlaybackService::class.java)
-        runCatching { applicationContext.startService(playbackIntent) }
-        applicationContext.bindService(
-            playbackIntent,
-            connection,
-            Context.BIND_AUTO_CREATE
-        )
-        serviceBound = true
+        // F1/E2: a ligação com o motor é da fachada. A Activity só diz "me avisa quando
+        // estiver pronto" — ela não sabe mais qual classe de serviço é essa.
+        playbackBind = Playback.connect(this) { syncMiniPlayer() }
         Telemetry.log(this, "createMain: bindService ok")
 
         if (!Permissions.hasAccess(this)) {
@@ -415,11 +435,20 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         Telemetry.log(this, "MAIN onResume")
         CrashLogger.writeLog(this, "MARK: onResume")
         if (!mainViewsReady) return
+        // O slot do `Playback.listener` é único e a Activity de baixo nem sempre é parada: no
+        // PiP de vídeo ela só é pausada, e a VideoPlayerActivity toma o slot no onResume e o
+        // devolve como `null` no onPause/onStop. Nesse caminho o `onStart` da MainActivity
+        // NÃO roda de novo, então ninguém ficava com o slot e todo `notifySong` era
+        // descartado — a mini player congelava na faixa antiga enquanto o áudio (e a
+        // notificação, que leem `currentSong` direto) seguiam certos. Revindicar aqui
+        // conserta: quando esta tela está em foreground é ela que tem o slot.
+        Playback.listener = this
+        syncMiniPlayer()
         syncToolbar()
         MotionControls.attachIfEnabled(
             this,
             onShake = {
-                if (Playback.queue.isNotEmpty() && (Playback.service != null)) Playback.next()
+                if (Playback.queue.isNotEmpty() && Playback.isReady) Playback.next()
             },
             onTilt = { dir ->
                 val am = getSystemService(AudioManager::class.java)
@@ -454,10 +483,8 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     }
 
     override fun onDestroy() {
-        if (serviceBound) {
-            serviceBound = false
-            runCatching { applicationContext.unbindService(connection) }
-        }
+        playbackBind?.let { Playback.release(it) }
+        playbackBind = null
         virgin.destroy()
         super.onDestroy()
     }
@@ -499,6 +526,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             AlbumsTabFragment::class.java.simpleName -> AlbumsTabFragment()
             ArtistsTabFragment::class.java.simpleName -> ArtistsTabFragment()
             PlaylistsTabFragment::class.java.simpleName -> PlaylistsTabFragment()
+            PodcastsTabFragment::class.java.simpleName -> PodcastsTabFragment()
             else -> SongsTabFragment()
         }
     }
@@ -554,8 +582,35 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         pushDetail(PlaylistDetailFragment.forPlaylist(playlist), "playlist_detail")
     }
 
+    /** F3: abre os episódios de uma assinatura, com título, autor e capa que a lista já tem. */
+    fun openPodcast(feed: PodcastFeedRow) {
+        pushDetail(
+            PodcastDetailFragment.forPodcast(
+                feed.id,
+                feed.title?.takeIf { it.isNotBlank() } ?: getString(R.string.podcast),
+                feed.author.orEmpty(),
+                feed.artworkUrl.orEmpty()
+            ),
+            "podcast_detail"
+        )
+    }
+
     /** Abre a tela de reprodução própria (usado pela home e pelo mini player). */
     fun openNowPlaying() {
+        // F2b: com um vídeo no item atual, a NowPlaying é a tela ERRADA. Ela mostra a arte
+        // grande e os controles de música, mas não tem superfície de vídeo — o áudio do
+        // vídeo saía e a imagem nunca aparecia, com a miniatura do vídeo no lugar da tela.
+        //
+        // Não dá para consertar só redirecionando dentro do `onSongChanged` da
+        // NowPlayingActivity (que era o caminho do vídeo que *virou* o item atual): aqui o
+        // vídeo já é o item atual quando a tela abre, então nenhuma troca de faixa dispara
+        // nada e o redirecionamento nunca acontecia. A decisão é no clique, com o motor já
+        // no estado em que vai ficar.
+        val song = Playback.currentSong
+        if (song != null && song.needsVideoScreen) {
+            VideoPlayerActivity.showPlaying(this)
+            return
+        }
         startActivity(Intent(this, NowPlayingActivity::class.java))
     }
 
@@ -649,10 +704,23 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     private fun syncMiniPlayer() {
         if (!mainViewsReady) return
-        val song = Playback.currentSong ?: return
+        val song = Playback.currentSong
+        if (song == null) {
+            // Antes ficava com o texto da faixa anterior e a barra aparecia de novo por causa
+            // do `syncToolbar`. Limpar aqui evita o flash da música velha quando a fila volta.
+            miniTitle.text = ""
+            miniArtist.text = ""
+            miniArt.setImageDrawable(null)
+            miniRadioNext.visibility = View.GONE
+            miniPlayer.visibility = View.GONE
+            return
+        }
         miniTitle.text = song.title
         miniArtist.text = song.artist
         ArtLoader.load(song.albumId, song.path, miniArt)
+        // O botão de girar só faz sentido no rádio: em música ele pularia faixa como um
+        // "próxima" comum, que o swipe e o botão de fone já cobrem.
+        miniRadioNext.visibility = if (song.isRadio) View.VISIBLE else View.GONE
         val playing = Playback.isPlaying
         miniPlay.setImageResource(if (playing) R.drawable.ic_pause else R.drawable.ic_play)
         miniShuffle.tint(if (Playback.shuffle) R.color.primary else R.color.text_secondary)
@@ -664,11 +732,12 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         miniRepeat.setImageResource(icon)
         miniRepeat.tint(color)
         val songId = song.id
+        val key = QueueKey.encode(song)
         ThreadPool.post {
             val fav = PlaylistDb.get(applicationContext).isFavorite(songId)
             ThreadPool.onUi {
                 if (!mainViewsReady) return@onUi
-                if (Playback.currentSong?.id != songId) return@onUi
+                if (!QueueKey.sameType(Playback.currentKey, key)) return@onUi
                 miniLike.setImageResource(if (fav) R.drawable.ic_favorite else R.drawable.ic_heart)
                 miniLike.tint(if (fav) R.color.primary else R.color.text_secondary)
             }
@@ -700,7 +769,29 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             syncMiniPlayer()
             syncToolbar()
             virgin.announceRadioSong(song)
+            // A faixa mudou fora da lista: o fundo de "tocando agora" andou para a música
+            // antiga e ficava lá até a lista recarregar. As telas que mostram o destaque se
+            // avisam por conta própria — veja [HighlightSync].
+            syncListHighlight()
+            // F2b: vídeo entrou na fila misturada e virou o item atual. Sem isto o áudio sai
+            // pela mini player e a imagem não aparece em lugar nenhum — vídeo precisa de
+            // surface, e a surface só existe na tela de vídeo, que abre aqui já grudada no
+            // motor (sem `Playback.start`, para não trocar a fila).
+            if (song.needsVideoScreen) VideoPlayerActivity.showPlaying(this)
         }
+    }
+
+    /**
+     * Avisa a lista visível de que a faixa mudou.
+     *
+     * Percorre o fragmento de topo **e** os filhos: álbum, artista, playlist e favoritas
+     * são filhos da Biblioteca, e é lá que a lista fica quando o usuário troca de faixa pela
+     * mini player — justamente com a lista aberta na tela.
+     */
+    private fun syncListHighlight() {
+        val root = supportFragmentManager.findFragmentById(R.id.fragment_container) ?: return
+        (root as? HighlightSync)?.syncHighlight()
+        root.childFragmentManager.fragments.forEach { (it as? HighlightSync)?.syncHighlight() }
     }
 
     override fun onPlayStateChanged(isPlaying: Boolean) {

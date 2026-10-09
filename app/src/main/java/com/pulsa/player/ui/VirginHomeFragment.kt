@@ -302,9 +302,7 @@ class VirginHomeFragment : Fragment() {
         val rows = listOf(
             AssistantData("🎭", getString(R.string.v_avatar),
                 {
-                    getString(
-                        if (Settings.masculineAvatar(ctx)) R.string.dj_voice_name_male else R.string.dj_voice_name
-                    )
+                    Settings.assistantName(ctx)
                 },
                 { false }, { toggleAvatar() }),
             AssistantData("🗣", getString(R.string.v_voice),
@@ -510,20 +508,27 @@ class VirginHomeFragment : Fragment() {
 
     private fun toggleAvatar() {
         val ctx = requireContext()
-        val next = !Settings.masculineAvatar(ctx)
-        Settings.setMasculineAvatar(ctx, next)
+        val next = (Settings.avatarStyle(ctx) + 1) % 3
+        Settings.setAvatarStyle(ctx, next)
         DancingVirginView.refreshAll()
-        Telemetry.log(ctx, "Virgin avatar masculino=$next")
-        val name = getString(
-            if (next) R.string.dj_voice_name_male else R.string.dj_voice_name
-        )
+        Telemetry.log(ctx, "Virgin avatar estilo=$next")
+        val name = Settings.assistantName(ctx)
         Toast.makeText(
             requireActivity(),
             getString(R.string.v_avatar_switched, name),
             Toast.LENGTH_SHORT
         ).show()
+        // A Vera tem a propria frase: trocar so o nome, mantendo "agora sou o
+        // Victor/Virgin", ficaria errado no meio.
         speak(
-            getString(if (next) R.string.v_avatar_speak_male else R.string.v_avatar_speak_female, name),
+            if (next == Settings.VERA) {
+                getString(R.string.v_avatar_speak_vera, name)
+            } else {
+                getString(
+                    if (next == Settings.VICTOR) R.string.v_avatar_speak_male else R.string.v_avatar_speak_female,
+                    name
+                )
+            },
             force = true
         )
         refresh()
@@ -621,6 +626,9 @@ class VirginHomeFragment : Fragment() {
             R.string.dj_commands_dynq to R.drawable.ic_queue_music,
             R.string.dj_commands_decade to R.drawable.ic_album,
             R.string.dj_commands_ambient_vol to R.drawable.ic_ambient,
+            R.string.dj_commands_video to R.drawable.ic_play_circle,
+            R.string.dj_commands_video_open to R.drawable.ic_videocam,
+            R.string.dj_commands_video_back to R.drawable.ic_replay_15,
             R.string.dj_commands_hello to R.drawable.ic_mic
         )
         val accent = ContextCompat.getColor(act, R.color.primary)
@@ -664,9 +672,7 @@ class VirginHomeFragment : Fragment() {
             R.string.tami_clock_greet_after -> R.string.home_greet_after
             else -> R.string.home_greet_night
         }
-        val name = getString(
-            if (Settings.masculineAvatar(ctx)) R.string.dj_voice_name_male else R.string.dj_voice_name
-        )
+        val name = Settings.assistantName(ctx)
         view?.findViewById<TextView>(R.id.btn_greet)?.text = "👋 " + getString(greetRes)
         speak("$name, ${getString(lineRes)}")
     }
@@ -678,7 +684,7 @@ class VirginHomeFragment : Fragment() {
             if (voice == null) {
                 voice = DjVoice(ctx, Settings.languageTag(Settings.language(ctx)))
             }
-            voice!!.init { ready -> if (ready) voice!!.speak(text, null, onDone) }
+            voice?.init { ready -> if (ready) voice?.speak(text, null, onDone) }
         }
     }
 
@@ -713,7 +719,11 @@ class VirginHomeFragment : Fragment() {
                 val n = settingsSongs()
                 when {
                     n > 0 -> getString(
-                        if (Settings.masculineAvatar(ctx)) R.string.hero_status_ready_m else R.string.hero_status_ready_f
+                        when (Settings.avatarStyle(ctx)) {
+                            Settings.VICTOR -> R.string.hero_status_ready_m
+                            Settings.VERA -> R.string.hero_status_ready_n
+                            else -> R.string.hero_status_ready_f
+                        }
                     )
                     else -> getString(R.string.hero_status_no_songs)
                 }

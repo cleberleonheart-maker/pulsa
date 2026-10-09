@@ -77,6 +77,34 @@ object VirginMedia {
         return best
     }
 
+    /**
+     * F2 · Vídeo local pelo nome ("toca o filme X"). Mesmo fuzzy do [findArtist], contra o
+     * título do MediaStore — sem artista, porque vídeo não tem. Quem não achar aqui cai no
+     * histórico de streams ([com.pulsa.player.data.StreamHistory.find]) no handler.
+     */
+    fun findVideo(context: Context, query: String?): Video? {
+        val q = DjCommander.norm(query.orEmpty()).trim()
+        if (q.isEmpty()) return null
+        val videos = runCatching { VideoLibrary.all(context) }.getOrDefault(emptyList())
+        var best: Video? = null
+        var bestScore = -1
+        for (v in videos) {
+            val n = DjCommander.norm(v.title)
+            if (n.isEmpty()) continue
+            val score = when {
+                n == q -> 1000
+                n.contains(q) -> 100 + q.length
+                q.contains(n) && q.length >= n.length -> 50 + n.length
+                else -> -1
+            }
+            if (score > bestScore) {
+                bestScore = score
+                best = v
+            }
+        }
+        return best
+    }
+
     fun findDuplicates(context: Context): DuplicateSet {
         val all = Library.allSongs(context)
         val groups = LinkedHashMap<String, MutableList<Song>>()

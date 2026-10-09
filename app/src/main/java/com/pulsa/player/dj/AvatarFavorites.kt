@@ -7,11 +7,14 @@ import com.pulsa.player.model.Song
 
 /**
  * Música favorita do avatar (Virgin/Victor): a faixa mais tocada no histórico
- * local (Janela ampla). Sem histórico, cai numa favorita aleatória da biblioteca.
+ * local (Janela ampla). Sem histórico, cai numa favorita aleatória da biblioteca —
+ * sorteada **uma única vez** e guardada, para o rótulo não trocar de música a cada
+ * renderização da tela inicial.
  */
 object AvatarFavorites {
 
     private const val WINDOW_DAYS = 3650
+    private const val PREF_FALLBACK_ID = "avatar_fav_fallback_id"
 
     /** SongId mais tocada no histórico, se houver alguma já tocada. */
     fun favoriteId(context: Context): Long? {
@@ -25,7 +28,16 @@ object AvatarFavorites {
         favoriteId(context)?.let { id ->
             songs.firstOrNull { it.id == id }?.let { return it }
         }
-        return songs.randomOrNull()
+        return stickyFallback(context, songs)
+    }
+
+    private fun stickyFallback(context: Context, songs: List<Song>): Song? {
+        val sp = com.pulsa.player.core.Settings.dataPrefs(context)
+        val saved = sp.getLong(PREF_FALLBACK_ID, -1L)
+        songs.firstOrNull { it.id == saved }?.let { return it }
+        val pick = songs.randomOrNull() ?: return null
+        sp.edit().putLong(PREF_FALLBACK_ID, pick.id).apply()
+        return pick
     }
 
     fun favorite(context: Context, onResult: (Song?) -> Unit) {

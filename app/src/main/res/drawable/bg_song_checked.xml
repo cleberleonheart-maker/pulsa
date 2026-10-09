@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Item marcado na seleção múltipla. Distinto do bg_song_selected, que é o "tocando agora":
+    os dois podem estar visíveis ao mesmo tempo (a música tocando também pode estar
+    selecionada para apagar) e precisam ser diferentes, senão o usuário não sabe qual
+    musicou e o que escolheu.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape>
+            <corners android:radius="20dp" />
+            <solid android:color="@color/aurora_violet_a40" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/primary" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <corners android:radius="20dp" />
+            <solid android:color="@color/aurora_violet_a26" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/primary" />
+        </shape>
+    </item>
+</selector>

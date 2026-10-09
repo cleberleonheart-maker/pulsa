@@ -17,8 +17,9 @@ import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.playback.QueueKey
 
-class SongsTabFragment : Fragment() {
+class SongsTabFragment : Fragment(), HighlightSync {
 
     private var headerContainer: View? = null
     private var headerTitle: TextView? = null
@@ -28,6 +29,7 @@ class SongsTabFragment : Fragment() {
     private var emptyText: TextView? = null
     private var emptyAction: View? = null
     private var adapter: SongListAdapter? = null
+    private var selectionBar: SelectionBar? = null
     private var loading = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -50,6 +52,12 @@ class SongsTabFragment : Fragment() {
             onMenu = { song -> SongActions.show(requireContext(), song, onDeleted = { load() }) }
         )
         adapter = a
+        selectionBar = SelectionWiring.setUpSelection(this, view, a,
+            onAction = { songs, reload -> SongActions.confirmDeleteMany(requireContext(), songs, reload) },
+            reload = { load() },
+            // F2b: a mesma segunda ação dos vídeos — juntar no fim da fila sem trocar o
+            // que está tocando.
+            onExtraAction = { songs -> SongActions.enqueue(requireContext(), songs) })
         list?.apply {
             layoutManager = LinearLayoutManager(this@SongsTabFragment.context)
             adapter = a
@@ -89,7 +97,8 @@ class SongsTabFragment : Fragment() {
                 if (isAdded) {
                     headerContainer?.visibility = View.GONE
                     adapter?.songs = ordered
-                    adapter?.highlightId = Playback.currentSong?.id
+                    selectionBar?.setAvailable(ordered.map { it.id })
+                    syncHighlight()
                     if (ordered.isEmpty()) {
                         showEmpty(getString(R.string.empty_no_music), false)
                     } else {
@@ -107,4 +116,15 @@ class SongsTabFragment : Fragment() {
     }
 
     fun title(): String = requireContext().getString(R.string.tab_songs)
+
+    /**
+     * Reposiciona o "tocando agora" depois que a faixa mudou fora da lista (mini player,
+     * notificação, próximo/anterior). Quem preenche no `load()` é o mesmo caminho.
+     */
+    override fun syncHighlight() {
+        val cur = Playback.currentSong
+        adapter?.highlightKey = cur?.let { QueueKey.encode(it) }
+        adapter?.highlightId = cur?.id
+    }
+
 }

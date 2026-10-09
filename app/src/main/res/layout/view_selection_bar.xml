@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Barra de seleção múltipla. Fica escondida (gone) até haver seleção, e a
+    SelectionBar controla a visibilidade — por isso o id precisa existir em todas as
+    telas com lista, mesmo as que não usam seleção.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/selection_bar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginBottom="6dp"
+    android:background="@drawable/bg_selection_bar"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp"
+    android:visibility="gone">
+
+    <ImageView
+        android:id="@+id/selection_close"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/selection_clear"
+        android:padding="7dp"
+        android:src="@drawable/ic_arrow_back"
+        android:tint="@color/text_secondary" />
+
+    <TextView
+        android:id="@+id/selection_count"
+        style="@style/TextAppearance.Pulsa.Hud"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:layout_weight="1"
+        android:maxLines="1"
+        android:textColor="@color/primary"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/selection_all"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="13sp" />
+
+    <!--
+        Segunda ação opcional (F2b: adicionar à fila). Escondida por padrão: só a tela que
+        tem a ação passa os parâmetros, e as outras quatro seguem com o botão só de apagar.
+    -->
+    <ImageView
+        android:id="@+id/selection_extra"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/add_to_queue"
+        android:padding="8dp"
+        android:src="@drawable/ic_queue_music"
+        android:tint="@color/primary"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/selection_delete"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/delete_selected"
+        android:padding="8dp"
+        android:src="@drawable/ic_delete"
+        android:tint="@color/primary_red" />
+</LinearLayout>
