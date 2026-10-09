@@ -232,7 +232,10 @@ class VideosTabFragment : Fragment() {
         val ready = item.streamUrl
         if (ready != null) {
             dialog?.dismiss()
-            VideoPlayerActivity.startStream(ctx, ready, item.title, item.captions)
+            VideoPlayerActivity.startStream(
+                ctx, ready, item.title, item.captions,
+                uuid = item.uuid, pageUrl = item.pageUrl, thumbnail = item.thumbnail.orEmpty()
+            )
             return
         }
         Toast.makeText(ctx, R.string.peertube_resolving, Toast.LENGTH_SHORT).show()
@@ -244,7 +247,11 @@ class VideosTabFragment : Fragment() {
                 return@resolve
             }
             dialog?.dismiss()
-            VideoPlayerActivity.startStream(ctx, url, resolved.title, resolved.captions)
+            VideoPlayerActivity.startStream(
+                ctx, url, resolved.title, resolved.captions,
+                uuid = resolved.uuid, pageUrl = resolved.pageUrl,
+                thumbnail = resolved.thumbnail.orEmpty()
+            )
         }
     }
 

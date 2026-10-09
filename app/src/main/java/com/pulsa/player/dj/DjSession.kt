@@ -30,6 +30,7 @@ import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.data.StreamHistory
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.media.GalleryScanner
 import com.pulsa.player.media.MusicEditor
@@ -603,6 +604,44 @@ class DjSession(
         speak(say(R.string.dj_voice_video_back, Helper.formatDuration(alvo)))
     }
 
+    /**
+     * F2 · "Toca o filme X" — abre o vídeo pelo nome (local primeiro, depois histórico de
+     * streams). Mesma regra de [MainVirgin.virgVideoByName]: a consulta ao MediaStore/disco
+     * sai da main thread.
+     */
+    private fun virgVideoByName(query: String?) {
+        val q = query.orEmpty()
+        if (q.isBlank()) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            val video = VirginMedia.findVideo(ctx, q)
+            val stream = if (video == null) StreamHistory.find(ctx, q) else null
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                when {
+                    video != null -> {
+                        Telemetry.log(activity, "DJ video_by_name local=${video.title}")
+                        speak(activity.getString(R.string.dj_voice_video_open, video.title))
+                        VideoPlayerActivity.start(activity, listOf(video), 0)
+                    }
+                    stream != null -> {
+                        Telemetry.log(activity, "DJ video_by_name stream=${stream.title}")
+                        speak(activity.getString(R.string.dj_voice_video_open, stream.title))
+                        VideoPlayerActivity.startStream(
+                            activity, stream.url, stream.title,
+                            uuid = stream.uuid, pageUrl = stream.pageUrl,
+                            thumbnail = stream.thumbnail
+                        )
+                    }
+                    else -> speak(say(R.string.dj_voice_video_not_found))
+                }
+            }
+        }
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -886,6 +925,7 @@ class DjSession(
             "mixwith" -> {
                 startMixWithArtist(DjCommander.mixArtist(norm))
             }
+            "video_by_name" -> virgVideoByName(DjCommander.videoQuery(norm))
             "video_play" -> virgVideoPlay()
             "video_open" -> virgVideoOpen()
             "video_back" -> virgVideoBack()

@@ -513,6 +513,7 @@
     <string name="dj_voice_video_open">Opening %1$s.</string>
     <string name="dj_voice_video_play">Resuming %1$s.</string>
     <string name="dj_voice_video_back">Back to %1$s.</string>
+    <string name="dj_voice_video_not_found">I couldn\'t find a video with that name.</string>
     <string name="dj_voice_mix">Sure! Preparing a new mix for you.</string>
     <string name="dj_voice_fav">Marked as favorite!</string>
     <string name="dj_voice_month_favs">Let\'s go! Playing %d of this month\'s favorites.</string>

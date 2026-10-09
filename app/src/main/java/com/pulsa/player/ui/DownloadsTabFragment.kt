@@ -114,7 +114,10 @@ class DownloadsTabFragment : Fragment() {
         // arquivo veio. O aviso de "Assistindo offline" que estava aqui mentia: ele
         // aparecia no instante em que o player era aberto, sem esperar a reprodução
         // começar, então confirmava uma coisa que ainda não tinha acontecido.
-        VideoPlayerActivity.startStream(ctx, Uri.fromFile(file).toString(), item.title)
+        VideoPlayerActivity.startStream(
+            ctx, Uri.fromFile(file).toString(), item.title,
+            uuid = item.id, pageUrl = item.pageUrl
+        )
     }
 
     private fun menu(item: DownloadStore.Item) {

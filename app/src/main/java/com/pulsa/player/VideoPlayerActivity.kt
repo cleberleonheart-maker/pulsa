@@ -31,6 +31,7 @@ import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.PeerTube
+import com.pulsa.player.data.StreamHistory
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.media.SubtitleConfig
 import com.pulsa.player.media.Subtitles
@@ -106,8 +107,24 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             context: Context,
             url: String,
             title: String = "",
-            captions: List<PeerTube.Caption> = emptyList()
+            captions: List<PeerTube.Caption> = emptyList(),
+            uuid: String = "",
+            pageUrl: String = "",
+            thumbnail: String = ""
         ) {
+            // F2 · registra no histórico aqui, e não em cada chamador: este é o único ponto
+            // por onde um stream (ou o download dele) vira reprodução, então "toca o filme X"
+            // depois acha o que a pessoa realmente abriu, sem repetir a gravação em três telas.
+            StreamHistory.record(
+                context.applicationContext,
+                StreamHistory.Entry(
+                    title = title,
+                    url = url,
+                    pageUrl = pageUrl,
+                    uuid = uuid,
+                    thumbnail = thumbnail
+                )
+            )
             val intent = Intent(context, VideoPlayerActivity::class.java)
                 .putExtra(EXTRA_STREAM_URL, url)
                 .putExtra(EXTRA_STREAM_TITLE, title)

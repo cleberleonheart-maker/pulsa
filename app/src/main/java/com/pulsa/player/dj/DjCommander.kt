@@ -194,6 +194,54 @@ object DjCommander {
             (norm.contains("pausa") || norm.contains("pausar") || norm.contains("para") ||
                 norm.contains("parar") || norm.contains("pare") || norm.contains("stop"))
 
+    /**
+     * F2 · Nome do vídeo depois do verbo. Devolve `null` quando não há nome — aí o comando
+     * continua sendo retomar/abrir o que já está tocando ([video_play]/[video_open]).
+     *
+     * "toca o filme Matrix" precisa virar `video_by_name` com query `matrix`. O que sobra
+     * depois de cortar verbo + artigo + palavra de vídeo **é** o nome: "do Lobo de Wall
+     * Street" fica com o "do" de propósito, porque o fuzzy match do [VirginMedia.findVideo]
+     * aceita sobra e um título sem artigo costuma casar mesmo assim.
+     */
+    fun videoQuery(norm: String): String? {
+        if (!videoWord(norm)) return null
+        // "volta pra tras no video" é retrocesso, não busca por nome: sem esta guarda o
+        // "volta pra " virava marcador e o resto ("tras no video") era lido como título.
+        if (videoSeekBackWord(norm)) return null
+        val markers = listOf(
+            "toca ", "toque ", "tocar ", "abre ", "abrir ", "mostra ", "mostrar ",
+            "continua ", "continuar ", "retoma ", "retomar ",
+            "coloca ", "manda ", "roda ", "rodar ",
+            "volta pro ", "volta pra ", "volta para o ", "volta para a ", "volta ao "
+        )
+        var rest: String? = null
+        for (m in markers) {
+            val i = norm.indexOf(m)
+            if (i >= 0) {
+                rest = norm.substring(i + m.length)
+                break
+            }
+        }
+        if (rest == null) return null
+        // Tira do começo artigo/possessivo + palavra de vídeo, em qualquer repetição:
+        // "o filme do lobo de wall street" → "do lobo de wall street". É por token, não por
+        // prefixo de string, senão um "filme" no fim (sem espaço depois) sobrevivia e virava
+        // um falso nome — e aí "mostra o video"/"volta pro filme" deixariam de ser
+        // video_play/video_open para virar busca por uma palavra que é o próprio comando.
+        val stop = setOf(
+            "o", "a", "os", "as", "um", "uma",
+            "meu", "minha", "meus", "minhas",
+            "filme", "filmes", "video", "videos", "episodio", "episodios",
+            "serie", "series", "documentario", "documentarios"
+        )
+        val tokens = rest.trim().split(' ').filter { it.isNotBlank() }
+        var start = 0
+        while (start < tokens.size && tokens[start] in stop) start++
+        return tokens.drop(start).joinToString(" ")
+            .trim(',', '.', '!', '?', ' ', '-', ':')
+            .takeIf { it.isNotBlank() }
+    }
+
     private fun playedYesterdayMatch(norm: String): Boolean =
         norm.contains("que toquei ontem") || norm.contains("toquei ontem") ||
             norm.contains("cantei ontem") || norm.contains("ouvi ontem") ||
@@ -730,6 +778,10 @@ object DjCommander {
         // `video_play` ANTES de `video_open`: "continua o filme" retoma, não abre tela.
         // "toca" também é o play da música (mais abaixo), então o `videoWord` é o que
         // separa os dois.
+        // `video_by_name` ANTES de video_play/video_open: "toca o filme Matrix" tem nome e
+        // precisa achar na biblioteca/histórico; "toca o filme" sem nome continua retomando.
+        // O [videoQuery] só devolve algo quando sobra texto depois do verbo+artigo+filme.
+        videoQuery(norm) != null -> "video_by_name"
         videoPlayMatch(norm) -> "video_play"
         videoOpenMatch(norm) -> "video_open"
         videoBackMatch(norm) -> "video_back"

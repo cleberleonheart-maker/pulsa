@@ -93,6 +93,30 @@ class DjCommanderTest {
     }
 
     @Test
+    fun action_video_by_name() {
+        // Com nome depois do verbo+artigo+palavra de vídeo, vira busca na biblioteca/histórico
+        // em vez de retomar o que já está tocando.
+        assertEquals("video_by_name", DjCommander.action(DjCommander.norm("virgin, toca o filme matrix")))
+        assertEquals("video_by_name", DjCommander.action(DjCommander.norm("virgin, abre o filme matrix reloaded")))
+        assertEquals("video_by_name", DjCommander.action(DjCommander.norm("virgin, mostra o video do show")))
+        // Sem nome sobra retomar/abrir: a palavra de vídeo sozinha não é um nome.
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, toca o filme")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, mostra o video")))
+    }
+
+    @Test
+    fun videoQuery_extrai_o_nome() {
+        assertEquals("matrix", DjCommander.videoQuery(DjCommander.norm("virgin, toca o filme matrix")))
+        assertEquals(
+            "matrix reloaded",
+            DjCommander.videoQuery(DjCommander.norm("virgin, abre o filme matrix reloaded"))
+        )
+        assertNull(DjCommander.videoQuery(DjCommander.norm("virgin, toca o filme")))
+        assertNull(DjCommander.videoQuery(DjCommander.norm("virgin, pausa o filme")))
+        assertNull(DjCommander.videoQuery(DjCommander.norm("virgin, pausa a musica")))
+    }
+
+    @Test
     fun action_video_back() {
         assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta 30 segundos do filme")))
         assertEquals("video_back", DjCommander.action(DjCommander.norm("virgin, volta pra tras no video")))
