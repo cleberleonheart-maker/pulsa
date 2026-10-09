@@ -416,12 +416,17 @@
     <string name="downloads_empty_hint">Abra a busca do PeerTube e use o menu do vídeo para baixar.</string>
     <string name="downloads_queued">Na fila</string>
     <string name="downloads_running">Baixando…</string>
+    <string name="downloads_paused">Pausado</string>
     <string name="downloads_done">Baixado</string>
     <string name="downloads_failed">Falhou</string>
     <string name="downloads_cancelled">Cancelado</string>
     <string name="downloads_continue">Continuar</string>
+    <string name="downloads_pause">Pausar</string>
     <string name="downloads_cancel">Cancelar</string>
     <string name="downloads_delete">Apagar</string>
+    <string name="downloads_no_space">Sem espaço no aparelho</string>
+    <string name="downloads_wifi_only">Baixar só no Wi‑Fi</string>
+    <string name="downloads_wifi_only_hint">Download grande em rede medida consome sua franquia sem aviso; quando ligado, a fila espera a rede Wi‑Fi/cabo chegar.</string>
     <string name="download_start_queued">Na fila para baixar</string>
     <string name="download_not_available">Este vídeo não tem MP4 para baixar</string>
     <string name="download_already">Já está nos baixados</string>

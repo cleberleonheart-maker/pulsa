@@ -541,7 +541,10 @@ class PlaybackService : MediaLibraryService() {
         // conta própria. Um `songsByIds` único não resolveria a fila misturada: o id do
         // vídeo 42 buscaria a música 42. Então cada chave vai para a biblioteca que é
         // dela, e a ordem salva é reconstruída por cima.
+        // Fila universal: rádio/stream não têm linha no MediaStore — a chave `r:`/`s:` já
+        // carrega a URL, e o título/artista que a URL não sabe vêm do `queue_extras`.
         val songIds = keys.filter { it.startsWith(QueueKey.VIDEO_PREFIX) == false }
+            .filterNot { QueueKey.isRadio(it) || QueueKey.isStream(it) }
             .mapNotNull { it.substringAfter(':').toLongOrNull() }
         val videoIds = keys.filter { it.startsWith(QueueKey.VIDEO_PREFIX) }
             .mapNotNull { it.substringAfter(':').toLongOrNull() }
@@ -551,8 +554,12 @@ class PlaybackService : MediaLibraryService() {
         if (videoIds.isNotEmpty()) {
             VideoLibrary.all(this).forEach { v -> if (videoIds.contains(v.id)) videosById[v.id] = v }
         }
+        val extras = parseQueueExtras()
         val songs = keys.mapNotNull { key ->
-            songsById[key] ?: videosById[key.substringAfter(':').toLongOrNull()]?.let { videoSong(it) }
+            when {
+                QueueKey.isRadio(key) || QueueKey.isStream(key) -> songForRemoteKey(key, extras)
+                else -> songsById[key] ?: videosById[key.substringAfter(':').toLongOrNull()]?.let { videoSong(it) }
+            }
         }
         if (songs.isEmpty()) {
             // Toda a fila sumiu do MediaStore (fotos apagadas, sdcard removido). Não tenta
@@ -600,9 +607,12 @@ class PlaybackService : MediaLibraryService() {
      * retomável". Com o [QueueKey] o vídeo é salvo como `v:<id>` e volta pelo
      * `VideoLibrary`, então a fila misturada sobrevive à morte do processo.
      *
-     * Rádio e stream continuam fora, e por um motivo que não é "não dá": os dois usam id
-     * sintético e **não têm item no MediaStore** para o restore reencontrar. O rádio tem
-     * mecanismo próprio ([setRadioResume]).
+     * **Fila universal: rádio e stream agora entram também.** Eles não têm item no
+     * MediaStore, mas a identidade deles é a URL — a chave `r:<url>`/`s:<url>` é o suficiente
+     * para o restore remontar o `Song`. O que a chave não carrega (título, artista) vai no
+     * `queue_extras` (ver [Settings.setQueueExtras]), um `JSONObject` de `chave -> {t,a}`.
+     * O rádio continua com mecanismo próprio ([setRadioResume]) para voltar **tocando**;
+     * a fila universal traz ele de volta pausado, igual ao resto.
      */
     private fun saveQueueState() {
         if (suppressQueueSave) return
@@ -610,12 +620,10 @@ class PlaybackService : MediaLibraryService() {
             Settings.clearQueueState(this)
             return
         }
-        // Índice na fila **gravada**, e não na fila real: como rádio e stream são pulados,
-        // o item tocando pode estar antes ou depois de todos os que foram salvos.
         val keys = QueueKey.encodeAll(queue)
         if (keys.isEmpty()) {
-            // Fila só de rádio/stream. Deixar a fila antiga salva seria pior que não ter
-            // nada: o próximo boot restauraria uma playlist que o usuário já trocou.
+            // Fila em que nenhum item tem chave. Deixar a fila antiga salva seria pior que
+            // não ter nada: o próximo boot restauraria uma playlist que o usuário já trocou.
             Settings.clearQueueState(this)
             return
         }
@@ -631,6 +639,80 @@ class PlaybackService : MediaLibraryService() {
         }
         val pos = runCatching { player?.currentPosition ?: 0L }.getOrDefault(0L)
         Settings.setQueueState(this, keys, savedIndex, pos)
+        // O `queue_extras` é a sombra da fila, então grava no mesmo tick — sem a chave dele
+        // na frente, um boot novo restauraria um rádio com o URL no lugar do nome.
+        Settings.setQueueExtras(this, buildQueueExtras(queue))
+    }
+
+    /**
+     * Fila universal — o texto que o `queue_extras` guarda para rádio e stream.
+     *
+     * Rádio e stream reconstroem o `Song` da URL (a chave), mas o nome da estação e o gênero
+     * ninguém adivinha de novo — e são o que a notificação e a fila mostram. O objeto é
+     * indexado pela própria chave para o restore ler no mesmo passo em que monta a fila.
+     */
+    private fun buildQueueExtras(queue: List<Song>): String {
+        val obj = org.json.JSONObject()
+        for (song in queue) {
+            val key = QueueKey.encode(song) ?: continue
+            if (!QueueKey.isRadio(key) && !QueueKey.isStream(key)) continue
+            obj.put(key, org.json.JSONObject().put("t", song.title).put("a", song.artist))
+        }
+        return obj.toString()
+    }
+
+    /** Fila universal — o inverso de [buildQueueExtras]: `chave -> (título, artista)`. */
+    private fun parseQueueExtras(): Map<String, Pair<String, String>>? {
+        val raw = Settings.queueExtras(this)
+        if (raw.isBlank()) return null
+        return runCatching {
+            val map = HashMap<String, Pair<String, String>>()
+            val obj = org.json.JSONObject(raw)
+            val it = obj.keys()
+            while (it.hasNext()) {
+                val key = it.next()
+                val meta = obj.optJSONObject(key) ?: continue
+                map[key] = meta.optString("t") to meta.optString("a")
+            }
+            map
+        }.getOrNull()
+    }
+
+    /**
+     * Fila universal — o `Song` que o restore monta para rádio e stream.
+     *
+     * A forma é a mesmíssima de quem cria os dois originalmente ([stationSong] no rádio,
+     * `stream:<url>` na tela de vídeo): mudar aqui e lá em paralelo quebraria silenciosamente
+     * a correspondência — dois `path` diferentes, uma chave que não acha o outro.
+     */
+    private fun songForRemoteKey(key: String, extras: Map<String, Pair<String, String>>?): Song? {
+        val url = key.substringAfter(':')
+        if (url.isBlank()) return null
+        val title = extras?.get(key)?.first?.takeIf { it.isNotBlank() } ?: url
+        val artist = extras?.get(key)?.second.orEmpty()
+        return if (QueueKey.isRadio(key)) {
+            Song(
+                id = (url.hashCode() and 0x7fffffff).toLong(),
+                title = title,
+                artist = artist,
+                album = getString(R.string.radio),
+                albumId = 0L,
+                durationMs = 0L,
+                path = Song.RADIO_PREFIX + url,
+                year = 0
+            )
+        } else {
+            Song(
+                id = url.hashCode().toLong() and 0x7FFFFFFFFFFFFFFFL,
+                title = title,
+                artist = artist,
+                album = getString(R.string.tab_videos),
+                albumId = 0L,
+                durationMs = 0L,
+                path = Song.STREAM_PREFIX + url,
+                year = 0
+            )
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

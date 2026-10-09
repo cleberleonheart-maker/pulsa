@@ -88,10 +88,11 @@ class QueueKeyTest {
     }
 
     @Test
-    fun `radio e stream nao sao retomaveis`() {
-        // Os dois usam id sintetico e nao tem item no MediaStore para o restore reencontrar.
-        assertNull(QueueKey.encode(radio("https://radio.example/live")))
-        assertNull(QueueKey.encode(stream("https://cdn.example/master.m3u8")))
+    fun `radio e stream sao retomaveis pela url`() {
+        // Fila universal: nao ha item no MediaStore, entao a identidade e o endereco em si —
+        // a mesma URL e a mesma estação, e e o que sobrevive ao restore.
+        assertEquals("r:https://radio.example/live", QueueKey.encode(radio("https://radio.example/live")))
+        assertEquals("s:https://cdn.example/master.m3u8", QueueKey.encode(stream("https://cdn.example/master.m3u8")))
     }
 
     @Test
@@ -102,9 +103,14 @@ class QueueKeyTest {
     }
 
     @Test
-    fun `encodeAll pula o que nao e retomavel e mantem a ordem`() {
+    fun `encodeAll mantem a ordem e so pula o que nao tem chave`() {
         val songs = listOf(audio(1), radio("https://r/1"), video(2), stream("https://s/1"), audio(3))
-        assertEquals(listOf("a:1", "v:2", "a:3"), QueueKey.encodeAll(songs))
+        assertEquals(
+            listOf("a:1", "r:https://r/1", "v:2", "s:https://s/1", "a:3"),
+            QueueKey.encodeAll(songs)
+        )
+        // O unico item sem chave e o orfao de id negativo (sem podcast).
+        assertTrue(QueueKey.encodeAll(listOf(audio(1).copy(id = -1L))).isEmpty())
     }
 
     // ------------------------------------------------------------------ decode
@@ -113,6 +119,27 @@ class QueueKeyTest {
     fun `decode le a chave nova`() {
         assertEquals("a:42", QueueKey.decode("a:42"))
         assertEquals("v:7", QueueKey.decode("v:7"))
+        assertEquals("r:https://radio.example/live", QueueKey.decode("r:https://radio.example/live"))
+        assertEquals("s:https://cdn.example/master.m3u8", QueueKey.decode("s:https://cdn.example/master.m3u8"))
+    }
+
+    @Test
+    fun `decode preserva a url inteira mesmo com dois pontos`() {
+        // URL de radio/stream tem `:` no esquema e no path; o split e no primeiro, e o
+        // payload e tudo o que vem depois — cortar ali quebraria a estacao.
+        val url = "https://r.example:8443/stream/canal?fmt=1.5&x=2"
+        assertEquals("r:$url", QueueKey.decode("r:$url"))
+        assertTrue(QueueKey.isRadio("r:$url"))
+        assertFalse(QueueKey.isStream("r:$url"))
+        assertFalse(QueueKey.isRadio("s:$url"))
+        assertTrue(QueueKey.isStream("s:$url"))
+    }
+
+    @Test
+    fun `decode rejeita radio e stream sem endereco`() {
+        assertNull(QueueKey.decode("r:"))
+        assertNull(QueueKey.decode("s:"))
+        assertNull(QueueKey.decode("r:  "))
     }
 
     @Test
@@ -182,7 +209,12 @@ class QueueKeyTest {
 
     @Test
     fun `ida e volta preserva a chave`() {
-        val songs = listOf(audio(11), video(22))
+        val songs = listOf(
+            audio(11),
+            video(22),
+            radio("https://r.example/ao-vivo"),
+            stream("https://s.example/hls/master.m3u8")
+        )
         val keys = QueueKey.encodeAll(songs)
         assertEquals(keys, keys.mapNotNull { QueueKey.decode(it) })
     }
@@ -298,12 +330,12 @@ class QueueKeyTest {
     }
 
     @Test
-    fun `radio e stream passam sempre, por nao terem chave`() {
-        // Nao ha como saber se "a mesma" radio ja esta na fila: o id e um hash do endereco e
-        // a estacao e a mesma enquanto o endereco for. Deixar passar e o comportamento
-        // esperado de "adicionar a fila" para uma estacao.
+    fun `radio e stream repetidos nao entram duas vezes`() {
+        // Fila universal: a chave deles e a URL, entao a mesma estacao num lote de "adicionar
+        // a fila" vira um item so — mesmo tratamento de audio/video/episodio.
         val fila = listOf(radio("http://r1"), stream("http://s1"))
         val novo = QueueKey.filterNew(fila, listOf(radio("http://r1"), stream("http://s1")))
-        assertEquals(2, novo.size)
+        assertEquals(0, novo.size)
+        assertEquals(listOf(radio("http://r2")), QueueKey.filterNew(fila, listOf(radio("http://r2"))))
     }
 }

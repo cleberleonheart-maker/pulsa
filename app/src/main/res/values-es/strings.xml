@@ -402,7 +402,11 @@
     <string name="downloads_running">Descargando…</string>
     <string name="downloads_done">Descargado</string>
     <string name="downloads_failed">Falló</string>
-    <string name="downloads_cancelled">Cancelado</string>
+    <string name="downloads_paused">En pausa</string>
+    <string name="downloads_pause">Pausar</string>
+    <string name="downloads_no_space">Sin espacio en el dispositivo</string>
+    <string name="downloads_wifi_only">Descargar solo con Wi‑Fi</string>
+    <string name="downloads_wifi_only_hint">Las descargas grandes gastan tus datos sin avisar; al activarlo, la cola espera a una red Wi‑Fi/cable.</string>
     <string name="downloads_continue">Continuar</string>
     <string name="downloads_cancel">Cancelar</string>
     <string name="downloads_delete">Borrar</string>

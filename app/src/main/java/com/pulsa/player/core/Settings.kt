@@ -570,6 +570,20 @@ object Settings {
     fun resumeOn(context: Context): Boolean =
         prefs(context).getBoolean("resume_on", true)
 
+    /**
+     * F2 · Download Center — só baixa em rede não medida (Wi‑Fi/cabo).
+     *
+     * Padrão `true`: baixar um vídeo de centenas de MB no 4G sem avisar é o jeito mais rápido
+     * de a primeira experiência do Download Center virar uma conta de dados. Quem quiser baixar
+     * pelos dados desliga aqui.
+     */
+    fun setDownloadWifiOnly(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("download_wifi_only", value).apply()
+    }
+
+    fun downloadWifiOnly(context: Context): Boolean =
+        prefs(context).getBoolean("download_wifi_only", true)
+
     fun setGesturesOn(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("gestures_on", value).apply()
     }
@@ -689,12 +703,29 @@ object Settings {
         )
     }
 
+    /**
+     * Fila universal — o que o MediaStore não sabe sobre rádio e stream.
+     *
+     * A chave de rádio/stream é a URL (ver [QueueKey]), mas ela não carrega título nem
+     * artista. Como esses itens não têm linha no MediaStore para o restore reconstruir, o
+     * texto vai à parte, indexado pela própria chave. É um `JSONObject` de `chave -> {t,a}`;
+     * assim os dois elementos que faltam voltam junto com a fila e uma URL estranha não
+     * precisa caber em nenhum formato de chave.
+     */
+    fun setQueueExtras(context: Context, json: String) {
+        prefs(context).edit().putString("queue_extras", json).apply()
+    }
+
+    fun queueExtras(context: Context): String =
+        prefs(context).getString("queue_extras", "") ?: ""
+
     fun clearQueueState(context: Context) {
         prefs(context).edit()
             .remove("queue_ids")
             .remove("queue_index")
             .remove("queue_position")
             .remove("queue_saved_at")
+            .remove("queue_extras")
             .apply()
     }
 

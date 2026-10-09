@@ -44,13 +44,31 @@ object QueueKey {
     const val EPISODE_PREFIX = "e"
 
     /**
-     * A chave de [song], ou `null` quando ela não é retomável — rádio e stream não têm item
-     * no MediaStore para o restore reencontrar, e o rádio tem mecanismo próprio
-     * ([Settings.setRadioResume]).
+     * Fila universal — prefixo da chave de rádio. O padrão esteve em `encode` como `null` porque
+     * a chave era só o id do MediaStore, e rádio não tem id nenhum. Aqui a identidade é o
+     * endereço da estação em si: a mesma URL é a mesma estação, e é o que o servidor de rádio
+     * entrega de estável. O `Song.RADIO_PREFIX` (`radio:`) é do `path`, este é da fila.
+     */
+    const val RADIO_PREFIX = "r"
+
+    /**
+     * Fila universal — prefixo da chave de stream (PeerTube/URL colada). Igual ao rádio: o que
+     * identifica um stream é a URL, não um id — o hash que serve de `song.id` não é estável nem
+     * único (pode colidir com um id de verdade, o mesmo problema que a chave tipada resolve).
+     */
+    const val STREAM_PREFIX = "s"
+
+    /**
+     * A chave de [song], ou `null` quando ela não é retomável.
+     *
+     * Áudio/vídeo/episódio têm id numérico no MediaStore/Room e a chave é `tipo:id`. Rádio e
+     * stream não têm linha no MediaStore — a identidade deles é a URL, então a chave é
+     * `r:<url>`/`s:<url>`. O texto de exibição vai à parte no `queue_extras` (ver [Settings]),
+     * porque a URL não sabe o nome da estação.
      */
     fun encode(song: Song): String? = when {
-        song.isRadio -> null
-        song.isStream -> null
+        song.isRadio -> song.radioUrl?.takeIf { it.isNotBlank() }?.let { "$RADIO_PREFIX:$it" }
+        song.isStream -> song.streamUrl?.takeIf { it.isNotBlank() }?.let { "$STREAM_PREFIX:$it" }
         // O podcast vem **antes** do vídeo de propósito: um episódio em vídeo tem `path` de
         // podcast e nunca `video:`, mas se a ordem invertesse e um dia o `videoId` aparecesse
         // nesse caminho, a chave seria `v:` e o restore.seekaria no MediaStore pelo id do
@@ -65,9 +83,11 @@ object QueueKey {
     /**
      * O inverso de [encode].
      *
-     * Aceita `"a:42"`, `"v:42"` e `"e:42"`, e também o número solto `42` — o formato do `queue_ids`
-     * antigo, que era só `id` de áudio. Qualquer outra coisa é `null`, e o caller trata isso
-     * como "esse item não voltou mais".
+     * Aceita `"a:42"`, `"v:42"`, `"e:42"`, `"r:<url>"` e `"s:<url>"`, e também o número solto
+     * `42` — o formato do `queue_ids` antigo, que era só `id` de áudio. Um endereço de
+     * rádio/stream pode conter `:` e até `,` sem problema: o split é no **primeiro** `:` e o
+     * resto é o payload inteiro. Qualquer outra coisa é `null`, e o caller trata isso como
+     * "esse item não voltou mais".
      */
     fun decode(raw: String): String? {
         val s = raw.trim()
@@ -75,17 +95,26 @@ object QueueKey {
         val sep = s.indexOf(':')
         if (sep < 0) return if (s.toLongOrNull() != null) "$AUDIO_PREFIX:$s" else null
         val kind = s.substring(0, sep)
-        val id = s.substring(sep + 1).trim().toLongOrNull() ?: return null
+        val rest = s.substring(sep + 1).trim()
         return when (kind) {
-            AUDIO_PREFIX -> "$AUDIO_PREFIX:$id"
-            VIDEO_PREFIX -> "$VIDEO_PREFIX:$id"
-            EPISODE_PREFIX -> "$EPISODE_PREFIX:$id"
+            AUDIO_PREFIX -> rest.toLongOrNull()?.let { "$AUDIO_PREFIX:$it" }
+            VIDEO_PREFIX -> rest.toLongOrNull()?.let { "$VIDEO_PREFIX:$it" }
+            EPISODE_PREFIX -> rest.toLongOrNull()?.let { "$EPISODE_PREFIX:$it" }
+            // Payload de rádio/stream não é número: o endereço em si. Só não pode ser vazio.
+            RADIO_PREFIX -> if (rest.isNotEmpty()) "$RADIO_PREFIX:$rest" else null
+            STREAM_PREFIX -> if (rest.isNotEmpty()) "$STREAM_PREFIX:$rest" else null
             else -> null
         }
     }
 
     /** `true` quando a chave é de episódio, para o restore da fila saber o que reencontrar. */
     fun isEpisode(key: String): Boolean = key.startsWith("$EPISODE_PREFIX:")
+
+    /** `true` quando a chave é de rádio (`r:<url>`). */
+    fun isRadio(key: String): Boolean = key.startsWith("$RADIO_PREFIX:")
+
+    /** `true` quando a chave é de stream (`s:<url>`). */
+    fun isStream(key: String): Boolean = key.startsWith("$STREAM_PREFIX:")
 
     /** As chaves da fila na ordem, pulando o que não é retomável. */
     fun encodeAll(songs: List<Song>): List<String> = songs.mapNotNull { encode(it) }
@@ -100,8 +129,9 @@ object QueueKey {
      * 42 e a música de id 42 são itens diferentes, então os dois podem estar na fila. Por
      * `id` o vídeo seria descartado por causa de uma música — e o inverso também.
      *
-     * Rádio e stream não têm chave, então passam sempre: são um item só do seu endereço, e
-     * ninguém espera que a mesma rádio entre duas vezes na fila.
+     * Fila universal: rádio e stream também têm chave (a URL), então a mesma rádio **não**
+     * entra duas vezes — igual ao resto. Isso era até impossível antes, quando eles não
+     * tinham chave e o `filterNew` deixava passar sempre.
      */
     fun filterNew(existing: List<Song>, candidates: List<Song>): List<Song> {
         val seen = existing.mapNotNull { encode(it) }.toMutableSet()

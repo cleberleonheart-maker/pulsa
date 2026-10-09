@@ -403,7 +403,11 @@
     <string name="downloads_running">Downloading…</string>
     <string name="downloads_done">Downloaded</string>
     <string name="downloads_failed">Failed</string>
-    <string name="downloads_cancelled">Cancelled</string>
+    <string name="downloads_paused">Paused</string>
+    <string name="downloads_pause">Pause</string>
+    <string name="downloads_no_space">Not enough storage</string>
+    <string name="downloads_wifi_only">Download on Wi-Fi only</string>
+    <string name="downloads_wifi_only_hint">Big downloads use your mobile data without warning; when on, the queue waits for a Wi-Fi/wired network.</string>
     <string name="downloads_continue">Resume</string>
     <string name="downloads_cancel">Cancel</string>
     <string name="downloads_delete">Delete</string>

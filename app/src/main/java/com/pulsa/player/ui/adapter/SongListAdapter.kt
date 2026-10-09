@@ -102,8 +102,9 @@ class SongListAdapter(
      * anterior mesmo com a nova tocando. Por isso os dois são escritos juntos aqui, e não
      * em dois lugares diferentes.
      *
-     * Rádio e stream não têm chave (`QueueKey.encode` devolve `null`), e aí o `bind` cai
-     * no id — que é o comportamento de sempre para esses, e o mesmo que o `load()` faz.
+     * Rádio e stream ganharam chave na fila universal (`r:<url>`/`s:<url>`, ver [QueueKey]),
+     * então o `bind` os compara por chave como todo mundo. Quem continua caindo no id são
+     * os itens sem chave nenhuma (ex.: episódio sem id legível).
      */
     private fun markPlaying(song: Song) {
         // Só um aviso quando nenhum dos dois mudou: os `set` já notificam, e eles são

@@ -250,6 +250,13 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.btn_download).setOnClickListener { startDownload() }
 
+        findViewById<MaterialSwitch>(R.id.download_wifi_switch).apply {
+            isChecked = Settings.downloadWifiOnly(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setDownloadWifiOnly(this@SettingsActivity, checked)
+            }
+        }
+
         findViewById<MaterialButton>(R.id.btn_update_site).setOnClickListener {
             UpdateChecker.downloadFromSite(this)
         }

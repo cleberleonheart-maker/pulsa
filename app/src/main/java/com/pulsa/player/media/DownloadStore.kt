@@ -23,7 +23,7 @@ import java.util.concurrent.Executors
  */
 object DownloadStore {
 
-    enum class Status { QUEUED, RUNNING, DONE, FAILED, CANCELLED }
+    enum class Status { QUEUED, RUNNING, PAUSED, DONE, FAILED, CANCELLED }
 
     data class Item(
         /** UUID do PeerTube, ou o hash da URL quando não há. Serve de chave e de nome de arquivo. */
@@ -37,7 +37,15 @@ object DownloadStore {
         val total: Long = -1L,
         val status: Status = Status.QUEUED,
         val error: String? = null,
-        val addedAt: Long = 0L
+        val addedAt: Long = 0L,
+        /**
+         * Bytes por segundo da transferência em andamento (0 quando parado).
+         *
+         * É transiente: não vai para o JSON porque a velocidade do download de ontem não diz
+         * nada e voltaria como "parado" na tela. Existe só para a linha da fila mostrar o
+         * ritmo sem o adapter ter que guardar relógio por item.
+         */
+        val speed: Long = 0L
     ) {
         fun isDone() = status == Status.DONE
         fun isActive() = status == Status.QUEUED || status == Status.RUNNING

@@ -111,9 +111,17 @@ class DownloadsAdapter(
         val status = when (item.status) {
             DownloadStore.Status.QUEUED -> ctx.getString(R.string.downloads_queued)
             DownloadStore.Status.RUNNING -> ctx.getString(R.string.downloads_running)
+            DownloadStore.Status.PAUSED -> ctx.getString(R.string.downloads_paused)
             DownloadStore.Status.DONE -> ctx.getString(R.string.downloads_done)
             DownloadStore.Status.FAILED -> item.error ?: ctx.getString(R.string.downloads_failed)
             DownloadStore.Status.CANCELLED -> ctx.getString(R.string.downloads_cancelled)
+        }
+        // O ritmo só interessa enquanto baixa: PAUSED mostra o mesmo tamanho mas sem o "/s",
+        // que daria a entender que a transferência ainda está andando.
+        val ritmo = if (item.status == DownloadStore.Status.RUNNING && item.speed > 0L) {
+            " · ${Helper.formatBytes(item.speed)}/s"
+        } else {
+            ""
         }
         holder.meta.text = if (item.isActive()) {
             val size = if (item.total > 0L) {
@@ -121,10 +129,9 @@ class DownloadsAdapter(
             } else {
                 Helper.formatBytes(item.bytes)
             }
-            "$status · $size"
+            "$status · $size$ritmo"
         } else {
-            val size = Helper.formatBytes(item.bytes)
-            "$status · $size"
+            "$status · ${Helper.formatBytes(item.bytes)}$ritmo"
         }
 
         // A barra só existe enquanto baixa: ela some quando termina, em vez de ficar

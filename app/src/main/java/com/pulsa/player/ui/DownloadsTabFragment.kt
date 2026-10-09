@@ -130,13 +130,20 @@ class DownloadsTabFragment : Fragment() {
             actions += { play(item) }
         }
         if (item.isActive()) {
+            // Pausar não é o mesmo que cancelar: o segundo mata a tentativa (vira `CANCELLED`,
+            // some da fila ativa), o primeiro congela o `.part` para seguir depois (vira `PAUSED`).
+            labels += ctx.getString(R.string.downloads_pause)
+            actions += {
+                DownloadService.pause(ctx, item.id)
+            }
             labels += ctx.getString(R.string.downloads_cancel)
             actions += {
                 DownloadService.cancel(ctx, item.id)
                 toast(R.string.downloads_cancelled)
             }
         }
-        if (item.status == DownloadStore.Status.FAILED || item.status == DownloadStore.Status.CANCELLED) {
+        if (item.status == DownloadStore.Status.FAILED || item.status == DownloadStore.Status.CANCELLED ||
+            item.status == DownloadStore.Status.PAUSED) {
             // "Continuar" e não "Tentar de novo": quando existe `.part`, o serviço retoma
             // pelo `Range` e o usuário não perde o que já baixou.
             labels += ctx.getString(R.string.downloads_continue)
