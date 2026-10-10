@@ -32,7 +32,49 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
-    <string name="changelog">Novidades desta versão (5.9.4):
+    <string name="changelog">Novidades desta versão (5.9.8):
+→ QUANTAS VEZES VOCÊ TOCOU ESSA?
+• Com uma música tocando, pergunte "Virgi, quantas vezes toquei essa?" e ela responde o
+  total de vezes, quando você ouviu pela primeira vez e quando foi a última — lendo o seu
+  histórico de reprodução.
+
+→ PARA NO FIM DESSA MÚSICA
+• "Virgi, para depois dessa" pausa quando a música atual terminar, sem você precisar marcar
+  um tempo. O sleep timer por minutos continua valendo.
+
+→ SALVA A FILA COMO PLAYLIST
+• "Virgi, salva essa fila como playlist viagem" grava a fila inteira numa playlist. Se já
+  existir uma com o mesmo nome, ela junta as músicas sem duplicar.
+
+→ DEDICATÓRIA À PRÓXIMA
+• "Virgi, dedica a próxima pra Ana" guarda a dedicatória e ela fala no início da próxima
+  faixa. "Dedica essa pra Ana" dedica a que já está tocando.
+
+→ MARATONA DE PODCAST
+• Ao começar um episódio, o próximo não ouvido do mesmo feed já entra na fila em segundo
+  plano. A troca vem sem espera e sem você voltar na tela.
+
+→ PULSA NA TV
+• O Pulsa agora aparece no launcher da TV (Android TV / Google TV), com o mesmo app do
+  celular. Também tirei a pasta de podcasts do sistema da lista de álbuns da biblioteca.
+
+★ DA 5.9.7
+→ DOWNLOAD E LIMPEZA POR VOZ
+• "Virgi, baixa esse episódio pra ouvir no carro" baixa o episódio que está tocando, e
+  "Virgi, limpa o que tá ocupando espaço" apaga os downloads que você confirmar, poupando
+  o que está tocando.
+
+★ DA 5.9.6
+→ O DOWNLOAD CENTER NÃO ENCHE MAIS O CARTÃO
+• Ele mostra quanto espaço os downloads vão ocupar e avisa antes de encher o armazenamento,
+  em vez de deixar o celular sem espaço.
+
+★ DA 5.9.5
+→ A FILA INTEIRA POR VOZ
+• "Virgi, joga o vídeo pro fim" reordena a fila atual, e "Virgi, o que já tocou de vídeo
+  hoje?" lista o que você ouviu hoje por tipo de mídia.
+
+★ DA 5.9.4
 → O 3D E O SURROUND PARARAM DE QUEBRAR A MÚSICA
 • Com o efeito ligado a faixa morria no meio e o Pulsa reiniciava o som. O que acontecia é
   que o 3D reaproveitava o mesmo pedaço de memória que já estava tocando, e o player tropeçava
@@ -716,6 +758,10 @@
     <string name="dj_commands_video">"Virgin, continua o filme / retoma o filme" — volta a tocar o vídeo, com o app fechado</string>
     <string name="dj_commands_video_open">"Virgin, mostra o vídeo / volta pro filme" — abre a tela do vídeo que está tocando</string>
     <string name="dj_commands_video_back">"Virgin, volta 30 segundos do filme / pausa o filme" — mexe no vídeo sem tocar na tela</string>
+    <string name="dj_commands_playcount">"Virgin, quantas vezes toquei essa?" — conta quantas vezes você já tocou a faixa atual</string>
+    <string name="dj_commands_sleep_end">"Virgin, para depois dessa" — pausa quando a música atual terminar</string>
+    <string name="dj_commands_queue_save">"Virgin, salva essa fila como playlist [nome]" — salva a fila atual numa playlist</string>
+    <string name="dj_commands_dedicate">"Virgin, dedica essa pra [nome] / dedica a próxima pra [nome]" — dedicatória falada</string>
     <string name="dj_scene_malhar">pra malhar</string>
     <string name="dj_scene_estudar">pra estudar</string>
     <string name="dj_scene_viajar">pra viajar</string>
@@ -732,6 +778,17 @@
     <string name="dj_voice_sleeptimer_set">Tranquilo! Paro a música daqui a %1$d minutos.</string>
     <string name="dj_voice_sleeptimer_done">Pronto, pausado. Boa noite!</string>
     <string name="dj_voice_sleeptimer_none">Não tem nada tocando agora pra eu pausar.</string>
+    <string name="dj_voice_sleep_end_set">Fechado! Paro quando essa música terminar.</string>
+    <string name="dj_voice_playcount">Você tocou %1$s %2$d vezes. Última vez: %3$s.</string>
+    <string name="dj_voice_playcount_none">Ainda não tocou %1$s comigo.</string>
+    <string name="dj_voice_playcount_today">hoje</string>
+    <string name="dj_voice_playcount_yesterday">ontem</string>
+    <string name="dj_voice_playcount_days">há %1$d dias</string>
+    <string name="dj_voice_playcount_months">há %1$d meses</string>
+    <string name="dj_voice_queue_save_empty">A fila está vazia, não tem o que salvar.</string>
+    <string name="dj_voice_queue_save_ask">Com qual nome? Diga: salva a fila como playlist e o nome.</string>
+    <string name="dj_voice_queue_save_done">Salvei %2$d músicas na playlist %1$s.</string>
+    <string name="dj_voice_queue_save_merged">Juntei %2$d músicas na playlist %1$s que já existia.</string>
     <string name="gestures_label">Gestos</string>
     <string name="gestures_desc">Agite o aparelho para trocar de música e incline para mudar o volume</string>
     <string name="hands_free_label">Mãos-livres</string>

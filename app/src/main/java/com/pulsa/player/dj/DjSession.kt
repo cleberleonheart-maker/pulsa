@@ -24,6 +24,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.DjActivity
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
+import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Settings
@@ -1248,11 +1249,30 @@ class DjSession(
                 speak(DjIdentity.introSpeech())
             }
             "count" -> voiceLibraryCount()
+            "playcount" -> voicePlayCount()
             "daily_set" -> startDailySet()
+            "queue_save" -> voiceSaveQueueAsPlaylist(norm)
+            "sleep_end" -> {
+                if (!Playback.isPlaying) {
+                    speak(say(R.string.dj_voice_sleeptimer_none))
+                } else {
+                    SleepTimer.scheduleEndOfTrack()
+                    speak(say(R.string.dj_voice_sleep_end_set))
+                }
+            }
             "dedicate" -> {
                 val name = DjCommander.dedicatee(norm)
                 if (name.isNullOrBlank()) {
                     speak(say(R.string.dj_voice_dedicate_ask))
+                } else if (DjCommander.dedicateNow(norm)) {
+                    val cur = Playback.currentSong
+                    if (cur != null) {
+                        speak(say(R.string.dj_voice_dedication_lead, name) + " " +
+                            say(R.string.dj_voice_track, cur.title, cur.artist))
+                    } else {
+                        DjDedication.pending = name
+                        speak(say(R.string.dj_voice_dedicate_ok, name))
+                    }
                 } else {
                     DjDedication.pending = name
                     speak(say(R.string.dj_voice_dedicate_ok, name))
@@ -1279,6 +1299,77 @@ class DjSession(
                 } else {
                     speak(activity.getString(R.string.dj_voice_count, n))
                 }
+            }
+        }
+    }
+
+    /** "Quantas vezes toquei essa?" — lê o play_log da faixa atual e fala o resumo. */
+    private fun voicePlayCount() {
+        val cur = Playback.currentSong
+        if (cur == null) {
+            speak(say(R.string.dj_voice_unknown))
+            return
+        }
+        val app = activity.applicationContext
+        val key = DjLearn.typedKey(cur) ?: cur.id
+        ThreadPool.post {
+            val info = DjLearn.playCount(app, key)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (info == null) {
+                    speak(say(R.string.dj_voice_playcount_none, cur.title))
+                    return@onUi
+                }
+                val gap = info.lastTs?.let {
+                    val days = (System.currentTimeMillis() / 1000L - it) / 86400L
+                    when {
+                        days < 1L -> activity.getString(R.string.dj_voice_playcount_today)
+                        days < 2L -> activity.getString(R.string.dj_voice_playcount_yesterday)
+                        days < 30L -> activity.getString(R.string.dj_voice_playcount_days, days)
+                        else -> activity.getString(R.string.dj_voice_playcount_months, days / 30)
+                    }
+                } ?: ""
+                speak(say(R.string.dj_voice_playcount, cur.title, info.total, gap))
+            }
+        }
+    }
+
+    /** "Salva essa fila como playlist X" — grava a fila atual inteira no banco. */
+    private fun voiceSaveQueueAsPlaylist(norm: String) {
+        val queue = Playback.queue
+        if (queue.isEmpty()) {
+            speak(say(R.string.dj_voice_queue_save_empty))
+            return
+        }
+        val raw = DjCommander.queueSaveName(norm)
+        if (raw.isNullOrBlank()) {
+            speak(say(R.string.dj_voice_queue_save_ask))
+            return
+        }
+        val name = raw.replaceFirstChar { it.titlecase() }
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val db = PlaylistDb.get(ctx)
+            val key = DjCommander.norm(name)
+            val existing = runCatching { db.playlists() }.getOrDefault(emptyList())
+                .firstOrNull { DjCommander.norm(it.name) == key }
+            val id = if (existing != null) {
+                existing.id
+            } else {
+                runCatching { db.createPlaylist(name) }.getOrNull()
+            }
+            if (id == null) {
+                ThreadPool.onUi { speak(say(R.string.dj_voice_dynq_none)) }
+                return@post
+            }
+            val songs = queue.filter { !it.isVideo && !it.isPodcast && !it.isRadio && !it.isStream }
+            runCatching { db.addAllMissingSongs(id, songs) }
+            Telemetry.log(activity, "Virgin queue->playlist \"$name\" n=${songs.size}")
+            ThreadPool.onUi {
+                speak(
+                    if (existing != null) say(R.string.dj_voice_queue_save_merged, existing.name, songs.size)
+                    else say(R.string.dj_voice_queue_save_done, name, songs.size)
+                )
             }
         }
     }

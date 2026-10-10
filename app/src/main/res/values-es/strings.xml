@@ -30,7 +30,102 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.9.3):
+    <string name="changelog">Novedades de esta versión (5.9.8):
+→ ¿CUÁNTAS VECES LA TOCASTE?
+• Con una canción sonando, pregunta "Virgi, ¿cuántas veces toqué esta?" y ella responde el
+  total, cuándo la escuchaste por primera vez y cuándo fue la última — leyendo tu historial
+  de reproducción.
+
+→ PARA AL TERMINAR ESTA CANCIÓN
+• "Virgi, para después de esta" pausa cuando termine la canción actual, sin que tengas que
+  fijar un tiempo. El sleep timer por minutos sigue funcionando.
+
+→ GUARDA LA FILA COMO LISTA
+• "Virgi, guarda esta fila como lista viaje" graba la fila entera en una lista. Si ya existe
+  una con el mismo nombre, junta las canciones sin duplicar.
+
+→ DEDICATORIA A LA SIGUIENTE
+• "Virgi, dedica la siguiente a Ana" guarda la dedicatoria y ella la dice al empezar la
+  siguiente canción. "Dedica esta a Ana" dedica la que ya está sonando.
+
+→ MARATÓN DE PODCAST
+• Al empezar un episodio, el siguiente no escuchado del mismo feed ya entra en la fila en
+  segundo plano. El cambio llega sin espera y sin que vuelvas a la pantalla.
+
+→ PULSA EN LA TV
+• Pulsa ahora aparece en el launcher de la TV (Android TV / Google TV), con la misma app del
+  celular. También quité la carpeta de podcasts del sistema de la lista de álbumes.
+
+★ DE LA 5.9.7
+→ DESCARGA Y LIMPIEZA POR VOZ
+• "Virgi, baja este episodio para el auto" baja el episodio que está sonando, y "Virgi,
+  limpia lo que ocupa espacio" borra las descargas que confirmes, respetando la que suena.
+
+★ DE LA 5.9.6
+→ EL DOWNLOAD CENTER YA NO LLENA LA TARJETA
+• Muestra cuánto espacio ocuparán las descargas y avisa antes de llenar el almacenamiento,
+  en vez de dejar el celular sin espacio.
+
+★ DE LA 5.9.5
+→ TODA LA FILA POR VOZ
+• "Virgi, manda el video al final" reordena la fila actual, y "Virgi, ¿qué se escuchó de
+  video hoy?" lista lo que oíste hoy por tipo de medio.
+
+★ DE LA 5.9.4
+→ EL 3D Y EL SURROUND DEJARON DE ROMPER LA MÚSICA
+• Con el efecto activado la canción moría a la mitad y Pulsa reiniciaba el sonido. Lo que
+  pasaba es que el 3D reutilizaba el mismo trozo de memoria que ya estaba sonando y el
+  reproductor tropezaba con él. Ahora el efecto tiene memoria propia: la canción suena de
+  principio a fin, incluso cuando enciendes el 3D o el surround con la música sonando.
+
+→ LOS AJUSTES ABREN DE NUEVO
+• La pantalla de ajustes se cerraba sola justo después de la actualización, y en algunos
+  equipos quedaba en negro. El fondo animado se dibujaba encima de la pantalla y nunca se
+  quitaba; ahora se detiene cuando entras a los ajustes. También volvió todo lo que muestra
+  la pantalla: si algún elemento falta, Pulsa lo salta en vez de cerrarse, y el nombre de lo
+  que faltó queda en el registro.
+
+→ EL VISUALIZADOR APARECE SIN QUE LO PIDAS
+• El visualizador quedaba oculto a menos que la canción estuviera sonando, y desaparecía
+  solo en la pantalla de reproducción. Ahora está siempre ahí, del tamaño de una barra, y
+  respeta el botón de encendido/apagado: apagado, desaparece y deja de capturar sonido.
+
+→ TUS LISTAS AGUANTAN LA ACTUALIZACIÓN
+• La lista de canciones y las favoritas pasaron a usar la base de datos real de Android
+  (Room), que es lo que usa el resto del sistema. Quien tenía Pulsa instalado antes sigue con
+  todo en su lugar: la app convierte la base vieja sola, sin reinstalar y sin perder ninguna
+  lista. El camino se probó con datos dentro de cada tabla antes de ir al APK.
+
+→ EL TRABAJO DE FONDO VUELVE SOLO
+• Espejar la biblioteca y el aprendizaje de la Virgin dependían de que la app estuviera
+  abierta: si cerrabas Pulsa, eso se detenía y solo volvía cuando la abrías de nuevo — o peor,
+  después de reiniciar el celular. Ahora es trabajo real del sistema: Android lo reejecuta,
+  con internet disponible. La descarga por enlace en los Ajustes también se volvió una de
+  estas: si sales de la pantalla a la mitad, la descarga continúa en vez de desaparecer. Lo
+  que sigue siendo inmediato es el estado de reproducción y los comandos del control remoto —
+  esos necesitan responder en segundos, y la Virgin que manda está en vivo.
+
+→ AHORA SÍ PUEDES CREAR UNA LISTA COMO SE DEBE
+• El botón de crear lista estaba desaparecido: solo se podía crear pasando por el menú de una
+  canción, o sea, era obligatorio tener una canción a mano. No había forma de empezar una
+  lista de cero — que es el caso más común. Ahora hay un "+" arriba en la pestaña Listas, y el
+  mismo botón aparece solo cuando la lista está vacía.
+
+→ TU COPIA DE SEGURIDAD LLEVA LAS LISTAS
+• El archivo de copia llevaba el aprendizaje de la Virgin y los ajustes de sonido, pero no
+  tus listas, ni las favoritas, ni los nombres que habías corregido a mano. Cambiabas de
+  celular y perdías todo lo que organizaste a mano. Ahora va todo — y el restore dice qué
+  volvió y qué no, en vez de un "listo" genérico. Las canciones que aún no están en el equipo
+  aparecen listadas por nombre: no se borraron de la copia, solo aún no llegaron aquí. Y como
+  la copia funciona por la ruta de cada archivo, también sobrevive a que cambies la carpeta de
+  la música o muevas los archivos.
+
+→ LISTA POR VOZ
+• "Virgi, crea una lista llamada batidinhas" crea la lista, y "pon la lista batidinhas"
+  empieza a sonar. Ninguna de las dos existía por voz. Si dices el nombre de una lista que no
+  existe, la Virgin avisa y muestra cuáles tienes — en vez de quedarse en silencio.
+
+★ DE LA 5.9.3
 → LA APP YA NO SE QUEDA EN LA PANTALLA DE LA VIRGIN
 • El manos libres encendía el micrófono antes de convertirse en servicio en primer plano. En
   Android 12+ eso mata el proceso: la Pulsa abría, moría y volvía a la misma pantalla. Ahora entra
@@ -147,6 +242,13 @@
     <string name="dj_voice_sleeptimer_set">¡Listo! Pauso la música en %1$d minutos.</string>
     <string name="dj_voice_sleeptimer_done">Listo, pausado. ¡Buenas noches!</string>
     <string name="dj_voice_sleeptimer_none">No está sonando nada ahora para pausar.</string>
+    <string name="dj_voice_sleep_end_set">¡Hecho! Paro cuando termine esta canción.</string>
+    <string name="dj_voice_playcount">Tocaste %1$s %2$d veces. La última vez: %3$s.</string>
+    <string name="dj_voice_playcount_none">Todavía no tocaste %1$s conmigo.</string>
+    <string name="dj_voice_playcount_today">hoy</string>
+    <string name="dj_voice_playcount_yesterday">ayer</string>
+    <string name="dj_voice_playcount_days">hace %1$d días</string>
+    <string name="dj_voice_playcount_months">hace %1$d meses</string>
     <string name="gestures_label">Gestos</string>
     <string name="gestures_desc">Sacude el teléfono para cambiar de canción e inclínalo para cambiar el volumen</string>
     <string name="hands_free_label">Manos libres</string>
@@ -526,6 +628,10 @@
     <string name="dj_voice_video_not_found">No encontré ningún video con ese nombre.</string>
     <string name="dj_voice_queue_move_done">Movido al final de la fila: %1$s.</string>
     <string name="dj_voice_queue_move_none">No encontré nada que mover al final de la fila.</string>
+    <string name="dj_voice_queue_save_empty">La fila está vacía, no hay nada que guardar.</string>
+    <string name="dj_voice_queue_save_ask">¿Con qué nombre? Di: guarda la fila como lista y el nombre.</string>
+    <string name="dj_voice_queue_save_done">Guardé %2$d canciones en la lista %1$s.</string>
+    <string name="dj_voice_queue_save_merged">Añadí %2$d canciones a la lista %1$s que ya existía.</string>
     <string name="dj_voice_history_none">Hoy todavía no sonó nada de eso.</string>
     <string name="dj_voice_history_all">Hoy sonó: %1$s.</string>
     <string name="dj_voice_download_no_ep">No hay un episodio sonando ahora.</string>

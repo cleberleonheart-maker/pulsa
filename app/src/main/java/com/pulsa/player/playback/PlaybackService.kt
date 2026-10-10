@@ -1228,6 +1228,7 @@ class PlaybackService : MediaLibraryService() {
             Playback.notifySpeedChanged(effectiveSpeed())
             if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
             notePlay(song)
+            maybeQueueNextEpisode(song)
             Playback.notifySong(song, index)
             loadLargeIcon(song)
             announceInBackground(song)
@@ -1377,6 +1378,46 @@ class PlaybackService : MediaLibraryService() {
     /** Último `id` já registrado no aprendizado; evita contar o mesmo toque duas vezes. */
     private var learnedId = -1L
 
+    /**
+     * Maratona de podcast: quando um episódio começa, o próximo não ouvido do mesmo feed
+     * entra na fila em background — a troca vem sem buffer e o usuário não precisa voltar
+     * na tela pra dar play no seguinte. Idempotente: se o próximo já está na fila (entrou
+     * por refresh ou clique manual), não duplica.
+     */
+    private var bingeQueuedKey: String? = null
+
+    private fun maybeQueueNextEpisode(song: Song) {
+        if (!song.isPodcast) return
+        val epId = song.podcastId ?: return
+        val key = "podcast:$epId"
+        if (bingeQueuedKey == key) return
+        bingeQueuedKey = key
+        val app = applicationContext
+        ThreadPool.post {
+            val db = runCatching { PodcastDb.get(app) }.getOrNull() ?: return@post
+            val current = runCatching { db.episode(epId) }.getOrNull() ?: return@post
+            val unplayed = runCatching { db.unplayed(current.podcastId) }.getOrDefault(emptyList())
+            val candidates = unplayed.filter { it.id != epId && !it.finished }
+            // Maratona natural: a imediatamente mais recente ANTERIOR à atual (ouvir de
+            // trás pra frente é o fluxo comum do podcast). Se não há anterior, pega a
+            // imediatamente mais nova — o caso de quem retomou de um episódio antigo.
+            val next = candidates
+                .filter { it.publishedAt < current.publishedAt }
+                .maxByOrNull { it.publishedAt }
+                ?: candidates.filter { it.publishedAt > current.publishedAt }
+                    .minByOrNull { it.publishedAt }
+                ?: return@post
+            val feedTitle = runCatching { db.feed(current.podcastId)?.title }
+                .getOrNull() ?: song.artist
+            val nextSong = runCatching { db.toSong(feedTitle, next) }.getOrNull() ?: return@post
+            ThreadPool.onUi {
+                val already = queue.any { it.path == nextSong.path }
+                if (already) return@onUi
+                enqueue(listOf(nextSong))
+            }
+        }
+    }
+
     private fun adoptPlayerIndex() {
         val p = player ?: return
         if (queue.isEmpty()) return
@@ -1395,6 +1436,7 @@ class PlaybackService : MediaLibraryService() {
         refreshNotification()
         if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
         notePlay(song)
+        maybeQueueNextEpisode(song)
         loadLargeIcon(song)
         announceInBackground(song)
         Playback.notifySong(song, at)

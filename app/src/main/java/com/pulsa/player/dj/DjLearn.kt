@@ -37,6 +37,9 @@ object DjLearn {
         val nightOwl: Pair<Long, Int>?       // faixa com ≥50% dos toques entre 0h-6h
     )
 
+    /** "Quantas vezes toquei essa": total + primeiro/último toque (ts em segundos). */
+    data class PlayCount(val total: Int, val firstTs: Long?, val lastTs: Long?)
+
     class Learner(context: Context) :
         SQLiteOpenHelper(context.applicationContext, "dj_learn.db", null, 4) {
 
@@ -297,6 +300,30 @@ object DjLearn {
             return result
         }
 
+        /**
+         * "Quantas vezes toquei essa": total de toques, primeiro e último, do play_log.
+         * `null` quando a faixa nunca tocou — quem fala decide o que responder.
+         */
+        fun playCount(songId: Long): PlayCount? {
+            var total = 0
+            var firstTs: Long? = null
+            var lastTs: Long? = null
+            runCatching {
+                readableDatabase.rawQuery(
+                    "SELECT COUNT(*), MIN(ts), MAX(ts) FROM play_log WHERE song_id = ?",
+                    arrayOf(songId.toString())
+                ).use { c ->
+                    if (c.moveToFirst()) {
+                        total = c.getInt(0)
+                        if (!c.isNull(1)) firstTs = c.getLong(1)
+                        if (!c.isNull(2)) lastTs = c.getLong(2)
+                    }
+                }
+            }
+            if (total <= 0) return null
+            return PlayCount(total, firstTs, lastTs)
+        }
+
         fun recordSkip(songId: Long) {
             bump(songId, "skips", 1)
         }
@@ -491,6 +518,9 @@ object DjLearn {
 
     fun playedOnDay(context: Context, dayOffset: Int, limit: Int): List<Pair<Long, Int>> =
         learner(context).playedOnDay(System.currentTimeMillis() / 1000L, dayOffset, limit)
+
+    fun playCount(context: Context, songId: Long): PlayCount? =
+        learner(context).playCount(songId)
 
     fun rewind(context: Context, days: Int, limit: Int): RewindResult =
         learner(context).rewind(System.currentTimeMillis() / 1000L, days, limit)

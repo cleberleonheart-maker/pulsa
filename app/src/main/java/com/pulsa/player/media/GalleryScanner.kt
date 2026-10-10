@@ -22,13 +22,15 @@ object GalleryScanner {
         if (scanning) return
         scanning = true
         ThreadPool.post {
+            // DIRECTORY_PODCASTS fica de fora de propósito: a pasta de podcasts do sistema
+            // não é álbum de música. O PodcastDb é quem varre os feeds assinados; varrer
+            // isso aqui fazia cada episódio baixado aparecer como "álbum" na biblioteca.
             val dirs = listOfNotNull(
                 Environment.getExternalStorageDirectory(),
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS),
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RINGTONES)
             ).distinct()
             val files = mutableListOf<String>()

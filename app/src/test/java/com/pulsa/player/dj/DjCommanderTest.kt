@@ -583,4 +583,81 @@ class DjCommanderTest {
         assertEquals("dia", DjCommander.playlistName(DjCommander.norm("toca a playlist do dia")))
         assertEquals("daily_set", DjCommander.action(DjCommander.norm("toca a playlist do dia")))
     }
+
+    @Test
+    fun playcount_query_recognizes_current_song_phrases() {
+        assertTrue(DjCommander.playCountQuery(DjCommander.norm("virgin, quantas vezes toquei essa")))
+        assertTrue(DjCommander.playCountQuery(DjCommander.norm("quantas vezes toquei essa musica")))
+        assertTrue(DjCommander.playCountQuery(DjCommander.norm("how many times did i play this song")))
+        assertFalse(DjCommander.playCountQuery(DjCommander.norm("virgin, quantas musicas tem na biblioteca")))
+        assertFalse(DjCommander.playCountQuery(DjCommander.norm("virgin, quantas vezes")))
+    }
+
+    @Test
+    fun playcount_action_beats_count() {
+        assertEquals(
+            "playcount",
+            DjCommander.action(DjCommander.norm("virgin, quantas vezes toquei essa musica"))
+        )
+        assertEquals("count", DjCommander.action(DjCommander.norm("virgin, quantas musicas tem")))
+    }
+
+    @Test
+    fun sleep_end_query_distinguishes_from_timer_and_pause() {
+        assertTrue(DjCommander.sleepEndQuery(DjCommander.norm("virgin, para depois dessa")))
+        assertTrue(DjCommander.sleepEndQuery(DjCommander.norm("para quando acabar essa")))
+        assertTrue(DjCommander.sleepEndQuery(DjCommander.norm("stop after this song")))
+        assertFalse(DjCommander.sleepEndQuery(DjCommander.norm("virgin, para em 20 minutos")))
+        assertFalse(DjCommander.sleepEndQuery(DjCommander.norm("virgin, para a musica")))
+    }
+
+    @Test
+    fun sleep_end_action_beats_pause() {
+        assertEquals("sleep_end", DjCommander.action(DjCommander.norm("virgin, para depois dessa")))
+        assertEquals("sleeptimer", DjCommander.action(DjCommander.norm("virgin, para em 20 minutos")))
+    }
+
+    @Test
+    fun queue_save_needs_save_verb_and_queue_word() {
+        assertTrue(DjCommander.queueSaveQuery(DjCommander.norm("virgin, salva essa fila como playlist viagem")))
+        assertTrue(DjCommander.queueSaveQuery(DjCommander.norm("salva a fila como lista rock")))
+        assertFalse(DjCommander.queueSaveQuery(DjCommander.norm("virgin, salva a musica")))
+        assertFalse(DjCommander.queueSaveQuery(DjCommander.norm("virgin, toca a fila")))
+    }
+
+    @Test
+    fun queue_save_name_extracts_after_marker() {
+        assertEquals(
+            "viagem",
+            DjCommander.queueSaveName(DjCommander.norm("salva essa fila como playlist viagem"))
+        )
+        assertEquals(
+            "rock viagem",
+            DjCommander.queueSaveName(DjCommander.norm("salva a fila como playlist rock viagem"))
+        )
+        assertNull(DjCommander.queueSaveName(DjCommander.norm("salva a fila")))
+    }
+
+    @Test
+    fun queue_save_action_is_distinct_from_playlist_create() {
+        assertEquals(
+            "queue_save",
+            DjCommander.action(DjCommander.norm("virgin, salva essa fila como playlist viagem"))
+        )
+        assertEquals(
+            "playlist_new",
+            DjCommander.action(DjCommander.norm("virgin, cria uma playlist chamada viagem"))
+        )
+    }
+
+    @Test
+    fun dedicate_now_vs_next() {
+        assertTrue(DjCommander.dedicateNow(DjCommander.norm("virgin, dedica essa pra ana")))
+        assertTrue(DjCommander.dedicateNow(DjCommander.norm("dedica essa musica pra ana")))
+        assertFalse(DjCommander.dedicateNow(DjCommander.norm("virgin, dedica a proxima pra ana")))
+        assertEquals(
+            "dedicate",
+            DjCommander.action(DjCommander.norm("virgin, dedica essa pra ana"))
+        )
+    }
 }

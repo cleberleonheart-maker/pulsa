@@ -10,6 +10,9 @@ object DjCommander {
 
     /** Divide um comando encadeado em até duas partes; vazio quando não há conectivo. */
     fun chain(norm: String): List<String> {
+        // "para depois dessa" contém " depois ", mas é um comando único (sleep end-of-track).
+        // Sem esta guarda o chain quebraria em ["para", "dessa"] e o sleep_end nunca seria visto.
+        if (sleepEndQuery(norm)) return emptyList()
         for (sep in CHAIN_SEPS) {
             val i = norm.indexOf(sep)
             if (i >= 0) {
@@ -377,6 +380,62 @@ object DjCommander {
     }
 
     private fun dedicateMatch(norm: String): Boolean = norm.contains("dedic")
+
+    /** "dedica essa pra Ana" (faixa atual) vs "dedica a próxima" (a próxima, já existente). */
+    fun dedicateNow(norm: String): Boolean {
+        if (!dedicateMatch(norm)) return false
+        return listOf("dedica essa", "dedica essa musica", "dedica esta", "dedica esta musica",
+            "dedicar essa", "dedicar essa musica", "dedica la", "dedicala",
+            "dedicate this", "dedica esta cancion").any { norm.contains(it) }
+    }
+
+    /** "quantas vezes toquei essa" / "como foi essa" → toques da faixa atual no play_log. */
+    fun playCountQuery(norm: String): Boolean {
+        val askCount = listOf("quantas vezes", "quantas vez", "quanta vez",
+            "how many times", "cuantas veces", "cuantas vez")
+        val current = listOf("essa", "essa musica", "esta", "esta musica",
+            "tocando", "a que esta", "this song", "esta cancion")
+        return askCount.any { norm.contains(it) } &&
+            (current.any { norm.contains(it) } || norm.contains("toquei"))
+    }
+
+    /** "para depois dessa" / "para quando acabar" → sleep timer no fim da faixa atual. */
+    fun sleepEndQuery(norm: String): Boolean {
+        if (norm.contains("para em") || norm.contains("parar em") ||
+            norm.contains("pausa em") || norm.contains("daqui a")
+        ) return false
+        return listOf(
+            "para depois dessa", "para depois que essa", "para quando acabar",
+            "para quando terminar", "para no fim da musica", "para ao terminar",
+            "para quando acabar essa", "para depois que essa terminar",
+            "para quando essa acabar", "para quando essa terminar",
+            "stop after this", "stop after this song",
+            "para al final de esta", "para cuando termine esta"
+        ).any { norm.contains(it) }
+    }
+
+    /** "salva essa fila como playlist viagem" / "salva a fila como rock". */
+    fun queueSaveQuery(norm: String): Boolean {
+        if (!(norm.contains("salva") || norm.contains("salvar") ||
+                norm.contains("guarda") || norm.contains("guardar"))
+        ) return false
+        if (!(norm.contains("fila") || norm.contains("queue"))) return false
+        return norm.contains("playlist") || norm.contains("lista")
+    }
+
+    /** Nome da playlist em "salva a fila como playlist viagem". */
+    fun queueSaveName(norm: String): String? {
+        for (marker in listOf("como playlist ", "como a playlist ", "na playlist ",
+            "na lista ", "como lista ", "com o nome ")) {
+            val i = norm.indexOf(marker)
+            if (i >= 0) {
+                val rest = norm.substring(i + marker.length)
+                    .trim().trim(',', '.', '!', '?', ' ')
+                if (rest.length >= 2) return rest
+            }
+        }
+        return null
+    }
 
     fun dedicatee(norm: String): String? {
         val markers = listOf(
@@ -852,6 +911,10 @@ object DjCommander {
     }
 
     fun action(norm: String): String? = when {
+        // Salvar a fila vem antes das playlists: "salva a fila como playlist X" contém a
+        // palavra "playlist" (e o "play" dentro dela faz o [playlistPlay] casar), então sem
+        // esta prioridade o comando viraria "toca a playlist X" em vez de salvar a fila.
+        queueSaveQuery(norm) -> "queue_save"
         // Playlists ficam no topo porque o nome da playlist pode ser qualquer palavra — até
         // "malhar" ou "chuva" podem ser o nome de uma playlist salva. Quem tem a palavra
         // "playlist" na frase vence; se não existir uma com esse nome, o `MainVirgin` devolve
@@ -861,6 +924,7 @@ object DjCommander {
         ambientVolume(norm) != null -> "ambient_vol"
         sceneQuery(norm) != null -> "scene"
         weekMatch(norm) -> "weekly"
+        sleepEndQuery(norm) -> "sleep_end"
         sleepTimerQuery(norm) != null -> "sleeptimer"
         (norm.contains("cancel") || norm.contains("desliga") || norm.contains("remove") ||
             norm.contains("apaga") || norm.contains("delete") || norm.contains("clear")) &&
@@ -868,6 +932,7 @@ object DjCommander {
         alarmQuery(norm) != null -> "alarm"
         dynamicQuery(norm) != null -> "dynq"
         decadeQuery(norm) != null -> "decade"
+        playCountQuery(norm) -> "playcount"
         countMatch(norm) -> "count"
         dailySetMatch(norm) -> "daily_set"
         memorySave(norm) -> "memory_save"
@@ -946,6 +1011,9 @@ object DjCommander {
         norm.contains("cancel") || norm.contains("esquece") || norm == "nao" -> "cancel"
         norm.contains("delet") || norm.contains("apag") || norm.contains("exclui") ||
             norm.contains("remove") -> "delete"
+        // Dedicatória antes do ramo genérico de "essa/tocando -> info": "dedica essa pra Ana"
+        // contém "essa" e acabava caindo em "info" sem nunca ver a dedicatória.
+        dedicateMatch(norm) -> "dedicate"
         norm.contains("qual") || norm.contains("essa") || norm.contains("tocando") -> "info"
         norm.contains("suger") || norm.contains("sugest") || norm.contains("recomend") ||
             norm.contains("indica uma") || norm.contains("o que voce tocaria") ||
@@ -956,7 +1024,6 @@ object DjCommander {
             norm.contains("o que voce faz") || norm.contains("voce e quem") ||
             norm.contains("como voce nasceu") || norm.contains("sua identidade") -> "identity"
         norm.contains("obrigad") || norm.contains("valeu") -> "thanks"
-        dedicateMatch(norm) -> "dedicate"
         norm.contains("oi") || norm.contains("ola") -> "hello"
         else -> null
     }

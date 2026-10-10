@@ -30,7 +30,102 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.9.3):
+    <string name="changelog">What is new (5.9.8):
+→ HOW MANY TIMES DID YOU PLAY THIS?
+• With a song playing, ask "Virgi, how many times did I play this?" and she answers the
+  total, when you first heard it and when it was last — reading your listening history.
+
+→ STOP AT THE END OF THIS SONG
+• "Virgi, stop after this one" pauses when the current song ends, without you setting a
+  time. The minute-based sleep timer still works.
+
+→ SAVE THE QUEUE AS A PLAYLIST
+• "Virgi, save this queue as playlist trip" writes the whole queue into a playlist. If one
+  with the same name already exists, she merges the songs without duplicating.
+
+→ DEDICATE THE NEXT ONE
+• "Virgi, dedicate the next one to Ana" saves the dedication and she says it at the start of
+  the next track. "Dedicate this one to Ana" dedicates the one already playing.
+
+→ PODCAST BINGE
+• When an episode starts, the next unplayed one from the same feed is already queued in the
+  background. The switch comes with no wait and without you going back to the screen.
+
+→ PULSA ON TV
+• Pulsa now shows up in the TV launcher (Android TV / Google TV), with the same phone app.
+  I also removed the system podcast folder from the library album list.
+
+★ FROM 5.9.7
+→ DOWNLOAD AND VOICE CLEANUP
+• "Virgi, download this episode to listen in the car" downloads the episode playing, and
+  "Virgi, clean up what is taking space" deletes the downloads you confirm, sparing the one
+  that is playing.
+
+★ FROM 5.9.6
+→ THE DOWNLOAD CENTER NO LONGER FILLS THE CARD
+• It shows how much space the downloads will take and warns before filling up storage,
+  instead of leaving the phone without space.
+
+★ FROM 5.9.5
+→ THE WHOLE QUEUE BY VOICE
+• "Virgi, move the video to the end" reorders the current queue, and "Virgi, what videos
+  played today?" lists what you heard today by media type.
+
+★ FROM 5.9.4
+→ THE 3D AND SURROUND STOPPED BREAKING THE MUSIC
+• With the effect on the track died in the middle and Pulsa restarted the sound. What
+  happened is that the 3D reused the same chunk of memory that was already playing, and the
+  player tripped on it. Now the effect has memory of its own: the song plays from start to
+  finish, including when you turn on 3D or surround with the music already playing.
+
+→ SETTINGS OPEN AGAIN
+• The settings screen closed by itself right after the update, and on some devices only black
+  remained. The animated background was drawn over the screen and was never removed; now it
+  stops when you enter settings. Everything the screen shows also came back: if an element is
+  ever missing, Pulsa skips instead of closing, and the name of what was missing stays in the
+  log.
+
+→ THE VISUALIZER SHOWS UP WITHOUT YOU ASKING
+• The visualizer stayed hidden unless the track was playing, and vanished by itself on the
+  playback screen. Now it is always there, the size of a bar, and respects the on/off button:
+  off, it disappears and stops grabbing sound.
+
+→ YOUR PLAYLISTS SURVIVE THE UPGRADE
+• The song list and favorites now use the real Android database (Room), which is what the
+  rest of the system uses. Anyone who had Pulsa installed before keeps everything in place:
+  the app converts the old database on its own, with no reinstall and no lost playlist. The
+  path was tested with data inside every table before going into the APK.
+
+→ THE BACKGROUND WORK COMES BACK ON ITS OWN
+• Mirroring the library and Virgin\'s learning depended on the app being open: if you closed
+  Pulsa, that simply stopped and only came back when you opened it again — or worse, after
+  restarting the phone. Now this is real system work: Android re-runs it, with the internet
+  available. The download by link in Settings became one of these too: if you leave the screen
+  midway, the download continues instead of vanishing. What still runs at once is the playback
+  state and the remote control commands — those need to answer in seconds, and the Virgin who
+  commands is live.
+
+→ NOW YOU CAN CREATE A PLAYLIST THE RIGHT WAY
+• The create-playlist button was missing: you could only create one through a song\'s menu,
+  meaning you had to have a song in hand. There was no way to start a playlist from scratch —
+  which is the most common case. Now there is a "+" at the top of the Playlists tab, and the
+  same button appears by itself when the list is empty.
+
+→ YOUR BACKUP TAKES THE PLAYLISTS ALONG
+• The backup file carried Virgin\'s learning and the sound settings, but not your playlists,
+  nor favorites, nor the names you had fixed by hand. You changed phones and lost everything
+  you organized by hand. Now it all goes — and the restore says what came back and what did
+  not, instead of a generic "done". Songs that are not on the device yet are listed by name:
+  they were not deleted from the backup, they just have not arrived here yet. And since the
+  backup works by each file\'s path, it also survives you changing the music folder or moving
+  files around.
+
+→ PLAYLIST BY VOICE
+• "Virgi, create a playlist called beats" creates the playlist, and "play the beats playlist"
+  starts playing it. Neither existed by voice. If you say the name of a playlist that does
+  not exist, Virgin warns you and shows which ones you have — instead of staying silent.
+
+★ FROM 5.9.3
 → THE APP NO LONGER STICKS ON VIRGIN\'S SPLASH
 • Hands-free turned the microphone on before becoming a foreground service. On Android 12+ that
   kills the process: Pulsa would open, die and come back to the same screen. It now goes
@@ -148,6 +243,13 @@
     <string name="dj_voice_sleeptimer_set">Got it! I\'ll pause the music in %1$d minutes.</string>
     <string name="dj_voice_sleeptimer_done">Done, paused. Good night!</string>
     <string name="dj_voice_sleeptimer_none">There is nothing playing right now to pause.</string>
+    <string name="dj_voice_sleep_end_set">Deal! I\'ll stop when this song ends.</string>
+    <string name="dj_voice_playcount">You played %1$s %2$d times. Last time: %3$s.</string>
+    <string name="dj_voice_playcount_none">You haven\'t played %1$s with me yet.</string>
+    <string name="dj_voice_playcount_today">today</string>
+    <string name="dj_voice_playcount_yesterday">yesterday</string>
+    <string name="dj_voice_playcount_days">%1$d days ago</string>
+    <string name="dj_voice_playcount_months">%1$d months ago</string>
     <string name="gestures_label">Gestures</string>
     <string name="gestures_desc">Shake the phone to skip a track and tilt it to change the volume</string>
     <string name="hands_free_label">Hands-free</string>
@@ -527,6 +629,10 @@
     <string name="dj_voice_video_not_found">I couldn\'t find a video with that name.</string>
     <string name="dj_voice_queue_move_done">Moved to the end of the queue: %1$s.</string>
     <string name="dj_voice_queue_move_none">I couldn\'t find anything to move to the end of the queue.</string>
+    <string name="dj_voice_queue_save_empty">The queue is empty, there\'s nothing to save.</string>
+    <string name="dj_voice_queue_save_ask">What name? Say: save the queue as playlist and the name.</string>
+    <string name="dj_voice_queue_save_done">Saved %2$d songs to the playlist %1$s.</string>
+    <string name="dj_voice_queue_save_merged">Added %2$d songs to the existing playlist %1$s.</string>
     <string name="dj_voice_history_none">Nothing like that has played yet today.</string>
     <string name="dj_voice_history_all">Played today: %1$s.</string>
     <string name="dj_voice_download_no_ep">No episode is playing right now.</string>
