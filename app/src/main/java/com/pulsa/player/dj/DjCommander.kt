@@ -194,6 +194,47 @@ object DjCommander {
             (norm.contains("pausa") || norm.contains("pausar") || norm.contains("para") ||
                 norm.contains("parar") || norm.contains("pare") || norm.contains("stop"))
 
+    // ----- Fila universal: reordenação por voz ("joga o vídeo pro fim") -----
+
+    /**
+     * Fila universal — o pedido de mover um item para o fim da fila.
+     *
+     * `video`/`episode` vêm do tipo citado na frase ("joga o vídeo pro fim"); quando nenhum
+     * é citado, o alvo é o item atual (`any`). Quem escolhe **qual** item do tipo mover é o
+     * motor ([com.pulsa.player.playback.Playback], que conhece a fila) — aqui só o texto
+     * decide a intenção.
+     */
+    data class QueueMove(val video: Boolean, val episode: Boolean) {
+        val any: Boolean get() = !video && !episode
+    }
+
+    private val MOVE_END_VERBS = listOf(
+        "joga", "manda", "bota", "poe", "coloca", "move", "leva", "deixa",
+        "tira", "empurra", "ponha", "coloque", "mueva", "mueve", "put", "send"
+    )
+
+    private fun moveToEndSignal(norm: String): Boolean =
+        listOf(
+            "pro fim", "para o fim", "pro final", "para o final", "ao fim", "ao final",
+            "no fim", "no final", "final da fila", "fim da fila", "por ultimo",
+            "at the end", "to the end", "al final", "para el final", "pon al final"
+        ).any { norm.contains(it) }
+
+    /**
+     * "virgi, joga o vídeo pro fim" → `QueueMove(video=true)`; "manda essa pro fim da fila"
+     * → `QueueMove(any=true)`. `null` quando a frase não é reordenação.
+     *
+     * O verbo é obrigatório de propósito: "o que você faria para o fim do mês" tem o sinal
+     * mas nenhum verbo de mover, e sem essa trava a frase ia para o "para" do vídeo.
+     */
+    fun moveToEndQuery(norm: String): QueueMove? {
+        if (!moveToEndSignal(norm)) return null
+        if (MOVE_END_VERBS.none { norm.contains(it) }) return null
+        val video = listOf("video", "videos", "filme", "filmes", "movie", "movies").any { norm.contains(it) }
+        val episode = listOf("episodio", "episodios", "episode", "episodes", "serie", "series", "podcast").any { norm.contains(it) }
+        return QueueMove(video = video, episode = episode)
+    }
+
     /**
      * F2 · Nome do vídeo depois do verbo. Devolve `null` quando não há nome — aí o comando
      * continua sendo retomar/abrir o que já está tocando ([video_play]/[video_open]).
@@ -781,6 +822,11 @@ object DjCommander {
         // `video_by_name` ANTES de video_play/video_open: "toca o filme Matrix" tem nome e
         // precisa achar na biblioteca/histórico; "toca o filme" sem nome continua retomando.
         // O [videoQuery] só devolve algo quando sobra texto depois do verbo+artigo+filme.
+        // Fila universal: reordenação por voz. Fica ANTES do bloco de vídeo de propósito:
+        // "joga o vídeo **para** o fim" contém "para", que a [videoPauseMatch] leria como
+        // pausa. Verbo de mover + "fim/final" é sinal específico o bastante para não roubar
+        // "volta pro filme" nem "toca pra malhar".
+        moveToEndQuery(norm) != null -> "queue_move"
         videoQuery(norm) != null -> "video_by_name"
         videoPlayMatch(norm) -> "video_play"
         videoOpenMatch(norm) -> "video_open"

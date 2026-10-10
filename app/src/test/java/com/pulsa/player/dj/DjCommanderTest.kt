@@ -3,6 +3,7 @@ package com.pulsa.player.dj
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DjCommanderTest {
@@ -148,6 +149,38 @@ class DjCommanderTest {
     fun action_video_pause() {
         assertEquals("video_pause", DjCommander.action(DjCommander.norm("virgin, pausa o filme")))
         assertEquals("video_pause", DjCommander.action(DjCommander.norm("virgin, para o video")))
+    }
+
+    @Test
+    fun action_queue_move() {
+        assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, joga o video pro fim")))
+        assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, manda o episodio pro fim da fila")))
+        assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, bota essa musica por ultimo")))
+        assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, coloca essa no final da fila")))
+        assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, move to the end da fila")))
+    }
+
+    @Test
+    fun action_queue_move_beats_video_pause_and_play() {
+        // O "para" de "joga o vídeo **para** o fim" não é pausa: a reordenação vem antes.
+        assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, joga o video para o fim")))
+        // Sem verbo de mover, o sinal de fim sozinho não é reordenação — cai no resto.
+        assertNull(DjCommander.action(DjCommander.norm("virgin, pro fim")))
+        // "volta pro filme" continua abrindo o vídeo, não virando reordenação.
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, volta pro filme")))
+    }
+
+    @Test
+    fun queue_move_query_tipo() {
+        val video = DjCommander.moveToEndQuery(DjCommander.norm("joga o video pro fim"))
+        assertNotNull(video)
+        assertEquals(DjCommander.QueueMove(video = true, episode = false), video)
+        val episodio = DjCommander.moveToEndQuery(DjCommander.norm("manda o episodio pro fim da fila"))
+        assertEquals(DjCommander.QueueMove(video = false, episode = true), episodio)
+        val generico = DjCommander.moveToEndQuery(DjCommander.norm("coloca essa no final da fila"))
+        assertEquals(DjCommander.QueueMove(video = false, episode = false), generico)
+        assertTrue(generico!!.any)
+        assertNull(DjCommander.moveToEndQuery("fim do video"))
     }
 
     @Test

@@ -648,6 +648,25 @@ class DjSession(
         }
     }
 
+    /**
+     * Fila universal — reordenação por voz ("virgi, joga o vídeo pro fim"). Mesma regra do
+     * [MainVirgin.virgQueueMove]: o motor escolhe o item, aqui só decide o que falar.
+     */
+    private fun voiceQueueMove(query: DjCommander.QueueMove?) {
+        val q = query ?: return
+        if (Playback.queue.isEmpty()) {
+            speak(say(R.string.dj_voice_queue_move_none))
+            return
+        }
+        val moved = Playback.moveToEnd(q.video, q.episode)
+        if (moved == null) {
+            speak(say(R.string.dj_voice_queue_move_none))
+            return
+        }
+        Telemetry.log(activity, "DJ queue_move type=video:${q.video} episode:${q.episode} -> ${moved.title}")
+        speak(say(R.string.dj_voice_queue_move_done, moved.title))
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -944,6 +963,7 @@ class DjSession(
                     speak(say(R.string.dj_voice_pause))
                 }
             }
+            "queue_move" -> voiceQueueMove(DjCommander.moveToEndQuery(norm))
             "skip" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {

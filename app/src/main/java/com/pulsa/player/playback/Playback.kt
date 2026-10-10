@@ -235,6 +235,12 @@ object Playback {
      */
     fun enqueue(songs: List<Song>): Int = link?.enqueue(songs) ?: 0
 
+    /**
+     * Fila universal — reordenação por voz ("virgi, joga o vídeo pro fim"). Move o item
+     * pedido pro fim da fila e devolve o que moveu (ou `null` quando não há nada).
+     */
+    fun moveToEnd(video: Boolean, episode: Boolean): Song? = link?.moveToEnd(video, episode)
+
     /** Retoma a reprodução (E5: a tela de vídeo volta do segundo plano e o motor estava pausado). */
     fun play() {
         link?.play()

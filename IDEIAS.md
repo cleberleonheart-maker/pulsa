@@ -157,6 +157,16 @@
 - [ ] **Despertador progressivo**: variação do alarme — o volume sobe gradual + som ambiente em vez de estourar — `AlarmManager` + `Ambient`
 - [ ] **Karaokê de viagem**: letra sincronizada em landscape fullscreen (pra TV/modo passeio) — `Lyrics` + `DancingVirginView`
 
+### Novas ideias (out/2026)
+- [ ] **"Quantas vezes toquei essa?"**: a faixa atual responde pela voz — vezes tocadas, último toque e primeira vez, lidos do `play_log` — `DjLearn` + `DjCommander`
+- [ ] **Relançar antigas**: mix das faixas que você não ouve há 6+ meses, com a Virgin avisando o intervalo (""essa fazia 8 meses que não tocava"") — o oposto do "Rádio com memória" que já existe — `DjLearn.lastPlayedMap` + `DjEngine`
+- [ ] **Rádio do humor**: "virgi, tô nervoso" monta fila calmante; "tô pra baixo" energizante — mesmo motor das cenas, mas guiado por estado de espírito — `DjCommander` + `DjEngine` + `Ambient`
+- [ ] **Dedicação à próxima**: "dedica a próxima pra Ana" — hoje o `dedicate` sempre pega a faixa atual; falta o modo "depois que essa terminar" — `DjDedication` + `DjCommander`
+- [ ] **Prefetch da próxima**: baixa em cache a faixa seguinte da fila quando o Wi-Fi está ocioso, para a troca vir sem buffer — reaproveita o `DownloadService` + `Playback.queue`
+- [ ] **Salvar fila como playlist**: "salva essa fila como playlist viagem" — a fila atual vira uma playlist salva por voz — `PlaylistDb` + `DjCommander`
+- [ ] **Para depois dessa**: sleep timer "para depois que essa terminar" — o fim da faixa vira o gatilho, com timeout como teto — `Playback` + `DjCommander`
+- [ ] **Maratona de podcast**: ao fim do episódio já toca o próximo da mesma série (binge mode) — `Playback.onTrackEnded` + `PodcastDb`
+
 ## Web player (pulsaweb) — a fazer (app separado da web)
 - [ ] **Controle do "Ouvir juntos" pelo PC**: o web player entra na sessão com o código de 5 letras e espelha/controla sem celular — `MirrorSync` + pulsaweb
 - [ ] **Pulsa Rewind / replay do ano na web**: replay das músicas mais tocadas + gráfico de ano completo no dashboard web, gerado da telemetria (`/stats` já agrega) — o resumo já existe no app (4.12.0)
@@ -224,7 +234,7 @@
   - [ ] **`kotlinx.coroutines` no lugar do `ThreadPool`** — a dependência está declarada (`kotlinx-coroutines-android:1.8.1`) e é usada em **um** lugar só (`work/PulsaWork.kt`). O resto do app é `ThreadPool.post`/`onUi`. Migração de 108 chamadas: não é risco de comportamento, é custo alto sem ganho percebido — o `ThreadPool` está isolado e funciona
 
 ### Novas ideias para a central
-- [~] **Fila universal** (09/10): **rádio e stream agora entram** — o `QueueKey` deu chave aos dois (`r:<url>`/`s:<url>`), o restore remonta os `Song` da URL+som de `queue_extras` (título/artista), e a mesma rádio deixa de entrar duas vezes na fila (`filterNew`). Falta a reordenação por voz ("virgi, joga o vídeo pro fim") e o histórico do que já tocou por tipo (`Playback.queue` + novo modelo) — barata, porque `Playback.queue` já existe; é speech-to-intent
+- [~] **Fila universal** (09/10): **rádio e stream agora entram** — o `QueueKey` deu chave aos dois (`r:<url>`/`s:<url>`), o restore remonta os `Song` da URL+som de `queue_extras` (título/artista), e a mesma rádio deixa de entrar duas vezes na fila (`filterNew`). **Reordenação por voz feita** (10/10): "virgi, joga o vídeo pro fim" move o item pedido para o fim da fila — o parser (`DjCommander.moveToEndQuery`, verbo de mover + "fim/final", antes do bloco de vídeo porque "para o fim" contém "para") só diz a intenção, e o motor (`PlaybackService.moveToEnd`) escolhe o item do tipo citado mais próximo à frente (atual → frente → fundo) e reposiciona via `moveMediaItem` (sem parar a faixa atual) ou `prepareCurrent` quando é o item atual. Falta o histórico do que já tocou por tipo (`Playback.queue` + novo modelo) — barata, porque `Playback.queue` já existe; é speech-to-intent
 - [ ] **"Qual é essa música?"** (Shazam interno): conversa direto com o diferencial do DJ, e um recognizer resolve
 - [x] **Terceiro avatar · Vera** (`c6eb5fa`):Virgin e Victor são os dois roxos, então a Vera ganhou paleta própria (teal/ciano, óculos de sol) e voz própria (pitch 1.02, entre os outros dois). O `avatar_masculino` booleano virou id 0–2 com compatibilidade (`Settings.kt:409-424`), e o toque na tela cicla os três (`VirginHomeFragment.kt:511`). **Validado no aparelho em 30/09** — os três avatares passaram pelo rework no padrão do Lingo e foram aprovados (ver seção Avatares)
 - [x] **Log de erro legível** (`8ec25af`): o `CrashLogger` escrevia só em `getExternalFilesDir`, que é `Android/data/` — bloqueado para leitura no Android 11+, então o crash acontecia e ninguém conseguia ler o stack. Agora espelha em `Download/Pulsa/pulsa-erros.log` via MediaStore (`core/CrashLogger.kt:19-35`), que o Termux lê. **Isso destrava o debug de todas as rodadas futuras**

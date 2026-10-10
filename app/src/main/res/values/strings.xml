@@ -612,6 +612,8 @@
     <string name="dj_voice_video_play">Continuando %1$s.</string>
     <string name="dj_voice_video_back">Voltei para %1$s.</string>
     <string name="dj_voice_video_not_found">Não achei nenhum vídeo com esse nome.</string>
+    <string name="dj_voice_queue_move_done">Movido para o fim da fila: %1$s.</string>
+    <string name="dj_voice_queue_move_none">Não achei nada para mover para o fim da fila.</string>
     <string name="dj_voice_mix">Claro! Preparando um mix novo para você.</string>
     <string name="dj_voice_fav">Marcada como favorita!</string>
     <string name="dj_voice_month_favs">Bora! Tocando %d favoritas desse mês.</string>

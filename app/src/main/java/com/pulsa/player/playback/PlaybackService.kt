@@ -964,6 +964,75 @@ class PlaybackService : MediaLibraryService() {
     }
 
     /**
+     * Fila universal — reordenação por voz ("virgi, joga o vídeo pro fim").
+     *
+     * Move para o **fim** o item pedido: o atual quando a frase não cita tipo, ou o item do
+     * tipo citado mais próximo — começando pelo que está tocando e depois pela **frente** da
+     * fila. O caso comum da fila mista é a música tocando com um vídeo na sequência: é esse
+     * vídeo que o usuário quer empurrar; o fundo da fila só entra quando não há nada adiante.
+     *
+     * Devolve o `Song` movido (para a Virgin nomear a resposta) ou `null` quando não há nada
+     * para mover (fila com menos de 2 itens, item já no fim, ou nenhum do tipo citado).
+     *
+     * Dois caminhos, porque mexer no item **atual** e no **aguardando** são coisas
+     * diferentes:
+     * - item atual: a fila é remontada por [prepareCurrent] — o item desliza para o fim e a
+     *   posição seguinte assume, como um "próxima" que empurra o vídeo para depois;
+     * - item à frente: o player recebe `moveMediaItem` e o que está tocando continua no
+     *   lugar, sem recomeçar a faixa atual do zero. O índice só é ajustado quando o item
+     *   movido estava **antes** do atual (ele desce uma casa).
+     *
+     * O player nunca recebe `setShuffleModeEnabled` (shuffle é gerido por aqui, ver
+     * [setShuffle]), então a timeline do
+     * ExoPlayer reflete a ordem de `queue` 1:1 e os índices de `moveMediaItem` batem com a
+     * nossa lista.
+     */
+    fun moveToEnd(videoType: Boolean, episodeType: Boolean): Song? {
+        val p = player ?: return null
+        val size = queue.size
+        if (size < 2) return null
+        val curIdx = index.coerceIn(0, size - 1)
+        val matches: (Song) -> Boolean = { s ->
+            when {
+                videoType -> s.needsVideoScreen
+                episodeType -> s.isPodcast
+                else -> true
+            }
+        }
+        val from = if (matches(queue[curIdx])) curIdx else {
+            val ahead = (curIdx + 1 until size).firstOrNull { matches(queue[it]) }
+            ahead ?: (0 until curIdx).firstOrNull { matches(queue[it]) }
+        }
+        if (from == null || from == size - 1) return null
+        val to = size - 1
+        val original = queue
+        val moved = queue[from]
+        queue = original.toMutableList().apply { add(removeAt(from)) }
+        if (from == curIdx) {
+            // `index` não muda: o item que deslizou para cá é o que continua tocando, e a
+            // remontagem do [prepareCurrent] toca ele no lugar do que foi empurrado.
+            index = from
+            runCatching { prepareCurrent() }.onFailure {
+                queue = original
+                return null
+            }
+        } else {
+            val ok = runCatching {
+                p.moveMediaItem(from, to)
+                true
+            }.getOrDefault(false)
+            if (!ok) {
+                queue = original
+                return null
+            }
+            if (from < curIdx) index = curIdx - 1
+            Playback.notifySong(currentSong, index)
+        }
+        saveQueueState()
+        return moved
+    }
+
+    /**
      * Reaplica o título/artist/album que o usuário editou, vinda do [PlaylistDb].
      *
      * Só para **áudio**: os overrides são guardados por `songId` e não sabem de que tipo é

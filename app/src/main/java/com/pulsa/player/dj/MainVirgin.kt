@@ -828,6 +828,29 @@ class MainVirgin(
         }
     }
 
+    /**
+     * Fila universal — reordenação por voz ("virgi, joga o vídeo pro fim").
+     *
+     * Quem escolhe **qual** item do tipo mover é o motor ([Playback.moveToEnd]): o atual
+     * quando a frase não cita tipo, senão o item do tipo citado mais próximo à frente. Aqui
+     * só traduz: sem fila -> o que não há para mover, item movido -> o nome dele.
+     */
+    private fun virgQueueMove(query: DjCommander.QueueMove?) {
+        val q = query ?: return
+        if (Playback.queue.isEmpty()) {
+            virginSpeak(say(R.string.dj_voice_queue_move_none))
+            return
+        }
+        val moved = Playback.moveToEnd(q.video, q.episode)
+        if (moved == null) {
+            virginSpeak(say(R.string.dj_voice_queue_move_none))
+            return
+        }
+        host.syncMiniPlayer()
+        Telemetry.log(activity, "Virgin queue_move type=video:${q.video} episode:${q.episode} -> ${moved.title}")
+        virginSpeak(say(R.string.dj_voice_queue_move_done, moved.title))
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -1050,6 +1073,7 @@ class MainVirgin(
                     virginSpeak(say(R.string.dj_voice_pause))
                 }
             }
+            "queue_move" -> virgQueueMove(DjCommander.moveToEndQuery(norm))
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong
                 if (action == "dislike" && cur != null) {

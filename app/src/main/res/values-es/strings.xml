@@ -517,6 +517,8 @@
     <string name="dj_voice_video_play">Reanudando %1$s.</string>
     <string name="dj_voice_video_back">Volví a %1$s.</string>
     <string name="dj_voice_video_not_found">No encontré ningún video con ese nombre.</string>
+    <string name="dj_voice_queue_move_done">Movido al final de la fila: %1$s.</string>
+    <string name="dj_voice_queue_move_none">No encontré nada que mover al final de la fila.</string>
     <string name="dj_voice_mix">¡Claro! Preparando un mix nuevo para ti.</string>
     <string name="dj_voice_fav">¡Marcada como favorita!</string>
     <string name="dj_voice_month_favs">¡Vamos! Reproduciendo %d favoritas de este mes.</string>
