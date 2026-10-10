@@ -529,6 +529,14 @@
     <string name="dj_voice_queue_move_none">I couldn\'t find anything to move to the end of the queue.</string>
     <string name="dj_voice_history_none">Nothing like that has played yet today.</string>
     <string name="dj_voice_history_all">Played today: %1$s.</string>
+    <string name="dj_voice_download_no_ep">No episode is playing right now.</string>
+    <string name="dj_voice_download_already">That episode is already downloaded: %1$s.</string>
+    <string name="dj_voice_download_start">Downloading %1$s for the car.</string>
+    <string name="dj_voice_download_done">Done, downloaded %1$s.</string>
+    <string name="dj_voice_download_fail">Could not download that episode.</string>
+    <string name="dj_voice_clean_none">There are no downloads to clean.</string>
+    <string name="dj_voice_clean_confirm">%1$s of videos and %2$s of episodes downloaded. Should I delete them?</string>
+    <string name="dj_voice_clean_done">Freed %1$s.</string>
     <string name="dj_voice_mix">Sure! Preparing a new mix for you.</string>
     <string name="dj_voice_fav">Marked as favorite!</string>
     <string name="dj_voice_month_favs">Let\'s go! Playing %d of this month\'s favorites.</string>

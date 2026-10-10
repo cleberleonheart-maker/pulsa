@@ -237,6 +237,38 @@ object DjCommander {
 
     // ----- Histórico do que já tocou, por tipo ("o que já tocou de vídeo hoje?") -----
 
+    /**
+     * F4 · Download por voz — "virgi, baixa esse episódio pra ouvir no carro".
+     *
+     * Verbos curtos de propósito ("baixa"/"baixe") seguidos de "episodio"/"podcast". O verbo
+     * não pode virar catch-all ("baixa essa música X" é outra coisa), por isso a checagem
+     * exige os dois lados: sem verbo não é pedido de download; sem alvo de episódio não é
+     * este comando.
+     */
+    fun downloadQuery(norm: String): Boolean {
+        val verb = listOf("baixa", "baixe", "baixar").any { norm.contains(it) }
+        if (!verb) return false
+        return listOf("episodio", "episodios", "episode", "episodes", "podcast").any { norm.contains(it) }
+    }
+
+    /**
+     * F4 · Limpeza por voz — "virgi, limpa o que tá ocupando espaço".
+     *
+     * Frases fixas, não palavras soltas: "limpa" sozinho e "memoria"/"apaga" pertencem a
+     * outros ramos ([pendrive], delete de música), e este comando não pode roubá-las.
+     */
+    fun cleanQuery(norm: String): Boolean =
+        listOf(
+            "limpa o que", "limpar o que", "limpe o que",
+            "limpa espaco", "limpar espaco", "limpe o espaco", "limpa o espaco",
+            "libera espaco", "liberar espaco", "libere espaco",
+            "apaga os downloads", "apagar os downloads", "apague os downloads",
+            "limpa os downloads", "limpar os downloads", "limpe os downloads",
+            "limpa a memoria", "limpar a memoria",
+            "free up space", "clean up space", "clean space",
+            "libera espacio", "liberar espacio", "limpiar espacio", "limpiar el espacio"
+        ).any { norm.contains(it) }
+
     private val HISTORY_SIGNALS = listOf(
         "historico", "historial", "play history", "recent",
         "o que ja tocou", "o que ja toceu", "o que tocou", "o que toceu", "o que ja passou",
@@ -864,6 +896,11 @@ object DjCommander {
         // "volta pro filme" nem "toca pra malhar".
         // Histórico por tipo antes do bloco de vídeo: "o que já tocou de vídeo" tem a palavra
         // "vídeo", e o [videoQuery]/[videoOpenMatch] a leria como comando de vídeo.
+        // Download por voz antes do bloco de vídeo: "baixa esse episódio" tem "episodio",
+        // que o [videoWord] leria como "toca o episódio". "limpa o que tá ocupando espaço"
+        // tem "apaga"/"memoria", que os ramos de delete de música e de pendrive pegariam.
+        downloadQuery(norm) -> "download_episode"
+        cleanQuery(norm) -> "clean_space"
         historyQuery(norm) != null -> "queue_history"
         moveToEndQuery(norm) != null -> "queue_move"
         videoQuery(norm) != null -> "video_by_name"

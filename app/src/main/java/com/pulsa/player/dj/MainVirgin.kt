@@ -31,13 +31,19 @@ import com.pulsa.player.data.Library
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.StreamHistory
+import com.pulsa.player.media.DownloadService
+import com.pulsa.player.media.DownloadStore
 import com.pulsa.player.media.GalleryScanner
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
+import com.pulsa.player.podcast.Episode
+import com.pulsa.player.podcast.PodcastDb
+import com.pulsa.player.podcast.PodcastFiles
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Telemetry
+import com.pulsa.player.work.PulsaWork
 import com.pulsa.player.core.CrashLogger
 
 /**
@@ -80,10 +86,13 @@ class MainVirgin(
         private const val AMBIENT_DUCK_FACTOR = 0.2f
         private val HANDS_FREE_BLOCKED = setOf(
             "scan", "duplicates", "pendrive", "delete", "confirm", "cancel",
+            "clean_space",
             "visualizer", "skin", "karaoke"
             // `video_open` NÃO fica bloqueado: era o único jeito de voltar para a tela do
             // vídeo depois que ela fecha sozinha. Travar o comando só entregava o vídeo
             // parado, e sem comando para retomá-lo — que é o que "continua o filme" faz.
+            // `download_episode` também NÃO fica bloqueado: "baixa esse episódio pra ouvir
+            // no carro" é literalmente o comando para usar no carro, em voo.
         )
     }
 
@@ -104,6 +113,7 @@ class MainVirgin(
     private var virginRecognizing = false
     private var pendingRecognize = false
     private var pendingDelete: Song? = null
+    private var pendingClean = false
     private var pendingDuplicateSongs: List<Song> = emptyList()
     private var pendingDuplicateVideos: List<Video> = emptyList()
     private var pendingPendriveFiles: List<VirginMedia.PendriveFile>? = null
@@ -875,6 +885,136 @@ class MainVirgin(
         }
     }
 
+    /**
+     * F4 · Download por voz — "virgi, baixa esse episódio pra ouvir no carro".
+     *
+     * Resolve o episódio pela faixa que está tocando agora (`song.podcastId`). A leitura do
+     * banco sai da main thread; o download vai para o WorkManager (fila única por episódio,
+     * com rede como constraint — o "pra ouvir no carro" é isso: ele baixa quando puder). O
+     * `selectManually` NÃO entra aqui: comando de voz não pode abrir escolha, pega o atual.
+     */
+    private fun virgDownloadEpisode() {
+        val current = Playback.currentSong
+        val episodeId = current?.podcastId
+        if (episodeId == null) {
+            virginSpeak(say(R.string.dj_voice_download_no_ep))
+            return
+        }
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            val episode = PodcastDb.get(ctx).episode(episodeId)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (episode == null) {
+                    virginSpeak(say(R.string.dj_voice_download_fail))
+                    return@onUi
+                }
+                if (episode.filePath.isNotBlank()) {
+                    virginSpeak(say(R.string.dj_voice_download_already, episode.title))
+                    return@onUi
+                }
+                Telemetry.log(activity, "Virgin download_episode id=${episode.id}")
+                val job = PulsaWork.download(ctx, episode.audioUrl, "podcast-ep${episode.id}")
+                if (job == null) {
+                    virginSpeak(say(R.string.dj_voice_download_fail))
+                    return@onUi
+                }
+                virginSpeak(say(R.string.dj_voice_download_start, episode.title))
+                PulsaWork.watchDownload(ctx, job) { ok, path ->
+                    if (ok && path.isNotBlank()) {
+                        ThreadPool.post { PodcastDb.get(ctx).setFilePath(episode.id, path) }
+                        virginSpeak(say(R.string.dj_voice_download_done, episode.title))
+                    } else {
+                        virginSpeak(say(R.string.dj_voice_download_fail))
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * F4 · Limpeza por voz — "virgi, limpa o que tá ocupando espaço".
+     *
+     * Primeira fala é perguntar: mostra quanto dos vídeos e quanto dos episódios, e pede a
+     * confirmação (o "sim" reusa o ramo `confirm`). Apagar download por engano é mais caro
+     * que perguntar, então a confirmação dupla é de propósito — igual ao delete de música.
+     */
+    private fun virgCleanSpace() {
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            DownloadStore.ensureLoaded(ctx)
+            val done = DownloadStore.list().filter { it.status == DownloadStore.Status.DONE }
+            val videoBytes = done.sumOf { item ->
+                runCatching { DownloadStore.fileFor(ctx, item).length() }.getOrDefault(0L)
+            }
+            val episodes = downloadedEpisodes(ctx)
+            val podcastBytes = episodes.sumOf { ep ->
+                runCatching { java.io.File(ep.filePath).length() }.getOrDefault(0L)
+            }
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (videoBytes <= 0L && podcastBytes <= 0L) {
+                    virginSpeak(say(R.string.dj_voice_clean_none))
+                    return@onUi
+                }
+                pendingClean = true
+                virginHandler.removeCallbacksAndMessages(null)
+                virginHandler.postDelayed({ pendingClean = false }, 15000)
+                Telemetry.log(
+                    activity,
+                    "Virgin clean_space videos=${Helper.formatBytes(videoBytes)} podcasts=${Helper.formatBytes(podcastBytes)}"
+                )
+                virginSpeak(say(
+                    R.string.dj_voice_clean_confirm,
+                    Helper.formatBytes(videoBytes), Helper.formatBytes(podcastBytes)
+                ))
+            }
+        }
+    }
+
+    /** Confirmação do "limpa o que tá ocupando espaço": apaga e conta o que liberou. */
+    private fun virgCleanSpaceConfirm() {
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            DownloadStore.ensureLoaded(ctx)
+            val done = DownloadStore.list().filter { it.status == DownloadStore.Status.DONE }
+            val videoBytes = done.sumOf { item ->
+                runCatching { DownloadStore.fileFor(ctx, item).length() }.getOrDefault(0L)
+            }
+            // O episódio que está nos ouvidos agora não é apagado: derrubar o arquivo que
+            // o engine está lendo para o carro parar o que já estava descendo.
+            val currentEpisode = Playback.currentSong?.podcastId
+            val episodes = downloadedEpisodes(ctx).filter { it.id != currentEpisode }
+            val podcastBytes = episodes.sumOf { ep ->
+                runCatching { java.io.File(ep.filePath).length() }.getOrDefault(0L)
+            }
+            done.forEach { DownloadService.delete(ctx, it.id) }
+            val db = PodcastDb.get(ctx)
+            episodes.forEach { ep ->
+                if (ep.filePath.isNotBlank()) {
+                    PodcastFiles.delete(ctx, ep.filePath)
+                    db.setFilePath(ep.id, "")
+                }
+            }
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                Telemetry.log(
+                    activity,
+                    "Virgin clean_space freed=${Helper.formatBytes(videoBytes + podcastBytes)}"
+                )
+                virginSpeak(say(R.string.dj_voice_clean_done, Helper.formatBytes(videoBytes + podcastBytes)))
+            }
+        }
+    }
+
+    /** Todos os episódios baixados, em qualquer feed. Fora da main thread. */
+    private fun downloadedEpisodes(ctx: Context): List<Episode> {
+        val db = PodcastDb.get(ctx)
+        return db.feeds().flatMap { feed ->
+            runCatching { db.downloadedEpisodes(feed.id) }.getOrDefault(emptyList())
+        }
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -1043,7 +1183,7 @@ class MainVirgin(
             if (hasWake) virginSpeak(say(R.string.dj_voice_unknown))
             return
         }
-        if (action !in setOf("confirm", "cancel", "delete")) {
+        if (action !in setOf("confirm", "cancel", "delete", "clean_space")) {
             pendingDelete = null
             virginHandler.removeCallbacksAndMessages(null)
         }
@@ -1097,8 +1237,10 @@ class MainVirgin(
                     virginSpeak(say(R.string.dj_voice_pause))
                 }
             }
-            "queue_move" -> virgQueueMove(DjCommander.moveToEndQuery(norm))
+"queue_move"    -> virgQueueMove(DjCommander.moveToEndQuery(norm))
             "queue_history" -> virgQueueHistory(DjCommander.historyQuery(norm))
+            "download_episode" -> virgDownloadEpisode()
+            "clean_space" -> virgCleanSpace()
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong
                 if (action == "dislike" && cur != null) {
@@ -1192,6 +1334,10 @@ class MainVirgin(
                     pendingPendriveFiles = null
                     virginHandler.removeCallbacksAndMessages(null)
                     completePendriveCopy(pen)
+                } else if (pendingClean) {
+                    pendingClean = false
+                    virginHandler.removeCallbacksAndMessages(null)
+                    virgCleanSpaceConfirm()
                 } else {
                     val song = pendingDelete
                     pendingDelete = null
@@ -1204,6 +1350,10 @@ class MainVirgin(
                     pendingPendriveFiles = null
                     virginHandler.removeCallbacksAndMessages(null)
                     virginSpeak(activity.getString(R.string.dj_voice_pen_cancel))
+                } else if (pendingClean) {
+                    pendingClean = false
+                    virginHandler.removeCallbacksAndMessages(null)
+                    virginSpeak(say(R.string.dj_voice_delete_cancel))
                 } else {
                     pendingDelete = null
                     virginHandler.removeCallbacksAndMessages(null)

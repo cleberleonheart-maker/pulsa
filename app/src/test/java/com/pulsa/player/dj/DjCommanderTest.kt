@@ -1,6 +1,7 @@
 package com.pulsa.player.dj
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -209,6 +210,40 @@ class DjCommanderTest {
         // usa "tocou"/"tocar". Misturar faria "o que toquei ontem" cair no histórico de hoje.
         assertEquals("yesterday", DjCommander.action(DjCommander.norm("virgin, o que toquei ontem")))
         assertEquals("yesterday", DjCommander.action(DjCommander.norm("virgin, que toquei ontem")))
+    }
+
+    @Test
+    fun action_download_episode() {
+        // F4 · download por voz: verbo de baixar + alvo de episódio/podcast.
+        assertEquals("download_episode", DjCommander.action(DjCommander.norm("virgin, baixa esse episodio pra ouvir no carro")))
+        assertEquals("download_episode", DjCommander.action(DjCommander.norm("virgi, baixar o episodio novo")))
+        assertEquals("download_episode", DjCommander.action(DjCommander.norm("virgin, baixa esse podcast")))
+        assertEquals("download_episode", DjCommander.action(DjCommander.norm("virgi, baixe o episodio")))
+    }
+
+    @Test
+    fun download_query_sem_episodio_nao_e_download() {
+        // Verbo sozinho não basta: "baixa essa música X" não é este comando, e o alvo sem
+        // verbo ("o episódio" com toca/abre) continua sendo play/vídeo.
+        assertFalse(DjCommander.downloadQuery(DjCommander.norm("baixa essa musica")))
+        assertFalse(DjCommander.downloadQuery(DjCommander.norm("episodio novo do carro")))
+        // O bloco de vídeo continua em pé: "toca o episodio" sem nome vira video_play
+        // (retoma), não download.
+        assertEquals("video_play", DjCommander.action(DjCommander.norm("virgin, toca o episodio")))
+    }
+
+    @Test
+    fun action_clean_space() {
+        // F4 · limpeza por voz: frases fixas, porque "limpa"/"apaga"/"memoria" sozinhos
+        // pertencem a outros ramos (limpar meme, delete de música, pendrive).
+        assertEquals("clean_space", DjCommander.action(DjCommander.norm("virgin, limpa o que ta ocupando espaco")))
+        assertEquals("clean_space", DjCommander.action(DjCommander.norm("virgi, libera espaco")))
+        assertEquals("clean_space", DjCommander.action(DjCommander.norm("virgin, limpa os downloads")))
+        assertEquals("clean_space", DjCommander.action(DjCommander.norm("virgin, apaga os downloads")))
+        assertEquals("clean_space", DjCommander.action(DjCommander.norm("virgi, clean up space")))
+        // Nada de roubar: apagar a música continua sendo delete, a memória continua pendrive.
+        assertEquals("delete", DjCommander.action(DjCommander.norm("virgin, apaga essa musica")))
+        assertEquals("pendrive", DjCommander.action(DjCommander.norm("virgin, le memoria usb")))
     }
 
     @Test

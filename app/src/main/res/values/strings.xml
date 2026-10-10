@@ -623,6 +623,14 @@
     <string name="dj_voice_queue_move_none">Não achei nada para mover para o fim da fila.</string>
     <string name="dj_voice_history_none">Ainda não tocou nada desse tipo hoje.</string>
     <string name="dj_voice_history_all">Já tocou hoje: %1$s.</string>
+    <string name="dj_voice_download_no_ep">Não tem episódio tocando agora.</string>
+    <string name="dj_voice_download_already">Esse episódio já está baixado: %1$s.</string>
+    <string name="dj_voice_download_start">Baixando %1$s pra ouvir no carro.</string>
+    <string name="dj_voice_download_done">Pronto, baixei %1$s.</string>
+    <string name="dj_voice_download_fail">Não consegui baixar esse episódio.</string>
+    <string name="dj_voice_clean_none">Não tem download pra limpar.</string>
+    <string name="dj_voice_clean_confirm">Tem %1$s de vídeos e %2$s de episódios baixados. Quer que eu apague?</string>
+    <string name="dj_voice_clean_done">Limpei %1$s de espaço.</string>
     <string name="dj_voice_mix">Claro! Preparando um mix novo para você.</string>
     <string name="dj_voice_fav">Marcada como favorita!</string>
     <string name="dj_voice_month_favs">Bora! Tocando %d favoritas desse mês.</string>

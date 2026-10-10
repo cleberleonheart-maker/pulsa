@@ -32,13 +32,19 @@ import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.StreamHistory
 import com.pulsa.player.data.VideoLibrary
+import com.pulsa.player.media.DownloadService
+import com.pulsa.player.media.DownloadStore
 import com.pulsa.player.media.GalleryScanner
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
+import com.pulsa.player.podcast.Episode
+import com.pulsa.player.podcast.PodcastDb
+import com.pulsa.player.podcast.PodcastFiles
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Telemetry
+import com.pulsa.player.work.PulsaWork
 import com.pulsa.player.core.CrashLogger
 
 /**
@@ -104,6 +110,7 @@ class DjSession(
     private var djVoice: DjVoice? = null
     private var commandListener: DjCommandListener? = null
     private var pendingDelete: Song? = null
+    private var pendingClean = false
     private var recognizing = false
     private var pendingRecognize = false
     private var resumeAfterRecognize = false
@@ -687,6 +694,124 @@ class DjSession(
         }
     }
 
+    /**
+     * F4 · Download por voz — espelho do [MainVirgin.virgDownloadEpisode]: pega o episódio
+     * que está tocando e manda para a fila do WorkManager.
+     */
+    private fun voiceDownloadEpisode() {
+        val current = Playback.currentSong
+        val episodeId = current?.podcastId
+        if (episodeId == null) {
+            speak(say(R.string.dj_voice_download_no_ep))
+            return
+        }
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            val episode = PodcastDb.get(ctx).episode(episodeId)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (episode == null) {
+                    speak(say(R.string.dj_voice_download_fail))
+                    return@onUi
+                }
+                if (episode.filePath.isNotBlank()) {
+                    speak(say(R.string.dj_voice_download_already, episode.title))
+                    return@onUi
+                }
+                Telemetry.log(activity, "DJ download_episode id=${episode.id}")
+                val job = PulsaWork.download(ctx, episode.audioUrl, "podcast-ep${episode.id}")
+                if (job == null) {
+                    speak(say(R.string.dj_voice_download_fail))
+                    return@onUi
+                }
+                speak(say(R.string.dj_voice_download_start, episode.title))
+                PulsaWork.watchDownload(ctx, job) { ok, path ->
+                    if (ok && path.isNotBlank()) {
+                        ThreadPool.post { PodcastDb.get(ctx).setFilePath(episode.id, path) }
+                        speak(say(R.string.dj_voice_download_done, episode.title))
+                    } else {
+                        speak(say(R.string.dj_voice_download_fail))
+                    }
+                }
+            }
+        }
+    }
+
+    /** F4 · Limpeza por voz — espelho do [MainVirgin.virgCleanSpace]. */
+    private fun voiceCleanSpace() {
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            DownloadStore.ensureLoaded(ctx)
+            val done = DownloadStore.list().filter { it.status == DownloadStore.Status.DONE }
+            val videoBytes = done.sumOf { item ->
+                runCatching { DownloadStore.fileFor(ctx, item).length() }.getOrDefault(0L)
+            }
+            val episodes = downloadedEpisodes(ctx)
+            val podcastBytes = episodes.sumOf { ep ->
+                runCatching { java.io.File(ep.filePath).length() }.getOrDefault(0L)
+            }
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (videoBytes <= 0L && podcastBytes <= 0L) {
+                    speak(say(R.string.dj_voice_clean_none))
+                    return@onUi
+                }
+                pendingClean = true
+                uiHandler.removeCallbacksAndMessages(null)
+                uiHandler.postDelayed({ pendingClean = false }, 15000)
+                Telemetry.log(
+                    activity,
+                    "DJ clean_space videos=${Helper.formatBytes(videoBytes)} podcasts=${Helper.formatBytes(podcastBytes)}"
+                )
+                speak(say(
+                    R.string.dj_voice_clean_confirm,
+                    Helper.formatBytes(videoBytes), Helper.formatBytes(podcastBytes)
+                ))
+            }
+        }
+    }
+
+    /** F4 · Confirmação do "limpa o que tá ocupando espaço". */
+    private fun voiceCleanSpaceConfirm() {
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            DownloadStore.ensureLoaded(ctx)
+            val done = DownloadStore.list().filter { it.status == DownloadStore.Status.DONE }
+            val videoBytes = done.sumOf { item ->
+                runCatching { DownloadStore.fileFor(ctx, item).length() }.getOrDefault(0L)
+            }
+            val currentEpisode = Playback.currentSong?.podcastId
+            val episodes = downloadedEpisodes(ctx).filter { it.id != currentEpisode }
+            val podcastBytes = episodes.sumOf { ep ->
+                runCatching { java.io.File(ep.filePath).length() }.getOrDefault(0L)
+            }
+            done.forEach { DownloadService.delete(ctx, it.id) }
+            val db = PodcastDb.get(ctx)
+            episodes.forEach { ep ->
+                if (ep.filePath.isNotBlank()) {
+                    PodcastFiles.delete(ctx, ep.filePath)
+                    db.setFilePath(ep.id, "")
+                }
+            }
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                Telemetry.log(
+                    activity,
+                    "DJ clean_space freed=${Helper.formatBytes(videoBytes + podcastBytes)}"
+                )
+                speak(say(R.string.dj_voice_clean_done, Helper.formatBytes(videoBytes + podcastBytes)))
+            }
+        }
+    }
+
+    /** Todos os episódios baixados, em qualquer feed. Fora da main thread. */
+    private fun downloadedEpisodes(ctx: Context): List<Episode> {
+        val db = PodcastDb.get(ctx)
+        return db.feeds().flatMap { feed ->
+            runCatching { db.downloadedEpisodes(feed.id) }.getOrDefault(emptyList())
+        }
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -943,7 +1068,7 @@ class DjSession(
             if (hasWake) speak(say(R.string.dj_voice_unknown))
             return
         }
-        if (action !in setOf("confirm", "cancel", "delete")) {
+        if (action !in setOf("confirm", "cancel", "delete", "clean_space")) {
             pendingDelete = null
             uiHandler.removeCallbacksAndMessages(null)
         }
@@ -985,6 +1110,8 @@ class DjSession(
             }
             "queue_move" -> voiceQueueMove(DjCommander.moveToEndQuery(norm))
             "queue_history" -> voiceQueueHistory(DjCommander.historyQuery(norm))
+            "download_episode" -> voiceDownloadEpisode()
+            "clean_space" -> voiceCleanSpace()
             "skip" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {
@@ -1090,6 +1217,10 @@ class DjSession(
                 if (pendingPendriveFiles != null) {
                     uiHandler.removeCallbacksAndMessages(null)
                     completePendriveCopy()
+                } else if (pendingClean) {
+                    pendingClean = false
+                    uiHandler.removeCallbacksAndMessages(null)
+                    voiceCleanSpaceConfirm()
                 } else {
                     val song = pendingDelete
                     pendingDelete = null
@@ -1102,6 +1233,10 @@ class DjSession(
                     pendingPendriveFiles = null
                     uiHandler.removeCallbacksAndMessages(null)
                     speak(say(R.string.dj_voice_pen_cancel))
+                } else if (pendingClean) {
+                    pendingClean = false
+                    uiHandler.removeCallbacksAndMessages(null)
+                    speak(say(R.string.dj_voice_delete_cancel))
                 } else {
                     pendingDelete = null
                     uiHandler.removeCallbacksAndMessages(null)
