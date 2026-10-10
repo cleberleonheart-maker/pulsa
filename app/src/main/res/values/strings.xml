@@ -427,6 +427,13 @@
     <string name="downloads_no_space">Sem espaço no aparelho</string>
     <string name="downloads_wifi_only">Baixar só no Wi‑Fi</string>
     <string name="downloads_wifi_only_hint">Download grande em rede medida consome sua franquia sem aviso; quando ligado, a fila espera a rede Wi‑Fi/cabo chegar.</string>
+    <string name="downloads_limit">Limite de espaço</string>
+    <string name="downloads_limit_hint">Quanto os downloads podem ocupar no aparelho; depois do teto, novos downloads falham em vez de encher o cartão.</string>
+    <string name="downloads_limit_value_none">Sem limite</string>
+    <string name="downloads_limit_reached">Limite de espaço atingido — apague um download para continuar</string>
+    <string name="downloads_used_cap">%1$s usados de %2$s</string>
+    <string name="downloads_warning_limit">Limite atingido. Apague algum download para baixar mais.</string>
+    <string name="downloads_warning_free">Pouco espaço livre no aparelho: %1$s. Considere apagar downloads.</string>
     <string name="download_start_queued">Na fila para baixar</string>
     <string name="download_not_available">Este vídeo não tem MP4 para baixar</string>
     <string name="download_already">Já está nos baixados</string>

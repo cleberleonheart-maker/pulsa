@@ -584,6 +584,21 @@ object Settings {
     fun downloadWifiOnly(context: Context): Boolean =
         prefs(context).getBoolean("download_wifi_only", true)
 
+    /**
+     * F2 · Download Center — limite de espaço (MB) que o app pode ocupar com downloads.
+     * `0` = sem limite.
+     *
+     * Padrão `0`: quem já tem cartão grande não quer que o app corte download sozinho. Quer
+     * proteger o cartão — o caso do "baixei 20 vídeos e o aparelho parou" — coloca um número
+     * e o serviço recusa o que passar do teto, em vez de encher até o sistema reclamar.
+     */
+    fun setDownloadLimitMb(context: Context, value: Int) {
+        prefs(context).edit().putInt("download_limit_mb", value).apply()
+    }
+
+    fun downloadLimitMb(context: Context): Int =
+        prefs(context).getInt("download_limit_mb", 0)
+
     fun setGesturesOn(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("gestures_on", value).apply()
     }

@@ -407,6 +407,13 @@
     <string name="downloads_no_space">Sin espacio en el dispositivo</string>
     <string name="downloads_wifi_only">Descargar solo con Wi‑Fi</string>
     <string name="downloads_wifi_only_hint">Las descargas grandes gastan tus datos sin avisar; al activarlo, la cola espera a una red Wi‑Fi/cable.</string>
+    <string name="downloads_limit">Límite de espacio</string>
+    <string name="downloads_limit_hint">Cuánto disco pueden ocupar las descargas; pasado el tope, las nuevas fallan en vez de llenar la memoria.</string>
+    <string name="downloads_limit_value_none">Sin límite</string>
+    <string name="downloads_limit_reached">Límite de espacio alcanzado: borra una descarga para continuar</string>
+    <string name="downloads_used_cap">%1$s usados de %2$s</string>
+    <string name="downloads_warning_limit">Límite alcanzado. Borra una descarga para seguir bajando.</string>
+    <string name="downloads_warning_free">Poco espacio libre: %1$s. Conviene borrar descargas.</string>
     <string name="downloads_continue">Continuar</string>
     <string name="downloads_cancel">Cancelar</string>
     <string name="downloads_delete">Borrar</string>

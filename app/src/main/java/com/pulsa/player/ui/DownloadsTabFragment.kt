@@ -15,6 +15,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
+import com.pulsa.player.core.Helper
+import com.pulsa.player.core.Settings
 import com.pulsa.player.media.DownloadService
 import com.pulsa.player.media.DownloadStore
 import com.pulsa.player.ui.adapter.DownloadsAdapter
@@ -34,8 +36,13 @@ import com.pulsa.player.ui.adapter.DownloadsAdapter
  */
 class DownloadsTabFragment : Fragment() {
 
+    // Barra de 512 MB: abaixo disto, o Android começa a chiar (limpeza de cache, apps que
+    // se recusam a atualizar), então o aviso do app tem que acender antes, não junto.
+    private val LOW_FREE_BYTES = 512L * 1024L * 1024L
+
     private lateinit var adapter: DownloadsAdapter
     private lateinit var emptyView: TextView
+    private lateinit var banner: TextView
     private var observer: (() -> Unit)? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -43,6 +50,21 @@ class DownloadsTabFragment : Fragment() {
         val root = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
         }
+
+        // Fora da `RecyclerView`: o aviso de espaço tem que aparecer mesmo com a lista
+        // vazia — o caso que importa é "vou baixar e não cabe", antes da primeira linha
+        // existir.
+        banner = TextView(ctx).apply {
+            visibility = View.GONE
+            textSize = 13f
+            setTextColor(resources.getColor(R.color.text_secondary, null))
+            setBackgroundResource(R.drawable.bg_row_glass)
+            setPadding(16.dp, 12.dp, 16.dp, 12.dp)
+        }
+        root.addView(
+            banner,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        )
 
         val list = RecyclerView(ctx).apply {
             layoutManager = LinearLayoutManager(ctx)
@@ -89,6 +111,44 @@ class DownloadsTabFragment : Fragment() {
         val items = DownloadStore.list()
         adapter.submit(items)
         emptyView.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+        refreshBanner()
+    }
+
+    /**
+     * Aviso de espaço no topo da aba.
+     *
+     * Duas coisas, e elas se complementam: o teto que o usuário escolheu (mostrado sempre
+     * que existe, porque é o "quanto ainda dá pra baixar") e o próprio cartão, que avisa
+     * antes do sistema avisar por ele — o espaço livre cair para poucos MB geralmente é
+     * tarde demais para o usuário entender de onde veio a parada.
+     *
+     * Roda dentro do `render()` do observador: mudou o estado do download, muda o aviso.
+     */
+    private fun refreshBanner() {
+        val ctx = context ?: return
+        val messages = ArrayList<String>()
+
+        val limitMb = Settings.downloadLimitMb(ctx)
+        if (limitMb > 0) {
+            val used = DownloadStore.usedBytes(ctx)
+            val limit = limitMb * 1024L * 1024L
+            messages += getString(R.string.downloads_used_cap, Helper.formatBytes(used), Helper.formatBytes(limit))
+            if (used >= limit) {
+                messages += getString(R.string.downloads_warning_limit)
+            }
+        }
+
+        val free = runCatching { DownloadStore.dir(ctx).usableSpace }.getOrDefault(0L)
+        if (free in 1 until LOW_FREE_BYTES) {
+            messages += getString(R.string.downloads_warning_free, Helper.formatBytes(free))
+        }
+
+        if (messages.isEmpty()) {
+            banner.visibility = View.GONE
+        } else {
+            banner.text = messages.joinToString("\n")
+            banner.visibility = View.VISIBLE
+        }
     }
 
     private fun play(item: DownloadStore.Item) {

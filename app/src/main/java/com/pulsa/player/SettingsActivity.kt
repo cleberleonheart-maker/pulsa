@@ -257,6 +257,10 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        val limitValue = viewOrNull<TextView>(R.id.download_limit_value)
+        refreshDownloadLimit(limitValue)
+        findViewById<View>(R.id.download_limit_row).setOnClickListener { promptDownloadLimit(limitValue) }
+
         findViewById<MaterialButton>(R.id.btn_update_site).setOnClickListener {
             UpdateChecker.downloadFromSite(this)
         }
@@ -822,6 +826,32 @@ class SettingsActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
                 updateCacheLabel(valueView)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun refreshDownloadLimit(valueView: TextView?) {
+        val mb = Settings.downloadLimitMb(this)
+        valueView?.text = if (mb <= 0) {
+            getString(R.string.downloads_limit_value_none)
+        } else {
+            Helper.formatBytes(mb * 1024L * 1024L)
+        }
+    }
+
+    private fun promptDownloadLimit(valueView: TextView?) {
+        val current = Settings.downloadLimitMb(this)
+        val options = intArrayOf(0, 1024, 2048, 5120)
+        val labels = options.map { mb ->
+            if (mb <= 0) getString(R.string.downloads_limit_value_none)
+            else Helper.formatBytes(mb * 1024L * 1024L)
+        }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.downloads_limit)
+            .setSingleChoiceItems(labels, options.indexOfFirst { it == current }.let { if (it < 0) 0 else it }) { _, which ->
+                Settings.setDownloadLimitMb(this, options[which])
+                refreshDownloadLimit(valueView)
             }
             .setNegativeButton(R.string.cancel, null)
             .show()

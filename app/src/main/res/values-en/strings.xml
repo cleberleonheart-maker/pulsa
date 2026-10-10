@@ -408,6 +408,13 @@
     <string name="downloads_no_space">Not enough storage</string>
     <string name="downloads_wifi_only">Download on Wi-Fi only</string>
     <string name="downloads_wifi_only_hint">Big downloads use your mobile data without warning; when on, the queue waits for a Wi-Fi/wired network.</string>
+    <string name="downloads_limit">Storage limit</string>
+    <string name="downloads_limit_hint">How much disk downloads may use; past the cap, new downloads fail instead of filling your storage.</string>
+    <string name="downloads_limit_value_none">No limit</string>
+    <string name="downloads_limit_reached">Storage limit reached — delete a download to continue</string>
+    <string name="downloads_used_cap">%1$s used of %2$s</string>
+    <string name="downloads_warning_limit">Limit reached. Delete a download to keep going.</string>
+    <string name="downloads_warning_free">Low storage left: %1$s. Consider deleting downloads.</string>
     <string name="downloads_continue">Resume</string>
     <string name="downloads_cancel">Cancel</string>
     <string name="downloads_delete">Delete</string>
