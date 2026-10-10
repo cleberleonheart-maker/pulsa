@@ -30,7 +30,14 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.9.8):
+    <string name="changelog">What is new (5.9.9):
+→ ALL COMMANDS IN VIRGIN'S HELP
+• The list that opens from the mic on the home screen showed only part of the commands and
+  had fallen behind: recognize a song, delete, duplicate songs, flash drive, visualizer,
+  "who are you", alarm and others simply did not show up. Now it is the same list on every
+  screen, with every command, and a new command shows up on its own in both places.
+
+★ FROM 5.9.8
 → HOW MANY TIMES DID YOU PLAY THIS?
 • With a song playing, ask "Virgi, how many times did I play this?" and she answers the
   total, when you first heard it and when it was last — reading your listening history.

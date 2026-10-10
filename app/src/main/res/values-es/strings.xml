@@ -30,7 +30,15 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.9.8):
+    <string name="changelog">Novedades de esta versión (5.9.9):
+→ TODOS LOS COMANDOS EN LA AYUDA DE VIRGIN
+• La lista que abre el micrófono de la pantalla de inicio mostraba solo una parte de los
+  comandos y se había quedado atrás: reconocer canción, borrar, canciones repetidas,
+  pendrive, visualizador, "quién eres", despertador y otros no aparecían. Ahora es la misma
+  lista en todas las pantallas, con todos los comandos, y un comando nuevo aparece solo en
+  los dos lugares.
+
+★ DE LA 5.9.8
 → ¿CUÁNTAS VECES LA TOCASTE?
 • Con una canción sonando, pregunta "Virgi, ¿cuántas veces toqué esta?" y ella responde el
   total, cuándo la escuchaste por primera vez y cuándo fue la última — leyendo tu historial
