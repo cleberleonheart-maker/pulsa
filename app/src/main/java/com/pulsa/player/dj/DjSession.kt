@@ -667,6 +667,26 @@ class DjSession(
         speak(say(R.string.dj_voice_queue_move_done, moved.title))
     }
 
+    private fun voiceQueueHistory(type: String?) {
+        val t = type ?: return
+        ThreadPool.post {
+            val ranks = DjLearn.playedByKind(activity.applicationContext, t, 0, 8)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (ranks.isEmpty()) {
+                    speak(say(R.string.dj_voice_history_none))
+                    return@onUi
+                }
+                val items = ranks.map { (artist, title) ->
+                    if (artist.isBlank()) title else
+                        say(R.string.dj_voice_yesterday_item, artist, title)
+                }
+                Telemetry.log(activity, "DJ queue_history kind=$t items=${items.size}")
+                speak(say(R.string.dj_voice_history_all, items.joinToString("; ")))
+            }
+        }
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -964,6 +984,7 @@ class DjSession(
                 }
             }
             "queue_move" -> voiceQueueMove(DjCommander.moveToEndQuery(norm))
+            "queue_history" -> voiceQueueHistory(DjCommander.historyQuery(norm))
             "skip" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {

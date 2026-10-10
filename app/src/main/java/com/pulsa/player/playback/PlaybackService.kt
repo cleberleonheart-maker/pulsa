@@ -1354,14 +1354,24 @@ class PlaybackService : MediaLibraryService() {
      */
     private fun notePlay(song: Song?) {
         val s = song ?: return
-        if (s.isVideo || s.isStream || s.isRadio) return
         if (s.path.isBlank()) return
-        val id = s.id
-        if (id < 0L || id == learnedId) return
-        learnedId = id
         val app = applicationContext
-        // Gravação de banco fora da main: `prepareCurrent` roda no meio da troca de faixa.
-        ThreadPool.post { DjLearn.recordPlay(app, id) }
+        // Música (song_id positivo da biblioteca): aprendizado normal, que também alimenta o
+        // histórico da música pela linha sem `kind` (o DEFAULT é 'music').
+        if (!s.isVideo && !s.isStream && !s.isRadio && !s.isPodcast) {
+            val id = s.id
+            if (id < 0L || id == learnedId) return
+            learnedId = id
+            // Gravação de banco fora da main: `prepareCurrent` roda no meio da troca de faixa.
+            ThreadPool.post { DjLearn.recordPlay(app, id) }
+            return
+        }
+        // Vídeo/podcast/rádio/stream: só o histórico por tipo, com a chave negativa própria —
+        // nunca pelo `recordPlay`, que mexeria no `dj_stats` de música com um id que não é dela.
+        val key = DjLearn.typedKey(s) ?: return
+        if (key == learnedId) return
+        learnedId = key
+        ThreadPool.post { DjLearn.recordTyped(app, s) }
     }
 
     /** Último `id` já registrado no aprendizado; evita contar o mesmo toque duas vezes. */

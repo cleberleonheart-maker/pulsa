@@ -38,7 +38,7 @@ object DjLearn {
     )
 
     class Learner(context: Context) :
-        SQLiteOpenHelper(context.applicationContext, "dj_learn.db", null, 3) {
+        SQLiteOpenHelper(context.applicationContext, "dj_learn.db", null, 4) {
 
         private fun createStats(db: SQLiteDatabase) {
             db.execSQL(
@@ -52,13 +52,26 @@ object DjLearn {
             )
         }
 
+        /**
+         * Log de reprodução. As três colunas extras (`kind`/`title`/`artist`) são o histórico
+         * por tipo levado ao banco: `kind` diz se foi música, vídeo, podcast ou rádio e
+         * `title`/`artist` guardam a legenda no momento do toque.
+         *
+         * Denormalizar o nome é de propósito: a linha do MediaStore de um vídeo pode sumir
+         * (arquivo apagado, permissão revogada) e o histórico ficaria com ids órfãos — sem o
+         * título gravado aqui, o "o que já tocou de vídeo" não teria o que falar.
+         */
         private fun createPlayLog(db: SQLiteDatabase) {
             db.execSQL(
                 "CREATE TABLE IF NOT EXISTS play_log (" +
                     "song_id INTEGER NOT NULL, " +
-                    "ts INTEGER NOT NULL)"
+                    "ts INTEGER NOT NULL, " +
+                    "kind TEXT NOT NULL DEFAULT 'music', " +
+                    "title TEXT NOT NULL DEFAULT '', " +
+                    "artist TEXT NOT NULL DEFAULT '')"
             )
             db.execSQL("CREATE INDEX IF NOT EXISTS idx_play_log_ts ON play_log(ts)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_play_log_kind ON play_log(kind, ts)")
         }
 
         override fun onCreate(db: SQLiteDatabase) {
@@ -75,6 +88,22 @@ object DjLearn {
             if (oldVersion < 3) {
                 createPlayLog(db)
             }
+            if (oldVersion < 4) {
+                // `play_log` do v3 só tinha song_id/ts: as músicas já registradas viram
+                // `kind='music'` pelo DEFAULT, e o índice por (kind, ts) entra agora.
+                runCatching {
+                    db.execSQL("ALTER TABLE play_log ADD COLUMN kind TEXT NOT NULL DEFAULT 'music'")
+                }
+                runCatching {
+                    db.execSQL("ALTER TABLE play_log ADD COLUMN title TEXT NOT NULL DEFAULT ''")
+                }
+                runCatching {
+                    db.execSQL("ALTER TABLE play_log ADD COLUMN artist TEXT NOT NULL DEFAULT ''")
+                }
+                runCatching {
+                    db.execSQL("CREATE INDEX IF NOT EXISTS idx_play_log_kind ON play_log(kind, ts)")
+                }
+            }
         }
 
         fun recordPlay(songId: Long) {
@@ -85,6 +114,59 @@ object DjLearn {
                     arrayOf(songId, System.currentTimeMillis() / 1000L)
                 )
             }
+        }
+
+        /**
+         * Registra um toque no histórico **sem** tocar no `dj_stats` (aprendizado de música).
+         *
+         * É por aqui que passam vídeo, podcast, rádio e stream: a chave deles não é um
+         * `song_id` da biblioteca, e um `recordPlay` normal misturaria esses ids com as
+         * músicas nos contadores que o motor usa para recomendar — o mesmo número valendo
+         * para um vídeo e uma música. Aqui só entra a linha do [play_log], com tipo e legenda.
+         */
+        fun recordTyped(songId: Long, kind: String, title: String, artist: String) {
+            dirty = true
+            runCatching {
+                writableDatabase.execSQL(
+                    "INSERT INTO play_log (song_id, ts, kind, title, artist) VALUES (?, ?, ?, ?, ?)",
+                    arrayOf(songId, System.currentTimeMillis() / 1000L, kind, title, artist)
+                )
+            }
+        }
+
+        /**
+         * Itens que já tocaram de um ou mais tipos em um dia (0 = hoje, -1 = ontem), do mais
+         * recente para o mais antigo. Devolve `(artist, title)`, prontos para a locução.
+         */
+        fun playedByKind(nowSec: Long, kinds: List<String>, dayOffset: Int, limit: Int): List<Pair<String, String>> {
+            if (kinds.isEmpty()) return emptyList()
+            val result = ArrayList<Pair<String, String>>()
+            val marks = kinds.joinToString(",") { "?" }
+            runCatching {
+                val cal = java.util.Calendar.getInstance()
+                cal.timeInMillis = nowSec * 1000L
+                cal.add(java.util.Calendar.DAY_OF_YEAR, dayOffset)
+                cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                cal.set(java.util.Calendar.MINUTE, 0)
+                cal.set(java.util.Calendar.SECOND, 0)
+                cal.set(java.util.Calendar.MILLISECOND, 0)
+                val start = cal.timeInMillis / 1000L
+                cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                val end = cal.timeInMillis / 1000L
+                val args = (listOf(start.toString(), end.toString()) + kinds + listOf(limit.toString()))
+                    .toTypedArray()
+                readableDatabase.rawQuery(
+                    "SELECT artist, title, COUNT(*) AS n FROM play_log " +
+                        "WHERE ts >= ? AND ts < ? AND kind IN ($marks) " +
+                        "GROUP BY kind, song_id ORDER BY MAX(ts) DESC LIMIT ?",
+                    args
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        result.add((c.getString(0) ?: "") to (c.getString(1) ?: ""))
+                    }
+                }
+            }
+            return result
         }
 
         fun heatmap(nowSec: Long, days: Int): IntArray {
@@ -425,4 +507,45 @@ object DjLearn {
         }
         return out
     }
+
+    /**
+     * Chave de histórico de uma mídia que não é música — negativa para nunca colidir com os
+     * `song_id` positivos da biblioteca. `null` quando o item não tem identidade estável.
+     */
+    fun typedKey(song: com.pulsa.player.model.Song): Long? = when {
+        song.isPodcast -> song.podcastId?.let { -it }
+        song.isVideo -> song.videoId?.let { -it }
+        song.isRadio -> song.radioUrl?.let { -it.hashCode().toLong() }
+        song.isStream -> song.streamUrl?.let { -it.hashCode().toLong() }
+        else -> null
+    }
+
+    /** Tipo do [play_log] para o histórico por tipo. Música é `song_id` positivo. */
+    fun kindOf(song: com.pulsa.player.model.Song): String = when {
+        song.isPodcast -> "podcast"
+        song.isRadio -> "radio"
+        song.isVideo || song.isStream -> "video"
+        else -> "music"
+    }
+
+    /** Grava o toque de uma mídia não-música (vídeo/podcast/rádio/stream) no histórico. */
+    fun recordTyped(context: Context, song: com.pulsa.player.model.Song) {
+        val key = typedKey(song) ?: return
+        learner(context).recordTyped(key, kindOf(song), song.title, song.artist)
+    }
+
+    /** Tipos do [play_log] que uma consulta de histórico ("video"/"podcast"/…) abrange. */
+    fun kindsFor(type: String): List<String> = when (type) {
+        "video" -> listOf("video")
+        "podcast" -> listOf("podcast")
+        "music" -> listOf("music")
+        "radio" -> listOf("radio")
+        else -> listOf("music", "video", "podcast", "radio")
+    }
+
+    /** Itens que já tocaram hoje, por tipo, prontos para a locução. */
+    fun playedByKind(context: Context, type: String, dayOffset: Int, limit: Int): List<Pair<String, String>> =
+        learner(context).playedByKind(
+            System.currentTimeMillis() / 1000L, kindsFor(type), dayOffset, limit
+        )
 }

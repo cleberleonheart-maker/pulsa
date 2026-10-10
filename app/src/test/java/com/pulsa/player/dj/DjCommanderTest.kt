@@ -184,6 +184,34 @@ class DjCommanderTest {
     }
 
     @Test
+    fun action_queue_history() {
+        assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, o que ja toceu de video hoje")))
+        assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, quais podcasts tocaram hoje")))
+        assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, o que ja passou hoje")))
+        assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, o que tocou de musica")))
+        assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, what played today")))
+    }
+
+    @Test
+    fun history_query_tipo() {
+        assertEquals("video", DjCommander.historyQuery(DjCommander.norm("o que ja toceu de video hoje")))
+        assertEquals("video", DjCommander.historyQuery(DjCommander.norm("o que toceu de filme")))
+        assertEquals("podcast", DjCommander.historyQuery(DjCommander.norm("quais podcasts tocaram hoje")))
+        assertEquals("music", DjCommander.historyQuery(DjCommander.norm("o que toceu de musica")))
+        assertEquals("all", DjCommander.historyQuery(DjCommander.norm("o que ja passou hoje")))
+        assertNull(DjCommander.historyQuery(DjCommander.norm("toca uma musica")))
+        assertNull(DjCommander.historyQuery(DjCommander.norm("virgin, o que voce acha disso")))
+    }
+
+    @Test
+    fun history_query_nao_rouba_yesterday() {
+        // "o que toquei"/"toquei ontem" é o yesterday, com "toquei" (1ª pessoa); o histórico
+        // usa "tocou"/"tocar". Misturar faria "o que toquei ontem" cair no histórico de hoje.
+        assertEquals("yesterday", DjCommander.action(DjCommander.norm("virgin, o que toquei ontem")))
+        assertEquals("yesterday", DjCommander.action(DjCommander.norm("virgin, que toquei ontem")))
+    }
+
+    @Test
     fun video_back_sem_video_cai_em_prev_no_handler() {
         // O parser devolve `video_back` para a palavra de direção sozinha, e quem desvia
         // para a faixa anterior é o handler (`virgVideoBack`), que é quem sabe o que está

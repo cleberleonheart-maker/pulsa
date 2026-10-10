@@ -851,6 +851,30 @@ class MainVirgin(
         virginSpeak(say(R.string.dj_voice_queue_move_done, moved.title))
     }
 
+    /**
+     * Histórico do dia por tipo ("virgi, o que já tocou de vídeo hoje?"). Fala só os mais
+     * recentes, porque uma lista inteira do dia não é legível de ouvido.
+     */
+    private fun virgQueueHistory(type: String?) {
+        val t = type ?: return
+        ThreadPool.post {
+            val ranks = DjLearn.playedByKind(activity.applicationContext, t, 0, 8)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (ranks.isEmpty()) {
+                    virginSpeak(activity.getString(R.string.dj_voice_history_none))
+                    return@onUi
+                }
+                val items = ranks.map { (artist, title) ->
+                    if (artist.isBlank()) title else
+                        activity.getString(R.string.dj_voice_yesterday_item, artist, title)
+                }
+                Telemetry.log(activity, "Virgin queue_history kind=$t items=${items.size}")
+                virginSpeak(activity.getString(R.string.dj_voice_history_all, items.joinToString("; ")))
+            }
+        }
+    }
+
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
         val songId = Settings.resumeSongId(ctx)
@@ -1074,6 +1098,7 @@ class MainVirgin(
                 }
             }
             "queue_move" -> virgQueueMove(DjCommander.moveToEndQuery(norm))
+            "queue_history" -> virgQueueHistory(DjCommander.historyQuery(norm))
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong
                 if (action == "dislike" && cur != null) {

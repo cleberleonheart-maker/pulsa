@@ -235,6 +235,42 @@ object DjCommander {
         return QueueMove(video = video, episode = episode)
     }
 
+    // ----- Histórico do que já tocou, por tipo ("o que já tocou de vídeo hoje?") -----
+
+    private val HISTORY_SIGNALS = listOf(
+        "historico", "historial", "play history", "recent",
+        "o que ja tocou", "o que ja toceu", "o que tocou", "o que toceu", "o que ja passou",
+        "o que passou", "o que andou tocando",
+        "quais tocaram", "quais passaram", "quais podcasts tocaram", "quais musicas tocaram",
+        "podcasts tocaram", "musicas tocaram", "videos tocaram", "filmes tocaram",
+        "what played", "what has played", "what did i play", "what have i played",
+        "que sonaron", "que ha sonado", "que sono hoy", "que pasaron"
+    )
+
+    /**
+     * Histórico de reprodução por tipo: "o que já tocou de vídeo hoje?" → `video`;
+     * "quais podcasts tocaram?" → `podcast`; "o que já passou hoje?" → `all`. `null` quando a
+     * frase não pede histórico.
+     *
+     * Usa o **"tocou"** (3ª pessoa) de propósito: o "o que toquei"/"toquei ontem" já é o
+     * [playedYesterdayMatch], e misturar os dois faria "o que toquei" cair no histórico de
+     * hoje. O tipo ausente é `all` — "o que já passou hoje" fala de tudo.
+     */
+    fun historyQuery(norm: String): String? {
+        if (HISTORY_SIGNALS.none { norm.contains(it) }) return null
+        val video = listOf("video", "videos", "filme", "filmes", "movie", "movies").any { norm.contains(it) }
+        val podcast = listOf("podcast", "podcasts", "episodio", "episodios", "episode", "episodes", "serie", "series").any { norm.contains(it) }
+        val music = listOf("musica", "musicas", "cancao", "cancoes", "song", "songs", "music").any { norm.contains(it) }
+        val radio = norm.contains("radio") || norm.contains("estacao") || norm.contains("station")
+        return when {
+            video -> "video"
+            podcast -> "podcast"
+            music -> "music"
+            radio -> "radio"
+            else -> "all"
+        }
+    }
+
     /**
      * F2 · Nome do vídeo depois do verbo. Devolve `null` quando não há nome — aí o comando
      * continua sendo retomar/abrir o que já está tocando ([video_play]/[video_open]).
@@ -826,6 +862,9 @@ object DjCommander {
         // "joga o vídeo **para** o fim" contém "para", que a [videoPauseMatch] leria como
         // pausa. Verbo de mover + "fim/final" é sinal específico o bastante para não roubar
         // "volta pro filme" nem "toca pra malhar".
+        // Histórico por tipo antes do bloco de vídeo: "o que já tocou de vídeo" tem a palavra
+        // "vídeo", e o [videoQuery]/[videoOpenMatch] a leria como comando de vídeo.
+        historyQuery(norm) != null -> "queue_history"
         moveToEndQuery(norm) != null -> "queue_move"
         videoQuery(norm) != null -> "video_by_name"
         videoPlayMatch(norm) -> "video_play"
