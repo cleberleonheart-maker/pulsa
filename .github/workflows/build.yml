@@ -16,7 +16,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Cache Gradle (wrapper + dependencias)
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
       - name: Android SDK (preinstalado no runner)
         run: echo "ANDROID_HOME=$ANDROID_HOME" && test -n "$ANDROID_HOME"
       - name: Make gradlew executable
@@ -42,7 +42,7 @@ jobs:
       - name: Assemble release (assinado)
         run: ./gradlew :app:assembleRelease --console=plain
       - name: Upload APK
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: Pulsa-release-apk
           path: app/build/outputs/apk/release/app-release.apk
@@ -54,7 +54,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Download APK
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: Pulsa-release-apk
           path: apk
