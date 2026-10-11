@@ -1,4 +1,5 @@
 package com.pulsa.player.ui.adapter
+import com.pulsa.player.util.TvFocus
 
 import android.view.LayoutInflater
 import android.view.View
@@ -45,7 +46,11 @@ class SearchAdapter(
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
             TYPE_HEADER -> HeaderVH(inflater.inflate(R.layout.item_search_header, parent, false))
-            else -> RowVH(inflater.inflate(R.layout.item_search_result, parent, false))
+            else -> {
+                val view = inflater.inflate(R.layout.item_search_result, parent, false)
+                TvFocus.apply(view)
+                RowVH(view)
+            }
         }
     }
 

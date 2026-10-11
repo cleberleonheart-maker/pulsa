@@ -1,15 +1,14 @@
 package com.pulsa.player.ui
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -30,6 +29,7 @@ import com.pulsa.player.dj.AvatarFavorites
 import com.pulsa.player.core.Settings
 import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.ThreadPool
+import kotlin.math.abs
 
 class NowPlayingFragment : Fragment() {
 
@@ -55,11 +55,13 @@ class NowPlayingFragment : Fragment() {
     private var shaderView: MusicShaderView? = null
     private var userSeeking = false
     private var lyricsPanel: View? = null
-    private var lyricsCur: TextView? = null
-    private var lyricsNext: TextView? = null
+    private var lyricsList: androidx.recyclerview.widget.RecyclerView? = null
+    private var lyricsAdapter: com.pulsa.player.ui.adapter.LyricsAdapter? = null
+    private var lastLyricsIndex = -1
     private var lyricsForSong = -1L
     private var lyricsLines: List<Lyrics.Line> = emptyList()
     private var lyricsLoading = false
+    private var artSwipe: GestureDetector? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_now_playing, container, false)
@@ -104,13 +106,41 @@ class NowPlayingFragment : Fragment() {
             refreshAbButtons()
         }
         view.findViewById<View>(R.id.np_eq).setOnClickListener { showEqDialog() }
-        view.findViewById<View>(R.id.np_lyrics).setOnClickListener { showLyricsDialog() }
+        view.findViewById<View>(R.id.np_lyrics).setOnClickListener { manualLyricsSearch() }
         lyricsPanel = view.findViewById(R.id.np_lyrics_panel)
-        lyricsCur = view.findViewById(R.id.np_lyrics_cur)
-        lyricsNext = view.findViewById(R.id.np_lyrics_next)
-        lyricsPanel?.setOnClickListener { showLyricsDialog() }
+        lyricsList = view.findViewById(R.id.np_lyrics_list)
+        lyricsList?.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+        lyricsAdapter = com.pulsa.player.ui.adapter.LyricsAdapter().also {
+            lyricsList?.adapter = it
+        }
         visualizerView = view.findViewById(R.id.np_visualizer)
         shaderView = view.findViewById(R.id.np_shader)
+
+        // Arrastar a capa para cima abre a fila (mesmo padrão de gesto do mini player).
+        artSwipe = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                val dx = e2.x - (e1?.x ?: e2.x)
+                val dy = e2.y - (e1?.y ?: e2.y)
+                if (dy < -60 && abs(dy) > abs(dx) && velocityY < -400) {
+                    QueueSheetFragment.show(parentFragmentManager)
+                    return true
+                }
+                return false
+            }
+        })
+        view.findViewById<View>(R.id.np_art_frame).setOnTouchListener { _, event ->
+            artSwipe?.onTouchEvent(event) ?: false
+        }
+        if (com.pulsa.player.util.UiMode.isTv(requireContext())) {
+            val artFrame = view.findViewById<View>(R.id.np_art_frame)
+            com.pulsa.player.util.TvFocus.apply(artFrame)
+            artFrame.setOnClickListener { QueueSheetFragment.show(parentFragmentManager) }
+        }
 
         view.findViewById<View>(R.id.np_prev).setOnClickListener { Playback.prev() }
         view.findViewById<View>(R.id.np_next).setOnClickListener { Playback.next() }
@@ -228,6 +258,7 @@ class NowPlayingFragment : Fragment() {
         val key = QueueKey.encode(song)
         lyricsForSong = song.id
         lyricsLines = emptyList()
+        lastLyricsIndex = -1
         lyricsPanel?.visibility = View.GONE
         // postNetwork, e nao post: `Lyrics.resolve` vai buscar online quando nao acha
         // no dispositivo, e isso roda a CADA troca de musica. No pool local, segurava
@@ -243,8 +274,10 @@ class NowPlayingFragment : Fragment() {
                 lyricsLoading = false
                 lyricsLines = result?.lines.orEmpty()
                 if (lyricsLines.isEmpty()) {
+                    lyricsAdapter?.submit(emptyList())
                     lyricsPanel?.visibility = View.GONE
                 } else {
+                    lyricsAdapter?.submit(lyricsLines)
                     lyricsPanel?.visibility = View.VISIBLE
                     updateLyricsKaraoke(Playback.position)
                 }
@@ -252,27 +285,16 @@ class NowPlayingFragment : Fragment() {
         }
     }
 
-    /** Destaque karaokê: linha atual em destaque + as próximas embaixo, roladas no tempo. */
+    /** Destaque karaokê: a lista rola para manter a linha atual em evidência. */
     private fun updateLyricsKaraoke(positionMs: Long) {
         val lines = lyricsLines
-        val cur = lyricsCur ?: return
+        val adapter = lyricsAdapter ?: return
         if (lines.isEmpty()) return
         val idx = Lyrics.lineAt(lines, positionMs)
-        val currentText = lines[idx].text.ifBlank { "\u266A" }
-        if (cur.text != currentText) cur.text = currentText
-        val next = buildString {
-            var shown = 0
-            for (i in idx + 1 until lines.size) {
-                if (shown >= 3) break
-                val t = lines[i].text
-                if (t.isBlank()) continue
-                if (shown > 0) append('\n')
-                append(t)
-                shown++
-            }
-        }
-        lyricsNext?.apply {
-            setText(if (next.isEmpty()) "" else next)
+        adapter.setCurrent(idx)
+        if (idx in lines.indices && idx != lastLyricsIndex) {
+            lastLyricsIndex = idx
+            lyricsList?.smoothScrollToPosition(idx)
         }
         lyricsPanel?.apply {
             if (visibility != View.VISIBLE) visibility = View.VISIBLE
@@ -565,7 +587,14 @@ class NowPlayingFragment : Fragment() {
             .show()
     }
 
-    private fun showLyricsDialog() {
+    /**
+     * Busca de novo a letra da faixa atual e mostra no painel embutido.
+     *
+     * A resolução automática já roda a cada troca de faixa ([syncLyricsFor]); este é o
+     * caminho manual do botão "Letra" — útil quando a primeira tentativa falhou (sem rede,
+     * por exemplo) e a letra apareceu no cache depois.
+     */
+    private fun manualLyricsSearch() {
         val song = Playback.currentSong ?: return
         val app = context?.applicationContext ?: return
         Toast.makeText(requireContext(), getString(R.string.lyrics_searching), Toast.LENGTH_SHORT).show()
@@ -590,51 +619,14 @@ class NowPlayingFragment : Fragment() {
                 if (result.source == Lyrics.Result.Source.ONLINE_SYNCED) {
                     Toast.makeText(requireContext(), getString(R.string.lyrics_downloaded), Toast.LENGTH_SHORT).show()
                 }
-                showLyricsDialogContent(song, result)
+                lyricsForSong = song.id
+                lyricsLines = result.lines
+                lastLyricsIndex = -1
+                lyricsAdapter?.submit(lyricsLines)
+                lyricsPanel?.visibility = View.VISIBLE
+                updateLyricsKaraoke(Playback.position)
             }
         }
-    }
-
-    private fun showLyricsDialogContent(song: com.pulsa.player.model.Song, result: Lyrics.Result) {
-        val context = requireContext()
-        val lines = result.lines
-        val lineTexts = lines.map { it.text }
-        val tv = TextView(context).apply {
-            textSize = 16f
-            setLineSpacing(0f, 1.25f)
-            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
-            setPadding(32, 24, 32, 24)
-            text = lineTexts.joinToString("\n")
-            movementMethod = android.text.method.ScrollingMovementMethod.getInstance()
-        }
-        val scroll = ScrollView(context).apply {
-            addView(tv)
-        }
-        val dialogTitle = buildString {
-            append(song.title)
-            when (result.source) {
-                Lyrics.Result.Source.ONLINE_SYNCED -> append(" — ").append(getString(R.string.lyrics_online_lrc))
-                Lyrics.Result.Source.ONLINE_PLAIN -> append(" — ").append(getString(R.string.lyrics_online_plain))
-                Lyrics.Result.Source.LOCAL -> Unit
-            }
-        }
-        val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle(dialogTitle)
-            .setView(scroll)
-            .setNegativeButton(R.string.close, null)
-            .show()
-        val lineHeight = (tv.paint.fontMetrics.run { bottom - top } * 1.25f).toInt().coerceAtLeast(1)
-        val handler = Handler(Looper.getMainLooper())
-        val updater = object : Runnable {
-            override fun run() {
-                if (!dialog.isShowing || !isAdded) return
-                val idx = Lyrics.lineAt(lines, Playback.position)
-                val viewportHalf = (scroll.height / 2).coerceAtLeast(0)
-                scroll.smoothScrollTo(0, (idx * lineHeight - viewportHalf).coerceAtLeast(0))
-                handler.postDelayed(this, 300)
-            }
-        }
-        handler.post(updater)
     }
 
     private fun Int.dp(): Int = (this * resources.displayMetrics.density).toInt()

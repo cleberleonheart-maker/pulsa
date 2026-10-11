@@ -30,7 +30,20 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.9.9):
+    <string name="changelog">What is new (5.10.0):
+→ QUEUE ON THE NOW PLAYING SCREEN
+• Swipe the cover art up to open the queue. Drag tracks to reorder and tap one to jump
+  straight to it.
+
+→ LYRICS BUILT IN
+• Synced lyrics now live on the now playing screen itself, scrolling like karaoke with the
+  current line highlighted. Before they opened in a separate window.
+
+→ REMOTE CONTROL ON TV
+• On TV the app is driven by the remote: every item lights up when focused, the mini player
+  opens now playing and the cover art opens the queue.
+
+★ FROM 5.9.9
 → ALL COMMANDS IN VIRGIN\'S HELP
 • The list that opens from the mic on the home screen showed only part of the commands and
   had fallen behind: recognize a song, delete, duplicate songs, flash drive, visualizer,

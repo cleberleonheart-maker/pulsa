@@ -36,6 +36,7 @@ import com.pulsa.player.dj.DjVoice
 import com.pulsa.player.dj.TamiRadio
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.sync.Telemetry
+import com.pulsa.player.util.TvFocus
 
 /**
  * Home "Virgin" no modelo dashboard: deck do avatar, console Bombar/Relaxar,
@@ -105,6 +106,7 @@ class VirginHomeFragment : Fragment() {
 
     private fun bindResumeCard(view: View) {
         val card = view.findViewById<View>(R.id.resume_card)
+        TvFocus.apply(card)
         card.setOnClickListener { (activity as? MainActivity)?.openNowPlaying() }
         view.findViewById<View>(R.id.resume_play).setOnClickListener {
             Playback.toggle()
@@ -134,6 +136,7 @@ class VirginHomeFragment : Fragment() {
                 row.removeAllViews()
                 recents.forEachIndexed { i, song ->
                     val item = makeRecentCover(ctx, song)
+                    TvFocus.apply(item)
                     val startIndex = i
                     item.setOnClickListener {
                         val all = Library.recentSongs(ctx)
@@ -275,6 +278,7 @@ class VirginHomeFragment : Fragment() {
             chip.gravity = Gravity.CENTER
             chip.setPadding(dp(10), dp(10), dp(10), dp(10))
             chip.background = ContextCompat.getDrawable(ctx, R.drawable.bg_vcard)
+            TvFocus.apply(chip)
             val icon = TextView(ctx)
             icon.text = s.icon
             icon.textSize = 22f
@@ -358,6 +362,7 @@ class VirginHomeFragment : Fragment() {
         row.gravity = Gravity.CENTER_VERTICAL
         row.setPadding(dp(12), dp(12), dp(12), dp(12))
         row.background = ContextCompat.getDrawable(ctx, R.drawable.bg_vcard)
+        TvFocus.apply(row)
 
         val icon = TextView(ctx)
         icon.text = r.icon

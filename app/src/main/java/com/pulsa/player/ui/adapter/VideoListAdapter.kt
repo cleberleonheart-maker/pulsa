@@ -1,4 +1,5 @@
 package com.pulsa.player.ui.adapter
+import com.pulsa.player.util.TvFocus
 
 import android.content.ContentUris
 import android.content.Context
@@ -89,6 +90,7 @@ class VideoListAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_video, parent, false)
+        TvFocus.apply(view)
         return VH(view)
     }
 

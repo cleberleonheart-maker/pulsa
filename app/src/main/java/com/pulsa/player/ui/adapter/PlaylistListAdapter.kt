@@ -1,4 +1,5 @@
 package com.pulsa.player.ui.adapter
+import com.pulsa.player.util.TvFocus
 
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +24,7 @@ class PlaylistListAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_playlist, parent, false)
+        TvFocus.apply(view)
         return VH(view)
     }
 

@@ -30,7 +30,20 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.9.9):
+    <string name="changelog">Novedades de esta versión (5.10.0):
+→ FILA EN LA PANTALLA DE REPRODUCCIÓN
+• Desliza la carátula hacia arriba para abrir la fila. Arrastra las pistas para reordenar y
+  toca una para saltar directo a ella.
+
+→ LETRA INTEGRADA
+• La letra sincronizada ahora vive en la propia pantalla de reproducción, desplazándose como
+  un karaoke con la línea actual resaltada. Antes se abría en una ventana aparte.
+
+→ CONTROL EN LA TV
+• En la TV la app se maneja con el mando: cada elemento se ilumina al recibir el foco, el
+  mini reproductor abre la reproducción y la carátula abre la fila.
+
+★ DE LA 5.9.9
 → TODOS LOS COMANDOS EN LA AYUDA DE VIRGIN
 • La lista que abre el micrófono de la pantalla de inicio mostraba solo una parte de los
   comandos y se había quedado atrás: reconocer canción, borrar, canciones repetidas,

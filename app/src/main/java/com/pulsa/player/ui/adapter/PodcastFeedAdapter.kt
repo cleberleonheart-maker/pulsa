@@ -1,4 +1,5 @@
 package com.pulsa.player.ui.adapter
+import com.pulsa.player.util.TvFocus
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -42,8 +43,11 @@ class PodcastFeedAdapter(
     }
     private val loading = HashSet<String>()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_podcast_feed, parent, false))
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_podcast_feed, parent, false)
+        TvFocus.apply(view)
+        return VH(view)
+    }
 
     override fun getItemCount(): Int = items.size
 

@@ -26,6 +26,7 @@
             android:paddingVertical="24dp">
 
         <FrameLayout
+            android:id="@+id/np_art_frame"
             android:layout_width="300dp"
             android:layout_height="300dp"
             android:clipChildren="false"
@@ -173,36 +174,20 @@
         <LinearLayout
             android:id="@+id/np_lyrics_panel"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="200dp"
             android:layout_marginTop="14dp"
             android:background="@drawable/bg_row_glass"
-            android:clickable="true"
-            android:focusable="true"
             android:orientation="vertical"
-            android:padding="16dp"
+            android:padding="8dp"
             android:visibility="gone">
 
-            <TextView
-                android:id="@+id/np_lyrics_cur"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/np_lyrics_list"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:maxLines="2"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="19sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/np_lyrics_next"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:maxLines="3"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="true"
+                android:paddingVertical="60dp" />
         </LinearLayout>
 
         <LinearLayout

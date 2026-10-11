@@ -1033,6 +1033,77 @@ class PlaybackService : MediaLibraryService() {
     }
 
     /**
+     * Fila universal — reordena um item para uma posição (arrastar para reordenar na tela
+     * de reprodução). É o `moveToEnd` genérico: em vez do fim fixo, aceita qualquer destino.
+     *
+     * Mesmos dois caminhos do [moveToEnd] pelo mesmo motivo: mexer no item **atual** exige
+     * remontar a fila por [prepareCurrent] (a posição do que está tocando tem de acompanhar o
+     * novo índice), enquanto mover um item **aguardando** basta para o player, sem recomeçar a
+     * faixa atual. O índice atual é corrigido quando o movimento cruza por ele.
+     *
+     * Devolve `true` quando a fila mudou.
+     */
+    fun moveQueueItem(from: Int, to: Int): Boolean {
+        val p = player ?: return false
+        val size = queue.size
+        if (size < 2) return false
+        val f = from.coerceIn(0, size - 1)
+        val t = to.coerceIn(0, size - 1)
+        if (f == t) return true
+        val curIdx = index.coerceIn(0, size - 1)
+        val original = queue
+        val mutable = original.toMutableList()
+        val moved = mutable.removeAt(f)
+        mutable.add(t, moved)
+        queue = mutable
+        if (f == curIdx) {
+            // O item que estava tocando deslizou: ele continua tocando, só na casa nova.
+            index = t
+            runCatching { prepareCurrent() }.onFailure {
+                queue = original
+                return false
+            }
+        } else {
+            val ok = runCatching {
+                p.moveMediaItem(f, t)
+                true
+            }.getOrDefault(false)
+            if (!ok) {
+                queue = original
+                return false
+            }
+            index = when {
+                f < curIdx && t >= curIdx -> curIdx - 1
+                f > curIdx && t <= curIdx -> curIdx + 1
+                else -> curIdx
+            }
+            Playback.notifySong(currentSong, index)
+        }
+        saveQueueState()
+        return true
+    }
+
+    /**
+     * Fila universal — pula para um item da fila pelo índice (toque na lista da fila).
+     *
+     * Usa `seekTo(índice)` e deixa o [adoptPlayerIndex] reconciliar `queue`/`index` — é o
+     * mesmo caminho de um "tocar isto" vindo do Android Auto/fone, então não há segunda
+     * lógica de troca de faixa para manter. Dá play para o toque na fila valer com o motor
+     * pausado, como um clique em qualquer lista de músicas.
+     */
+    fun jumpTo(target: Int): Boolean {
+        val p = player ?: return false
+        if (queue.isEmpty()) return false
+        val t = target.coerceIn(0, queue.size - 1)
+        val ok = runCatching {
+            p.seekTo(t, 0L)
+            play()
+            true
+        }.getOrDefault(false)
+        return ok
+    }
+
+    /**
      * Reaplica o título/artist/album que o usuário editou, vinda do [PlaylistDb].
      *
      * Só para **áudio**: os overrides são guardados por `songId` e não sabem de que tipo é

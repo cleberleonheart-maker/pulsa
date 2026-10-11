@@ -241,6 +241,12 @@ object Playback {
      */
     fun moveToEnd(video: Boolean, episode: Boolean): Song? = link?.moveToEnd(video, episode)
 
+    /** Reordena um item da fila (arrastar para reordenar na tela de reprodução). */
+    fun moveQueueItem(from: Int, to: Int): Boolean = link?.moveQueueItem(from, to) ?: false
+
+    /** Pula para um item da fila pelo índice (toque na lista da fila). */
+    fun jumpTo(index: Int): Boolean = link?.jumpTo(index) ?: false
+
     /** Retoma a reprodução (E5: a tela de vídeo volta do segundo plano e o motor estava pausado). */
     fun play() {
         link?.play()

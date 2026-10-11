@@ -63,6 +63,8 @@ import com.pulsa.player.core.Blacklist
 import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.Telemetry
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.util.TvFocus
+import com.pulsa.player.util.UiMode
 import com.pulsa.player.util.UpdateChecker
 import kotlin.math.abs
 
@@ -333,6 +335,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         miniPlayer.setOnTouchListener { _, event ->
             miniSwipeDetector?.onTouchEvent(event) ?: false
         }
+        // Android TV: sem toque, o D-pad precisa focar o mini player inteiro para abrir a
+        // reprodução; o foco cai primeiro nele quando há algo tocando.
+        if (UiMode.isTv(this)) TvFocus.apply(miniPlayer)
         miniPlay.setOnClickListener { Playback.toggle() }
         miniShuffle.setOnClickListener {
             Playback.setShuffle(!Playback.shuffle)
