@@ -964,6 +964,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     /**
+
      * Fila universal — reordenação por voz ("virgi, joga o vídeo pro fim").
      *
      * Move para o **fim** o item pedido: o atual quando a frase não cita tipo, ou o item do
@@ -1104,6 +1105,8 @@ class PlaybackService : MediaLibraryService() {
     }
 
     /**
+
+
      * Reaplica o título/artist/album que o usuário editou, vinda do [PlaylistDb].
      *
      * Só para **áudio**: os overrides são guardados por `songId` e não sabem de que tipo é
@@ -1299,7 +1302,10 @@ class PlaybackService : MediaLibraryService() {
             Playback.notifySpeedChanged(effectiveSpeed())
             if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
             notePlay(song)
+
             maybeQueueNextEpisode(song)
+
+
             Playback.notifySong(song, index)
             loadLargeIcon(song)
             announceInBackground(song)
@@ -1426,6 +1432,7 @@ class PlaybackService : MediaLibraryService() {
      */
     private fun notePlay(song: Song?) {
         val s = song ?: return
+
         if (s.path.isBlank()) return
         val app = applicationContext
         // Música (song_id positivo da biblioteca): aprendizado normal, que também alimenta o
@@ -1444,10 +1451,21 @@ class PlaybackService : MediaLibraryService() {
         if (key == learnedId) return
         learnedId = key
         ThreadPool.post { DjLearn.recordTyped(app, s) }
+
+        if (s.isVideo || s.isStream || s.isRadio) return
+        if (s.path.isBlank()) return
+        val id = s.id
+        if (id < 0L || id == learnedId) return
+        learnedId = id
+        val app = applicationContext
+        // Gravação de banco fora da main: `prepareCurrent` roda no meio da troca de faixa.
+        ThreadPool.post { DjLearn.recordPlay(app, id) }
+
     }
 
     /** Último `id` já registrado no aprendizado; evita contar o mesmo toque duas vezes. */
     private var learnedId = -1L
+
 
     /**
      * Maratona de podcast: quando um episódio começa, o próximo não ouvido do mesmo feed
@@ -1489,6 +1507,8 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+
+
     private fun adoptPlayerIndex() {
         val p = player ?: return
         if (queue.isEmpty()) return
@@ -1507,7 +1527,10 @@ class PlaybackService : MediaLibraryService() {
         refreshNotification()
         if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
         notePlay(song)
+
         maybeQueueNextEpisode(song)
+
+
         loadLargeIcon(song)
         announceInBackground(song)
         Playback.notifySong(song, at)

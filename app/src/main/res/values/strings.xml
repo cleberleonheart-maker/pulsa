@@ -32,6 +32,7 @@
     <string name="update_installed">Pulsa atualizada</string>
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
+
     <string name="changelog">Novidades desta versão (5.10.0):
 → FILA NA TELA DE REPRODUÇÃO
 • Arraste a capa para cima para abrir a fila. Arraste as faixas para reordenar e toque em
@@ -95,6 +96,9 @@
   hoje?" lista o que você ouviu hoje por tipo de mídia.
 
 ★ DA 5.9.4
+
+    <string name="changelog">Novidades desta versão (5.9.4):
+
 → O 3D E O SURROUND PARARAM DE QUEBRAR A MÚSICA
 • Com o efeito ligado a faixa morria no meio e o Pulsa reiniciava o som. O que acontecia é
   que o 3D reaproveitava o mesmo pedaço de memória que já estava tocando, e o player tropeçava
@@ -489,6 +493,7 @@
     <string name="downloads_no_space">Sem espaço no aparelho</string>
     <string name="downloads_wifi_only">Baixar só no Wi‑Fi</string>
     <string name="downloads_wifi_only_hint">Download grande em rede medida consome sua franquia sem aviso; quando ligado, a fila espera a rede Wi‑Fi/cabo chegar.</string>
+
     <string name="downloads_limit">Limite de espaço</string>
     <string name="downloads_limit_hint">Quanto os downloads podem ocupar no aparelho; depois do teto, novos downloads falham em vez de encher o cartão.</string>
     <string name="downloads_limit_value_none">Sem limite</string>
@@ -496,6 +501,8 @@
     <string name="downloads_used_cap">%1$s usados de %2$s</string>
     <string name="downloads_warning_limit">Limite atingido. Apague algum download para baixar mais.</string>
     <string name="downloads_warning_free">Pouco espaço livre no aparelho: %1$s. Considere apagar downloads.</string>
+
+
     <string name="download_start_queued">Na fila para baixar</string>
     <string name="download_not_available">Este vídeo não tem MP4 para baixar</string>
     <string name="download_already">Já está nos baixados</string>
@@ -681,6 +688,7 @@
     <string name="dj_voice_video_play">Continuando %1$s.</string>
     <string name="dj_voice_video_back">Voltei para %1$s.</string>
     <string name="dj_voice_video_not_found">Não achei nenhum vídeo com esse nome.</string>
+
     <string name="dj_voice_queue_move_done">Movido para o fim da fila: %1$s.</string>
     <string name="dj_voice_queue_move_none">Não achei nada para mover para o fim da fila.</string>
     <string name="dj_voice_history_none">Ainda não tocou nada desse tipo hoje.</string>
@@ -693,6 +701,8 @@
     <string name="dj_voice_clean_none">Não tem download pra limpar.</string>
     <string name="dj_voice_clean_confirm">Tem %1$s de vídeos e %2$s de episódios baixados. Quer que eu apague?</string>
     <string name="dj_voice_clean_done">Limpei %1$s de espaço.</string>
+
+
     <string name="dj_voice_mix">Claro! Preparando um mix novo para você.</string>
     <string name="dj_voice_fav">Marcada como favorita!</string>
     <string name="dj_voice_month_favs">Bora! Tocando %d favoritas desse mês.</string>
@@ -778,10 +788,13 @@
     <string name="dj_commands_video">"Virgin, continua o filme / retoma o filme" — volta a tocar o vídeo, com o app fechado</string>
     <string name="dj_commands_video_open">"Virgin, mostra o vídeo / volta pro filme" — abre a tela do vídeo que está tocando</string>
     <string name="dj_commands_video_back">"Virgin, volta 30 segundos do filme / pausa o filme" — mexe no vídeo sem tocar na tela</string>
+
     <string name="dj_commands_playcount">"Virgin, quantas vezes toquei essa?" — conta quantas vezes você já tocou a faixa atual</string>
     <string name="dj_commands_sleep_end">"Virgin, para depois dessa" — pausa quando a música atual terminar</string>
     <string name="dj_commands_queue_save">"Virgin, salva essa fila como playlist [nome]" — salva a fila atual numa playlist</string>
     <string name="dj_commands_dedicate">"Virgin, dedica essa pra [nome] / dedica a próxima pra [nome]" — dedicatória falada</string>
+
+
     <string name="dj_scene_malhar">pra malhar</string>
     <string name="dj_scene_estudar">pra estudar</string>
     <string name="dj_scene_viajar">pra viajar</string>
@@ -798,6 +811,7 @@
     <string name="dj_voice_sleeptimer_set">Tranquilo! Paro a música daqui a %1$d minutos.</string>
     <string name="dj_voice_sleeptimer_done">Pronto, pausado. Boa noite!</string>
     <string name="dj_voice_sleeptimer_none">Não tem nada tocando agora pra eu pausar.</string>
+
     <string name="dj_voice_sleep_end_set">Fechado! Paro quando essa música terminar.</string>
     <string name="dj_voice_playcount">Você tocou %1$s %2$d vezes. Última vez: %3$s.</string>
     <string name="dj_voice_playcount_none">Ainda não tocou %1$s comigo.</string>
@@ -809,6 +823,8 @@
     <string name="dj_voice_queue_save_ask">Com qual nome? Diga: salva a fila como playlist e o nome.</string>
     <string name="dj_voice_queue_save_done">Salvei %2$d músicas na playlist %1$s.</string>
     <string name="dj_voice_queue_save_merged">Juntei %2$d músicas na playlist %1$s que já existia.</string>
+
+
     <string name="gestures_label">Gestos</string>
     <string name="gestures_desc">Agite o aparelho para trocar de música e incline para mudar o volume</string>
     <string name="hands_free_label">Mãos-livres</string>

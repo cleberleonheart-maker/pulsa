@@ -41,6 +41,7 @@ interface PlayerLink {
     fun start(songs: List<Song>, startIndex: Int)
     fun enqueue(songs: List<Song>): Int
 
+
     /** Fila universal: move o item pedido pro fim da fila e devolve o que moveu (ou `null`). */
     fun moveToEnd(video: Boolean, episode: Boolean): Song?
 
@@ -49,6 +50,8 @@ interface PlayerLink {
 
     /** Pula para um item da fila pelo índice (toque na lista da fila). */
     fun jumpTo(index: Int): Boolean
+
+
     fun play()
     fun toggle()
     fun pause()
@@ -105,9 +108,12 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
     override fun refreshCurrentMeta() = service.refreshCurrentMeta()
     override fun start(songs: List<Song>, startIndex: Int) = service.start(songs, startIndex)
     override fun enqueue(songs: List<Song>): Int = service.enqueue(songs)
+
     override fun moveToEnd(video: Boolean, episode: Boolean): Song? = service.moveToEnd(video, episode)
     override fun moveQueueItem(from: Int, to: Int): Boolean = service.moveQueueItem(from, to)
     override fun jumpTo(index: Int): Boolean = service.jumpTo(index)
+
+
     override fun play() = service.play()
     override fun toggle() = service.toggle()
     override fun pause() = service.pause()

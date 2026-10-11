@@ -257,9 +257,12 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+
         val limitValue = viewOrNull<TextView>(R.id.download_limit_value)
         refreshDownloadLimit(limitValue)
         findViewById<View>(R.id.download_limit_row).setOnClickListener { promptDownloadLimit(limitValue) }
+
+
 
         findViewById<MaterialButton>(R.id.btn_update_site).setOnClickListener {
             UpdateChecker.downloadFromSite(this)

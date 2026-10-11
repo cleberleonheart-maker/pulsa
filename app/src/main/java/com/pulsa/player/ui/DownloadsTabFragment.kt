@@ -15,8 +15,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
+
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Settings
+
+
 import com.pulsa.player.media.DownloadService
 import com.pulsa.player.media.DownloadStore
 import com.pulsa.player.ui.adapter.DownloadsAdapter
@@ -36,6 +39,7 @@ import com.pulsa.player.ui.adapter.DownloadsAdapter
  */
 class DownloadsTabFragment : Fragment() {
 
+
     // Barra de 512 MB: abaixo disto, o Android começa a chiar (limpeza de cache, apps que
     // se recusam a atualizar), então o aviso do app tem que acender antes, não junto.
     private val LOW_FREE_BYTES = 512L * 1024L * 1024L
@@ -43,6 +47,10 @@ class DownloadsTabFragment : Fragment() {
     private lateinit var adapter: DownloadsAdapter
     private lateinit var emptyView: TextView
     private lateinit var banner: TextView
+
+    private lateinit var adapter: DownloadsAdapter
+    private lateinit var emptyView: TextView
+
     private var observer: (() -> Unit)? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -50,6 +58,7 @@ class DownloadsTabFragment : Fragment() {
         val root = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
         }
+
 
         // Fora da `RecyclerView`: o aviso de espaço tem que aparecer mesmo com a lista
         // vazia — o caso que importa é "vou baixar e não cabe", antes da primeira linha
@@ -65,6 +74,8 @@ class DownloadsTabFragment : Fragment() {
             banner,
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         )
+
+
 
         val list = RecyclerView(ctx).apply {
             layoutManager = LinearLayoutManager(ctx)
@@ -111,6 +122,7 @@ class DownloadsTabFragment : Fragment() {
         val items = DownloadStore.list()
         adapter.submit(items)
         emptyView.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+
         refreshBanner()
     }
 
@@ -149,6 +161,8 @@ class DownloadsTabFragment : Fragment() {
             banner.text = messages.joinToString("\n")
             banner.visibility = View.VISIBLE
         }
+
+
     }
 
     private fun play(item: DownloadStore.Item) {

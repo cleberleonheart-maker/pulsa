@@ -1037,6 +1037,7 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
+
             <LinearLayout
                 android:id="@+id/download_limit_row"
                 android:layout_width="match_parent"
@@ -1079,6 +1080,8 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
             </LinearLayout>
+
+
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_update_site"

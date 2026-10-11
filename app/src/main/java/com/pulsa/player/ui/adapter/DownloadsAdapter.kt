@@ -1,5 +1,8 @@
 package com.pulsa.player.ui.adapter
+
 import com.pulsa.player.util.TvFocus
+
+
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -53,11 +56,16 @@ class DownloadsAdapter(
         notifyDataSetChanged()
     }
 
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_download, parent, false)
         TvFocus.apply(view)
         return VH(view)
     }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
+        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_download, parent, false))
+
 
     override fun getItemCount(): Int = items.size
 

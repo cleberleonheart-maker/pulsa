@@ -24,7 +24,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.DjActivity
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
+
 import com.pulsa.player.audio.SleepTimer
+
+
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Settings
@@ -45,7 +48,10 @@ import com.pulsa.player.podcast.PodcastFiles
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Telemetry
+
 import com.pulsa.player.work.PulsaWork
+
+
 import com.pulsa.player.core.CrashLogger
 
 /**
@@ -656,6 +662,7 @@ class DjSession(
         }
     }
 
+
     /**
      * Fila universal — reordenação por voz ("virgi, joga o vídeo pro fim"). Mesma regra do
      * [MainVirgin.virgQueueMove]: o motor escolhe o item, aqui só decide o que falar.
@@ -812,6 +819,8 @@ class DjSession(
             runCatching { db.downloadedEpisodes(feed.id) }.getOrDefault(emptyList())
         }
     }
+
+
 
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
@@ -1109,10 +1118,13 @@ class DjSession(
                     speak(say(R.string.dj_voice_pause))
                 }
             }
+
             "queue_move" -> voiceQueueMove(DjCommander.moveToEndQuery(norm))
             "queue_history" -> voiceQueueHistory(DjCommander.historyQuery(norm))
             "download_episode" -> voiceDownloadEpisode()
             "clean_space" -> voiceCleanSpace()
+
+
             "skip" -> {
                 val cur = Playback.currentSong
                 if (cur != null) {

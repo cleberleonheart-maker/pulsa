@@ -153,6 +153,7 @@ class DjCommanderTest {
     }
 
     @Test
+
     fun action_queue_move() {
         assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, joga o video pro fim")))
         assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, manda o episodio pro fim da fila")))
@@ -247,6 +248,8 @@ class DjCommanderTest {
     }
 
     @Test
+
+
     fun video_back_sem_video_cai_em_prev_no_handler() {
         // O parser devolve `video_back` para a palavra de direção sozinha, e quem desvia
         // para a faixa anterior é o handler (`virgVideoBack`), que é quem sabe o que está
@@ -584,6 +587,7 @@ class DjCommanderTest {
         assertEquals("daily_set", DjCommander.action(DjCommander.norm("toca a playlist do dia")))
     }
 
+
     @Test
     fun playcount_query_recognizes_current_song_phrases() {
         assertTrue(DjCommander.playCountQuery(DjCommander.norm("virgin, quantas vezes toquei essa")))
@@ -660,4 +664,6 @@ class DjCommanderTest {
             DjCommander.action(DjCommander.norm("virgin, dedica essa pra ana"))
         )
     }
+
+
 }

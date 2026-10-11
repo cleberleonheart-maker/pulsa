@@ -292,6 +292,7 @@ class DownloadService : Service() {
             finish(id)
             return
         }
+
         // Limite do Download Center: o teto é do que já está em disco (arquivos + `.part`).
         // Um item novo que já passaria dele é recusado antes de gastar um byte de rede — o
         // aviso aqui é mais barato que o aviso no meio do download, e é o que deixa o
@@ -305,6 +306,8 @@ class DownloadService : Service() {
             finish(id)
             return
         }
+
+
         DownloadStore.put(
             this,
             original.copy(status = DownloadStore.Status.RUNNING, error = null, speed = 0L),
@@ -376,12 +379,15 @@ class DownloadService : Service() {
             if (!hasRoomFor(need)) {
                 throw IllegalStateException(getString(R.string.downloads_no_space))
             }
+
             // A checagem definitiva do limite também: com o total real, dá para recusar o
             // download que estouraria o teto de propósito sem depender do tamanho conhecido
             // antes de abrir a conexão.
             if (total > 0L && limitExceeded(need)) {
                 throw IllegalStateException(getString(R.string.downloads_limit_reached))
             }
+
+
 
             DownloadStore.put(
                 this,
@@ -417,6 +423,7 @@ class DownloadService : Service() {
                             val speed = ((out.length() - lastBytes) * 1000L) / (now - lastUi).coerceAtLeast(1L)
                             lastUi = now
                             lastBytes = out.length()
+
                             // Tamanho desconhecido escorrega: sem total não dá para recusar
                             // antes de começar, então o `.part` em crescimento é que acusa a
                             // passagem do teto. O custo é uma checagem por 400 ms, o mesmo
@@ -425,6 +432,8 @@ class DownloadService : Service() {
                                 out.fd.sync()
                                 throw IllegalStateException(getString(R.string.downloads_limit_reached))
                             }
+
+
                             DownloadStore.put(
                                 this,
                                 original.copy(
@@ -554,6 +563,7 @@ class DownloadService : Service() {
         return free >= need + MIN_FREE
     }
 
+
     /**
      * O teto do Download Center (`Settings.downloadLimitMb`) está estourado por `extra` bytes.
      *
@@ -567,6 +577,8 @@ class DownloadService : Service() {
         val limit = limitMb * 1024L * 1024L
         return DownloadStore.usedBytes(this) + extra > limit
     }
+
+
 
     /** Encerra a corrida de um id: limpa as flags e deixa o foreground decidir se continua vivo. */
     private fun finish(id: String) {

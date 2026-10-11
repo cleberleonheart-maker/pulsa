@@ -64,6 +64,7 @@ object DownloadStore {
     fun fileFor(context: Context, item: Item): File = File(dir(context), item.fileName)
 
     /**
+
      * Bytes que o Download Center já ocupa no aparelho: arquivos prontos **e** os `.part` em
      * andamento (um parcial que nunca terminou ainda é espaço usado, e o limite tem que
      * contá-lo — é justamente ele que estoura o cartão quando o download morre no meio).
@@ -76,6 +77,8 @@ object DownloadStore {
 
 
     /**
+
+
      * Arquivo parcial, usado enquanto o download não termina.
      *
      * `internal` e não `private` de propósito: `private` no topo de um arquivo em Kotlin

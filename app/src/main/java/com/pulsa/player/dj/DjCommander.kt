@@ -197,6 +197,7 @@ object DjCommander {
             (norm.contains("pausa") || norm.contains("pausar") || norm.contains("para") ||
                 norm.contains("parar") || norm.contains("pare") || norm.contains("stop"))
 
+
     // ----- Fila universal: reordenação por voz ("joga o vídeo pro fim") -----
 
     /**
@@ -305,6 +306,8 @@ object DjCommander {
             else -> "all"
         }
     }
+
+
 
     /**
      * F2 · Nome do vídeo depois do verbo. Devolve `null` quando não há nome — aí o comando
@@ -911,10 +914,13 @@ object DjCommander {
     }
 
     fun action(norm: String): String? = when {
+
         // Salvar a fila vem antes das playlists: "salva a fila como playlist X" contém a
         // palavra "playlist" (e o "play" dentro dela faz o [playlistPlay] casar), então sem
         // esta prioridade o comando viraria "toca a playlist X" em vez de salvar a fila.
         queueSaveQuery(norm) -> "queue_save"
+
+
         // Playlists ficam no topo porque o nome da playlist pode ser qualquer palavra — até
         // "malhar" ou "chuva" podem ser o nome de uma playlist salva. Quem tem a palavra
         // "playlist" na frase vence; se não existir uma com esse nome, o `MainVirgin` devolve
@@ -955,6 +961,7 @@ object DjCommander {
         // `video_by_name` ANTES de video_play/video_open: "toca o filme Matrix" tem nome e
         // precisa achar na biblioteca/histórico; "toca o filme" sem nome continua retomando.
         // O [videoQuery] só devolve algo quando sobra texto depois do verbo+artigo+filme.
+
         // Fila universal: reordenação por voz. Fica ANTES do bloco de vídeo de propósito:
         // "joga o vídeo **para** o fim" contém "para", que a [videoPauseMatch] leria como
         // pausa. Verbo de mover + "fim/final" é sinal específico o bastante para não roubar
@@ -968,6 +975,8 @@ object DjCommander {
         cleanQuery(norm) -> "clean_space"
         historyQuery(norm) != null -> "queue_history"
         moveToEndQuery(norm) != null -> "queue_move"
+
+
         videoQuery(norm) != null -> "video_by_name"
         videoPlayMatch(norm) -> "video_play"
         videoOpenMatch(norm) -> "video_open"

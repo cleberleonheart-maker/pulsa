@@ -22,7 +22,10 @@ import com.pulsa.player.MainActivity
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
 import com.pulsa.player.audio.Ambient
+
 import com.pulsa.player.audio.SleepTimer
+
+
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Profile
@@ -32,8 +35,11 @@ import com.pulsa.player.data.Library
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.StreamHistory
+
 import com.pulsa.player.media.DownloadService
 import com.pulsa.player.media.DownloadStore
+
+
 import com.pulsa.player.media.GalleryScanner
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.model.Song
@@ -44,7 +50,10 @@ import com.pulsa.player.podcast.PodcastFiles
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.QueueKey
 import com.pulsa.player.sync.Telemetry
+
 import com.pulsa.player.work.PulsaWork
+
+
 import com.pulsa.player.core.CrashLogger
 
 /**
@@ -92,8 +101,11 @@ class MainVirgin(
             // `video_open` NÃO fica bloqueado: era o único jeito de voltar para a tela do
             // vídeo depois que ela fecha sozinha. Travar o comando só entregava o vídeo
             // parado, e sem comando para retomá-lo — que é o que "continua o filme" faz.
+
             // `download_episode` também NÃO fica bloqueado: "baixa esse episódio pra ouvir
             // no carro" é literalmente o comando para usar no carro, em voo.
+
+
         )
     }
 
@@ -839,6 +851,7 @@ class MainVirgin(
         }
     }
 
+
     /**
      * Fila universal — reordenação por voz ("virgi, joga o vídeo pro fim").
      *
@@ -1015,6 +1028,8 @@ class MainVirgin(
             runCatching { db.downloadedEpisodes(feed.id) }.getOrDefault(emptyList())
         }
     }
+
+
 
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
@@ -1238,10 +1253,13 @@ class MainVirgin(
                     virginSpeak(say(R.string.dj_voice_pause))
                 }
             }
+
 "queue_move"    -> virgQueueMove(DjCommander.moveToEndQuery(norm))
             "queue_history" -> virgQueueHistory(DjCommander.historyQuery(norm))
             "download_episode" -> virgDownloadEpisode()
             "clean_space" -> virgCleanSpace()
+
+
             "skip", "next", "dislike" -> {
                 val cur = Playback.currentSong
                 if (action == "dislike" && cur != null) {
