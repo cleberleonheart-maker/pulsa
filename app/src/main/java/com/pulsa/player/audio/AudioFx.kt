@@ -25,7 +25,12 @@ object AudioFx {
         Settings.QUALITY_JAZZ to intArrayOf(3, 2, -1, 2, 4),
         Settings.QUALITY_ACOUSTIC to intArrayOf(-1, 3, 4, 3, 2),
         Settings.QUALITY_CLASSICAL to intArrayOf(3, 2, 0, -2, -1),
-        Settings.QUALITY_LOUDNESS to intArrayOf(3, 1, 0, 1, 3)
+        Settings.QUALITY_LOUDNESS to intArrayOf(3, 1, 0, 1, 3),
+        // Modo podcast: corta o rumble grave (mais fadiga na fala que na música), realça o
+        // miolo de inteligibilidade (~250 Hz–1 kHz) e **corta a banda de 2–4 kHz**, que é onde
+        // mora o "sibilo"/aspereza da voz comprimida de podcast. Música não quer isso; por isso
+        // é um preset próprio, e não o QUALITY_VOICES (que faz o contrário: sobe os 3,6 kHz).
+        Settings.QUALITY_PODCAST to intArrayOf(-4, 3, 4, -3, -1)
     )
 
     private val GENRE_PATTERNS = listOf(
@@ -56,7 +61,22 @@ object AudioFx {
         return Settings.QUALITY_DEFAULT
     }
 
-    fun apply(context: Context, sessionId: Int, genre: String? = null) {
+    /**
+     * Qual preset aplicar, dado o que o usuário escolheu, o gênero e se é podcast. Pura.
+     *
+     * Regras, na ordem: preset escolhido à mão sempre ganha (inclusive o próprio podcast); no
+     * AUTO, episódio de podcast pega o preset de voz **antes** do gênero — o gênero de um feed
+     * ("news", "comedy") não descreve a mixagem da fala e cairia num preset de música; fora
+     * disso, o AUTO segue o gênero como sempre.
+     */
+    fun presetKey(selected: String, genre: String?, isPodcast: Boolean): String = when {
+        selected == Settings.QUALITY_PODCAST -> Settings.QUALITY_PODCAST
+        selected == Settings.QUALITY_AUTO && isPodcast -> Settings.QUALITY_PODCAST
+        selected == Settings.QUALITY_AUTO -> presetForGenre(genre)
+        else -> selected
+    }
+
+    fun apply(context: Context, sessionId: Int, genre: String? = null, isPodcast: Boolean = false) {
         release()
         karaoke = Settings.karaokeOn(context)
         if (sessionId <= 0) return
@@ -71,8 +91,7 @@ object AudioFx {
         } catch (t: Throwable) {
             null
         }
-        val selected = Settings.audioQuality(context)
-        val key = if (selected == Settings.QUALITY_AUTO) presetForGenre(genre) else selected
+        val key = presetKey(Settings.audioQuality(context), genre, isPodcast)
         applyPreset(eq, key, if (Settings.customEqOn(context)) customBands(context) else IntArray(0))
         bb?.let {
             runCatching { it.setStrength(if (key == Settings.QUALITY_DANCE) 900 else 500) }

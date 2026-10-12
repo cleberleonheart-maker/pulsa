@@ -399,6 +399,14 @@ class PlaybackService : MediaLibraryService() {
         return runCatching { Library.genreOf(applicationContext, song.id) }.getOrNull()
     }
 
+    /**
+     * O que está tocando é episódio de podcast? Decide o preset de voz do EQ.
+     *
+     * Vale tanto para o episódio em áudio quanto para o episódio em vídeo: em ambos a fonte é
+     * fala, e o preset de voz é escolhido justamente pela fonte, não pela tela.
+     */
+    private fun isPodcastPlaying(): Boolean = currentSong?.isPodcast == true
+
     inner class LocalBinder : Binder() {
         val service: PlaybackService get() = this@PlaybackService
     }
@@ -750,7 +758,7 @@ class PlaybackService : MediaLibraryService() {
         SpatialAudio.sync(applicationContext)
         player?.let {
             if (it.audioSessionId > 0) {
-                AudioFx.apply(applicationContext, it.audioSessionId, currentSongGenre())
+                AudioFx.apply(applicationContext, it.audioSessionId, currentSongGenre(), isPodcastPlaying())
             }
         }
         // O visualizador também é lido por voz ("virgi, desliga o visualizador"), e o `attach`
@@ -1378,7 +1386,7 @@ class PlaybackService : MediaLibraryService() {
         val p = player ?: return
         val sessionId = p.audioSessionId
         if (sessionId <= 0) return
-        AudioFx.apply(applicationContext, sessionId, currentSongGenre())
+        AudioFx.apply(applicationContext, sessionId, currentSongGenre(), isPodcastPlaying())
         // `sync` e não `attach`: um novo `attach` ignoraria a preferência e religaria a
         // captura que o usuário mandou desligar.
         MusicVisualizer.sync(applicationContext, sessionId)

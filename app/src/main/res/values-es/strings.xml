@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.14):
-→ DESCARGAR CARÁTULAS
-• El botón ahora descarga al momento, incluso en datos móviles (antes esperaba el Wi-Fi y no avisaba).
-• Busca la carátula en la tienda de iTunes de tu idioma (Brasil, España o EE. UU.) y reintenta solo con el álbum cuando el artista está mal — encuentra muchas más carátulas.</string>
+    <string name="changelog">Novedades de esta versión (5.10.15):
+→ MODO PODCAST EN EL EQ
+• Los episodios de podcast ahora tienen su propio preset de voz: recorta los graves que cansan, realza la voz y corta los 2–4 kHz que vuelven áspera la habla.
+• En automático entra solo para los podcasts; también puedes elegir "Podcast" a mano en Configuración → Calidad de audio.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -235,6 +235,7 @@
     <string name="quality_acoustic">Acústico</string>
     <string name="quality_classical">Clásico</string>
     <string name="quality_loudness">Sonoridad</string>
+    <string name="quality_podcast">Podcast</string>
     <string name="equalizer">Ecualizador</string>
     <string name="eq_subtitle">Aplica la calidad de audio elegida</string>
     <string name="audio_8d">Audio 8D</string>

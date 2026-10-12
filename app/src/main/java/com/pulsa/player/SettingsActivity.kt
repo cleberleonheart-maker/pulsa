@@ -678,6 +678,7 @@ class SettingsActivity : AppCompatActivity() {
             Settings.QUALITY_DEFAULT,
             Settings.QUALITY_BASS,
             Settings.QUALITY_VOICES,
+            Settings.QUALITY_PODCAST,
             Settings.QUALITY_TREBLE,
             Settings.QUALITY_ROCK,
             Settings.QUALITY_DANCE,

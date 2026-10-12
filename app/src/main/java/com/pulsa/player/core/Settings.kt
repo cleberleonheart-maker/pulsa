@@ -50,6 +50,7 @@ object Settings {
     const val QUALITY_ACOUSTIC = "acoustic"
     const val QUALITY_CLASSICAL = "classical"
     const val QUALITY_LOUDNESS = "loudness"
+    const val QUALITY_PODCAST = "podcast"
     const val DANCE_SPEED = 1.12f
     const val DANCE_PITCH = 1.06f
 
@@ -370,6 +371,7 @@ object Settings {
         QUALITY_ACOUSTIC -> R.string.quality_acoustic
         QUALITY_CLASSICAL -> R.string.quality_classical
         QUALITY_LOUDNESS -> R.string.quality_loudness
+        QUALITY_PODCAST -> R.string.quality_podcast
         else -> R.string.quality_default
     }
 
