@@ -30,13 +30,17 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.5):
-→ CONTINÚA DONDE LO DEJASTE
-• La tarjeta de inicio ahora sabe qué escuchabas: música, episodio, video o radio.
-• Virgin retoma en voz alta dónde paraste: \"volviendo al episodio de ayer, paraste en el minuto 34\".</string>
+    <string name="changelog">Novedades de esta versión (5.10.6):
+→ FILTROS DE CONTENIDO EN LA BÚSQUEDA
+• Segunda fila de chips: Descargados, No escuchados, Cortos y Recientes.
+• Se combina con el tipo: Podcasts + Descargados lista solo los episodios que se escuchan sin conexión.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
+    <string name="search_filter_downloaded">Descargados</string>
+    <string name="search_filter_unplayed">No escuchados</string>
+    <string name="search_filter_short">Cortos</string>
+    <string name="search_filter_recent">Recientes</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
     <string name="grant_permission">Permitir acceso</string>

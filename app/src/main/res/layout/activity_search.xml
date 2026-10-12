@@ -91,6 +91,48 @@
         </LinearLayout>
     </HorizontalScrollView>
 
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="6dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/search_chip_content_strip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="3dp">
+
+            <TextView
+                android:id="@+id/search_chip_content_all"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/search_filter_all" />
+
+            <TextView
+                android:id="@+id/search_chip_content_downloaded"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/search_filter_downloaded" />
+
+            <TextView
+                android:id="@+id/search_chip_content_unplayed"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/search_filter_unplayed" />
+
+            <TextView
+                android:id="@+id/search_chip_content_short"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/search_filter_short" />
+
+            <TextView
+                android:id="@+id/search_chip_content_recent"
+                style="@style/Widget.Pulsa.TabItem"
+                android:text="@string/search_filter_recent" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
