@@ -8,20 +8,29 @@ class CoverFetcherTest {
 
     @Test
     fun `searchUrl junta artista e album no termo`() {
-        val url = CoverFetcher.searchUrl("Pink Floyd", "The Wall")
+        val url = CoverFetcher.searchUrl("Pink Floyd", "The Wall", "US")
         assertEquals(
-            "https://itunes.apple.com/search?media=music&entity=album&limit=5&term=Pink+Floyd+The+Wall",
+            "https://itunes.apple.com/search?media=music&entity=album&limit=5&country=US&term=Pink+Floyd+The+Wall",
             url
         )
     }
 
     @Test
     fun `searchUrl sem artista usa so o album`() {
-        val url = CoverFetcher.searchUrl("", "Ao Vivo")
+        val url = CoverFetcher.searchUrl("", "Ao Vivo", "BR")
         assertEquals(
-            "https://itunes.apple.com/search?media=music&entity=album&limit=5&term=Ao+Vivo",
+            "https://itunes.apple.com/search?media=music&entity=album&limit=5&country=BR&term=Ao+Vivo",
             url
         )
+    }
+
+    @Test
+    fun `countryFor segue o idioma do app`() {
+        assertEquals("BR", CoverFetcher.countryFor("pt"))
+        assertEquals("ES", CoverFetcher.countryFor("es"))
+        assertEquals("US", CoverFetcher.countryFor("en"))
+        assertEquals("US", CoverFetcher.countryFor(""))
+        assertEquals("BR", CoverFetcher.countryFor("PT"))
     }
 
     @Test

@@ -138,15 +138,16 @@ object PulsaWork {
      * Baixa as capas em falta do acervo, uma vez.
      *
      * `REPLACE` porque é um pedido manual: tocar de novo recomeça do zero em vez de enfileirar
-     * duas passadas. A constraint de rede respeita o "baixar só no Wi-Fi" das Configurações —
-     * capa é dado que o usuário não pediu a cada faixa, então não deve furar essa trava.
+     * duas passadas. A constraint é [NetworkType.CONNECTED] de propósito: quem toca no botão
+     * está pedindo **agora**, então a trava "baixar só no Wi-Fi" (que é para download
+     * automático/de fundo) não se aplica. Antes usava `UNMETERED` quando a opção estava ligada e
+     * o job ficava parado na fila com o Wi-Fi desligado — o usuário tocava e nada acontecia.
      *
      * @return o id do job, para acompanhar quantas capas saíram; null se nem agendar deu.
      */
     fun downloadCovers(context: Context): UUID? {
-        val wifi = runCatching { Settings.downloadWifiOnly(context) }.getOrDefault(true)
         val constraint = Constraints.Builder()
-            .setRequiredNetworkType(if (wifi) NetworkType.UNMETERED else NetworkType.CONNECTED)
+            .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
         val request = OneTimeWorkRequestBuilder<CoverWorker>()
             .setConstraints(constraint)
@@ -274,11 +275,14 @@ object PulsaWork {
         CoroutineWorker(context, params) {
         override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
             val ctx = applicationContext
+            val country = CoverFetcher.countryFor(
+                runCatching { Settings.language(ctx) }.getOrDefault(Settings.LANG_PT)
+            )
             var done = 0
             runCatching {
                 for (album in Library.albums(ctx)) {
                     if (ArtLoader.hasArt(ctx, album.id)) continue
-                    val bmp = CoverFetcher.fetch(album.artist, album.name) ?: continue
+                    val bmp = CoverFetcher.fetch(album.artist, album.name, country) ?: continue
                     if (ArtLoader.put(ctx, album.id, bmp)) done++
                 }
             }

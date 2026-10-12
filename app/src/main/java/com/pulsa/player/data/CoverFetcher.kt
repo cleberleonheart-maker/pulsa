@@ -33,11 +33,23 @@ object CoverFetcher {
     private val ART_60 = Regex("\"artworkUrl60\"\\s*:\\s*\"([^\"]+)\"")
     private val SIZE = Regex("\\d+x\\d+bb")
 
-    /** A consulta por álbum (artista + nome). Pura, para o teste conferir a montagem. */
-    fun searchUrl(artist: String, album: String): String {
+    /** A consulta por álbum (artista + nome). Pura, para o teste conferir a montagem.
+     *
+     * O `country` importa: sem ele o iTunes responde pela loja dos EUA, onde muito álbum
+     * brasileiro (gospel, forró, MPB) simplesmente não existe — era o que fazia metade do
+     * acervo não achar capa. Quem decide o país é [countryFor], a partir do idioma do app.
+     */
+    fun searchUrl(artist: String, album: String, country: String): String {
         val term = listOf(artist, album).filter { it.isNotBlank() }.joinToString(" ")
-        return "https://$HOST/search?media=music&entity=album&limit=5&term=" +
+        return "https://$HOST/search?media=music&entity=album&limit=5&country=$country&term=" +
             URLEncoder.encode(term, "UTF-8")
+    }
+
+    /** Loja do iTunes conforme o idioma do app (pt→Brasil, es→Espanha, resto→EUA). Pura. */
+    fun countryFor(language: String): String = when (language.lowercase()) {
+        "pt" -> "BR"
+        "es" -> "ES"
+        else -> "US"
     }
 
     /**
@@ -60,11 +72,21 @@ object CoverFetcher {
     /**
      * Busca a capa e devolve o bitmap já decodificado, ou `null`.
      *
+     * Tenta primeiro `artista + álbum` e, se não vier arte, repete **só com o álbum** — o
+     * artista polui a consulta quando o nome do arquivo traz "feat.", vírgulas ou o artista
+     * errado (compilação), e cair para o disco do álbum acha o que a busca combinada perdeu.
+     *
      * **Bloqueia** (rede): quem chama é o job de capas, numa thread de IO.
      */
-    fun fetch(artist: String, album: String): Bitmap? {
-        val json = getText(searchUrl(artist, album)) ?: return null
-        val url = pickArtwork(json) ?: return null
+    fun fetch(artist: String, album: String, country: String): Bitmap? {
+        val withArtist = runCatching { getText(searchUrl(artist, album, country)) }.getOrNull()
+        var artwork = withArtist?.let { pickArtwork(it) }
+        if (artwork == null && artist.isNotBlank()) {
+            // Só vale a segunda ida se a primeira realmente incluía o artista.
+            val albumOnly = runCatching { getText(searchUrl("", album, country)) }.getOrNull()
+            artwork = albumOnly?.let { pickArtwork(it) }
+        }
+        val url = artwork ?: return null
         val bytes = getBytes(url) ?: return null
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     }

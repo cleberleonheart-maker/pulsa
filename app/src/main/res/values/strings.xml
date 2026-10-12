@@ -33,10 +33,10 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.13):
-→ VELOCIDADE E SALTINHO
-• Episódios de podcast ganharam velocidade (0,5x a 2x) e salto de 15s no Agora Tocando — a velocidade fica guardada separada da de vídeo.
-• A Virgin anuncia a velocidade nova; quem mexe muito, ela comenta que você gosta de acelerar.</string>
+    <string name="changelog">Novidades desta versão (5.10.14):
+→ BAIXAR CAPAS
+• O botão agora baixa na hora, mesmo no celular (antes ficava esperando o Wi-Fi e não avisava).
+• Busca capa na loja do iTunes do seu idioma (Brasil, Espanha ou EUA) e tenta de novo só pelo álbum quando o artista está errado — acha bem mais capa.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>

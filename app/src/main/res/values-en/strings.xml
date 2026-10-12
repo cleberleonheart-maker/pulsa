@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.13):
-→ SPEED AND SEEK
-• Podcast episodes now have speed (0.5x to 2x) and a 15s jump on the Now Playing screen — the speed is saved separately from the video speed.
-• The Virgin announces the new speed; use it a lot and she comments that you like to speed up.</string>
+    <string name="changelog">What is new (5.10.14):
+→ DOWNLOAD COVERS
+• The button now downloads right away, even on mobile data (before it waited for Wi-Fi and said nothing).
+• It looks for art in your language storefront (Brazil, Spain or US) and retries with the album name only when the artist is wrong — finds far more covers.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

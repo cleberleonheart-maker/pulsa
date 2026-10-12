@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.13):
-→ VELOCIDAD Y SALTO
-• Los episodios de podcast ahora tienen velocidad (0,5x a 2x) y salto de 15s en Reproduciendo — la velocidad se guarda aparte de la de vídeo.
-• La Virgin anuncia la velocidad nueva; úsala mucho y comenta que te encanta acelerar.</string>
+    <string name="changelog">Novedades de esta versión (5.10.14):
+→ DESCARGAR CARÁTULAS
+• El botón ahora descarga al momento, incluso en datos móviles (antes esperaba el Wi-Fi y no avisaba).
+• Busca la carátula en la tienda de iTunes de tu idioma (Brasil, España o EE. UU.) y reintenta solo con el álbum cuando el artista está mal — encuentra muchas más carátulas.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
