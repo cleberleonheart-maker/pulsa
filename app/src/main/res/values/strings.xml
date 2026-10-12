@@ -33,7 +33,7 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.0):
+    <string name="changelog">Novidades desta versão (5.10.1):
 → FILA NA TELA DE REPRODUÇÃO
 • Arraste a capa para cima para abrir a fila. Arraste as faixas para reordenar e toque em
   uma para pular direto para ela.
@@ -96,9 +96,6 @@
   hoje?" lista o que você ouviu hoje por tipo de mídia.
 
 ★ DA 5.9.4
-
-    <string name="changelog">Novidades desta versão (5.9.4):
-
 → O 3D E O SURROUND PARARAM DE QUEBRAR A MÚSICA
 • Com o efeito ligado a faixa morria no meio e o Pulsa reiniciava o som. O que acontecia é
   que o 3D reaproveitava o mesmo pedaço de memória que já estava tocando, e o player tropeçava

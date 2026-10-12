@@ -30,7 +30,7 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.0):
+    <string name="changelog">Novedades de esta versión (5.10.1):
 → FILA EN LA PANTALLA DE REPRODUCCIÓN
 • Desliza la carátula hacia arriba para abrir la fila. Arrastra las pistas para reordenar y
   toca una para saltar directo a ella.
