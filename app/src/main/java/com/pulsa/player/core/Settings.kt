@@ -722,6 +722,14 @@ object Settings {
     }
 
     /**
+     * F5 — quando a fila foi salva, para a Virgin dizer "de ontem" em vez de um horário.
+     *
+     * `0` quando nunca houve sessão; o [com.pulsa.player.core.ResumeInfo] lê isso como
+     * "da outra vez" e não inventa uma data.
+     */
+    fun queueSavedAt(context: Context): Long = prefs(context).getLong("queue_saved_at", 0L)
+
+    /**
      * Fila universal — o que o MediaStore não sabe sobre rádio e stream.
      *
      * A chave de rádio/stream é a URL (ver [QueueKey]), mas ela não carrega título nem

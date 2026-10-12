@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.4):
-→ UNIFIED SEARCH
-• Search now finds songs, albums, artists, videos and podcast episodes in the same field.
-• Chips at the top filter by type: All, Songs, Albums, Artists, Videos and Podcasts.</string>
+    <string name="changelog">What is new (5.10.5):
+→ CONTINUE WHERE YOU LEFT OFF
+• The home card now knows what you were playing: music, episode, video or radio.
+• Virgin resumes out loud with where you stopped: \"back to yesterday\'s episode, you stopped at minute 34\".</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -491,6 +491,20 @@
     <string name="dj_voice_resume_searching">Let me see where we left off...</string>
     <string name="dj_voice_resume">Back! Playing %1$s, by %2$s, from where you stopped.</string>
     <string name="dj_voice_resume_none">I couldn\'t find where you stopped last time. Ask me to play a song and I\'ll start right now!</string>
+    <string name="resume_kind_podcast">Episode</string>
+    <string name="resume_kind_video">Video</string>
+    <string name="resume_kind_radio">Radio</string>
+    <string name="resume_kind_stream">Stream</string>
+    <string name="resume_card_stopped_at">stopped at %1$s</string>
+    <string name="resume_stopped_at_minutes">You stopped at minute %1$d.</string>
+    <string name="resume_stopped_at_clock">You stopped at %1$s.</string>
+    <string name="resume_when_today">from today</string>
+    <string name="resume_when_yesterday">from yesterday</string>
+    <string name="resume_when_past">from last time</string>
+    <string name="resume_spoken_music">Back to %1$s, by %2$s.</string>
+    <string name="resume_spoken_podcast">Back to %2$s\'s episode %1$s.</string>
+    <string name="resume_spoken_video">Back to the video %1$s.</string>
+    <string name="resume_spoken_radio">Back to the radio %1$s.</string>
     <string name="dj_voice_video_none">There\'s no video playing right now.</string>
     <string name="dj_voice_video_open">Opening %1$s.</string>
     <string name="dj_voice_video_play">Resuming %1$s.</string>

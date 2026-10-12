@@ -29,6 +29,7 @@ import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Profile
+import com.pulsa.player.core.ResumeInfo
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.Library
@@ -1033,6 +1034,19 @@ class MainVirgin(
 
     private fun resumeLastSession() {
         val ctx = activity.applicationContext
+        // F5 — a própria fila restaurada já é a "última coisa tocada", e ela é ciente do
+        // tipo sem precisar remontar nada do banco: o item atual pode ser episódio, rádio
+        // ou stream, não só música. Vídeo fica de fora de propósito (não se retoma vídeo
+        // sem a tela), então ele cai no caminho de música abaixo.
+        val current = Playback.currentSong
+        if (current != null && !current.needsVideoScreen) {
+            virginSpeak(activity.getString(R.string.dj_voice_resume_searching))
+            val pos = Playback.position
+            if (!Playback.isPlaying) Playback.toggle()
+            Telemetry.log(activity, "Virgin resume atual tipo=${ResumeInfo.kindOf(current)} pos=$pos")
+            virginSpeak(ResumeInfo.spoken(activity, current, pos, Settings.queueSavedAt(ctx)))
+            return
+        }
         val songId = Settings.resumeSongId(ctx)
         if (songId < 0L) {
             virginSpeak(activity.getString(R.string.dj_voice_resume_none))

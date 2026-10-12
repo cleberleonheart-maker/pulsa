@@ -22,6 +22,7 @@ import com.pulsa.player.NowPlayingActivity
 import com.pulsa.player.R
 import com.pulsa.player.RadioActivity
 import com.pulsa.player.core.Permissions
+import com.pulsa.player.core.ResumeInfo
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.ArtLoader
@@ -428,9 +429,20 @@ class VirginHomeFragment : Fragment() {
             return
         }
         card.visibility = View.VISIBLE
+        // Tocando agora não "parou" em lugar nenhum, então a posição só entra pausado — é
+        // o que faz o mesmo card servir de "tocando agora" e de "continuar de onde parou".
+        val stoppedAt = if (Playback.isPlaying) 0L else Playback.position
         v.findViewById<TextView>(R.id.resume_title)?.text = song.title
-        v.findViewById<TextView>(R.id.resume_artist)?.text = song.artist + " • " + song.album
-        ArtLoader.load(song.albumId, song.path, v.findViewById(R.id.resume_art))
+        v.findViewById<TextView>(R.id.resume_artist)?.text =
+            ResumeInfo.cardSubtitle(requireContext(), song, stoppedAt)
+        val art = v.findViewById<ImageView>(R.id.resume_art)
+        if (song.albumId > 0L || song.isVideo) {
+            ArtLoader.load(song.albumId, song.path, art)
+        } else {
+            // Episódio, rádio e stream não têm arte no MediaStore: o ícone do tipo diz mais
+            // do que a nota musical de sempre.
+            art.setImageResource(ResumeInfo.iconRes(song))
+        }
         v.findViewById<ImageView>(R.id.resume_play)?.setImageResource(
             if (Playback.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
         )
