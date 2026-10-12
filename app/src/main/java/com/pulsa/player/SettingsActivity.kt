@@ -32,6 +32,7 @@ import com.pulsa.player.core.Changelog
 import com.pulsa.player.core.Helper
 import com.pulsa.player.sync.MirrorSync
 import com.pulsa.player.work.PulsaWork
+import com.pulsa.player.media.UrlDownloader
 import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.Telemetry
 import com.pulsa.player.core.ThreadPool
@@ -698,15 +699,14 @@ class SettingsActivity : AppCompatActivity() {
     private fun startDownload() {
         val url = findViewById<EditText>(R.id.download_url).text.toString().trim()
         val name = findViewById<EditText>(R.id.download_name).text.toString().trim()
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            Toast.makeText(this, R.string.download_invalid_url, Toast.LENGTH_SHORT).show()
+        UrlDownloader.validate(url)?.let { errorRes ->
+            Toast.makeText(
+                this, errorRes,
+                if (errorRes == R.string.download_direct_only) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
+            ).show()
             return
         }
-        if (urlLooksLikePage(url)) {
-            Toast.makeText(this, R.string.download_direct_only, Toast.LENGTH_LONG).show()
-            return
-        }
-        val finalName = name.ifEmpty { guessName(url) }
+        val finalName = name.ifEmpty { UrlDownloader.guessName(url) }
         // Virou job do WorkManager: espera a rede, e se a tela fechar no meio o download
         // continua -- antes era uma thread do pool que morria junto com o processo sem aviso.
         val job = PulsaWork.download(this, url, finalName)
@@ -728,25 +728,6 @@ class SettingsActivity : AppCompatActivity() {
             }
             Toast.makeText(app, message, Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun guessName(url: String): String {
-        val segment = url.substringBefore('?').substringAfterLast('/')
-        return segment.substringBeforeLast('.', segment).ifEmpty { "música" }
-    }
-
-    private fun urlLooksLikePage(url: String): Boolean {
-        val lower = url.lowercase()
-        if (lower.contains("youtube.com") || lower.contains("youtu.be") ||
-            lower.contains("spotify.com") || lower.contains("deezer.com") ||
-            lower.contains("soundcloud.com") || lower.contains("tidal.com") ||
-            lower.contains("apple.com") || lower.contains("music.youtube.com")
-        ) return true
-        val path = lower.substringBefore('?').substringAfter("://").substringAfter('/')
-        if (path.startsWith("watch") || path.startsWith("track") || path.startsWith("album") ||
-            path.startsWith("playlist") || path.startsWith("shorts") || path.startsWith("embed")
-        ) return true
-        return false
     }
 
     private fun refreshGeminiKey() {

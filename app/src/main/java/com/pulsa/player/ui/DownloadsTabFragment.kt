@@ -7,12 +7,15 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
 
@@ -22,7 +25,9 @@ import com.pulsa.player.core.Settings
 
 import com.pulsa.player.media.DownloadService
 import com.pulsa.player.media.DownloadStore
+import com.pulsa.player.media.UrlDownloader
 import com.pulsa.player.ui.adapter.DownloadsAdapter
+import com.pulsa.player.work.PulsaWork
 
 /**
  * F2 — aba "Baixados": os vídeos PeerTube que estão no aparelho, e só eles.
@@ -70,6 +75,20 @@ class DownloadsTabFragment : Fragment() {
         root.addView(
             banner,
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        )
+
+        // Baixar por URL de arquivo: a mesma entrada das Configurações, agora aqui na aba —
+        // o ponto de quem só quer encher o cartão (música, palestra, episódio avulso) sem
+        // passar pela busca do PeerTube.
+        val addUrl = MaterialButton(ctx).apply {
+            text = getString(R.string.downloads_add_url)
+            setOnClickListener { promptDownloadUrl() }
+        }
+        root.addView(
+            addUrl,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(16.dp, 4.dp, 16.dp, 4.dp)
+            }
         )
 
 
@@ -162,6 +181,66 @@ class DownloadsTabFragment : Fragment() {
 
     }
 
+    private fun promptDownloadUrl() {
+        val ctx = requireContext()
+        val urlInput = EditText(ctx).apply {
+            hint = getString(R.string.download_url_hint)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_URI
+        }
+        val nameInput = EditText(ctx).apply {
+            hint = getString(R.string.download_name_hint)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+        }
+        val body = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24.dp, 8.dp, 24.dp, 0)
+        }
+        body.addView(urlInput, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        body.addView(
+            nameInput,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = 12.dp
+            }
+        )
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle(R.string.downloads_add_url)
+            .setView(body)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.download) { _, _ ->
+                startUrlDownload(urlInput.text.toString().trim(), nameInput.text.toString().trim())
+            }
+            .show()
+    }
+
+    /**
+     * Mesmo caminho das Configurações: valida (http/https + não é página), joga no
+     * WorkManager e avisa quando o arquivo cai no MediaStore.
+     */
+    private fun startUrlDownload(url: String, name: String) {
+        val ctx = requireContext()
+        UrlDownloader.validate(url)?.let { errorRes ->
+            toast(errorRes)
+            return
+        }
+        val finalName = name.ifEmpty { UrlDownloader.guessName(url) }
+        val job = PulsaWork.download(ctx, url, finalName)
+        if (job == null) {
+            toast(R.string.download_failed, finalName)
+            return
+        }
+        toast(R.string.download_started)
+        val app = ctx.applicationContext
+        PulsaWork.watchDownload(ctx, job) { ok, _ ->
+            val message = if (ok) {
+                app.getString(R.string.download_done, finalName)
+            } else {
+                app.getString(R.string.download_failed, finalName)
+            }
+            Toast.makeText(app, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun play(item: DownloadStore.Item) {
         val ctx = context ?: return
         if (!item.isDone()) {
@@ -242,8 +321,8 @@ class DownloadsTabFragment : Fragment() {
             .show()
     }
 
-    private fun toast(res: Int) {
-        Toast.makeText(requireContext(), res, Toast.LENGTH_SHORT).show()
+    private fun toast(res: Int, vararg args: Any) {
+        Toast.makeText(requireContext(), getString(res, *args), Toast.LENGTH_SHORT).show()
     }
 
     private val Int.dp: Int

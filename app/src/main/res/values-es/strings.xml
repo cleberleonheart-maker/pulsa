@@ -30,10 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.6):
-→ FILTROS DE CONTENIDO EN LA BÚSQUEDA
-• Segunda fila de chips: Descargados, No escuchados, Cortos y Recientes.
-• Se combina con el tipo: Podcasts + Descargados lista solo los episodios que se escuchan sin conexión.</string>
+    <string name="changelog">Novedades de esta versión (5.10.7):
+→ DESCARGAR DESDE URL EN LA PESTAÑA DE DESCARGA
+• La entrada "Descargar desde URL" ahora está en la pestaña Descargas, no solo en Configuración.
+• Tu enlace de archivo (p. ej. .mp3) va a la cola de WorkManager: espera la red, descarga en segundo plano y avisa cuando el archivo llega al dispositivo.
+• El nombre se adivina del enlace; puedes cambiarlo antes de descargar.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -370,6 +371,7 @@
     <string name="downloads_idle">Ninguna descarga en curso</string>
     <string name="downloads_tab">Descargados</string>
     <string name="downloads_empty">Nada descargado todavía</string>
+    <string name="downloads_add_url">Descargar desde URL</string>
     <string name="downloads_empty_hint">Abre la búsqueda de PeerTube y usa el menú del vídeo para descargar.</string>
     <string name="downloads_queued">En cola</string>
     <string name="downloads_running">Descargando…</string>
