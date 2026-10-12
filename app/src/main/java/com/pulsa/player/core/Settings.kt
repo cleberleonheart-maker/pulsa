@@ -601,6 +601,43 @@ object Settings {
         prefs(context).getInt("download_limit_mb", 0)
 
 
+    /**
+     * F5 · Limpeza automática do offline — apaga o que não foi usado há [offlineCleanupDays]
+     * dias. `0` = desligado.
+     *
+     * Padrão `0`: apagar arquivo sozinho é a decisão que mais dói se erra, então começa
+     * desligado e só liga por escolha explícita. Os valores oferecidos (7/30/60) evitam a
+     * zona ambígua de "1 dia", que apagaria o que a pessoa baixou ontem para ver hoje.
+     */
+    fun setOfflineCleanupDays(context: Context, value: Int) {
+        prefs(context).edit().putInt("offline_cleanup_days", value).apply()
+    }
+
+    fun offlineCleanupDays(context: Context): Int =
+        prefs(context).getInt("offline_cleanup_days", 0)
+
+    /** Aviso de voz pendente da última limpeza automática: o que ela apagou e quanto liberou. */
+    fun setPendingOfflineClean(context: Context, count: Int, bytes: Long) {
+        prefs(context).edit()
+            .putInt("offline_clean_pending_count", count)
+            .putLong("offline_clean_pending_bytes", bytes)
+            .apply()
+    }
+
+    fun pendingOfflineClean(context: Context): Pair<Int, Long>? {
+        val count = prefs(context).getInt("offline_clean_pending_count", 0)
+        if (count <= 0) return null
+        return count to prefs(context).getLong("offline_clean_pending_bytes", 0L)
+    }
+
+    fun clearPendingOfflineClean(context: Context) {
+        prefs(context).edit()
+            .remove("offline_clean_pending_count")
+            .remove("offline_clean_pending_bytes")
+            .apply()
+    }
+
+
 
     fun setGesturesOn(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("gestures_on", value).apply()

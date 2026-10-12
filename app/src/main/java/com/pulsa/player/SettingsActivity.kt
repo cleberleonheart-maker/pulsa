@@ -263,6 +263,10 @@ class SettingsActivity : AppCompatActivity() {
         refreshDownloadLimit(limitValue)
         findViewById<View>(R.id.download_limit_row).setOnClickListener { promptDownloadLimit(limitValue) }
 
+        val cleanupValue = viewOrNull<TextView>(R.id.offline_cleanup_value)
+        refreshOfflineCleanup(cleanupValue)
+        findViewById<View>(R.id.offline_cleanup_row).setOnClickListener { promptOfflineCleanup(cleanupValue) }
+
 
 
         findViewById<MaterialButton>(R.id.btn_update_site).setOnClickListener {
@@ -836,6 +840,32 @@ class SettingsActivity : AppCompatActivity() {
             .setSingleChoiceItems(labels, options.indexOfFirst { it == current }.let { if (it < 0) 0 else it }) { _, which ->
                 Settings.setDownloadLimitMb(this, options[which])
                 refreshDownloadLimit(valueView)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun refreshOfflineCleanup(valueView: TextView?) {
+        val days = Settings.offlineCleanupDays(this)
+        valueView?.text = if (days <= 0) {
+            getString(R.string.offline_cleanup_value_off)
+        } else {
+            getString(R.string.offline_cleanup_days, days)
+        }
+    }
+
+    private fun promptOfflineCleanup(valueView: TextView?) {
+        val current = Settings.offlineCleanupDays(this)
+        val options = intArrayOf(0, 7, 30, 60)
+        val labels = options.map { days ->
+            if (days <= 0) getString(R.string.offline_cleanup_value_off)
+            else getString(R.string.offline_cleanup_days, days)
+        }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.offline_cleanup)
+            .setSingleChoiceItems(labels, options.indexOfFirst { it == current }.let { if (it < 0) 0 else it }) { _, which ->
+                Settings.setOfflineCleanupDays(this, options[which])
+                refreshOfflineCleanup(valueView)
             }
             .setNegativeButton(R.string.cancel, null)
             .show()

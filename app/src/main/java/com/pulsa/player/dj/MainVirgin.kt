@@ -43,6 +43,7 @@ import com.pulsa.player.media.DownloadStore
 
 import com.pulsa.player.media.GalleryScanner
 import com.pulsa.player.media.MusicEditor
+import com.pulsa.player.media.OfflineCleanupRunner
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.podcast.Episode
@@ -152,7 +153,17 @@ class MainVirgin(
                     } else {
                         activity.getString(R.string.dj_voice_welcome, nick)
                     }
-                    vm.speak(msg)
+                    // O Worker de limpeza roda com o app fechado e não tem quem ouvir: ele
+                    // guarda o que fez e o aviso sai aqui, junto da saudação (uma locução só,
+                    // porque `speak` duas vezes seguidas cortaria a primeira).
+                    val notice = OfflineCleanupRunner.takePendingNotice(activity)
+                    val full = if (notice == null) {
+                        msg
+                    } else {
+                        val (count, bytes) = notice
+                        "$msg ${activity.getString(R.string.dj_voice_clean_auto, Helper.formatBytes(bytes), count)}"
+                    }
+                    vm.speak(full)
                 }
             }
         }

@@ -22,8 +22,8 @@ android {
         minSdk = 23
 targetSdk = 34
 
-        versionCode = 140
-        versionName = "5.10.9"
+        versionCode = 141
+        versionName = "5.10.10"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 

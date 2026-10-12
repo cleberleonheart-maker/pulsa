@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.9):
-→ LISTAS EN M3U
-• Exporta una lista: menú ⋮ → "Compartir (.m3u)" o "Guardar archivo (.m3u)".
-• Importa .m3u de otros reproductores: menú ⋮ en Listas → "Importar M3U"; la app casa por ruta y, cuando el archivo viene de otro dispositivo, por artista y título.</string>
+    <string name="changelog">Novedades de esta versión (5.10.10):
+→ LIMPIEZA AUTOMÁTICA DEL OFFLINE
+• En Ajustes, activa "Limpiar descargas antiguas": la app borra sola lo que no escuchas desde hace 7, 30 o 60 días.
+• La Virgin te avisa la próxima vez que abras la app: cuántas borró y cuánto espacio liberó.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -403,6 +403,10 @@
     <string name="downloads_limit">Límite de espacio</string>
     <string name="downloads_limit_hint">Cuánto disco pueden ocupar las descargas; pasado el tope, las nuevas fallan en vez de llenar la memoria.</string>
     <string name="downloads_limit_value_none">Sin límite</string>
+    <string name="offline_cleanup">Limpiar descargas antiguas</string>
+    <string name="offline_cleanup_hint">Borra sola las descargas que no escuchas desde hace tiempo, liberando espacio.</string>
+    <string name="offline_cleanup_value_off">Desactivado</string>
+    <string name="offline_cleanup_days">%1$d días</string>
     <string name="downloads_limit_reached">Límite de espacio alcanzado: borra una descarga para continuar</string>
     <string name="downloads_used_cap">%1$s usados de %2$s</string>
     <string name="downloads_warning_limit">Límite alcanzado. Borra una descarga para seguir bajando.</string>
@@ -550,6 +554,7 @@
     <string name="dj_voice_clean_none">No hay descargas que limpiar.</string>
     <string name="dj_voice_clean_confirm">Hay %1$s de vídeos y %2$s de episodios descargados. ¿Los borro?</string>
     <string name="dj_voice_clean_done">Liberé %1$s de espacio.</string>
+    <string name="dj_voice_clean_auto">Hice una limpieza del offline: borré %2$d descargas antiguas y liberé %1$s de espacio.</string>
 
 
     <string name="dj_voice_mix">¡Claro! Preparando un mix nuevo para ti.</string>

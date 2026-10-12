@@ -16,6 +16,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.pulsa.player.core.Blacklist
 import com.pulsa.player.media.MusicDownloader
+import com.pulsa.player.media.OfflineCleanupRunner
 import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.podcast.PodcastSync
 import com.pulsa.player.sync.RemoteSync
@@ -41,10 +42,14 @@ import kotlinx.coroutines.withContext
 object PulsaWork {
 
     private const val SYNC_PERIODIC = "pulsa_sync_periodic"
+    private const val CLEANUP_PERIODIC = "pulsa_offline_cleanup"
     private const val DOWNLOAD = "pulsa_download"
 
     /** 15 min é o piso do WorkManager, e é uma janela boa para a lista de bloqueio. */
     private const val SYNC_MINUTES = 15L
+
+    /** A limpeza do offline olha em dias, então uma passada por dia basta. */
+    private const val CLEANUP_HOURS = 24L
 
     private val NETWORK = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -64,6 +69,17 @@ object PulsaWork {
                 PeriodicWorkRequestBuilder<SyncWorker>(SYNC_MINUTES, TimeUnit.MINUTES)
                     .setConstraints(NETWORK)
                     .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.MINUTES)
+                    .build()
+            )
+        }
+        // A limpeza do offline não tem constraint de rede (é disco), mas só apaga de verdade
+        // quando a opção está ligada — quem decide é o Worker, não o agendamento. Assim ligar
+        // e desligar não precisa mexer no WorkManager.
+        runCatching {
+            wm.enqueueUniquePeriodicWork(
+                CLEANUP_PERIODIC,
+                ExistingPeriodicWorkPolicy.KEEP,
+                PeriodicWorkRequestBuilder<OfflineCleanupWorker>(CLEANUP_HOURS, TimeUnit.HOURS)
                     .build()
             )
         }
@@ -148,6 +164,22 @@ object PulsaWork {
             withContext(Dispatchers.IO) {
                 runCatching { PodcastSync.refreshAll(PodcastDb.get(ctx)) }
             }
+        }
+    }
+
+    /**
+     * A limpeza automática do offline (F5).
+     *
+     * Roda com o app fechado, então não tem como avisar por voz na hora: ela apaga, guarda o
+     * que fez e a Virgin fala na próxima vez em que estiver ativa. Sempre `success()` — apagar
+     * arquivo velho não é uma operação que valha retentar; um erro aqui só deixaria espaço
+     * ocupado, não perdido.
+     */
+    class OfflineCleanupWorker(context: Context, params: WorkerParameters) :
+        CoroutineWorker(context, params) {
+        override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+            runCatching { OfflineCleanupRunner.run(applicationContext) }
+            Result.success()
         }
     }
 
