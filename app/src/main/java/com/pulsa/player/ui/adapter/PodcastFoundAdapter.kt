@@ -49,9 +49,6 @@ class PodcastFoundAdapter(
         return VH(view)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_podcast_feed, parent, false))
-
 
     override fun getItemCount(): Int = items.size
 

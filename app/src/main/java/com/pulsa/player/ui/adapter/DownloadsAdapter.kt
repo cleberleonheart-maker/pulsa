@@ -63,9 +63,6 @@ class DownloadsAdapter(
         return VH(view)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
-        VH(LayoutInflater.from(parent.context).inflate(R.layout.item_download, parent, false))
-
 
     override fun getItemCount(): Int = items.size
 

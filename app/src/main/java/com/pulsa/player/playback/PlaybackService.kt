@@ -1451,16 +1451,6 @@ class PlaybackService : MediaLibraryService() {
         if (key == learnedId) return
         learnedId = key
         ThreadPool.post { DjLearn.recordTyped(app, s) }
-
-        if (s.isVideo || s.isStream || s.isRadio) return
-        if (s.path.isBlank()) return
-        val id = s.id
-        if (id < 0L || id == learnedId) return
-        learnedId = id
-        val app = applicationContext
-        // Gravação de banco fora da main: `prepareCurrent` roda no meio da troca de faixa.
-        ThreadPool.post { DjLearn.recordPlay(app, id) }
-
     }
 
     /** Último `id` já registrado no aprendizado; evita contar o mesmo toque duas vezes. */
