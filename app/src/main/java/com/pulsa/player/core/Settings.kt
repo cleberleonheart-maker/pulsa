@@ -335,6 +335,29 @@ object Settings {
         prefs(context).edit().putFloat("video_speed", value.coerceIn(0.5f, 2.0f)).apply()
     }
 
+    /**
+     * F5 — velocidade escolhida pelo usuário para **episódio de podcast**.
+     *
+     * Separada da de vídeo de propósito: 1,5x num podcast não é pedido para 1,5x num vídeo, e o
+     * mesmo campo faria acelerar um vazar no outro. O motor aplica conforme o tipo do item.
+     */
+    fun podcastSpeed(context: Context): Float =
+        prefs(context).getFloat("podcast_speed", 1f).coerceIn(0.5f, 2.0f)
+
+    fun setPodcastSpeed(context: Context, value: Float) {
+        prefs(context).edit().putFloat("podcast_speed", value.coerceIn(0.5f, 2.0f)).apply()
+    }
+
+    /** Quantas vezes o usuário mexeu na velocidade (vídeo ou episódio) — vira fala da Virgin. */
+    fun speedUses(context: Context): Int = prefs(context).getInt("speed_uses", 0)
+
+    fun bumpSpeedUses(context: Context) {
+        prefs(context).edit().putInt("speed_uses", speedUses(context) + 1).apply()
+    }
+
+    /** A partir de quantas mudanças de velocidade a Virgin troca o anúncio pela fala curiosa. */
+    const val SPEED_FAN_THRESHOLD = 5
+
     fun qualityLabelRes(quality: String): Int = when (quality) {
         QUALITY_AUTO -> R.string.quality_auto
         QUALITY_BASS -> R.string.quality_bass

@@ -30,12 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.12):
-→ DESCARGAR CARÁTULAS
-• Configuración ahora tiene "Descargar carátulas": busca en iTunes la carátula de los álbumes sin arte y la guarda en el dispositivo.
-• Respeta el "descargar solo por Wi-Fi"; al terminar, dice cuántas carátulas llegaron.
-→ COMPARTIR
-• Compartir ahora pregunta: tarjeta con carátula o el archivo original (música/vídeo) — un solo adjunto, confiable en cualquier app.</string>
+    <string name="changelog">Novedades de esta versión (5.10.13):
+→ VELOCIDAD Y SALTO
+• Los episodios de podcast ahora tienen velocidad (0,5x a 2x) y salto de 15s en Reproduciendo — la velocidad se guarda aparte de la de vídeo.
+• La Virgin anuncia la velocidad nueva; úsala mucho y comenta que te encanta acelerar.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -566,6 +564,8 @@
     <string name="dj_voice_clean_confirm">Hay %1$s de vídeos y %2$s de episodios descargados. ¿Los borro?</string>
     <string name="dj_voice_clean_done">Liberé %1$s de espacio.</string>
     <string name="dj_voice_clean_auto">Hice una limpieza del offline: borré %2$d descargas antiguas y liberé %1$s de espacio.</string>
+    <string name="dj_voice_speed">velocidad %1$s</string>
+    <string name="dj_voice_speed_fan">te encanta acelerar, ¿eh? lo dejo así pues</string>
 
 
     <string name="dj_voice_mix">¡Claro! Preparando un mix nuevo para ti.</string>

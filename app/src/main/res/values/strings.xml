@@ -33,12 +33,10 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.12):
-→ BAIXAR CAPAS
-• Configurações ganhou "Baixar capas das músicas": busca no iTunes a arte dos álbuns sem capa e guarda no aparelho.
-• Respeita o "baixar só no Wi-Fi"; ao terminar, diz quantas capas saíram.
-→ COMPARTILHAR
-• O compartilhar agora pergunta: cartão com capa ou o arquivo original (música/vídeo) — um anexo só, confiável em qualquer app.</string>
+    <string name="changelog">Novidades desta versão (5.10.13):
+→ VELOCIDADE E SALTINHO
+• Episódios de podcast ganharam velocidade (0,5x a 2x) e salto de 15s no Agora Tocando — a velocidade fica guardada separada da de vídeo.
+• A Virgin anuncia a velocidade nova; quem mexe muito, ela comenta que você gosta de acelerar.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -591,6 +589,8 @@
     <string name="dj_voice_clean_confirm">Tem %1$s de vídeos e %2$s de episódios baixados. Quer que eu apague?</string>
     <string name="dj_voice_clean_done">Limpei %1$s de espaço.</string>
     <string name="dj_voice_clean_auto">Fiz uma limpeza no offline: apaguei %2$d baixados antigos e liberei %1$s de espaço.</string>
+    <string name="dj_voice_speed">velocidade %1$s</string>
+    <string name="dj_voice_speed_fan">você adora acelerar, hein? deixo assim então</string>
 
 
     <string name="dj_voice_mix">Claro! Preparando um mix novo para você.</string>

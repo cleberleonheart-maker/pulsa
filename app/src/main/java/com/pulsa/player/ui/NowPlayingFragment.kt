@@ -25,6 +25,8 @@ import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.playback.Playback
+import com.pulsa.player.playback.PlaybackSpeeds
+import com.pulsa.player.dj.DjAnnounce
 import com.pulsa.player.audio.Ambient
 import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.core.Helper
@@ -58,6 +60,8 @@ class NowPlayingFragment : Fragment() {
     private var abClearButton: com.google.android.material.button.MaterialButton? = null
     private var visualizerView: AudioVisualizerView? = null
     private var shaderView: MusicShaderView? = null
+    private var speedRow: View? = null
+    private var speedView: TextView? = null
     private var userSeeking = false
     private var lyricsPanel: View? = null
     private var lyricsList: androidx.recyclerview.widget.RecyclerView? = null
@@ -67,6 +71,9 @@ class NowPlayingFragment : Fragment() {
     private var lyricsLines: List<Lyrics.Line> = emptyList()
     private var lyricsLoading = false
     private var artSwipe: GestureDetector? = null
+
+    /** O passo dos botões de salto: 15 s, o mesmo do vídeo. */
+    private val SEEK_15_MS = 15_000L
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_now_playing, container, false)
@@ -120,6 +127,14 @@ class NowPlayingFragment : Fragment() {
         }
         visualizerView = view.findViewById(R.id.np_visualizer)
         shaderView = view.findViewById(R.id.np_shader)
+
+        // F5 · velocidade e salto de 15s: linha própria, visível só em episódio (o vídeo faz
+        // isso na tela de vídeo). A velocidade de episódio é separada da de vídeo no Settings.
+        speedRow = view.findViewById(R.id.np_speed_row)
+        speedView = view.findViewById(R.id.np_speed)
+        view.findViewById<View>(R.id.np_rewind).setOnClickListener { podcastJump(-SEEK_15_MS) }
+        view.findViewById<View>(R.id.np_forward).setOnClickListener { podcastJump(SEEK_15_MS) }
+        speedView?.setOnClickListener { cyclePodcastSpeed() }
 
         // Arrastar a capa para cima abre a fila (mesmo padrão de gesto do mini player).
         artSwipe = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
@@ -200,6 +215,40 @@ class NowPlayingFragment : Fragment() {
         refreshModButtons()
         refreshAbButtons()
         refreshDreamTeam(song.id)
+        refreshPodcastControls()
+    }
+
+    /** Só episódio tem a linha de velocidade/salto; vídeo faz isso na tela de vídeo. */
+    private fun refreshPodcastControls() {
+        val song = Playback.currentSong ?: return
+        val podcast = song.isPodcast
+        speedRow?.visibility = if (podcast) View.VISIBLE else View.GONE
+        if (podcast) {
+            speedView?.text = PlaybackSpeeds.label(Settings.podcastSpeed(requireContext()))
+        }
+    }
+
+    private fun podcastJump(deltaMs: Long) {
+        val song = Playback.currentSong ?: return
+        if (song.durationMs > 0L) Playback.seekBy(deltaMs, song.durationMs)
+    }
+
+    /**
+     * F5 — passa o passo de velocidade do episódio e a Virgin anuncia.
+     *
+     * O contador em [Settings.speedUses] é o "ganhando voz": enquanto a pessoa mexe pouco, a
+     * Virgin diz o número novo; depois de [Settings.SPEED_FAN_THRESHOLD] vezes ela troca pelo
+     * comentário que aprendeu que a pessoa é fã de acelerar. A mesma fala é usada no vídeo.
+     */
+    private fun cyclePodcastSpeed() {
+        val escolhido = Playback.cyclePodcastSpeed()
+        speedView?.text = PlaybackSpeeds.label(escolhido)
+        val ctx = requireContext()
+        Settings.bumpSpeedUses(ctx)
+        val fan = Settings.speedUses(ctx) >= Settings.SPEED_FAN_THRESHOLD
+        val line = if (fan) getString(R.string.dj_voice_speed_fan)
+        else getString(R.string.dj_voice_speed, PlaybackSpeeds.speech(escolhido))
+        DjAnnounce.speak(requireContext(), line)
     }
 
     /** Quando a música favorita do avatar toca, o casal dança junto na capa. */

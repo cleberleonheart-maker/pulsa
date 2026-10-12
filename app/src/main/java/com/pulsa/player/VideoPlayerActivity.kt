@@ -717,6 +717,14 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     private fun cycleSpeed() {
         val escolhido = Playback.cycleVideoSpeed()
         speedView.text = PlaybackSpeeds.label(escolhido)
+        // F5 · a Virgin ganha voz: anuncia o passo novo e, quem mexe muito, ganha o comentário.
+        Settings.bumpSpeedUses(this)
+        val fan = Settings.speedUses(this) >= Settings.SPEED_FAN_THRESHOLD
+        com.pulsa.player.dj.DjAnnounce.speak(
+            this,
+            if (fan) getString(R.string.dj_voice_speed_fan)
+            else getString(R.string.dj_voice_speed, PlaybackSpeeds.speech(escolhido))
+        )
         // Os controles precisam aparecer, senão o número troca sozinho e parece não ter
         // acontecido nada.
         showControls()

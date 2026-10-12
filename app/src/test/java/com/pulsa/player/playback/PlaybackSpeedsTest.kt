@@ -14,14 +14,11 @@ import kotlin.math.abs
  */
 class PlaybackSpeedsTest {
 
-    /** Mesmo cálculo do `Playback.cycleVideoSpeed`, isolado do Android. */
-    private fun next(atual: Float): Float {
-        val i = PlaybackSpeeds.VALUES.indexOfFirst { abs(it - atual) < 0.01f }
-        return PlaybackSpeeds.VALUES[(i + 1).mod(PlaybackSpeeds.VALUES.size)]
-    }
+    /** F5: o passo público substitui a conta privada que a tela fazia. */
+    private fun next(atual: Float): Float = PlaybackSpeeds.step(atual, up = true)
 
     @Test
-    fun `o ciclo passa por todos os passos e volta ao inicio`() {
+    fun `subir passa por todos os passos e volta ao inicio`() {
         var v = 1f
         val vistos = mutableListOf(v)
         repeat(PlaybackSpeeds.VALUES.size - 1) {
@@ -33,6 +30,26 @@ class PlaybackSpeedsTest {
         assertEquals(1f, v, 0.001f)
         // Nenhum passo se repete antes de fechar.
         assertEquals(PlaybackSpeeds.VALUES.size, vistos.distinct().size)
+    }
+
+    @Test
+    fun `descer roda ao contrario e fecha no fim`() {
+        assertEquals(0.75f, PlaybackSpeeds.step(1f, up = false), 0.001f)
+        assertEquals(0.5f, PlaybackSpeeds.step(0.75f, up = false), 0.001f)
+        // O fundo da lista desce de volta para o topo, sem travar.
+        assertEquals(2.0f, PlaybackSpeeds.step(0.5f, up = false), 0.001f)
+    }
+
+    @Test
+    fun `subindo do teto volta ao chao`() {
+        assertEquals(0.5f, PlaybackSpeeds.step(2.0f, up = true), 0.001f)
+    }
+
+    @Test
+    fun `valor fora da lista parte do normal`() {
+        // Um 1.1 que não é passo (veio de onde for) anda a partir do 1x, sem cravar.
+        assertEquals(1.25f, PlaybackSpeeds.step(1.1f, up = true), 0.001f)
+        assertEquals(0.75f, PlaybackSpeeds.step(1.1f, up = false), 0.001f)
     }
 
     @Test
@@ -65,5 +82,20 @@ class PlaybackSpeedsTest {
         assertEquals("0.75x", PlaybackSpeeds.label(0.75f))
         assertEquals("1.25x", PlaybackSpeeds.label(1.25f))
         assertEquals("1.5x", PlaybackSpeeds.label(1.5f))
+    }
+
+    @Test
+    fun `a fala da Virgin usa palavra em vez do numero cru`() {
+        assertEquals("meio", PlaybackSpeeds.speech(0.5f))
+        assertEquals("tres quartos", PlaybackSpeeds.speech(0.75f))
+        assertEquals("normal", PlaybackSpeeds.speech(1f))
+        assertEquals("um e um quarto", PlaybackSpeeds.speech(1.25f))
+        assertEquals("um e meio", PlaybackSpeeds.speech(1.5f))
+        assertEquals("o dobro", PlaybackSpeeds.speech(2f))
+    }
+
+    @Test
+    fun `fala de valor fora da lista cai no rotulo`() {
+        assertEquals("1.1x", PlaybackSpeeds.speech(1.1f))
     }
 }

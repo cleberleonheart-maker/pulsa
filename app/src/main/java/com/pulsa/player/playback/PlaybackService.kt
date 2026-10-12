@@ -762,12 +762,14 @@ class PlaybackService : MediaLibraryService() {
     private fun applyDanceParams() {
         player?.let { p ->
             runCatching {
+                val song = currentSong
                 p.setPlaybackParameters(
                     PlaybackParameters(
                         effectiveSpeed(),
-                        // O pitch do modo dance só faz sentido em áudio: aplicar 1.06 em
-                        // vídeo não muda o tom de nada e só gasta CPU.
-                        if (currentSong?.isVideo == true || currentSong?.isStream == true) 1f
+                        // O pitch do modo dance só faz sentido em áudio de música: aplicar 1.06
+                        // em vídeo não muda o tom de nada e só gasta CPU, e em fala (podcast)
+                        // distorce a voz.
+                        if (song?.isVideo == true || song?.isStream == true || song?.isPodcast == true) 1f
                         else Settings.dancePitch(this)
                     )
                 )
@@ -785,14 +787,29 @@ class PlaybackService : MediaLibraryService() {
      */
     private fun effectiveSpeed(): Float {
         val dance = Settings.danceSpeed(this)
-        if (!isVideoOrStream(currentSong)) return dance
-        return (dance * Settings.videoSpeed(this)).coerceIn(0.25f, 4.0f)
+        val song = currentSong ?: return dance
+        val userSpeed = when {
+            // Vídeo/stream, e também o episódio em vídeo (que abre a tela de vídeo e tem o
+            // mesmo botão): quem decide é a tela que mostra o rótulo.
+            isVideoOrStream(song) || song.isPodcastVideo -> Settings.videoSpeed(this)
+            song.isPodcast -> Settings.podcastSpeed(this)
+            else -> return dance
+        }
+        return (dance * userSpeed).coerceIn(0.25f, 4.0f)
     }
 
     /** F2 — muda a velocidade do vídeo e persiste para a próxima faixa. */
     fun setVideoSpeed(value: Float) {
         val v = value.coerceIn(0.5f, 2.0f)
         Settings.setVideoSpeed(this, v)
+        applyDanceParams()
+        Playback.notifySpeedChanged(effectiveSpeed())
+    }
+
+    /** F5 — muda a velocidade de episódio e persiste para a próxima faixa. */
+    fun setPodcastSpeed(value: Float) {
+        val v = value.coerceIn(0.5f, 2.0f)
+        Settings.setPodcastSpeed(this, v)
         applyDanceParams()
         Playback.notifySpeedChanged(effectiveSpeed())
     }

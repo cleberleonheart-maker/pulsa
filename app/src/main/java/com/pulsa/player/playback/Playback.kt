@@ -11,7 +11,7 @@ import android.os.Looper
 import androidx.media3.common.Player
 import com.pulsa.player.core.Settings
 import com.pulsa.player.model.Song
-import com.pulsa.player.playback.PlaybackSpeeds.VALUES
+import com.pulsa.player.playback.PlaybackSpeeds
 import kotlin.math.abs
 
 /**
@@ -49,10 +49,7 @@ object Playback {
      */
     internal var appContext: Context? = null
 
-    private fun nextSpeed(atual: Float): Float {
-        val i = VALUES.indexOfFirst { abs(it - atual) < 0.01f }
-        return VALUES[(i + 1).mod(VALUES.size)]
-    }
+    private fun nextSpeed(atual: Float): Float = PlaybackSpeeds.step(atual, up = true)
 
     /**
      * O motor, quando ele está vivo. Preenchido pelo próprio [PlaybackService] no `onCreate`
@@ -301,6 +298,25 @@ object Playback {
 
     fun setVideoSpeed(value: Float) {
         link?.setVideoSpeed(value)
+    }
+
+    /**
+     * F5: velocidade dos episódios de podcast, em passos. Persiste e reaplica no motor.
+     *
+     * O mesmo desenho da velocidade de vídeo, mas **separada** no `Settings`: 1,5x num podcast
+     * não é pedido para 1,5x num vídeo (nem vice-versa), e juntar os dois faria acelerar um
+     * vazar no outro.
+     */
+    fun cyclePodcastSpeed(): Float {
+        val l = link ?: return PlaybackSpeeds.NORMAL
+        val atual = Settings.podcastSpeed(appContext ?: return PlaybackSpeeds.NORMAL)
+        val proximo = nextSpeed(atual)
+        l.setPodcastSpeed(proximo)
+        return proximo
+    }
+
+    fun setPodcastSpeed(value: Float) {
+        link?.setPodcastSpeed(value)
     }
 
     fun setShuffle(value: Boolean) {

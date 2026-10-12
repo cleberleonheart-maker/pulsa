@@ -30,12 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.12):
-→ DOWNLOAD COVERS
-• Settings now has "Download music covers": finds album art on iTunes for albums without a cover and saves it on the device.
-• Respects "download over Wi-Fi only"; when it ends, it tells you how many covers came in.
-→ SHARE
-• Sharing now asks: card with cover or the original file (music/video) — a single attachment, reliable in any app.</string>
+    <string name="changelog">What is new (5.10.13):
+→ SPEED AND SEEK
+• Podcast episodes now have speed (0.5x to 2x) and a 15s jump on the Now Playing screen — the speed is saved separately from video's.
+• The Virgin announces the new speed; use it a lot and she comments that you like to speed up.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -566,6 +564,8 @@
     <string name="dj_voice_clean_confirm">%1$s of videos and %2$s of episodes downloaded. Should I delete them?</string>
     <string name="dj_voice_clean_done">Freed %1$s.</string>
     <string name="dj_voice_clean_auto">I cleaned up offline media: deleted %2$d old downloads and freed %1$s.</string>
+    <string name="dj_voice_speed">speed %1$s</string>
+    <string name="dj_voice_speed_fan">you love speeding up, huh? keeping it then</string>
 
 
     <string name="dj_voice_mix">Sure! Preparing a new mix for you.</string>
