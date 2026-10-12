@@ -34,7 +34,7 @@ object DjLearn {
         val week: IntArray,                  // 7, dom..sáb
         val hours: IntArray,                 // 24
         val bestDay: Pair<String, Int>?,     // "dd/mm" → toques
-        val nightOwl: Pair<Long, Int>?       // faixa com ≥50% dos toques entre 0h-6h
+        val nightOwl: Pair<Long, Int>?       // faixa mais tocada entre 0h-6h (valor = toques na janela)
     )
 
     /** "Quantas vezes toquei essa": total + primeiro/último toque (ts em segundos). */
@@ -196,6 +196,7 @@ object DjLearn {
         fun rewind(nowSec: Long, days: Int, limit: Int): RewindResult {
             val from = if (days == Int.MAX_VALUE) 0L else nowSec - days * 86400L
             val count = mutableMapOf<Long, Int>()
+            val nightCount = mutableMapOf<Long, Int>()
             val hourOf = IntArray(24)
             val weekOf = IntArray(7)
             val dayOf = mutableMapOf<String, Int>()
@@ -219,7 +220,9 @@ object DjLearn {
                             firstSongId = id
                         }
                         cal.timeInMillis = ts * 1000L
-                        hourOf[cal.get(java.util.Calendar.HOUR_OF_DAY)]++
+                        val h = cal.get(java.util.Calendar.HOUR_OF_DAY)
+                        hourOf[h]++
+                        if (h < 6) nightCount[id] = (nightCount[id] ?: 0) + 1
                         weekOf[(cal.get(java.util.Calendar.DAY_OF_WEEK) + 6) % 7]++
                         val dd = cal.get(java.util.Calendar.DAY_OF_MONTH)
                         val mm = cal.get(java.util.Calendar.MONTH) + 1
@@ -231,27 +234,12 @@ object DjLearn {
             }
             val top = count.toList().sortedByDescending { it.second }.take(limit)
             val bestDay = dayOf.maxByOrNull { it.value }?.toPair()
-            var nightOwl: Pair<Long, Int>? = null
-            runCatching {
-                for ((id, plays) in top) {
-                    var night = 0
-                    readableDatabase.rawQuery(
-                        "SELECT ts FROM play_log WHERE song_id = ? AND ts >= ?",
-                        arrayOf(id.toString(), from.toString())
-                    ).use { c ->
-                        val cal = java.util.Calendar.getInstance()
-                        while (c.moveToNext()) {
-                            cal.timeInMillis = c.getLong(0) * 1000L
-                            val h = cal.get(java.util.Calendar.HOUR_OF_DAY)
-                            if (h < 6) night++
-                        }
-                    }
-                    if (plays > 0 && night.toDouble() / plays >= 0.5) {
-                        val cur = nightOwl
-                        if (cur == null || plays > cur.second) nightOwl = id to plays
-                    }
-                }
-            }
+            // Coruja: a faixa que a pessoa mais ouviu na madrugada (0h-6h). Antes exigia
+            // ≥50% dos toques de uma mesma faixa na janela e só olhava o top 10 — quem ouve
+            // de dia e de noite nunca batia 50% e o card saía sempre "nenhuma". Agora é o
+            // máximo de toques noturnos sobre o histórico inteiro, na linha do
+            // "você ouviu depois da meia-noite".
+            val nightOwl = nightCount.maxByOrNull { it.value }?.toPair()?.takeIf { it.second > 0 }
             val months = monthOf.toList().sortedBy { it.first }.takeLast(12)
             return RewindResult(total, top, count.size, firstTs, firstSongId, months, weekOf, hourOf, bestDay, nightOwl)
         }

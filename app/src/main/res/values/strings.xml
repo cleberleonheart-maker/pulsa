@@ -33,7 +33,13 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.1):
+    <string name="changelog">Novidades desta versão (5.10.2):
+→ PULSA REWIND: CORUJA
+• O fato "Coruja" do Rewind vivia vazio mesmo para quem ouve de madrugada: só aparecia se
+  uma única faixa tivesse 50% dos toques entre 0h e 6h, e ainda olhava só o top 10. Agora
+  mostra a faixa que você mais ouviu depois da meia-noite.
+
+★ DA 5.10.1
 → FILA NA TELA DE REPRODUÇÃO
 • Arraste a capa para cima para abrir a fila. Arraste as faixas para reordenar e toque em
   uma para pular direto para ela.

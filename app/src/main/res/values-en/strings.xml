@@ -30,7 +30,13 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.1):
+    <string name="changelog">What is new (5.10.2):
+→ PULSA REWIND: NIGHT OWL
+• The Night owl fact in Rewind stayed empty even for people who listen after midnight: it
+  only showed up when a single track had 50% of its plays between 0am and 6am, and it only
+  looked at the top 10. Now it shows the track you played the most after midnight.
+
+★ FROM 5.10.1
 → QUEUE ON THE NOW PLAYING SCREEN
 • Swipe the cover art up to open the queue. Drag tracks to reorder and tap one to jump
   straight to it.
