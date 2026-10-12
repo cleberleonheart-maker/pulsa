@@ -33,11 +33,10 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.7):
-→ BAIXAR POR URL NA ABA DE DOWNLOADS
-• Entrada "Baixar por URL" agora fica na aba Baixados, não só nas Configurações.
-• Seu link de arquivo (ex.: .mp3) vai para a fila do WorkManager: espera a rede, baixa em segundo plano e avisa quando o arquivo chega no aparelho.
-• O nome é adivinhado do link; você pode trocar antes de baixar.</string>
+    <string name="changelog">Novidades desta versão (5.10.8):
+→ ATALHOS NA TELA INICIAL
+• Segure o ícone do Pulsa para abrir direto: Baixados offline, Continuar, Novo episódio e Rádio Virgin.
+• "Continuar" retoma a última coisa tocada (música, episódio ou rádio) exatamente de onde parou.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -320,6 +319,14 @@
     <string name="downloads_active_count">%1$d downloads em andamento</string>
     <string name="downloads_idle">Nenhum download em andamento</string>
     <string name="downloads_tab">Baixados</string>
+    <string name="shortcut_downloads_short">Baixados</string>
+    <string name="shortcut_downloads_long">Baixados offline</string>
+    <string name="shortcut_resume_short">Continuar</string>
+    <string name="shortcut_resume_long">Continuar de onde parou</string>
+    <string name="shortcut_episode_short">Episódio</string>
+    <string name="shortcut_episode_long">Novo episódio</string>
+    <string name="shortcut_radio_short">Rádio</string>
+    <string name="shortcut_radio_long">Ligar a Rádio Virgin</string>
     <string name="downloads_empty">Nada baixado ainda</string>
     <string name="downloads_add_url">Baixar por URL</string>
     <string name="downloads_empty_hint">Abra a busca do PeerTube e use o menu do vídeo para baixar.</string>

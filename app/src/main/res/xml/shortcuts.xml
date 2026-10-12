@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  F5 — atalhos estáticos da tela inicial (long-press no ícone do Pulsa).
+
+  Intents explícitos (targetClass=MainActivity) que carregam um extra "shortcut" com o
+  destino; quem despacha é o MainActivity.handleShortcut. Como a Activity é singleTask,
+  o mesmo atalho com o app aberto cai no onNewIntent, sem abrir uma segunda instância.
+
+  As constantes dos valores vivem em MainActivity (SHORTCUT_*): mexer aqui sem mexer lá
+  (ou vice-versa) faz o atalho abrir a home em silêncio.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="downloads"
+        android:enabled="true"
+        android:icon="@drawable/ic_download"
+        android:shortcutShortLabel="@string/shortcut_downloads_short"
+        android:shortcutLongLabel="@string/shortcut_downloads_long">
+        <intent
+            android:action="com.pulsa.player.SHORTCUT"
+            android:targetPackage="com.pulsa.player"
+            android:targetClass="com.pulsa.player.MainActivity">
+            <extra
+                android:name="shortcut"
+                android:value="downloads" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="resume"
+        android:enabled="true"
+        android:icon="@drawable/ic_play"
+        android:shortcutShortLabel="@string/shortcut_resume_short"
+        android:shortcutLongLabel="@string/shortcut_resume_long">
+        <intent
+            android:action="com.pulsa.player.SHORTCUT"
+            android:targetPackage="com.pulsa.player"
+            android:targetClass="com.pulsa.player.MainActivity">
+            <extra
+                android:name="shortcut"
+                android:value="resume" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="new_episode"
+        android:enabled="true"
+        android:icon="@drawable/ic_play_circle"
+        android:shortcutShortLabel="@string/shortcut_episode_short"
+        android:shortcutLongLabel="@string/shortcut_episode_long">
+        <intent
+            android:action="com.pulsa.player.SHORTCUT"
+            android:targetPackage="com.pulsa.player"
+            android:targetClass="com.pulsa.player.MainActivity">
+            <extra
+                android:name="shortcut"
+                android:value="new_episode" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="virgin_fm"
+        android:enabled="true"
+        android:icon="@drawable/ic_radio"
+        android:shortcutShortLabel="@string/shortcut_radio_short"
+        android:shortcutLongLabel="@string/shortcut_radio_long">
+        <intent
+            android:action="com.pulsa.player.SHORTCUT"
+            android:targetPackage="com.pulsa.player"
+            android:targetClass="com.pulsa.player.MainActivity">
+            <extra
+                android:name="shortcut"
+                android:value="virgin_fm" />
+        </intent>
+    </shortcut>
+
+</shortcuts>

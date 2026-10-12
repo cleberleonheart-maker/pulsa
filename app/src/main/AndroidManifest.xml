@@ -50,6 +50,10 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- F5: atalhos estáticos de tela inicial (long-press no ícone). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
             <!-- TV: o mesmo MainActivity, launcher leanback. Sem activity nova — o
                  engine já é Media3 e a UI reage a D-pad/remote por padrão nos botões. -->
             <intent-filter>

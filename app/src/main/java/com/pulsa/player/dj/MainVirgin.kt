@@ -1032,7 +1032,14 @@ class MainVirgin(
 
 
 
-    private fun resumeLastSession() {
+    /**
+     * F5 — retomada da última sessão.
+     *
+     * Era `private` (só o comando de voz "volta a tocar" chamava). Virou pública porque o
+     * atalho "Continuar" da tela inicial é a mesma intenção sem passar pela fala: mesma
+     * fila, mesma posição, mesmo anúncio.
+     */
+    fun resumeLastSession() {
         val ctx = activity.applicationContext
         // F5 — a própria fila restaurada já é a "última coisa tocada", e ela é ciente do
         // tipo sem precisar remontar nada do banco: o item atual pode ser episódio, rádio

@@ -30,11 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.7):
-→ DESCARGAR DESDE URL EN LA PESTAÑA DE DESCARGA
-• La entrada "Descargar desde URL" ahora está en la pestaña Descargas, no solo en Configuración.
-• Tu enlace de archivo (p. ej. .mp3) va a la cola de WorkManager: espera la red, descarga en segundo plano y avisa cuando el archivo llega al dispositivo.
-• El nombre se adivina del enlace; puedes cambiarlo antes de descargar.</string>
+    <string name="changelog">Novedades de esta versión (5.10.8):
+→ ATAJOS EN LA PANTALLA DE INICIO
+• Mantén pulsado el icono de Pulsa para abrir directo: Descargas sin conexión, Continuar, Nuevo episodio y Radio Virgin.
+• "Continuar" retoma lo último que escuchaste (canción, episodio o radio) justo donde lo dejaste.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -370,6 +369,14 @@
     <string name="downloads_active_count">%1$d descargas en curso</string>
     <string name="downloads_idle">Ninguna descarga en curso</string>
     <string name="downloads_tab">Descargados</string>
+    <string name="shortcut_downloads_short">Descargas</string>
+    <string name="shortcut_downloads_long">Descargas sin conexión</string>
+    <string name="shortcut_resume_short">Continuar</string>
+    <string name="shortcut_resume_long">Continuar donde quedaste</string>
+    <string name="shortcut_episode_short">Episodio</string>
+    <string name="shortcut_episode_long">Nuevo episodio</string>
+    <string name="shortcut_radio_short">Radio</string>
+    <string name="shortcut_radio_long">Encender la Radio Virgin</string>
     <string name="downloads_empty">Nada descargado todavía</string>
     <string name="downloads_add_url">Descargar desde URL</string>
     <string name="downloads_empty_hint">Abre la búsqueda de PeerTube y usa el menú del vídeo para descargar.</string>

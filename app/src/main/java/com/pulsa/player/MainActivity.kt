@@ -72,6 +72,15 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
     companion object {
         private const val KEY_TAG = "tab"
+
+        // F5 — atalhos estáticos (res/xml/shortcuts.xml). O valor de cada um viaja como
+        // extra do intent explícito que aponta para esta Activity; o XML e estas constantes
+        // têm de continuar batendo (o extra se chama "shortcut" nos dois lados).
+        const val EXTRA_SHORTCUT = "shortcut"
+        const val SHORTCUT_DOWNLOADS = "downloads"
+        const val SHORTCUT_RESUME = "resume"
+        const val SHORTCUT_NEW_EPISODE = "new_episode"
+        const val SHORTCUT_VIRGIN_FM = "virgin_fm"
     }
 
     private lateinit var toolbar: MaterialToolbar
@@ -91,6 +100,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private var playbackBind: Playback.Bind? = null
     private var appliedAccent: String = Settings.ACCENT_PURPLE
     private var pendingSection: String? = null
+
+    /** Atalho "Continuar" disparado no arranque frio: espera o motor conectar para retomar. */
+    private var pendingResumeShortcut = false
 
     private val mainViewsReady: Boolean
         get() = ::toolbar.isInitialized &&
@@ -197,12 +209,42 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         if (intent?.action == MainVirgin.ACTION_VIRGIN_ALARM) {
             virgin.onVirginAlarm(intent)
         }
+        handleShortcut(intent)
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         if (intent?.action == MainVirgin.ACTION_VIRGIN_ALARM) {
             virgin.onVirginAlarm(intent)
+        } else {
+            setIntent(intent)
+            handleShortcut(intent)
+        }
+    }
+
+    /**
+     * F5 — atalhos estáticos do launcher (Baixados offline, Continuar, Novo episódio, Rádio
+     * Virgin). O intent é explícito (`targetClass=MainActivity`) e só carrega um extra de
+     * texto; a Activity decide o destino. Nenhuma tela nova e nenhum intent-filter: o
+     * `MainActivity` já é `singleTask`, então um atalho com o app aberto cai no
+     * `onNewIntent` e reaproveita a mesma instância.
+     */
+    private fun handleShortcut(intent: Intent?) {
+        val kind = intent?.getStringExtra(EXTRA_SHORTCUT) ?: return
+        // Consumido uma vez: sem isso um `recreate()` (troca de tema) ou um `onNewIntent`
+        // alheio reprocessaria o mesmo atalho e a Virgin retomaria a música de novo.
+        intent.removeExtra(EXTRA_SHORTCUT)
+        when (kind) {
+            SHORTCUT_DOWNLOADS -> openLibrarySection(BibliotecaFragment.SECTION_DOWNLOADS)
+            SHORTCUT_NEW_EPISODE -> openLibrarySection(BibliotecaFragment.SECTION_PODCASTS)
+            SHORTCUT_VIRGIN_FM -> startActivity(Intent(this, TamiRadioActivity::class.java))
+            SHORTCUT_RESUME -> {
+                // A retomada precisa do motor ligado: sem bind o `Playback.start` é no-op e
+                // a Virgin anunciaria a faixa que nunca começou. Com o app já aberto dá pra
+                // chamar direto; no arranque frio espera o `connect` (abaixo).
+                if (Playback.isReady) virgin.resumeLastSession()
+                else pendingResumeShortcut = true
+            }
         }
     }
 
@@ -360,7 +402,14 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
 
         // F1/E2: a ligação com o motor é da fachada. A Activity só diz "me avisa quando
         // estiver pronto" — ela não sabe mais qual classe de serviço é essa.
-        playbackBind = Playback.connect(this) { syncMiniPlayer() }
+        playbackBind = Playback.connect(this) {
+            syncMiniPlayer()
+            // Atalho "Continuar" no arranque frio: agora o motor responde.
+            if (pendingResumeShortcut) {
+                pendingResumeShortcut = false
+                virgin.resumeLastSession()
+            }
+        }
         Telemetry.log(this, "createMain: bindService ok")
 
         if (!Permissions.hasAccess(this)) {

@@ -30,11 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.7):
-→ DOWNLOAD FROM URL IN THE DOWNLOADS TAB
-• "Download from URL" now lives in the Downloads tab, not just in Settings.
-• Your file link (e.g. .mp3) goes to the WorkManager queue: waits for network, downloads in the background, and notifies you when the file lands on your device.
-• The name is guessed from the link; you can change it before downloading.</string>
+    <string name="changelog">What is new (5.10.8):
+→ HOME SCREEN SHORTCUTS
+• Long-press the Pulsa icon to jump straight to: Offline downloads, Continue, New episode and Virgin Radio.
+• "Continue" resumes the last thing you played (song, episode or radio) right where you left off.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -370,6 +369,14 @@
     <string name="downloads_active_count">%1$d downloads in progress</string>
     <string name="downloads_idle">No downloads in progress</string>
     <string name="downloads_tab">Downloads</string>
+    <string name="shortcut_downloads_short">Downloads</string>
+    <string name="shortcut_downloads_long">Offline downloads</string>
+    <string name="shortcut_resume_short">Continue</string>
+    <string name="shortcut_resume_long">Continue where you left off</string>
+    <string name="shortcut_episode_short">Episode</string>
+    <string name="shortcut_episode_long">New episode</string>
+    <string name="shortcut_radio_short">Radio</string>
+    <string name="shortcut_radio_long">Turn on Virgin Radio</string>
     <string name="downloads_empty">Nothing downloaded yet</string>
     <string name="downloads_add_url">Download from URL</string>
     <string name="downloads_empty_hint">Open the PeerTube search and use the video menu to download.</string>
