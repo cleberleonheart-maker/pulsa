@@ -1,17 +1,22 @@
 package com.pulsa.player.ui
 
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
+import com.pulsa.player.core.Permissions
+import com.pulsa.player.data.M3u
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Playlist
 import com.pulsa.player.ui.adapter.PlaylistListAdapter
@@ -40,6 +45,17 @@ class PlaylistsTabFragment : Fragment() {
     private var adapter: PlaylistListAdapter? = null
     private var loading = false
 
+    /**
+     * F5 — importar playlist `.m3u` de outro player. O `OpenDocument` aceita os MIME que os
+     * players costumam registrar para `.m3u`/`.m3u8`; `text/plain` cobre os que salvam como
+     * texto puro e não se anunciam.
+     */
+    private val importM3u = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) importFrom(uri)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_list, container, false)
     }
@@ -62,7 +78,7 @@ class PlaylistsTabFragment : Fragment() {
         view.findViewById<ImageView>(R.id.header_menu).apply {
             visibility = View.VISIBLE
             contentDescription = getString(R.string.new_playlist)
-            setOnClickListener { promptNewPlaylist() }
+            setOnClickListener { showPlaylistsMenu() }
         }
 
         val a = PlaylistListAdapter(
@@ -143,6 +159,102 @@ class PlaylistsTabFragment : Fragment() {
         loading = false
         load()
     }
+
+    /**
+     * Menu `⋮` do cabeçalho: criar playlist ou importar um `.m3u`.
+     *
+     * Antes era só "nova playlist" direto no toque. O mesmo botão virou a porta de entrada da
+     * importação — que é a outra coisa que se faz com a lista de playlists, e não tinha teto
+     * nenhum até agora (o backup em JSON era só do próprio Pulsa).
+     */
+    private fun showPlaylistsMenu() {
+        val options = arrayOf(
+            getString(R.string.new_playlist),
+            getString(R.string.m3u_import)
+        )
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> promptNewPlaylist()
+                    1 -> importM3u.launch(
+                        arrayOf("audio/x-mpegurl", "audio/mpegurl", "application/x-mpegurl", "text/plain")
+                    )
+                }
+            }
+            .show()
+    }
+
+    /**
+     * Importa um `.m3u`: casa as faixas com a biblioteca e cria/atualiza a playlist.
+     *
+     * Ler, casar e gravar vão para o `ThreadPool` — o parse é barato, mas o casamento varre o
+     * MediaStore e o insert é Room, e nenhum dos dois pode rodar na main thread. O nome da
+     * playlist sai do nome do arquivo (é o que a pessoa espera ao escolher "rock.m3u").
+     */
+    private fun importFrom(uri: Uri) {
+        val app = context?.applicationContext ?: return
+        if (!Permissions.hasAccess(app)) {
+            android.widget.Toast.makeText(
+                requireContext(), R.string.dj_no_permission, android.widget.Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        ThreadPool.post {
+            val text = runCatching {
+                app.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+            }.getOrNull()
+            if (text.isNullOrBlank()) {
+                failImport(R.string.m3u_failed)
+                return@post
+            }
+            val name = displayName(app, uri)
+                ?.removeSuffix(".m3u8")
+                ?.removeSuffix(".m3u")
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: app.getString(R.string.m3u_import_default)
+
+            val tracks = M3u.parse(text)
+            val resolved = if (tracks.isEmpty()) null else M3u.resolve(app, tracks)
+            if (resolved == null || resolved.songs.isEmpty()) {
+                failImport(R.string.m3u_import_empty)
+                return@post
+            }
+
+            val added = runCatching {
+                val db = PlaylistDb.get(app)
+                val id = db.playlistIdForRestore(name)
+                resolved.songs.count { db.addSong(id, it) }
+            }.getOrDefault(0)
+
+            ThreadPool.onUi {
+                if (!isAdded) return@onUi
+                val missing = resolved.missing.size
+                val base = getString(R.string.m3u_import_done, added, name)
+                val message = if (missing > 0) {
+                    base + " — " + getString(R.string.m3u_import_missing, missing)
+                } else {
+                    base
+                }
+                android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_LONG).show()
+                reload()
+            }
+        }
+    }
+
+    private fun failImport(messageRes: Int) {
+        ThreadPool.onUi {
+            if (isAdded) android.widget.Toast.makeText(
+                requireContext(), messageRes, android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    /** Nome de exibição do `content://` escolhido, sem o esquema de colunas do MediaStore. */
+    private fun displayName(app: android.content.Context, uri: Uri): String? = runCatching {
+        app.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+            ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+    }.getOrNull()
 
     private fun showEmpty(text: String?, showAction: Boolean) {
         emptyText?.text = text

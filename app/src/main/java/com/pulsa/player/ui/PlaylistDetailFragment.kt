@@ -1,16 +1,21 @@
 package com.pulsa.player.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
 import com.pulsa.player.data.Library
+import com.pulsa.player.data.M3u
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Playlist
 import com.pulsa.player.playback.Playback
@@ -18,6 +23,7 @@ import com.pulsa.player.ui.adapter.SongListAdapter
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.playback.QueueKey
+import java.io.File
 
 class PlaylistDetailFragment : Fragment(), HighlightSync {
 
@@ -28,6 +34,37 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
     private var headerSubtitle: TextView? = null
     private var loading = false
 
+    /** Nome da playlist, guardado para nomear o arquivo `.m3u` e o cabeçalho. */
+    private var playlistName: String = ""
+
+    /**
+     * F5 — exportar em `.m3u`. O `CreateDocument` devolve a URI escolhida; o conteúdo só é
+     * montado (e gravado) no callback, fora da main thread.
+     */
+    private val saveM3u = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("audio/x-mpegurl")
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        val app = context?.applicationContext ?: return@registerForActivityResult
+        val id = playlistId
+        ThreadPool.post {
+            val text = runCatching { M3u.serialize(PlaylistDb.get(app).songs(id)) }.getOrNull()
+            val ok = text != null && runCatching {
+                app.contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
+                true
+            }.getOrDefault(false)
+            ThreadPool.onUi {
+                if (isAdded) {
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        if (ok) R.string.m3u_saved else R.string.m3u_failed,
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_list, container, false)
     }
@@ -35,6 +72,7 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         playlistId = arguments?.getLong(ARG_ID, -1L) ?: -1L
         val name = arguments?.getString(ARG_NAME) ?: ""
+        playlistName = name
         val header = view.findViewById<View>(R.id.header_container)
         header.visibility = View.VISIBLE
         view.findViewById<ImageView>(R.id.header_art).visibility = View.GONE
@@ -75,7 +113,7 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
         }
         view.findViewById<ImageView>(R.id.header_menu).apply {
             visibility = View.VISIBLE
-            setOnClickListener { showAddSongs() }
+            setOnClickListener { showPlaylistMenu() }
         }
         view.findViewById<View>(R.id.empty_action).visibility = View.GONE
     }
@@ -188,6 +226,86 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
             .setNegativeButton(R.string.cancel, null)
             .show()
     }
+
+    /**
+     * Menu `⋮` do cabeçalho: adicionar músicas e exportar a playlist.
+     *
+     * Era um toque que ia direto para "Adicionar músicas"; agora abre as opções porque o mesmo
+     * botão passou a ser a porta de saída da playlist em `.m3u` — e uma ação destrutiva (sair
+     * da playlist) mora em outro lugar, aqui só entram as duas coisas que se faz com a lista
+     * inteira.
+     */
+    private fun showPlaylistMenu() {
+        val options = arrayOf(
+            getString(R.string.add_songs_title),
+            getString(R.string.m3u_share),
+            getString(R.string.m3u_save)
+        )
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(playlistName)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showAddSongs()
+                    1 -> shareM3u()
+                    2 -> saveM3u.launch(safeFileName(playlistName) + ".m3u")
+                }
+            }
+            .show()
+    }
+
+    /**
+     * Compartilha a playlist como arquivo `.m3u`.
+     *
+     * Vai como **arquivo** (não como texto): é o que o outro player importa. O arquivo mora no
+     * cache e sai pelo `FileProvider` com permissão de leitura — sem isso o app de destino
+     * recebe uma URI que não pode abrir.
+     */
+    private fun shareM3u() {
+        val app = context?.applicationContext ?: return
+        val id = playlistId
+        val name = playlistName
+        ThreadPool.post {
+            val songs = runCatching { PlaylistDb.get(app).songs(id) }.getOrDefault(emptyList())
+            if (songs.isEmpty()) {
+                ThreadPool.onUi {
+                    if (isAdded) android.widget.Toast.makeText(
+                        requireContext(), R.string.m3u_empty, android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+                return@post
+            }
+            val text = M3u.serialize(songs)
+            val uri = runCatching { writeM3uToCache(app, name, text) }.getOrNull()
+            ThreadPool.onUi {
+                if (!isAdded) return@onUi
+                if (uri == null) {
+                    android.widget.Toast.makeText(
+                        requireContext(), R.string.m3u_failed, android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    return@onUi
+                }
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "audio/x-mpegurl"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(
+                    Intent.createChooser(send, getString(R.string.m3u_share))
+                )
+            }
+        }
+    }
+
+    private fun writeM3uToCache(app: android.content.Context, name: String, text: String): Uri {
+        val dir = File(app.cacheDir, "playlists").apply { mkdirs() }
+        val file = File(dir, safeFileName(name) + ".m3u")
+        file.writeText(text)
+        return FileProvider.getUriForFile(app, app.packageName + ".fileprovider", file)
+    }
+
+    /** Nome de arquivo seguro: o nome da playlist pode ter `/`, `:` ou emoji. */
+    private fun safeFileName(name: String): String =
+        name.trim().ifEmpty { "playlist" }.replace(Regex("[^\\p{L}\\p{N}_-]+"), "_").take(40)
 
     private fun showAddSongs() {
         val ctx = requireContext()

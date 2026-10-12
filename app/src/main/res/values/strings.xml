@@ -33,10 +33,10 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.8):
-→ ATALHOS NA TELA INICIAL
-• Segure o ícone do Pulsa para abrir direto: Baixados offline, Continuar, Novo episódio e Rádio Virgin.
-• "Continuar" retoma a última coisa tocada (música, episódio ou rádio) exatamente de onde parou.</string>
+    <string name="changelog">Novidades desta versão (5.10.9):
+→ PLAYLISTS EM M3U
+• Exporte uma playlist: menu ⋮ → "Compartilhar (.m3u)" ou "Salvar arquivo (.m3u)".
+• Importe .m3u de outros players: menu ⋮ em Playlists → "Importar M3U"; o app casa por caminho e, quando o arquivo vem de outro aparelho, por artista e título.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -57,6 +57,16 @@
     <string name="n_playlists">%1$d playlists</string>
     <string name="one_playlist">1 playlist</string>
     <string name="playlist_created">Playlist criada</string>
+    <string name="m3u_share">Compartilhar (.m3u)</string>
+    <string name="m3u_save">Salvar arquivo (.m3u)</string>
+    <string name="m3u_empty">Playlist vazia</string>
+    <string name="m3u_saved">Playlist exportada</string>
+    <string name="m3u_failed">Não foi possível exportar</string>
+    <string name="m3u_import">Importar M3U</string>
+    <string name="m3u_import_default">Playlist importada</string>
+    <string name="m3u_import_done">%1$d músicas em \"%2$s\"</string>
+    <string name="m3u_import_missing">%1$d não encontradas</string>
+    <string name="m3u_import_empty">Nenhuma música do arquivo está neste aparelho</string>
     <string name="new_playlist_title">Nova playlist</string>
     <string name="playlist_name_hint">Nome da playlist</string>
     <string name="create">Criar</string>

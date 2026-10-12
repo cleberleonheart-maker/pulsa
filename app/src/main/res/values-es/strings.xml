@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.8):
-→ ATAJOS EN LA PANTALLA DE INICIO
-• Mantén pulsado el icono de Pulsa para abrir directo: Descargas sin conexión, Continuar, Nuevo episodio y Radio Virgin.
-• "Continuar" retoma lo último que escuchaste (canción, episodio o radio) justo donde lo dejaste.</string>
+    <string name="changelog">Novedades de esta versión (5.10.9):
+→ LISTAS EN M3U
+• Exporta una lista: menú ⋮ → "Compartir (.m3u)" o "Guardar archivo (.m3u)".
+• Importa .m3u de otros reproductores: menú ⋮ en Listas → "Importar M3U"; la app casa por ruta y, cuando el archivo viene de otro dispositivo, por artista y título.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -51,6 +51,16 @@
     <string name="add_to_playlist_title">Añadir a lista</string>
     <string name="add_to_queue">Añadir a la cola</string>
     <string name="new_playlist">Nueva lista</string>
+    <string name="m3u_share">Compartir (.m3u)</string>
+    <string name="m3u_save">Guardar archivo (.m3u)</string>
+    <string name="m3u_empty">Lista vacía</string>
+    <string name="m3u_saved">Lista exportada</string>
+    <string name="m3u_failed">No se pudo exportar</string>
+    <string name="m3u_import">Importar M3U</string>
+    <string name="m3u_import_default">Lista importada</string>
+    <string name="m3u_import_done">%1$d canciones en \"%2$s\"</string>
+    <string name="m3u_import_missing">%1$d no encontradas</string>
+    <string name="m3u_import_empty">Ninguna canción del archivo está en este dispositivo</string>
     <string name="new_playlist_title">Nueva lista</string>
     <string name="playlist_name_hint">Nombre de la lista</string>
     <string name="create">Crear</string>

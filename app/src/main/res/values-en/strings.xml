@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.8):
-→ HOME SCREEN SHORTCUTS
-• Long-press the Pulsa icon to jump straight to: Offline downloads, Continue, New episode and Virgin Radio.
-• "Continue" resumes the last thing you played (song, episode or radio) right where you left off.</string>
+    <string name="changelog">What is new (5.10.9):
+→ PLAYLISTS AS M3U
+• Export a playlist: ⋮ menu → "Share (.m3u)" or "Save file (.m3u)".
+• Import .m3u from other players: ⋮ menu in Playlists → "Import M3U"; the app matches by path and, when the file comes from another device, by artist and title.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -51,6 +51,16 @@
     <string name="add_to_playlist_title">Add to playlist</string>
     <string name="add_to_queue">Add to queue</string>
     <string name="new_playlist">New playlist</string>
+    <string name="m3u_share">Share (.m3u)</string>
+    <string name="m3u_save">Save file (.m3u)</string>
+    <string name="m3u_empty">Empty playlist</string>
+    <string name="m3u_saved">Playlist exported</string>
+    <string name="m3u_failed">Couldn\'t export</string>
+    <string name="m3u_import">Import M3U</string>
+    <string name="m3u_import_default">Imported playlist</string>
+    <string name="m3u_import_done">%1$d songs to \"%2$s\"</string>
+    <string name="m3u_import_missing">%1$d not found</string>
+    <string name="m3u_import_empty">None of the songs in the file are on this device</string>
     <string name="new_playlist_title">New playlist</string>
     <string name="playlist_name_hint">Playlist name</string>
     <string name="create">Create</string>
