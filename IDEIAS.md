@@ -113,7 +113,7 @@
 - [ ] **Karaokê sincronizado de verdade**: letras com highlight palavra-a-palavra (falta o sync temporal ao `Lyrics.kt`) na tela da dança — `DancingVirginView` + `Lyrics`
 - [ ] **Fila por energia**: "virgi, toca pra malhar/dirigir" monta fila pelo BPM/gênero detectado da faixa — `Library` + `DjCommander`
 - [ ] **Notificação com seek + letra**: mini-player na notificação com barra de progresso arrastável e letra da faixa — service + `NotificationCompat`
-- [ ] **Importar/exportar playlist M3U**: compartilha/recebe listas de outros players — `Library`
+- [x] **Importar/exportar playlist M3U** (F5, 5.10.9): `data/M3u.kt` — `serialize`/`parse` puros (7 testes em `M3uTest`) + `resolve`. Exportar: menu ⋮ da playlist → "Compartilhar (.m3u)" (arquivo no cache via `FileProvider`, não texto) ou "Salvar arquivo (.m3u)" (SAF `CreateDocument`). Importar: menu ⋮ de Playlists → "Importar M3U" (SAF `OpenDocument`). **Casar por caminho não basta** (o `.m3u` de outro aparelho traz o caminho de origem): `resolve` cai em degraus — caminho exato (`Library.songsByPaths`) → "artista - título" do `#EXTINF` → título → nome do arquivo, todos normalizados com `DjCommander.norm`; o que não casa é dito, nunca engolido. O `#EXTINF` corta na **primeira** vírgula (título com vírgula sobrevive) e o `.m3u` aceita CRLF/comentário/`#EXTINF` órfão
 - [ ] **Crossfade/fade sem gaps**: detectar BPM por DSP e transicionar em batida entre faixas (sem silêncio) — modo festa contínuo — `Playback` + `AudioFx`
 
 ### Conexão / sincronia
