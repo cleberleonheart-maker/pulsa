@@ -477,11 +477,17 @@ class VideosTabFragment : Fragment() {
 
     private fun share(video: Video) {
         val ctx = requireContext()
-        // F5 · cartão unificado: o vídeo sai com a mesma cara da música (frame + título),
-        // em vez do arquivo cru.
-        ShareCard.share(ctx, video.title, getString(R.string.tab_videos)) {
-            com.pulsa.player.data.ArtLoader.videoFrame(ctx, video.id)
-        }
+        // F5 · cartão unificado: o vídeo sai com a mesma cara da música (frame + título). O
+        // usuário escolhe entre o cartão e o arquivo de vídeo original.
+        ShareCard.choose(
+            ctx,
+            video.title,
+            getString(R.string.tab_videos),
+            { com.pulsa.player.data.ArtLoader.videoFrame(ctx, video.id) },
+            VideoLibrary.contentUri(video.id),
+            "video/*",
+            getString(R.string.share_video_file)
+        )
     }
 
     fun title(): String = requireContext().getString(R.string.tab_videos)

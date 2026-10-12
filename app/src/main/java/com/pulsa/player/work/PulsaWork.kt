@@ -15,6 +15,10 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.pulsa.player.core.Blacklist
+import com.pulsa.player.core.Settings
+import com.pulsa.player.data.ArtLoader
+import com.pulsa.player.data.CoverFetcher
+import com.pulsa.player.data.Library
 import com.pulsa.player.media.MusicDownloader
 import com.pulsa.player.media.OfflineCleanupRunner
 import com.pulsa.player.podcast.PodcastDb
@@ -44,6 +48,7 @@ object PulsaWork {
     private const val SYNC_PERIODIC = "pulsa_sync_periodic"
     private const val CLEANUP_PERIODIC = "pulsa_offline_cleanup"
     private const val DOWNLOAD = "pulsa_download"
+    private const val COVERS = "pulsa_covers"
 
     /** 15 min é o piso do WorkManager, e é uma janela boa para a lista de bloqueio. */
     private const val SYNC_MINUTES = 15L
@@ -126,6 +131,48 @@ object PulsaWork {
                 info.state == WorkInfo.State.SUCCEEDED,
                 info.outputData.getString(DownloadWorker.KEY_OUT_PATH).orEmpty()
             )
+        }, ContextCompat.getMainExecutor(app))
+    }
+
+    /**
+     * Baixa as capas em falta do acervo, uma vez.
+     *
+     * `REPLACE` porque é um pedido manual: tocar de novo recomeça do zero em vez de enfileirar
+     * duas passadas. A constraint de rede respeita o "baixar só no Wi-Fi" das Configurações —
+     * capa é dado que o usuário não pediu a cada faixa, então não deve furar essa trava.
+     *
+     * @return o id do job, para acompanhar quantas capas saíram; null se nem agendar deu.
+     */
+    fun downloadCovers(context: Context): UUID? {
+        val wifi = runCatching { Settings.downloadWifiOnly(context) }.getOrDefault(true)
+        val constraint = Constraints.Builder()
+            .setRequiredNetworkType(if (wifi) NetworkType.UNMETERED else NetworkType.CONNECTED)
+            .build()
+        val request = OneTimeWorkRequestBuilder<CoverWorker>()
+            .setConstraints(constraint)
+            .setBackoffCriteria(BackoffPolicy.LINEAR, 30, TimeUnit.SECONDS)
+            .build()
+        return runCatching {
+            WorkManager.getInstance(context).enqueueUniqueWork(COVERS, ExistingWorkPolicy.REPLACE, request)
+            request.id
+        }.getOrNull()
+    }
+
+    /** Avisa quantas capas foram baixadas quando o job termina (ou 0 em falha/cancelamento). */
+    fun watchCovers(context: Context, id: UUID, onFinished: (count: Int) -> Unit) {
+        val app = context.applicationContext
+        val wm = runCatching { WorkManager.getInstance(app) }.getOrNull() ?: return
+        val future = runCatching { wm.getWorkInfoById(id) }.getOrNull() ?: return
+        future.addListener({
+            val info = runCatching { future.get() }.getOrNull() ?: return@addListener
+            val finished = info.state == WorkInfo.State.SUCCEEDED ||
+                info.state == WorkInfo.State.FAILED ||
+                info.state == WorkInfo.State.CANCELLED
+            if (!finished) return@addListener
+            val count = if (info.state == WorkInfo.State.SUCCEEDED) {
+                info.outputData.getInt(CoverWorker.KEY_OUT_COUNT, 0)
+            } else 0
+            onFinished(count)
         }, ContextCompat.getMainExecutor(app))
     }
 
@@ -213,6 +260,33 @@ object PulsaWork {
             const val KEY_URL = "url"
             const val KEY_NAME = "name"
             const val KEY_OUT_PATH = "outPath"
+        }
+    }
+
+    /**
+     * O "Baixar capas" das Configurações: percorre os álbuns sem arte e busca no iTunes.
+     *
+     * Roda em [Dispatchers.IO] porque cada álbum é uma ida à rede (busca + imagem). Só conta
+     * como baixada quando o [ArtLoader.put] confirma a gravação; álbum sem resultado, ou que
+     * já tinha capa, é pulado em silêncio — o número no fim é o que interessa ao usuário.
+     */
+    class CoverWorker(context: Context, params: WorkerParameters) :
+        CoroutineWorker(context, params) {
+        override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+            val ctx = applicationContext
+            var done = 0
+            runCatching {
+                for (album in Library.albums(ctx)) {
+                    if (ArtLoader.hasArt(ctx, album.id)) continue
+                    val bmp = CoverFetcher.fetch(album.artist, album.name) ?: continue
+                    if (ArtLoader.put(ctx, album.id, bmp)) done++
+                }
+            }
+            Result.success(workDataOf(KEY_OUT_COUNT to done))
+        }
+
+        companion object {
+            const val KEY_OUT_COUNT = "outCount"
         }
     }
 }

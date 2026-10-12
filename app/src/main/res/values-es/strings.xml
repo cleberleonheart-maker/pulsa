@@ -30,10 +30,12 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.11):
-→ TARJETA PARA COMPARTIR
-• Compartir una canción, un vídeo o un episodio ahora envía una tarjeta con carátula, título y artista — en vez del archivo.
-• Los episodios de podcast ganaron "Compartir" en el menú, con la carátula del feed.</string>
+    <string name="changelog">Novedades de esta versión (5.10.12):
+→ DESCARGAR CARÁTULAS
+• Configuración ahora tiene "Descargar carátulas": busca en iTunes la carátula de los álbumes sin arte y la guarda en el dispositivo.
+• Respeta el "descargar solo por Wi-Fi"; al terminar, dice cuántas carátulas llegaron.
+→ COMPARTIR
+• Compartir ahora pregunta: tarjeta con carátula o el archivo original (música/vídeo) — un solo adjunto, confiable en cualquier app.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -171,6 +173,15 @@
     <string name="song_action_play_now">Reproducir ahora</string>
     <string name="share_music">Compartir</string>
     <string name="share_failed">No se pudo compartir</string>
+    <string name="share_card">Tarjeta (imagen)</string>
+    <string name="share_audio_file">Archivo de música</string>
+    <string name="share_video_file">Archivo de video</string>
+    <string name="covers_download">Descargar carátulas</string>
+    <string name="covers_download_hint">Busca en iTunes la carátula de los álbumes sin arte y la guarda en el dispositivo</string>
+    <string name="covers_started">Buscando carátulas…</string>
+    <string name="covers_done">%1$d carátulas descargadas</string>
+    <string name="covers_none">No se encontró ninguna carátula nueva</string>
+    <string name="covers_failed">No se pudieron descargar las carátulas</string>
     <string name="ringtone_phone">Tono del teléfono</string>
     <string name="ringtone_notification">Tono de notificación</string>
     <string name="ringtone_alarm">Tono de alarma</string>

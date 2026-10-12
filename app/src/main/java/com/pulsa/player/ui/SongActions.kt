@@ -1,11 +1,14 @@
 package com.pulsa.player.ui
 
+import android.content.ContentUris
 import android.content.Context
 import android.media.RingtoneManager
+import android.provider.MediaStore
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.PlaylistDb
+import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.media.MusicDeleter
@@ -136,15 +139,29 @@ fun show(
     }
 
     private fun share(context: Context, song: Song) {
-        // F5 · cartão unificado: música e vídeo saem com a mesma cara (capa + título), em vez
-        // de o arquivo cru. A capa decide por tipo aqui, onde o `Song` ainda sabe o que é.
-        ShareCard.share(context, song.title, song.artist.ifBlank { song.album }) {
-            if (song.isVideo) {
-                song.videoId?.let { ArtLoader.videoFrame(context, it) }
-            } else {
-                ArtLoader.decode(context, song.albumId, song.path)
-            }
+        // F5 · cartão unificado: música e vídeo saem com a mesma cara (capa + título). O usuário
+        // escolhe entre o cartão e o arquivo original — música ainda pode querer mandar o áudio.
+        val video = song.isVideo
+        val fileUri = if (video) {
+            song.videoId?.let { VideoLibrary.contentUri(it) }
+        } else {
+            ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id)
         }
+        ShareCard.choose(
+            context,
+            song.title,
+            song.artist.ifBlank { song.album },
+            {
+                if (video) {
+                    song.videoId?.let { ArtLoader.videoFrame(context, it) }
+                } else {
+                    ArtLoader.decode(context, song.albumId, song.path)
+                }
+            },
+            fileUri,
+            if (video) "video/*" else "audio/*",
+            context.getString(if (video) R.string.share_video_file else R.string.share_audio_file)
+        )
     }
 
     private fun confirmDelete(context: Context, song: Song, onDeleted: (() -> Unit)?) {

@@ -223,6 +223,30 @@ object ArtLoader {
         }
     }
 
+    /**
+     * Grava uma capa **baixada** no cache de arte (disco + memória) e diz se deu certo.
+     *
+     * Diferente do [saveToDisk] privado (assíncrono, do caminho de leitura), a escrita aqui é
+     * síncrona: quem chama é o job de baixar capas, já numa thread de IO, e precisa saber que
+     * gravou antes de contar o álbum como pronto e seguir. Como o `decode` lê o disco primeiro,
+     * a capa baixada passa a ganhar de qualquer arte antiga nas telas seguintes.
+     */
+    fun put(context: Context, albumId: Long, bitmap: Bitmap): Boolean {
+        if (albumId <= 0L) return false
+        val scaled = scaleDown(bitmap, 512)
+        val ok = runCatching {
+            val file = artFile(context, albumId)
+            file.parentFile?.mkdirs()
+            file.outputStream().use { scaled.compress(Bitmap.CompressFormat.JPEG, 88, it) }
+        }.isSuccess
+        if (ok) cache.put(albumId, scaled)
+        return ok
+    }
+
+    /** Já existe capa em disco para este álbum? (o job de capas pula esses e economiza rede) */
+    fun hasArt(context: Context, albumId: Long): Boolean =
+        albumId > 0L && artFile(context, albumId).exists()
+
     private fun saveToDisk(file: File, bitmap: Bitmap) {
         ThreadPool.post {
             runCatching {

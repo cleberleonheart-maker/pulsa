@@ -267,6 +267,8 @@ class SettingsActivity : AppCompatActivity() {
         refreshOfflineCleanup(cleanupValue)
         findViewById<View>(R.id.offline_cleanup_row).setOnClickListener { promptOfflineCleanup(cleanupValue) }
 
+        findViewById<View>(R.id.cover_download_row).setOnClickListener { startCoverDownload() }
+
 
 
         findViewById<MaterialButton>(R.id.btn_update_site).setOnClickListener {
@@ -869,6 +871,20 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun startCoverDownload() {
+        val id = PulsaWork.downloadCovers(this)
+        if (id == null) {
+            Toast.makeText(this, R.string.covers_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+        Toast.makeText(this, R.string.covers_started, Toast.LENGTH_SHORT).show()
+        // O contexto é o de aplicação: o job termina quando o usuário já pode ter saído da tela.
+        PulsaWork.watchCovers(applicationContext, id) { count ->
+            val msg = if (count > 0) getString(R.string.covers_done, count) else getString(R.string.covers_none)
+            Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun buildBackup(): String {

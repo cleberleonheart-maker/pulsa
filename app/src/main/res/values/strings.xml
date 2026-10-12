@@ -33,10 +33,12 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.11):
-→ CARTÃO PARA COMPARTILHAR
-• Compartilhar música, vídeo ou episódio agora manda um card com capa, título e artista — em vez do arquivo cru.
-• Episódios de podcast ganharam "Compartilhar" no menu, com a arte do feed.</string>
+    <string name="changelog">Novidades desta versão (5.10.12):
+→ BAIXAR CAPAS
+• Configurações ganhou "Baixar capas das músicas": busca no iTunes a arte dos álbuns sem capa e guarda no aparelho.
+• Respeita o "baixar só no Wi-Fi"; ao terminar, diz quantas capas saíram.
+→ COMPARTILHAR
+• O compartilhar agora pergunta: cartão com capa ou o arquivo original (música/vídeo) — um anexo só, confiável em qualquer app.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -108,6 +110,15 @@
     <string name="song_action_play_now">Tocar agora</string>
     <string name="share_music">Compartilhar</string>
     <string name="share_failed">Não foi possível compartilhar</string>
+    <string name="share_card">Cartão (imagem)</string>
+    <string name="share_audio_file">Arquivo de música</string>
+    <string name="share_video_file">Arquivo de vídeo</string>
+    <string name="covers_download">Baixar capas das músicas</string>
+    <string name="covers_download_hint">Busca no iTunes a arte dos álbuns sem capa e guarda no aparelho</string>
+    <string name="covers_started">Buscando capas…</string>
+    <string name="covers_done">%1$d capas baixadas</string>
+    <string name="covers_none">Nenhuma capa nova encontrada</string>
+    <string name="covers_failed">Não foi possível baixar as capas</string>
     <string name="ringtone_phone">Toque do celular</string>
     <string name="ringtone_notification">Toque de notificação</string>
     <string name="ringtone_alarm">Toque de alarme</string>

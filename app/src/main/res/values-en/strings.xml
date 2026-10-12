@@ -30,10 +30,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.11):
-→ SHARE CARD
-• Sharing a song, video or episode now sends a card with cover art, title and artist — instead of the raw file.
-• Podcast episodes got "Share" in the menu, using the feed artwork.</string>
+    <string name="changelog">What is new (5.10.12):
+→ DOWNLOAD COVERS
+• Settings now has "Download music covers": finds album art on iTunes for albums without a cover and saves it on the device.
+• Respects "download over Wi-Fi only"; when it ends, it tells you how many covers came in.
+→ SHARE
+• Sharing now asks: card with cover or the original file (music/video) — a single attachment, reliable in any app.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -171,6 +173,15 @@
     <string name="song_action_play_now">Play now</string>
     <string name="share_music">Share</string>
     <string name="share_failed">Could not share</string>
+    <string name="share_card">Card (image)</string>
+    <string name="share_audio_file">Music file</string>
+    <string name="share_video_file">Video file</string>
+    <string name="covers_download">Download music covers</string>
+    <string name="covers_download_hint">Finds album art on iTunes for albums without a cover and saves it on the device</string>
+    <string name="covers_started">Looking for covers…</string>
+    <string name="covers_done">%1$d covers downloaded</string>
+    <string name="covers_none">No new cover found</string>
+    <string name="covers_failed">Could not download the covers</string>
     <string name="ringtone_phone">Phone ringtone</string>
     <string name="ringtone_notification">Notification tone</string>
     <string name="ringtone_alarm">Alarm tone</string>

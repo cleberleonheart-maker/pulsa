@@ -12,7 +12,9 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.net.Uri
 import androidx.core.content.FileProvider
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R
 import com.pulsa.player.core.ThreadPool
 import java.io.File
@@ -134,6 +136,56 @@ object ShareCard {
                 if (!ok) toast(app, R.string.share_failed)
             }
         }
+    }
+
+    /**
+     * Igual a [share], mas deixa escolher entre o cartão e o **arquivo original**.
+     *
+     * O cartão é bonito de ler, o arquivo é a mídia em si — e são coisas diferentes para quem
+     * recebe. Como um `ACTION_SEND` só leva um anexo, oferecer os dois como itens de um menu é
+     * mais honesto do que juntá-los num `SEND_MULTIPLE` de tipos mistos (o WhatsApp pega só o
+     * primeiro anexo e descarta o resto, sem avisar).
+     *
+     * [fileUri] `null` cai direto no cartão: sem arquivo não há o que escolher, e um menu de
+     * um item só é ruído.
+     */
+    fun choose(
+        context: Context,
+        title: String,
+        subtitle: String,
+        art: () -> Bitmap?,
+        fileUri: Uri?,
+        fileMime: String,
+        fileLabel: String
+    ) {
+        if (fileUri == null) {
+            share(context, title, subtitle, art)
+            return
+        }
+        val text = listOf(title, subtitle).filter { it.isNotBlank() }.joinToString(" - ")
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.share_music)
+            .setItems(arrayOf(context.getString(R.string.share_card), fileLabel)) { dialog, which ->
+                dialog.dismiss()
+                if (which == 0) share(context, title, subtitle, art)
+                else shareFile(context, fileUri, fileMime, title, text)
+            }
+            .show()
+    }
+
+    /** Manda o arquivo original (áudio/vídeo) como anexo único — o comportamento de antes. */
+    private fun shareFile(context: Context, uri: Uri, mime: String, subject: String, text: String) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = mime
+            putExtra(Intent.EXTRA_STREAM, uri)
+            if (subject.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, subject)
+            if (text.isNotBlank()) putExtra(Intent.EXTRA_TEXT, text)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val ok = runCatching {
+            context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_music)))
+        }.isSuccess
+        if (!ok) toast(context.applicationContext, R.string.share_failed)
     }
 
     private fun launch(context: Context, file: File, text: String) {
