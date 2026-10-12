@@ -122,6 +122,21 @@ interface PodcastDao {
     )
     fun unplayed(podcastId: Long): List<PodcastEpisodeEntity>
 
+    /**
+     * Todos os episódios das assinaturas ativas, para a busca unificada (F5).
+     *
+     * O `JOIN` filtra por `subscribed = 1` aqui, e não no chamador: um feed cancelado ainda tem
+     * linhas em `podcast_episodes` (o cancelamento só marca o feed), então sem o `JOIN` a busca
+     * devolveria episódios de podcasts que a pessoa já removeu — resultado que toca e que a
+     * pessoa não tem mais como achar na própria lista.
+     */
+    @Query(
+        "SELECT e.* FROM podcast_episodes e " +
+            "JOIN podcast_feeds f ON e.podcast_id = f._id " +
+            "WHERE f.subscribed = 1 ORDER BY e.published_at DESC, e._id DESC"
+    )
+    fun searchableEpisodes(): List<PodcastEpisodeEntity>
+
     /** Um episódio só, para a tela de detalhe e para retomar do `position_ms`. */
     @Query("SELECT * FROM podcast_episodes WHERE _id = :id LIMIT 1")
     fun episode(id: Long): PodcastEpisodeEntity?

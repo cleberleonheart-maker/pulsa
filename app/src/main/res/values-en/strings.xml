@@ -30,7 +30,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.2):
+    <string name="changelog">What is new (5.10.3):
+→ UNIFIED SEARCH
+• Search now finds songs, albums, artists, videos and podcast episodes in the same field.
+• Chips at the top filter by type: All, Songs, Albums, Artists, Videos and Podcasts.
+
+★ FROM 5.10.2
 → PULSA REWIND: NIGHT OWL
 • The Night owl fact in Rewind stayed empty even for people who listen after midnight: it
   only showed up when a single track had 50% of its plays between 0am and 6am, and it only
@@ -201,7 +206,9 @@
 
 ★ FROM 5.8.1
 → HANDS-FREE: while the music plays, Virginia keeps listening for voice commands even with the app in the background</string>
-    <string name="search_hint">Search songs, albums or artists</string>
+    <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
+    <string name="search_empty">No results for \"%1$s\"</string>
+    <string name="search_filter_all">All</string>
     <string name="empty_no_music">No music found on this device</string>
     <string name="empty_no_permission">Allow music access to get started</string>
     <string name="grant_permission">Allow access</string>
@@ -316,6 +323,8 @@
     <string name="sections_header_songs">Songs</string>
     <string name="sections_header_albums">Albums</string>
     <string name="sections_header_artists">Artists</string>
+    <string name="sections_header_videos">Videos</string>
+    <string name="sections_header_podcasts">Podcasts</string>
 
     <string name="song_action_play_now">Play now</string>
     <string name="share_music">Share</string>

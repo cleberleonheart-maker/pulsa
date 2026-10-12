@@ -30,7 +30,12 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.2):
+    <string name="changelog">Novedades de esta versión (5.10.3):
+→ BÚSQUEDA UNIFICADA
+• La búsqueda ahora encuentra canciones, álbumes, artistas, vídeos y episodios de podcast en el mismo campo.
+• Chips arriba filtran por tipo: Todo, Canciones, Álbumes, Artistas, Vídeos y Podcasts.
+
+★ DE LA 5.10.2
 → PULSA REWIND: NOCTÁMBULO
 • El dato Noctámbulo del Rewind seguía vacío incluso para quien escucha de madrugada: solo
   aparecía si una sola pista tenía el 50% de las reproducciones entre las 0h y las 6h, y
@@ -202,7 +207,9 @@
 
 ★ DE LA 5.8.1
 → MANOS LIBRES: con la música sonando, Virginia sigue escuchando comandos de voz incluso con la app en segundo plano</string>
-    <string name="search_hint">Buscar canciones, álbumes o artistas</string>
+    <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
+    <string name="search_empty">Sin resultados para \"%1$s\"</string>
+    <string name="search_filter_all">Todo</string>
     <string name="empty_no_music">No se encontró música en este dispositivo</string>
     <string name="empty_no_permission">Permite el acceso a la música para empezar</string>
     <string name="grant_permission">Permitir acceso</string>
@@ -317,6 +324,8 @@
     <string name="sections_header_songs">Canciones</string>
     <string name="sections_header_albums">Álbumes</string>
     <string name="sections_header_artists">Artistas</string>
+    <string name="sections_header_videos">Vídeos</string>
+    <string name="sections_header_podcasts">Podcasts</string>
 
     <string name="song_action_play_now">Reproducir ahora</string>
     <string name="share_music">Compartir</string>

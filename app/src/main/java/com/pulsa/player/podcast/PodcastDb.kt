@@ -146,6 +146,15 @@ class PodcastDb(
     fun unplayed(podcastId: Long): List<Episode> =
         dao.unplayed(podcastId).map(PodcastEpisodeEntity::toEpisode).also(PodcastCache::putAll)
 
+    /**
+     * Todos os episódios das assinaturas ativas — a base da busca unificada (F5).
+     *
+     * Popula o [PodcastCache] como as demais leituras: a busca devolve o item já pronto para o
+     * clique, e sem o cache o `PlaybackService` não acharia a URL do episódio tocado.
+     */
+    fun allEpisodes(): List<Episode> =
+        dao.searchableEpisodes().map(PodcastEpisodeEntity::toEpisode).also(PodcastCache::putAll)
+
     /** Um episódio, com o cache preenchido — é o caminho do clique em "tocar". */
     fun episode(id: Long): Episode? = dao.episode(id)?.toEpisode()?.also {
         PodcastCache.put(it.id, it.playableUrl)

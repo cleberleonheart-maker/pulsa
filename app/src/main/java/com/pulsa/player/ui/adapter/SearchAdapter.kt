@@ -12,19 +12,40 @@ import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.model.Album
 import com.pulsa.player.model.Artist
 import com.pulsa.player.model.Song
+import com.pulsa.player.model.Video
+import com.pulsa.player.podcast.Episode
 import com.pulsa.player.core.Helper
 
+/**
+ * F5 — os tipos que a busca unificada sabe desenhar.
+ *
+ * Cada resultado carrega o modelo cru ([Song], [Video], [Episode]...): quem sabe tocar é o
+ * chamador, não o adapter. Foi assim que a busca deixou de ser só de música sem que o adapter
+ * precisasse conhecer `Playback`.
+ */
 sealed class SearchResult {
     data class Header(val label: String) : SearchResult()
     data class SongResult(val song: Song) : SearchResult()
     data class AlbumResult(val album: Album) : SearchResult()
     data class ArtistResult(val artist: Artist) : SearchResult()
+    data class VideoResult(val video: Video) : SearchResult()
+
+    /**
+     * Um episódio com o título do feed ao lado.
+     *
+     * O [feedTitle] não vem do [Episode]: o model guarda só o `podcastId`, e resolver o título
+     * na hora de desenhar exigiria consultar o banco na `onBindViewHolder`, que roda na main
+     * thread. Ele é resolvido uma vez no carregamento da busca e viaja junto.
+     */
+    data class EpisodeResult(val episode: Episode, val feedTitle: String) : SearchResult()
 }
 
 class SearchAdapter(
     private val onSong: (List<Song>, Int) -> Unit,
     private val onAlbum: (Album) -> Unit,
-    private val onArtist: (Artist) -> Unit
+    private val onArtist: (Artist) -> Unit,
+    private val onVideo: (Video) -> Unit,
+    private val onEpisode: (Episode, String) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var items: List<SearchResult> = emptyList()
@@ -39,6 +60,8 @@ class SearchAdapter(
             is SearchResult.SongResult -> TYPE_SONG
             is SearchResult.AlbumResult -> TYPE_ALBUM
             is SearchResult.ArtistResult -> TYPE_ARTIST
+            is SearchResult.VideoResult -> TYPE_VIDEO
+            is SearchResult.EpisodeResult -> TYPE_EPISODE
         }
     }
 
@@ -62,6 +85,8 @@ class SearchAdapter(
             is SearchResult.SongResult -> (holder as RowVH).bindSong(item.song)
             is SearchResult.AlbumResult -> (holder as RowVH).bindAlbum(item.album)
             is SearchResult.ArtistResult -> (holder as RowVH).bindArtist(item.artist)
+            is SearchResult.VideoResult -> (holder as RowVH).bindVideo(item.video)
+            is SearchResult.EpisodeResult -> (holder as RowVH).bindEpisode(item.episode, item.feedTitle)
         }
     }
 
@@ -105,6 +130,28 @@ class SearchAdapter(
             subtitle.text = Helper.trackCount(artist.numSongs, itemView.context.resources)
             itemView.setOnClickListener { onArtist(artist) }
         }
+
+        fun bindVideo(video: Video) {
+            // O `path` de vídeo é o que faz o [ArtLoader] extrair um frame em vez de desenhar a
+            // nota musical: com `albumId = 0` ele cairia no ícone, e vídeo em resultado de busca
+            // sem miniatura some no meio das músicas.
+            ArtLoader.load(0L, Song.VIDEO_PREFIX + video.id, art)
+            title.text = video.title
+            subtitle.text = Helper.formatDuration(video.durationMs)
+            itemView.setOnClickListener { onVideo(video) }
+        }
+
+        fun bindEpisode(episode: Episode, feedTitle: String) {
+            art.setImageResource(R.drawable.ic_mic)
+            art.background = itemView.context.getDrawable(R.drawable.bg_circle)
+            title.text = episode.title
+            subtitle.text = if (episode.durationSec > 0) {
+                feedTitle + " · " + Helper.formatDuration(episode.durationSec * 1000L)
+            } else {
+                feedTitle
+            }
+            itemView.setOnClickListener { onEpisode(episode, feedTitle) }
+        }
     }
 
     companion object {
@@ -112,5 +159,7 @@ class SearchAdapter(
         private const val TYPE_SONG = 1
         private const val TYPE_ALBUM = 2
         private const val TYPE_ARTIST = 3
+        private const val TYPE_VIDEO = 4
+        private const val TYPE_EPISODE = 5
     }
 }
