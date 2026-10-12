@@ -48,9 +48,6 @@ class DownloadsTabFragment : Fragment() {
     private lateinit var emptyView: TextView
     private lateinit var banner: TextView
 
-    private lateinit var adapter: DownloadsAdapter
-    private lateinit var emptyView: TextView
-
     private var observer: (() -> Unit)? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
