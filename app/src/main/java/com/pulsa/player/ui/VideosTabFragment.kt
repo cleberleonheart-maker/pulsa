@@ -477,16 +477,10 @@ class VideosTabFragment : Fragment() {
 
     private fun share(video: Video) {
         val ctx = requireContext()
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "video/*"
-            putExtra(Intent.EXTRA_STREAM, VideoLibrary.contentUri(video.id))
-            putExtra(Intent.EXTRA_TEXT, video.title)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        runCatching {
-            ctx.startActivity(Intent.createChooser(intent, ctx.getString(R.string.share_music)))
-        }.onFailure {
-            android.widget.Toast.makeText(ctx, R.string.share_failed, android.widget.Toast.LENGTH_SHORT).show()
+        // F5 · cartão unificado: o vídeo sai com a mesma cara da música (frame + título),
+        // em vez do arquivo cru.
+        ShareCard.share(ctx, video.title, getString(R.string.tab_videos)) {
+            com.pulsa.player.data.ArtLoader.videoFrame(ctx, video.id)
         }
     }
 

@@ -138,34 +138,54 @@ class PodcastDetailFragment : Fragment() {
         val ctx = context ?: return
         // O menu é montado com o estado **atual** do episódio: "Baixar" e "Apagar download"
         // nunca convivem, e um item que mente sobre o que faz é pior do que um item a menos.
-        val downloaded = ep.filePath.isNotBlank()
-        val labels = ArrayList<String>(4)
+        // Pares rótulo/ação em vez de `when(which)` com índices fixos: o episódio já tem um
+        // item condicional (baixar), e o "Compartilhar" no meio deslocaria todos os números.
+        val labels = ArrayList<String>(5)
+        val actions = ArrayList<() -> Unit>(5)
         labels += getString(R.string.podcast_play_now)
+        actions += { playFrom(ep) }
         labels += getString(R.string.add_to_queue)
+        actions += { enqueue(ep) }
         labels += getString(
             if (ep.played) R.string.podcast_mark_unplayed else R.string.podcast_mark_played
         )
+        actions += { togglePlayed(ep) }
+        // F5 · cartão unificado: o episódio vira o mesmo card da música/vídeo, com a arte do
+        // feed (ou do feed pai, quando o episódio não traz uma).
+        val art = ep.artworkUrl.ifBlank { arguments?.getString(ARG_ART).orEmpty() }
+        labels += getString(R.string.share_music)
+        actions += { shareEpisode(ep, art) }
         // Baixar só faz sentido com endereço de rede: um episódio em vídeo sem enclosure não
         // tem o que baixar, e oferecer o botão seria um convite a esperar por um erro.
+        val downloaded = ep.filePath.isNotBlank()
         val canDownload = !downloaded && ep.audioUrl.startsWith("http")
         if (canDownload || downloaded) {
             labels += getString(
                 if (downloaded) R.string.podcast_download_delete else R.string.podcast_download
             )
+            actions += { if (downloaded) deleteDownload(ep) else download(ep) }
         }
 
         MaterialAlertDialogBuilder(ctx)
             .setTitle(ep.title.ifBlank { getString(R.string.podcast_episode) })
             .setItems(labels.toTypedArray()) { d, which ->
-                when (which) {
-                    0 -> playFrom(ep)
-                    1 -> enqueue(ep)
-                    2 -> togglePlayed(ep)
-                    else -> if (downloaded) deleteDownload(ep) else download(ep)
-                }
+                actions.getOrNull(which)?.invoke()
                 d.dismiss()
             }
             .show()
+    }
+
+    /** Capa do episódio por rede: cai no quadro vazio do [ShareCard] quando a URL falha. */
+    private fun shareEpisode(ep: Episode, artworkUrl: String) {
+        val ctx = context ?: return
+        val title = ep.title.ifBlank { getString(R.string.podcast_episode) }
+        ShareCard.share(ctx, title, podcastTitle) {
+            artworkUrl.takeIf { it.startsWith("https://") }?.let { url ->
+                runCatching {
+                    java.net.URL(url).openStream().use { android.graphics.BitmapFactory.decodeStream(it) }
+                }.getOrNull()
+            }
+        }
     }
 
     /**

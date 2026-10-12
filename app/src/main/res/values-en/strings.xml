@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.10):
-→ OFFLINE AUTO-CLEANUP
-• In Settings, turn on "Clean up old downloads": the app deletes on its own whatever you have not listened to in 7, 30 or 60 days.
-• The Virgin tells you next time you open the app: how many were removed and how much space was freed.</string>
+    <string name="changelog">What is new (5.10.11):
+→ SHARE CARD
+• Sharing a song, video or episode now sends a card with cover art, title and artist — instead of the raw file.
+• Podcast episodes got "Share" in the menu, using the feed artwork.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

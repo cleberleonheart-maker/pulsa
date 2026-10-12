@@ -1,12 +1,10 @@
 package com.pulsa.player.ui
 
-import android.content.ContentUris
 import android.content.Context
-import android.content.Intent
 import android.media.RingtoneManager
-import android.provider.MediaStore
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R
+import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
@@ -138,21 +136,14 @@ fun show(
     }
 
     private fun share(context: Context, song: Song) {
-        val uri = ContentUris.withAppendedId(
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            song.id
-        )
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "audio/*"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, song.title)
-            putExtra(Intent.EXTRA_TEXT, song.title + " - " + song.artist)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        runCatching {
-            context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_music)))
-        }.onFailure {
-            android.widget.Toast.makeText(context, R.string.share_failed, android.widget.Toast.LENGTH_SHORT).show()
+        // F5 · cartão unificado: música e vídeo saem com a mesma cara (capa + título), em vez
+        // de o arquivo cru. A capa decide por tipo aqui, onde o `Song` ainda sabe o que é.
+        ShareCard.share(context, song.title, song.artist.ifBlank { song.album }) {
+            if (song.isVideo) {
+                song.videoId?.let { ArtLoader.videoFrame(context, it) }
+            } else {
+                ArtLoader.decode(context, song.albumId, song.path)
+            }
         }
     }
 

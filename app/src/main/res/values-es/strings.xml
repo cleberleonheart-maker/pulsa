@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.10):
-→ LIMPIEZA AUTOMÁTICA DEL OFFLINE
-• En Ajustes, activa "Limpiar descargas antiguas": la app borra sola lo que no escuchas desde hace 7, 30 o 60 días.
-• La Virgin te avisa la próxima vez que abras la app: cuántas borró y cuánto espacio liberó.</string>
+    <string name="changelog">Novedades de esta versión (5.10.11):
+→ TARJETA PARA COMPARTIR
+• Compartir una canción, un vídeo o un episodio ahora envía una tarjeta con carátula, título y artista — en vez del archivo.
+• Los episodios de podcast ganaron "Compartir" en el menú, con la carátula del feed.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

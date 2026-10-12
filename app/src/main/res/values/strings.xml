@@ -33,10 +33,10 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.10):
-→ LIMPEZA AUTOMÁTICA DO OFFLINE
-• Em Configurações, ligue "Limpar baixados antigos": o app apaga sozinho o que você não ouve há 7, 30 ou 60 dias.
-• A Virgin avisa na próxima vez em que você abrir o app: quantos apagou e quanto espaço liberou.</string>
+    <string name="changelog">Novidades desta versão (5.10.11):
+→ CARTÃO PARA COMPARTILHAR
+• Compartilhar música, vídeo ou episódio agora manda um card com capa, título e artista — em vez do arquivo cru.
+• Episódios de podcast ganharam "Compartilhar" no menu, com a arte do feed.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
