@@ -32,7 +32,7 @@
     <string name="changelog_title">What is new</string>
     <string name="changelog">What is new (5.10.13):
 → SPEED AND SEEK
-• Podcast episodes now have speed (0.5x to 2x) and a 15s jump on the Now Playing screen — the speed is saved separately from video's.
+• Podcast episodes now have speed (0.5x to 2x) and a 15s jump on the Now Playing screen — the speed is saved separately from the video speed.
 • The Virgin announces the new speed; use it a lot and she comments that you like to speed up.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
