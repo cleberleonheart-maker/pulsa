@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.20):
-→ SERVIDOR ONLINE FLEXIBLE
-• El modo "Online automático" ahora acepta cualquier dirección HTTPS publicada en pulsaweb, no solo el túnel de Cloudflare.
-• Tu propio servidor con dirección fija (p. ej. sslip.io/dominio propio) ya entra solo en el modo online.
-• Sigue exigiendo el token del servidor (Configuración → Token del servidor).</string>
+    <string name="changelog">Novedades de esta versión (5.10.21):
+→ SERVIDOR YA VIENE LISTO
+• La app ahora trae la dirección del servidor integrada y la encuentra sola — sin depender de pulsaweb ni escribir la dirección.
+• El modo Automático habla con el servidor público y usa la red local cuando está disponible.
+• Solo falta el token (Configuración → Token del servidor).</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -837,11 +837,11 @@
     <string name="restore_done">¡Copia restaurada!</string>
     <string name="restore_failed">Archivo no válido o sin datos de PULSA</string>
     <string name="server_title">Servidor</string>
-    <string name="server_default">Automático (red local / predeterminado)</string>
+    <string name="server_default">Automático (servidor público + red local)</string>
     <string name="server_hint">https://tu-servidor:8081</string>
     <string name="server_saved">Servidor actualizado — todo usará la nueva dirección</string>
     <string name="server_online">Online automático (lee la URL pública del pulsaweb)</string>
-    <string name="server_opt_lan">Red local / predeterminado (192.168.100.7)</string>
+    <string name="server_opt_lan">Automático (servidor público + red local)</string>
     <string name="server_opt_online">Online automático (dirección pública del servidor)</string>
     <string name="server_opt_custom">Dirección personalizada</string>
     <string name="server_token">Token del servidor</string>

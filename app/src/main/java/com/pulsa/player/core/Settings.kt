@@ -31,6 +31,9 @@ object Settings {
     const val SERVER_ONLINE = "auto"
     private const val DEFAULT_TELEMETRY_TOKEN = "pulsa-local-2026"
 
+    /** Servidor público fixo do Pulsa (Elastic IP + sslip.io). Entra sozinho, sem configurar nada. */
+    const val DEFAULT_SERVER_URL = "https://pulsa.3.151.24.62.sslip.io"
+
     const val ACCENT_PURPLE = "purple"
     const val ACCENT_BLUE = "blue"
     const val ACCENT_GREEN = "green"
@@ -176,14 +179,14 @@ object Settings {
         return cachedTunnel
     }
 
-    /** Hosts a tentar, na ordem: configurado/túnel primeiro, depois LAN e localhost. */
+    /** Hosts a tentar, na ordem: configurado/túnel primeiro, depois o servidor público, LAN e localhost. */
     fun serverCandidates(context: Context): List<String> {
-        val out = ArrayList<String>(3)
+        val out = ArrayList<String>(4)
         when (serverMode(context)) {
             "online" -> onlineServer(context)?.let { if (!out.contains(it)) out.add(it) }
             "custom" -> serverBase(context).let { if (it.isNotEmpty() && !out.contains(it)) out.add(it) }
         }
-        for (def in listOf("http://192.168.100.7:8081", "http://127.0.0.1:8081")) {
+        for (def in listOf(DEFAULT_SERVER_URL, "http://192.168.100.7:8081", "http://127.0.0.1:8081")) {
             if (!out.contains(def)) out.add(def)
         }
         return out

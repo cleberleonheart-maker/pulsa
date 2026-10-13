@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.20):
-→ FLEXIBLE ONLINE SERVER
-• The "Automatic online" mode now accepts any HTTPS address published on pulsaweb, not only the Cloudflare tunnel.
-• Your own server with a fixed address (e.g. sslip.io/your own domain) now joins online mode by itself.
-• Still requires the server token (Settings → Server token).</string>
+    <string name="changelog">What is new (5.10.21):
+→ SERVER COMES READY
+• The app now ships with the server address built in and finds it by itself — no pulsaweb, no typing the address.
+• The Automatic mode talks to the public server and falls back to the local network when available.
+• All that is left is the token (Settings → Server token).</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -837,11 +837,11 @@
     <string name="restore_done">Backup restored!</string>
     <string name="restore_failed">Invalid file or no PULSA data</string>
     <string name="server_title">Server</string>
-    <string name="server_default">Automatic (local network / default)</string>
+    <string name="server_default">Automatic (public server + local network)</string>
     <string name="server_hint">https://your-server:8081</string>
     <string name="server_saved">Server updated — everything will use the new address</string>
     <string name="server_online">Automatic online (reads the public URL from pulsaweb)</string>
-    <string name="server_opt_lan">Local network / default (192.168.100.7)</string>
+    <string name="server_opt_lan">Automatic (public server + local network)</string>
     <string name="server_opt_online">Automatic online (server public address)</string>
     <string name="server_opt_custom">Custom address</string>
     <string name="server_token">Server token</string>
