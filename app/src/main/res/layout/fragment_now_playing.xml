@@ -207,6 +207,16 @@
                 android:padding="10dp"
                 android:src="@drawable/ic_forward_15"
                 android:tint="@color/text_primary" />
+
+            <ImageButton
+                android:id="@+id/np_chapters"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/chapters"
+                android:padding="10dp"
+                android:src="@drawable/ic_chapters"
+                android:tint="@color/text_primary" />
         </LinearLayout>
 
         <com.pulsa.player.ui.AudioVisualizerView

@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.16):
-→ RESUMEN HABLADO DEL EPISODIO
-• Al terminar un episodio, la Virgin cuenta "lo que quedó" en 3 frases y enlaza con el siguiente de la serie.
-• Usa la IA cuando responde rápido; sin internet (o sin clave de IA) resume con la propia descripción del episodio — nunca se queda muda.
-• Para activar: Configuración → Resumen hablado del episodio (viene desactivado).</string>
+    <string name="changelog">Novedades de esta versión (5.10.17):
+→ CAPÍTULOS DEL EPISODIO
+• La mayoría de los podcasts trae el índice en la descripción ("00:00 Apertura, 03:20 El tema...").
+• En los episodios, el botón de listas de la fila de velocidad abre los capítulos; tocar uno salta directo hasta él.
+• Si la descripción no tiene capítulos, la app avisa — nada de listas vacías.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -674,6 +674,8 @@
     <string name="sect_dj_radio">Locutora de radio</string>
     <string name="podcast_summary">Resumen hablado del episodio</string>
     <string name="podcast_summary_desc">Al terminar un episodio, la Virgin resume "lo que quedó" y enlaza con el siguiente</string>
+    <string name="chapters">Capítulos</string>
+    <string name="chapters_empty">Este episodio no tiene capítulos.</string>
 
     <string name="tami_radio_title">Radio Virgin</string>
     <string name="tami_radio_badge">Modo radio de Virgin — todas tus canciones, sin parar</string>

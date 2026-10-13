@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.16):
-→ RESUMO FALADO DO EPISÓDIO
-• Ao terminar um episódio, a Virgin conta "o que ficou" em 3 frases e já emenda o próximo da série.
-• Usa a IA quando ela responde rápido; sem internet (ou sem chave da IA), ela resume pela própria descrição do episódio — nunca fica muda.
-• Para ligar: Configurações → Resumo falado do episódio (vem desligado).</string>
+    <string name="changelog">Novidades desta versão (5.10.17):
+→ CAPÍTULOS DO EPISÓDIO
+• A maioria dos podcasts traz o índice na descrição ("00:00 Abertura, 03:20 O assunto...").
+• Nos episódios, o botão de listas na linha de velocidade abre os capítulos; tocar num deles pula direto para lá.
+• Sem capítulos na descrição, o app avisa — nada de lista vazia.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -804,6 +804,8 @@
     <string name="sect_dj_radio">Locutora de rádio</string>
     <string name="podcast_summary">Resumo falado do episódio</string>
     <string name="podcast_summary_desc">Ao terminar um episódio, a Virgin resume "o que ficou" e já emenda o próximo</string>
+    <string name="chapters">Capítulos</string>
+    <string name="chapters_empty">Este episódio não tem capítulos.</string>
 
     <string name="tami_radio_title">Rádio Virgin</string>
     <string name="tami_radio_badge">Modo rádio da Virgin — todas as suas músicas, sem parar</string>

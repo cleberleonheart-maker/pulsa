@@ -36,6 +36,8 @@ import com.pulsa.player.dj.AvatarFavorites
 import com.pulsa.player.core.Settings
 import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.podcast.Chapters
+import com.pulsa.player.podcast.PodcastDb
 import kotlin.math.abs
 
 class NowPlayingFragment : Fragment() {
@@ -135,6 +137,7 @@ class NowPlayingFragment : Fragment() {
         view.findViewById<View>(R.id.np_rewind).setOnClickListener { podcastJump(-SEEK_15_MS) }
         view.findViewById<View>(R.id.np_forward).setOnClickListener { podcastJump(SEEK_15_MS) }
         speedView?.setOnClickListener { cyclePodcastSpeed() }
+        view.findViewById<View>(R.id.np_chapters).setOnClickListener { showChapters() }
 
         // Arrastar a capa para cima abre a fila (mesmo padrão de gesto do mini player).
         artSwipe = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
@@ -231,6 +234,30 @@ class NowPlayingFragment : Fragment() {
     private fun podcastJump(deltaMs: Long) {
         val song = Playback.currentSong ?: return
         if (song.durationMs > 0L) Playback.seekBy(deltaMs, song.durationMs)
+    }
+
+    /**
+     * F5 · Capítulos do episódio: lê a descrição do feed (que já tem o índice "00:00 ...") em
+     * background e abre a folha deles. Sem capítulos, avisa — o botão vive na linha do podcast
+     * justamente porque só episódio tem índice a oferecer.
+     */
+    private fun showChapters() {
+        val song = Playback.currentSong ?: return
+        val epId = song.podcastId ?: return
+        val app = requireContext().applicationContext
+        ThreadPool.post {
+            val desc = runCatching { PodcastDb.get(app).episode(epId)?.description }
+                .getOrNull().orEmpty()
+            val chapters = Chapters.parse(desc)
+            ThreadPool.onUi {
+                if (!isAdded) return@onUi
+                if (chapters.isEmpty()) {
+                    Toast.makeText(requireContext(), R.string.chapters_empty, Toast.LENGTH_SHORT).show()
+                    return@onUi
+                }
+                ChapterSheetFragment.show(parentFragmentManager, chapters, Playback.position, song.durationMs)
+            }
+        }
     }
 
     /**

@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.16):
-→ SPOKEN EPISODE SUMMARY
-• When an episode ends, Virgin tells you "what stuck" in 3 sentences and rolls straight into the next one in the series.
-• It uses the AI when it answers fast; offline (or without an AI key) it summarises from the episode description itself — never goes mute.
-• To turn on: Settings → Spoken episode summary (off by default).</string>
+    <string name="changelog">What is new (5.10.17):
+→ EPISODE CHAPTERS
+• Most podcasts ship the index in the description ("00:00 Intro, 03:20 The topic...").
+• On episodes, the list button in the speed row opens the chapters; tapping one jumps right to it.
+• If the description has no chapters, the app tells you — no empty list.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -674,6 +674,8 @@
     <string name="sect_dj_radio">Radio host</string>
     <string name="podcast_summary">Spoken episode summary</string>
     <string name="podcast_summary_desc">When an episode ends, Virgin sums up "what stuck" and rolls into the next one</string>
+    <string name="chapters">Chapters</string>
+    <string name="chapters_empty">This episode has no chapters.</string>
 
     <string name="tami_radio_title">Virgin Radio</string>
     <string name="tami_radio_badge">Virgin radio mode — all of your songs, non-stop</string>
