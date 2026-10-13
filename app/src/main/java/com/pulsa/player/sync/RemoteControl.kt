@@ -85,6 +85,7 @@ object RemoteControl {
                 conn.connectTimeout = 1000
                 conn.readTimeout = 1800
                 conn.setRequestProperty("X-Pulsa-Device", device)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
                 val http = conn.responseCode
                 val text = if (http == 200) conn.inputStream.bufferedReader().use { it.readText() } else ""
                 runCatching { conn.inputStream.close() }
@@ -111,6 +112,7 @@ object RemoteControl {
                     conn.readTimeout = 2000
                     conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                     conn.setRequestProperty("X-Pulsa-Device", target)
+                    conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
                     conn.doOutput = true
                     conn.setFixedLengthStreamingMode(body.toByteArray().size)
                     conn.outputStream.use { it.write(body.toByteArray()) }

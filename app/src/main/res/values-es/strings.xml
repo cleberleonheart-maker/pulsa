@@ -30,12 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.18):
-→ CONTROL DE SESIÓN (handoff)
-• La web de Pulsa ahora también es un reproductor controlable: al abrir muestra el código de sesión.
-• Configuración → Control de sesión: escribe el código y controla desde otro dispositivo (play/pause, anterior/siguiente, tiempo y volumen).
-• Escribe el código de la web y controla lo que suena desde el celular — y al revés.
-• El celular también controla otro Pulsa que suene en la misma sesión.</string>
+    <string name="changelog">Novedades de esta versión (5.10.19):
+→ SERVIDOR SEGURO (túnel/4G)
+• Todos los accesos al servidor ahora usan un token compartido (X-Pulsa-Token).
+• Configuración → Token del servidor: define la clave que la app usa para hablar con tu servidor.
+• Usa el mismo token en el servidor y en los otros dispositivos; la web entra con ?token=TU_TOKEN.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -845,4 +844,9 @@
     <string name="server_opt_lan">Red local / predeterminado (192.168.100.7)</string>
     <string name="server_opt_online">Online automático (dirección pública del túnel)</string>
     <string name="server_opt_custom">Dirección personalizada</string>
+    <string name="server_token">Token del servidor</string>
+    <string name="server_token_subtitle">Clave de acceso a tu servidor. Usa el mismo token en los otros dispositivos y en el servidor.</string>
+    <string name="server_token_hint">Pega aquí el token del servidor</string>
+    <string name="server_token_saved">¡Token guardado!</string>
+    <string name="server_token_missing">Predeterminado de la app (sin token propio)</string>
 </resources>

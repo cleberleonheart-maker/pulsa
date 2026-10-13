@@ -140,6 +140,8 @@ class SettingsActivity : AppCompatActivity() {
         refreshRemoteLabel()
         findViewById<View>(R.id.server_row).setOnClickListener { serverDialog() }
         refreshServerLabel()
+        findViewById<View>(R.id.server_token_row).setOnClickListener { promptServerToken() }
+        refreshServerToken()
         findViewById<View>(R.id.backup_row).setOnClickListener {
             backupLauncher.launch("pulsa-backup.json")
         }
@@ -722,6 +724,39 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun refreshServerToken() {
+        val label = viewOrNull<TextView>(R.id.server_token_value)
+        label?.text = if (Settings.hasCustomTelemetryToken(this)) {
+            getString(R.string.server_token_saved)
+        } else {
+            getString(R.string.server_token_missing)
+        }
+    }
+
+    private fun promptServerToken() {
+        val input = EditText(this).apply {
+            if (Settings.hasCustomTelemetryToken(this@SettingsActivity)) {
+                setText(Settings.telemetryToken(this@SettingsActivity))
+            }
+            hint = getString(R.string.server_token_hint)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            maxLines = 1
+            isSingleLine = true
+            setPadding(48, 16, 48, 16)
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.server_token)
+            .setMessage(R.string.server_token_subtitle)
+            .setView(input)
+            .setPositiveButton(R.string.save) { _, _ ->
+                Settings.setTelemetryToken(this, input.text.toString().trim())
+                refreshServerToken()
+                Toast.makeText(this, R.string.server_token_saved, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     private fun sessionCall(body: String): String {
         val device = Settings.deviceId(this)
         for (base in sessionHosts()) {
@@ -732,6 +767,7 @@ class SettingsActivity : AppCompatActivity() {
                 conn.readTimeout = 2500
                 conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 conn.setRequestProperty("X-Pulsa-Device", device)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(this))
                 conn.doOutput = true
                 conn.setFixedLengthStreamingMode(body.toByteArray().size)
                 conn.outputStream.use { it.write(body.toByteArray()) }
@@ -754,6 +790,7 @@ class SettingsActivity : AppCompatActivity() {
                 conn.connectTimeout = 2000
                 conn.readTimeout = 2500
                 conn.setRequestProperty("X-Pulsa-Device", device)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(this))
                 val text = conn.inputStream.bufferedReader().use { it.readText() }
                 conn.inputStream.close()
                 return text

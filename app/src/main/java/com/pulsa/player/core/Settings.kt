@@ -221,6 +221,12 @@ object Settings {
     fun telemetryToken(context: Context): String =
         secret(context, "telemetry_token").ifEmpty { DEFAULT_TELEMETRY_TOKEN }
 
+    fun setTelemetryToken(context: Context, value: String) =
+        setSecret(context, "telemetry_token", value)
+
+    fun hasCustomTelemetryToken(context: Context): Boolean =
+        secret(context, "telemetry_token").isNotEmpty()
+
     fun setAccent(context: Context, value: String) {
         prefs(context).edit().putString("accent", value).apply()
     }

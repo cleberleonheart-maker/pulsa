@@ -39,6 +39,7 @@ object ConfirmMail {
                 conn.readTimeout = 2500
                 conn.doOutput = true
                 conn.setFixedLengthStreamingMode(params.toByteArray().size)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(context))
                 conn.outputStream.use { it.write(params.toByteArray()) }
                 val code = conn.responseCode
                 val text = runCatching {

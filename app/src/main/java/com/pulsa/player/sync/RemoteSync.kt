@@ -216,6 +216,7 @@ object RemoteSync {
                 conn.connectTimeout = 800
                 conn.readTimeout = 1500
                 conn.setRequestProperty("X-Pulsa-Device", device)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
                 val code = conn.responseCode
                 val text = if (code == 200) {
                     conn.inputStream.bufferedReader().use { it.readText() }
@@ -243,6 +244,7 @@ object RemoteSync {
                 conn.connectTimeout = 800
                 conn.readTimeout = 1500
                 conn.setRequestProperty("X-Pulsa-Device", device)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
                 val code = conn.responseCode
                 val text = if (code == 200) conn.inputStream.bufferedReader().use { it.readText() } else ""
                 conn.inputStream.close()
@@ -334,6 +336,7 @@ object RemoteSync {
                 conn.doOutput = true
                 conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 conn.setRequestProperty("X-Pulsa-Device", device)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
                 conn.setFixedLengthStreamingMode(payload.size)
                 conn.outputStream.use { it.write(payload) }
                 conn.inputStream.close()

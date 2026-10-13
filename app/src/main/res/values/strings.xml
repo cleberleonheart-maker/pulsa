@@ -33,12 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.18):
-→ CONTROLE DE SESSÃO (handoff)
-• A web do Pulsa agora também é um player comandável: ao abrir, ela mostra o código da sessão.
-• Configurações → Controle de sessão: digite o código e comande de outro aparelho (play/pause, anterior/próxima, tempo e volume).
-• Digite o código da web e controle o que ela toca pelo celular — e vice-versa.
-• O celular também controla outro Pulsa que esteja tocando na mesma sessão.</string>
+    <string name="changelog">Novidades desta versão (5.10.19):
+→ SERVIDOR SEGURO (túnel/4G)
+• Todos os acessos ao servidor agora usam um token compartilhado (X-Pulsa-Token).
+• Configurações → Token do servidor: defina a chave que o app usa para falar com o seu servidor.
+• Use o mesmo token no servidor e nos outros aparelhos; a web entra com ?token=SEU_TOKEN.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -1066,4 +1065,9 @@
     <string name="server_opt_lan">Rede local / padrão (192.168.100.7)</string>
     <string name="server_opt_online">Online automático (endereço público do túnel)</string>
     <string name="server_opt_custom">Endereço personalizado</string>
+    <string name="server_token">Token do servidor</string>
+    <string name="server_token_subtitle">Chave de acesso ao seu servidor. Use o mesmo token nos outros aparelhos e no servidor.</string>
+    <string name="server_token_hint">Cole aqui o token do servidor</string>
+    <string name="server_token_saved">Token salvo!</string>
+    <string name="server_token_missing">Padrão do app (sem token próprio)</string>
 </resources>

@@ -174,6 +174,7 @@ object MirrorSync {
                 conn.connectTimeout = 800
                 conn.readTimeout = 1500
                 conn.setRequestProperty("X-Pulsa-Device", device)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
                 val codeHttp = conn.responseCode
                 val text = if (codeHttp == 200) {
                     conn.inputStream.bufferedReader().use { it.readText() }
