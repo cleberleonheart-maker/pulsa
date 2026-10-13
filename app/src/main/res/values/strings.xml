@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.21):
-→ SERVIDOR JÁ VEM PRONTO
-• O app agora traz o endereço do servidor embutido e encontra sozinho — sem depender do pulsaweb nem digitar endereço.
-• O modo Automático já fala com o servidor público e cai na rede local quando ela está disponível.
-• Só falta o token (Configurações → Token do servidor).</string>
+    <string name="changelog">Novidades desta versão (5.10.22):
+→ OUVIR JUNTOS FUNCIONA DE VERDADE
+• Corrigido: os comandos do controle remoto e do espelho tocavam no aparelho errado — agora o play/pause/next chegam e tocam no celular.
+• Ao escolher uma música na web, o celular toca junto quando tem o arquivo.
+• O botão do DJ agora mostra o papel certo ("escutando com o DJ" em quem entra).</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>

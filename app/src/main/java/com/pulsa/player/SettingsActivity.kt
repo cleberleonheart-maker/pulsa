@@ -511,7 +511,7 @@ class SettingsActivity : AppCompatActivity() {
                             return@runOnUiThread
                         }
                         Settings.setMirrorCode(this, code)
-                        Settings.setMirrorHost(this, true)
+                        Settings.setMirrorHost(this, false)
                         MirrorSync.start(this)
                         refreshMirrorLabel()
                         Toast.makeText(this, getString(R.string.mirror_joined, code), Toast.LENGTH_SHORT).show()

@@ -84,6 +84,15 @@ object MirrorSync {
             stop()
             return
         }
+        // A busca roda na thread de rede, mas o ExoPlayer foi criado no `onCreate` do service
+        // (thread principal): aplicar o estado (play/pause/seek/start) de qualquer outra thread
+        // estoura "wrong thread" e a música fica parada. Então a decisão é tomada na main.
+        handler.post {
+            if (running) applyInfo(ctx, info)
+        }
+    }
+
+    private fun applyInfo(ctx: Context, info: JSONObject) {
         val state = info.optJSONObject("state") ?: return
         val hostPlaying = state.optBoolean("playing", false)
         val current = state.optJSONObject("current")

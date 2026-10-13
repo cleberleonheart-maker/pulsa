@@ -262,34 +262,40 @@ object RemoteSync {
     private fun execute(ctx: Context, o: JSONObject) {
         val cmd = o.optString("cmd", "").lowercase()
         val value = o.opt("value")
-        try {
-            when (cmd) {
-                "toggle" -> Playback.toggle()
-                "play" -> if (!Playback.isPlaying) Playback.toggle()
-                "pause" -> if (Playback.isPlaying) Playback.toggle()
-                "next" -> Playback.next()
-                "prev" -> Playback.prev()
-                "seek" -> Playback.seekTo((value as? Number)?.toLong() ?: 0L)
-                "shuffle" -> Playback.setShuffle(toBool(value))
-                "repeat" -> Playback.cycleRepeat()
-                "volume" -> setStreamVolume(ctx, toFloat01(value))
-                "play_song" -> {
-                    val song = resolveSong(ctx, value?.toString() ?: "")
-                    if (song != null) Playback.start(listOf(song), 0)
-                }
-                "play_rewind" -> {
-                    val list = mutableListOf<Song>()
-                    when (value) {
-                        is JSONArray -> for (i in 0 until value.length()) {
-                            resolveSong(ctx, value.optString(i))?.let { list.add(it) }
-                        }
-                        else -> resolveSong(ctx, value?.toString() ?: "")?.let { list.add(it) }
+        // O tick roda na thread de rede, mas o ExoPlayer foi criado no `onCreate` do service
+        // (thread principal): mexer nele daqui estoura "wrong thread" e o comando se perde em
+        // silêncio. Por isso o comando é despachado de volta pra main — igual já fazemos pra
+        // LER o estado (capturePlayerState).
+        handler.post {
+            try {
+                when (cmd) {
+                    "toggle" -> Playback.toggle()
+                    "play" -> if (!Playback.isPlaying) Playback.toggle()
+                    "pause" -> if (Playback.isPlaying) Playback.toggle()
+                    "next" -> Playback.next()
+                    "prev" -> Playback.prev()
+                    "seek" -> Playback.seekTo((value as? Number)?.toLong() ?: 0L)
+                    "shuffle" -> Playback.setShuffle(toBool(value))
+                    "repeat" -> Playback.cycleRepeat()
+                    "volume" -> setStreamVolume(ctx, toFloat01(value))
+                    "play_song" -> {
+                        val song = resolveSong(ctx, value?.toString() ?: "")
+                        if (song != null) Playback.start(listOf(song), 0)
                     }
-                    if (list.isNotEmpty()) Playback.start(list, 0)
+                    "play_rewind" -> {
+                        val list = mutableListOf<Song>()
+                        when (value) {
+                            is JSONArray -> for (i in 0 until value.length()) {
+                                resolveSong(ctx, value.optString(i))?.let { list.add(it) }
+                            }
+                            else -> resolveSong(ctx, value?.toString() ?: "")?.let { list.add(it) }
+                        }
+                        if (list.isNotEmpty()) Playback.start(list, 0)
+                    }
                 }
+                Telemetry.log(ctx, "CMD exec=$cmd")
+            } catch (t: Throwable) {
             }
-            Telemetry.log(ctx, "CMD exec=$cmd")
-        } catch (t: Throwable) {
         }
     }
 
