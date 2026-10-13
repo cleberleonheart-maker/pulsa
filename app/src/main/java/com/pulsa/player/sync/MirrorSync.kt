@@ -26,8 +26,13 @@ import kotlin.math.abs
  */
 object MirrorSync {
 
-    private const val INTERVAL_MS = 4_000L
-    private const val MAX_DRIFT_MS = 6_000L
+    private const val INTERVAL_MS = 3_000L
+
+    /** Desvio tolerado antes de reposicionar a faixa. Menor que isto causa glitches; maior deixa audível a defasagem. */
+    private const val SEEK_THRESHOLD_MS = 500L
+
+    /** Limite de sanidade ao projetar a posição do host pra agora (relógios diferentes viram lixo). */
+    private const val MAX_AGE_MS = 10_000L
 
     private fun hosts(): List<String> {
         val ctx = appContext
@@ -109,18 +114,35 @@ object MirrorSync {
             playHostSong(ctx, current, state.optJSONArray("queue"))
             return
         }
-        // Mesma faixa: sincroniza posição e play/pause.
-        if (hostPos >= 0L && abs(Playback.position - hostPos) > MAX_DRIFT_MS) {
-            if (abs(hostPos - lastSeekPos) > MAX_DRIFT_MS) {
-                Playback.seekTo(hostPos)
-                lastSeekPos = hostPos
+        // Mesma faixa: alinha posição e play/pause. A posição do host vem com carimbo de
+        // tempo (ts), então projetamos pra agora — sem isso o celular fica alguns segundos
+        // à frente/atrás por causa do tempo entre o host publicar e a gente consultar.
+        val hostNow = hostPositionNow(state, hostPos, hostPlaying)
+        if (hostPlaying) {
+            if (!Playback.isPlaying) {
+                // Começa já alinhado, em vez de tocar do zero e só corrigir no próximo tick.
+                if (hostNow >= 0L) Playback.seekTo(hostNow)
+                Playback.toggle()
+                lastSeekPos = hostNow
+            } else if (hostNow >= 0L && abs(Playback.position - hostNow) > SEEK_THRESHOLD_MS) {
+                if (abs(hostNow - lastSeekPos) > SEEK_THRESHOLD_MS) {
+                    Playback.seekTo(hostNow)
+                    lastSeekPos = hostNow
+                }
             }
-        }
-        if (hostPlaying && !Playback.isPlaying) {
-            Playback.toggle()
-        } else if (!hostPlaying && Playback.isPlaying) {
+        } else if (Playback.isPlaying) {
             Playback.pause()
         }
+    }
+
+    /** Posição em que o host deve estar agora: soma o tempo decorrido desde o ts do estado. */
+    private fun hostPositionNow(state: JSONObject, hostPos: Long, hostPlaying: Boolean): Long {
+        if (hostPos < 0L) return -1L
+        if (!hostPlaying) return hostPos
+        val ts = state.optLong("ts", 0L)
+        if (ts <= 0L) return hostPos
+        val age = System.currentTimeMillis() - ts
+        return if (age in 0..MAX_AGE_MS) hostPos + age else hostPos
     }
 
     private fun playHostSong(ctx: Context, current: JSONObject, queueJson: JSONArray?) {

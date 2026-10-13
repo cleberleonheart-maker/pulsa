@@ -30,13 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.23):
-→ ESCUCHAR JUNTOS FUNCIONA DE VERDAD
-• Corregido: los comandos del control remoto y del espejo sonaban en el aparato equivocado — ahora play/pausa/siguiente llegan y suenan en el móvil.
-• Al elegir una canción en la web, el móvil suena junto si tiene el archivo.
-• El botón del DJ ahora muestra el rol correcto ("escuchando con el DJ" para quien entra).
-→ LA ACTUALIZACIÓN YA NO DESAPARECE
-• Si la instalación queda pendiente o falla, la app vuelve a ofrecer la actualización en el próximo arranque (ya no se esconde 12h) y reutiliza la descarga ya hecha.</string>
+    <string name="changelog">Novedades de esta versión (5.10.24):
+→ ESCUCHAR JUNTOS MEJOR ALINEADO
+• El móvil ahora reposiciona la canción en el mismo punto que la web. Antes solo corregía diferencias de más de 6 segundos, así que quedaba unos segundos adelantado.
+• Cuando empieza a sonar, ya entra en el punto correcto (ya no empieza desde cero).
+• La comprobación es más frecuente (cada 3 segundos).</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
