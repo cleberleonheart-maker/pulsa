@@ -349,6 +349,20 @@ object Settings {
         prefs(context).edit().putFloat("podcast_speed", value.coerceIn(0.5f, 2.0f)).apply()
     }
 
+    /**
+     * F5 — sumário falado do episódio ao terminar ("o que ficou").
+     *
+     * Padrão `false`: é um recurso que **fala no ouvido** logo depois do último segundo, e
+     * ligá-lo sozinho transformaria um player silencioso num que te interrompe toda vez que um
+     * episódio acaba. Quem quer a Virgin resumindo, liga.
+     */
+    fun podcastSummary(context: Context): Boolean =
+        prefs(context).getBoolean("podcast_summary", false)
+
+    fun setPodcastSummary(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("podcast_summary", value).apply()
+    }
+
     /** Quantas vezes o usuário mexeu na velocidade (vídeo ou episódio) — vira fala da Virgin. */
     fun speedUses(context: Context): Int = prefs(context).getInt("speed_uses", 0)
 

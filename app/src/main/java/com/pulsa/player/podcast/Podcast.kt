@@ -81,3 +81,22 @@ data class Episode(
     val finished: Boolean get() =
         played || (durationSec > 0 && positionMs > 0 && positionMs >= durationSec * 900L)
 }
+
+/**
+ * Qual episódio tocar em seguida numa maratona, dado o atual e os candidatos.
+ *
+ * Pura de propósito: é a regra que decide a ordem do "próximo da série" tanto na fila
+ * automática quanto no sumário falado, e regra de produto merece teste, não `if` perdido
+ * num worker.
+ *
+ * A ordem é **de trás pra frente**: o podcast se ouve do mais antigo para o mais novo, então
+ * o "próximo" natural é o imediatamente mais recente **anterior** ao que acabou. Se não há
+ * anterior (o usuário começou pelo mais velho do feed), pega o mais novo seguinte — o caso de
+ * quem retomou de um episódio antigo e quer seguir dali.
+ *
+ * Espera [candidates] já filtrados (mesmo feed, não ouvidos, sem o atual); a filtragem vive
+ * em quem chama, porque a fonte dos candidatos muda entre a fila e o resumo.
+ */
+fun nextEpisodeToPlay(candidates: List<Episode>, current: Episode): Episode? =
+    candidates.filter { it.publishedAt < current.publishedAt }.maxByOrNull { it.publishedAt }
+        ?: candidates.filter { it.publishedAt > current.publishedAt }.minByOrNull { it.publishedAt }

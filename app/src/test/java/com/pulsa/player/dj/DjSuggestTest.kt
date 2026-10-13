@@ -112,4 +112,43 @@ class DjSuggestTest {
         assertNull(DjSuggest.answerFrom(emptyList()))
         assertNull(DjSuggest.answerFrom(listOf(DjSuggest.Part("   ", thought = false))))
     }
+
+    // -- F5 · Sumário falado de episódio ------------------------------------------------
+
+    @Test
+    fun limpa_tags_e_entidades_da_descricao_do_feed() {
+        val raw = "<p>Bom dia &amp; boa sorte!</p> <a href=\"x\">link</a> &#39;Veja&#39;"
+        val clean = DjSuggest.cleanDescription(raw)
+        assertEquals("Bom dia & boa sorte! link 'Veja'", clean)
+    }
+
+    @Test
+    fun resumo_offline_pega_as_tres_primeiras_frases_sem_html() {
+        val desc = "<p>Primeira coisa importante aconteceu ontem.</p>" +
+            "<p>Depois falamos sobre cafe e sobre a chuva que caiu.</p>" +
+            "<p>Terceira ideia veio do ouvinte e rendeu debate.</p>" +
+            "<p>Uma quarta frase que nao deve aparecer no resumo.</p>"
+        val out = DjSuggest.offlineSummary(desc)
+        assertNotNull(out)
+        assertTrue(!out!!.contains("<"))
+        assertTrue(out.contains("Primeira coisa importante"))
+        assertTrue(out.contains("Terceira ideia"))
+        assertTrue(!out.contains("quarta frase"))
+    }
+
+    @Test
+    fun resumo_offline_sem_descricao_devolve_nada() {
+        assertNull(DjSuggest.offlineSummary(""))
+        assertNull(DjSuggest.offlineSummary("   \n  "))
+        assertNull(DjSuggest.offlineSummary("<p></p>"))
+    }
+
+    @Test
+    fun prompt_do_resumo_leva_titulo_e_descricao_e_pede_tres_frases() {
+        val prompt = DjSuggest.summaryPrompt("Episodio 12", "<p>Falamos de tudo um pouco.</p>")
+        assertTrue(prompt.contains("Episodio 12"))
+        assertTrue(prompt.contains("Falamos de tudo um pouco."))
+        assertTrue(!prompt.contains("<p>"))
+        assertTrue(prompt.contains("três frases"))
+    }
 }

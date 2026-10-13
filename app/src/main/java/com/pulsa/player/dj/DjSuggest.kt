@@ -174,7 +174,7 @@ object DjSuggest {
         }
     }
 
-    fun generate(context: Context, prompt: String, maxTokens: Int = 250): String? {
+    fun generate(context: Context, prompt: String, maxTokens: Int = 250, timeoutMs: Int = 20000): String? {
         val key = Settings.geminiKey(context)
         if (key.isBlank()) return null
 
@@ -191,8 +191,8 @@ object DjSuggest {
             val url = URL("https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
-            conn.connectTimeout = 20000
-            conn.readTimeout = 20000
+            conn.connectTimeout = timeoutMs
+            conn.readTimeout = timeoutMs
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("x-goog-api-key", key)
@@ -254,5 +254,90 @@ object DjSuggest {
             appendLine(songs.take(40).joinToString("\n") { "${it.title} - ${it.artist}" })
         }
         return generate(context, prompt, maxTokens = 220)
+    }
+
+    /**
+     * F5 · Sumário falado de episódio — o "o que ficou".
+     *
+     * Prompt no mesmo tom da persona (português, primeira pessoa, fala curta). Pede **três
+     * frases** porque é o que a voz da Virgin aguenta sem virar palestra no meio da fila.
+     * A descrição do feed costuma ser longa e cheia de markdown/links, então entra truncada.
+     */
+    fun summaryPrompt(title: String, description: String): String = buildString {
+        append(DjIdentity.personalityPrompt())
+        appendLine()
+        appendLine("O usuário acabou de ouvir este episódio de podcast.")
+        appendLine("Resuma \"o que ficou\" em EXATAMENTE três frases curtas, faladas, na primeira pessoa,")
+        appendLine("como quem puxa conversa no volante. Sem listas, sem markdown, sem aspas, sem títulos.")
+        appendLine("Não comece com 'Neste episódio'; fale direto com o ouvinte.")
+        appendLine()
+        appendLine("Título: " + title.take(200))
+        append("Descrição: ").append(cleanDescription(description).take(1500))
+    }
+
+    /**
+     * Sumário OFFLINE a partir da descrição do feed: as primeiras frases, sem a marcação.
+     *
+     * É o que sobra quando a IA está desligada, sem chave ou lenta. Não é tão redondo quanto
+     * o do Gemini, mas nunca deixa o "ao terminar" mudo — e funciona no túnel, sem rede.
+     */
+    fun offlineSummary(description: String, maxSentences: Int = 3): String? {
+        val clean = cleanDescription(description)
+        if (clean.isBlank()) return null
+        val sentences = clean.split(Regex("(?<=[.!?])\\s+"))
+            .map { it.trim() }
+            .filter { it.length >= 15 }
+        val joined = sentences.take(maxSentences).joinToString(" ").trim()
+        if (joined.isNotBlank()) return joined
+        return clean.take(300).trim().ifBlank { null }
+    }
+
+    /**
+     * Resumo do episódio para a Virgin falar, com a IA quando ela responder rápido e o texto
+     * da descrição como rede de segurança.
+     *
+     * A espera é **curta e limitada** (padrão 1,5 s): este texto sai logo depois do último
+     * segundo do episódio, e o próximo da fila só começa quando a fala termina. Deixar a
+     * chamada do Gemini segurar a virada por 20 s seria um silêncio pior que a fala boa.
+     */
+    fun summarizeEpisode(
+        context: Context,
+        title: String,
+        description: String,
+        waitMs: Long = 1500
+    ): String? {
+        val offline = offlineSummary(description)
+        if (!isReady(context)) return offline
+        val task = java.util.concurrent.FutureTask { episodeSummary(context, title, description) }
+        Thread(task, "pulsa-summary").start()
+        val ai = runCatching {
+            task.get(waitMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+        }.getOrNull()
+        return ai?.trim()?.ifBlank { null } ?: offline
+    }
+
+    /** Só o texto do Gemini para o resumo; `null` quando a IA não está pronta ou falha. */
+    fun episodeSummary(context: Context, title: String, description: String): String? {
+        if (!isReady(context)) return null
+        val prompt = summaryPrompt(title, description)
+        return generate(context, prompt, maxTokens = 400, timeoutMs = 8000)?.trim()?.ifBlank { null }
+    }
+
+    /**
+     * Limpa a descrição do feed: tira tags, decodifica as entidades mais comuns e junta os
+     * espaços. Sem isso a IA (e o resumo offline) recebem `<p>` e `&#39;` como se fossem texto,
+     * e a fala sai lendo pontuação de HTML.
+     */
+    fun cleanDescription(raw: String): String {
+        val noTags = Regex("<[^>]*>").replace(raw, " ")
+        val decoded = noTags
+            .replace("&nbsp;", " ")
+            .replace("&#39;", "'")
+            .replace("&apos;", "'")
+            .replace("&quot;", "\"")
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+        return decoded.replace(Regex("\\s+"), " ").trim()
     }
 }

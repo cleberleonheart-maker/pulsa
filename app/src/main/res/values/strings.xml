@@ -33,10 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.15):
-→ MODO PODCAST NO EQ
-• Episódio de podcast agora tem preset de voz próprio: corta o grave que cansa, realça a voz e corta os 2–4 kHz que azedam a fala.
-• No modo automático ele já entra sozinho no podcast; e dá pra escolher "Podcast" na mão em Configurações → Qualidade de áudio.</string>
+    <string name="changelog">Novidades desta versão (5.10.16):
+→ RESUMO FALADO DO EPISÓDIO
+• Ao terminar um episódio, a Virgin conta "o que ficou" em 3 frases e já emenda o próximo da série.
+• Usa a IA quando ela responde rápido; sem internet (ou sem chave da IA), ela resume pela própria descrição do episódio — nunca fica muda.
+• Para ligar: Configurações → Resumo falado do episódio (vem desligado).</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -592,6 +593,8 @@
     <string name="dj_voice_clean_auto">Fiz uma limpeza no offline: apaguei %2$d baixados antigos e liberei %1$s de espaço.</string>
     <string name="dj_voice_speed">velocidade %1$s</string>
     <string name="dj_voice_speed_fan">você adora acelerar, hein? deixo assim então</string>
+    <string name="dj_episode_summary_lead">O que ficou:</string>
+    <string name="dj_episode_summary_next"> A seguir, %1$s.</string>
 
 
     <string name="dj_voice_mix">Claro! Preparando um mix novo para você.</string>
@@ -799,6 +802,8 @@
 
     <string name="dj_radio">Locutora (curiosidades entre as músicas)</string>
     <string name="sect_dj_radio">Locutora de rádio</string>
+    <string name="podcast_summary">Resumo falado do episódio</string>
+    <string name="podcast_summary_desc">Ao terminar um episódio, a Virgin resume "o que ficou" e já emenda o próximo</string>
 
     <string name="tami_radio_title">Rádio Virgin</string>
     <string name="tami_radio_badge">Modo rádio da Virgin — todas as suas músicas, sem parar</string>

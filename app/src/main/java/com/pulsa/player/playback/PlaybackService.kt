@@ -56,6 +56,7 @@ import com.pulsa.player.audio.AudioFx
 import com.pulsa.player.audio.SpatialAudio
 import com.pulsa.player.audio.SpatialRenderersFactory
 import com.pulsa.player.dj.DjFacts
+import com.pulsa.player.dj.DjSuggest
 import com.pulsa.player.dj.DjVoice
 import com.pulsa.player.sync.LastFm
 import com.pulsa.player.widget.PulsaWidget
@@ -68,6 +69,7 @@ import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.podcast.PodcastCache
 import com.pulsa.player.podcast.PodcastDb
+import com.pulsa.player.podcast.nextEpisodeToPlay
 import com.pulsa.player.dj.DjLearn
 import java.io.File
 import kotlin.random.Random
@@ -1502,15 +1504,8 @@ class PlaybackService : MediaLibraryService() {
             val current = runCatching { db.episode(epId) }.getOrNull() ?: return@post
             val unplayed = runCatching { db.unplayed(current.podcastId) }.getOrDefault(emptyList())
             val candidates = unplayed.filter { it.id != epId && !it.finished }
-            // Maratona natural: a imediatamente mais recente ANTERIOR à atual (ouvir de
-            // trás pra frente é o fluxo comum do podcast). Se não há anterior, pega a
-            // imediatamente mais nova — o caso de quem retomou de um episódio antigo.
-            val next = candidates
-                .filter { it.publishedAt < current.publishedAt }
-                .maxByOrNull { it.publishedAt }
-                ?: candidates.filter { it.publishedAt > current.publishedAt }
-                    .minByOrNull { it.publishedAt }
-                ?: return@post
+            // Maratona natural: a regra é a mesma do "próximo da série" (ver nextEpisodeToPlay).
+            val next = nextEpisodeToPlay(candidates, current) ?: return@post
             val feedTitle = runCatching { db.feed(current.podcastId)?.title }
                 .getOrNull() ?: song.artist
             val nextSong = runCatching { db.toSong(feedTitle, next) }.getOrNull() ?: return@post
@@ -1868,6 +1863,13 @@ class PlaybackService : MediaLibraryService() {
             startSleepFade()
             return
         }
+        // F5 · Sumário falado: quando o episódio acabou de verdade (não é loop A-B nem "repetir
+        // uma", que voltam ao início logo acima), a Virgin resume "o que ficou" e só então a
+        // fila vira. Segurar a virada é o que impede a fala de começar por cima da próxima faixa.
+        maybeSpeakEpisodeSummary { advanceOrStop() }
+    }
+
+    private fun advanceOrStop() {
         if (repeatAll || index < queue.lastIndex) {
             advanceIndex(1)
         } else {
@@ -1876,6 +1878,64 @@ class PlaybackService : MediaLibraryService() {
             try {
                 player?.seekTo(0)
             } catch (e: Exception) {
+            }
+        }
+    }
+
+    /** Evita resumir o mesmo episódio duas vezes se o fim disparar mais de uma vez. */
+    private var summarySpokenForId = -1L
+
+    /**
+     * Resume o episódio em voz alta antes de seguir, quando o recurso está ligado.
+     *
+     * Todo o trabalho pesado (ler a descrição no banco, eventual chamada ao Gemini) roda fora
+     * da thread principal, porque `onTrackEnded` é chamado do listener do player. A fala só
+     * começa quando o texto chega; [onContinue] — a virada da fila — sai no `onDone` da voz,
+     * ou na hora, se não houver o que dizer, se a voz não subir ou se o resumo falhar.
+     */
+    private fun maybeSpeakEpisodeSummary(onContinue: () -> Unit) {
+        val song = currentSong
+        if (song == null || !song.isPodcast) { onContinue(); return }
+        if (!Settings.podcastSummary(this)) { onContinue(); return }
+        val epId = song.podcastId ?: run { onContinue(); return }
+        if (song.id == summarySpokenForId) { onContinue(); return }
+        summarySpokenForId = song.id
+
+        val app = applicationContext
+        val songId = song.id
+        // A virada só pode acontecer se o episódio resumido ainda for o atual: se o usuário
+        // pulou na mão enquanto o texto vinha, quem manda é o pulo dele, não o resumo.
+        val proceed = Runnable { if (currentSong?.id == songId) onContinue() }
+        ThreadPool.post {
+            val db = runCatching { PodcastDb.get(app) }.getOrNull()
+            val ep = db?.let { runCatching { it.episode(epId) }.getOrNull() }
+            val description = ep?.description.orEmpty()
+            val summary = DjSuggest.summarizeEpisode(app, song.title, description)
+
+            val nextTitle = runCatching {
+                if (ep == null) null else {
+                    val unplayed = db.unplayed(ep.podcastId)
+                    val next = nextEpisodeToPlay(unplayed.filter { it.id != epId && !it.finished }, ep)
+                    next?.title
+                }
+            }.getOrNull()
+
+            ThreadPool.onUi {
+                if (summary.isNullOrBlank()) { proceed.run(); return@onUi }
+                val voice = bgVoice ?: DjVoice(
+                    this, Settings.languageTag(Settings.language(this))
+                ).also { bgVoice = it }
+                val text = buildString {
+                    append(getString(R.string.dj_episode_summary_lead))
+                    append(' ')
+                    append(summary)
+                    if (!nextTitle.isNullOrBlank()) {
+                        append(getString(R.string.dj_episode_summary_next, nextTitle))
+                    }
+                }
+                voice.init { ready ->
+                    if (ready) voice.speak(text, onDone = { proceed.run() }) else proceed.run()
+                }
             }
         }
     }

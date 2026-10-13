@@ -30,10 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.15):
-→ PODCAST EQ MODE
-• Podcast episodes now get their own voice preset: trims the tiring low end, lifts the voice and cuts the 2–4 kHz that make speech harsh.
-• On automatic it kicks in by itself for podcasts; you can also pick "Podcast" by hand in Settings → Audio quality.</string>
+    <string name="changelog">What is new (5.10.16):
+→ SPOKEN EPISODE SUMMARY
+• When an episode ends, Virgin tells you "what stuck" in 3 sentences and rolls straight into the next one in the series.
+• It uses the AI when it answers fast; offline (or without an AI key) it summarises from the episode description itself — never goes mute.
+• To turn on: Settings → Spoken episode summary (off by default).</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -567,6 +568,8 @@
     <string name="dj_voice_clean_auto">I cleaned up offline media: deleted %2$d old downloads and freed %1$s.</string>
     <string name="dj_voice_speed">speed %1$s</string>
     <string name="dj_voice_speed_fan">you love speeding up, huh? keeping it then</string>
+    <string name="dj_episode_summary_lead">Here is what stuck:</string>
+    <string name="dj_episode_summary_next"> Up next, %1$s.</string>
 
 
     <string name="dj_voice_mix">Sure! Preparing a new mix for you.</string>
@@ -669,6 +672,8 @@
     <string name="skin_nebula">Nebula theme on.</string>
     <string name="dj_radio">Radio host (fun facts between songs)</string>
     <string name="sect_dj_radio">Radio host</string>
+    <string name="podcast_summary">Spoken episode summary</string>
+    <string name="podcast_summary_desc">When an episode ends, Virgin sums up "what stuck" and rolls into the next one</string>
 
     <string name="tami_radio_title">Virgin Radio</string>
     <string name="tami_radio_badge">Virgin radio mode — all of your songs, non-stop</string>

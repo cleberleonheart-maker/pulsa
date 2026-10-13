@@ -212,6 +212,13 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        findViewById<MaterialSwitch>(R.id.podcast_summary_switch).apply {
+            isChecked = Settings.podcastSummary(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setPodcastSummary(this@SettingsActivity, checked)
+            }
+        }
+
         // Gestos (shake/inclinacao): o interruptor nao existia, entao `Settings.gesturesOn`
         // ficava sempre false e o recurso era inalcancavel. Aqui so grava a escolha: quem
         // registra o sensor e a MainActivity, no onResume, via `attachIfEnabled` — assim o

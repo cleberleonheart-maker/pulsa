@@ -30,10 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.15):
-→ MODO PODCAST EN EL EQ
-• Los episodios de podcast ahora tienen su propio preset de voz: recorta los graves que cansan, realza la voz y corta los 2–4 kHz que vuelven áspera la habla.
-• En automático entra solo para los podcasts; también puedes elegir "Podcast" a mano en Configuración → Calidad de audio.</string>
+    <string name="changelog">Novedades de esta versión (5.10.16):
+→ RESUMEN HABLADO DEL EPISODIO
+• Al terminar un episodio, la Virgin cuenta "lo que quedó" en 3 frases y enlaza con el siguiente de la serie.
+• Usa la IA cuando responde rápido; sin internet (o sin clave de IA) resume con la propia descripción del episodio — nunca se queda muda.
+• Para activar: Configuración → Resumen hablado del episodio (viene desactivado).</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -567,6 +568,8 @@
     <string name="dj_voice_clean_auto">Hice una limpieza del offline: borré %2$d descargas antiguas y liberé %1$s de espacio.</string>
     <string name="dj_voice_speed">velocidad %1$s</string>
     <string name="dj_voice_speed_fan">te encanta acelerar, ¿eh? lo dejo así pues</string>
+    <string name="dj_episode_summary_lead">Lo que quedó:</string>
+    <string name="dj_episode_summary_next"> A seguir, %1$s.</string>
 
 
     <string name="dj_voice_mix">¡Claro! Preparando un mix nuevo para ti.</string>
@@ -669,6 +672,8 @@
     <string name="skin_nebula">Tema nebulosa activado.</string>
     <string name="dj_radio">Locutora en la radio (curiosidades entre canciones)</string>
     <string name="sect_dj_radio">Locutora de radio</string>
+    <string name="podcast_summary">Resumen hablado del episodio</string>
+    <string name="podcast_summary_desc">Al terminar un episodio, la Virgin resume "lo que quedó" y enlaza con el siguiente</string>
 
     <string name="tami_radio_title">Radio Virgin</string>
     <string name="tami_radio_badge">Modo radio de Virgin — todas tus canciones, sin parar</string>
