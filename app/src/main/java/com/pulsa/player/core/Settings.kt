@@ -19,6 +19,7 @@ object Settings {
     private const val KEY_DEVICE_ID = "device_id"
     private const val KEY_MIRROR_CODE = "mirror_code"
     private const val KEY_MIRROR_HOST = "mirror_host"
+    private const val KEY_REMOTE_CODE = "remote_control_code"
     private const val KEY_SERVER = "server_base"
     private const val KEY_TUNNEL_URL = "tunnel_url"
     private const val TUNNEL_INFO_HOST = "https://raw.githubusercontent.com/cleberleonheart-maker/pulsaweb/main/tunnel.txt"
@@ -122,6 +123,14 @@ object Settings {
 
     fun setMirrorHost(context: Context, host: Boolean) {
         prefs(context).edit().putBoolean(KEY_MIRROR_HOST, host).apply()
+    }
+
+    /** Código da sessão que este aparelho está controlando (controle remoto). */
+    fun remoteCode(context: Context): String =
+        prefs(context).getString(KEY_REMOTE_CODE, "") ?: ""
+
+    fun setRemoteCode(context: Context, code: String) {
+        prefs(context).edit().putString(KEY_REMOTE_CODE, code.trim().uppercase()).apply()
     }
 
     /** Endereço do servidor de telemetria (vazio = padrão da LAN/localhost). */

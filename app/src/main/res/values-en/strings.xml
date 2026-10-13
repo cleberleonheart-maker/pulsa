@@ -30,11 +30,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.17):
-→ EPISODE CHAPTERS
-• Most podcasts ship the index in the description ("00:00 Intro, 03:20 The topic...").
-• On episodes, the list button in the speed row opens the chapters; tapping one jumps right to it.
-• If the description has no chapters, the app tells you — no empty list.</string>
+    <string name="changelog">What is new (5.10.18):
+→ SESSION REMOTE (handoff)
+• The Pulsa web is now a controllable player too: it shows its session code when opened.
+• Settings → Session remote: type the code and command from another device (play/pause, previous/next, seek and volume).
+• Type the web code to control what it plays from your phone — and vice-versa.
+• The phone can also control another Pulsa playing in the same session.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -819,6 +820,15 @@
     <string name="mirror_left">Left the session</string>
     <string name="mirror_error">Could not reach the server</string>
     <string name="mirror_not_found">This track is not in your library: %1$s</string>
+    <string name="remote_title">Session remote</string>
+    <string name="remote_subtitle">Control what plays on another Pulsa or the web</string>
+    <string name="remote_code_hint">Session code (5 letters)</string>
+    <string name="remote_connect">Connect</string>
+    <string name="remote_active">Session %1$s</string>
+    <string name="remote_online">Session %1$s · online</string>
+    <string name="remote_offline">Session offline — server did not answer</string>
+    <string name="remote_waiting">Connecting…</string>
+    <string name="remote_nothing">Nothing playing in the session</string>
     <string name="backup_title">Back up</string>
     <string name="backup_subtitle">Saves learning, memories and equalizer to a file</string>
     <string name="restore_title">Restore backup</string>

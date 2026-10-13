@@ -33,11 +33,12 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.17):
-→ CAPÍTULOS DO EPISÓDIO
-• A maioria dos podcasts traz o índice na descrição ("00:00 Abertura, 03:20 O assunto...").
-• Nos episódios, o botão de listas na linha de velocidade abre os capítulos; tocar num deles pula direto para lá.
-• Sem capítulos na descrição, o app avisa — nada de lista vazia.</string>
+    <string name="changelog">Novidades desta versão (5.10.18):
+→ CONTROLE DE SESSÃO (handoff)
+• A web do Pulsa agora também é um player comandável: ao abrir, ela mostra o código da sessão.
+• Configurações → Controle de sessão: digite o código e comande de outro aparelho (play/pause, anterior/próxima, tempo e volume).
+• Digite o código da web e controle o que ela toca pelo celular — e vice-versa.
+• O celular também controla outro Pulsa que esteja tocando na mesma sessão.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -1028,6 +1029,15 @@
     <string name="mirror_left">Saiu da sessão</string>
     <string name="mirror_error">Não foi possível falar com o servidor</string>
     <string name="mirror_not_found">Esta música não está na sua biblioteca: %1$s</string>
+    <string name="remote_title">Controle de sessão</string>
+    <string name="remote_subtitle">Comande o que toca em outro Pulsa ou na web</string>
+    <string name="remote_code_hint">Código da sessão (5 letras)</string>
+    <string name="remote_connect">Conectar</string>
+    <string name="remote_active">Sessão %1$s</string>
+    <string name="remote_online">Sessão %1$s · online</string>
+    <string name="remote_offline">Sessão offline — o servidor não respondeu</string>
+    <string name="remote_waiting">Conectando…</string>
+    <string name="remote_nothing">Nada tocando na sessão</string>
     <string name="backup_title">Fazer backup</string>
     <string name="backup_subtitle">Guarda o aprendizado, memórias e equalizador em um arquivo</string>
     <string name="restore_title">Restaurar backup</string>

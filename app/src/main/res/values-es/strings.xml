@@ -30,11 +30,12 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.17):
-→ CAPÍTULOS DEL EPISODIO
-• La mayoría de los podcasts trae el índice en la descripción ("00:00 Apertura, 03:20 El tema...").
-• En los episodios, el botón de listas de la fila de velocidad abre los capítulos; tocar uno salta directo hasta él.
-• Si la descripción no tiene capítulos, la app avisa — nada de listas vacías.</string>
+    <string name="changelog">Novedades de esta versión (5.10.18):
+→ CONTROL DE SESIÓN (handoff)
+• La web de Pulsa ahora también es un reproductor controlable: al abrir muestra el código de sesión.
+• Configuración → Control de sesión: escribe el código y controla desde otro dispositivo (play/pause, anterior/siguiente, tiempo y volumen).
+• Escribe el código de la web y controla lo que suena desde el celular — y al revés.
+• El celular también controla otro Pulsa que suene en la misma sesión.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -819,6 +820,15 @@
     <string name="mirror_left">Saliste de la sesión</string>
     <string name="mirror_error">No se pudo contactar el servidor</string>
     <string name="mirror_not_found">Esta canción no está en tu biblioteca: %1$s</string>
+    <string name="remote_title">Control de sesión</string>
+    <string name="remote_subtitle">Controla lo que suena en otro Pulsa o en la web</string>
+    <string name="remote_code_hint">Código de sesión (5 letras)</string>
+    <string name="remote_connect">Conectar</string>
+    <string name="remote_active">Sesión %1$s</string>
+    <string name="remote_online">Sesión %1$s · en línea</string>
+    <string name="remote_offline">Sesión sin conexión — el servidor no respondió</string>
+    <string name="remote_waiting">Conectando…</string>
+    <string name="remote_nothing">Nada sonando en la sesión</string>
     <string name="backup_title">Hacer copia de seguridad</string>
     <string name="backup_subtitle">Guarda el aprendizaje, recuerdos y el ecualizador en un archivo</string>
     <string name="restore_title">Restaurar copia</string>

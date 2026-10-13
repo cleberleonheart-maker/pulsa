@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.RadioButton
@@ -17,6 +18,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
@@ -31,6 +33,8 @@ import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.core.Changelog
 import com.pulsa.player.core.Helper
 import com.pulsa.player.sync.MirrorSync
+import com.pulsa.player.sync.RemoteControl
+import com.pulsa.player.sync.RemoteProtocol
 import com.pulsa.player.work.PulsaWork
 import com.pulsa.player.media.UrlDownloader
 import com.pulsa.player.core.Settings
@@ -132,6 +136,8 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.quality_row).setOnClickListener { pickQuality() }
         findViewById<View>(R.id.mirror_row).setOnClickListener { mirrorMenu() }
         refreshMirrorLabel()
+        findViewById<View>(R.id.remote_row).setOnClickListener { remoteControlDialog() }
+        refreshRemoteLabel()
         findViewById<View>(R.id.server_row).setOnClickListener { serverDialog() }
         refreshServerLabel()
         findViewById<View>(R.id.backup_row).setOnClickListener {
@@ -550,6 +556,109 @@ class SettingsActivity : AppCompatActivity() {
             else getString(R.string.mirror_role_guest)
             label?.text = getString(R.string.mirror_active, code, role)
         }
+    }
+
+    private fun refreshRemoteLabel() {
+        val label = viewOrNull<TextView>(R.id.remote_value)
+        val code = Settings.remoteCode(this)
+        label?.text = if (code.isBlank()) getString(R.string.remote_subtitle)
+        else getString(R.string.remote_active, code)
+    }
+
+    private fun remoteControlDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_remote_control, null)
+        val codeInput = view.findViewById<EditText>(R.id.remote_code_input)
+        val status = view.findViewById<TextView>(R.id.remote_status)
+        val now = view.findViewById<TextView>(R.id.remote_now)
+        val playBtn = view.findViewById<Button>(R.id.remote_play)
+        val prevBtn = view.findViewById<Button>(R.id.remote_prev)
+        val nextBtn = view.findViewById<Button>(R.id.remote_next)
+        val seek = view.findViewById<SeekBar>(R.id.remote_seek)
+        val position = view.findViewById<TextView>(R.id.remote_position)
+        val vol = view.findViewById<SeekBar>(R.id.remote_vol)
+
+        val startCode = Settings.remoteCode(this).ifBlank { Settings.mirrorCode(this) }
+        codeInput.setText(startCode)
+
+        var dragging = false
+
+        fun apply(snap: RemoteProtocol.Snap) {
+            if (!snap.online) {
+                status.text = getString(R.string.remote_offline)
+                now.text = ""
+                playBtn.text = "▶"
+                return
+            }
+            status.text = getString(R.string.remote_online, snap.code)
+            if (snap.hasTrack) {
+                val album = if (snap.album.isNotEmpty()) " · ${snap.album}" else ""
+                now.text = "${snap.title} — ${snap.artist}$album"
+                playBtn.text = if (snap.playing) "⏸" else "▶"
+                val dur = snap.durationMs.coerceAtLeast(0L).toInt()
+                seek.max = dur
+                if (!dragging) seek.progress = snap.positionMs.coerceIn(0L, dur.toLong()).toInt()
+                position.text = "${fmtMs(snap.positionMs)} / ${fmtMs(snap.durationMs)}"
+                if (snap.volume >= 0) vol.progress = snap.volume
+            } else {
+                now.text = getString(R.string.remote_nothing)
+                playBtn.text = "▶"
+            }
+        }
+
+        RemoteControl.setListener(object : RemoteControl.Listener {
+            override fun onState(snap: RemoteProtocol.Snap) = apply(snap)
+        })
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.remote_title)
+            .setView(view)
+            .setPositiveButton(R.string.remote_connect, null)
+            .setNegativeButton(R.string.close, null)
+            .setOnDismissListener { RemoteControl.stop(); RemoteControl.setListener(null) }
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val code = codeInput.text.toString().trim().uppercase()
+                if (code.length < 3) {
+                    Toast.makeText(this, R.string.remote_code_hint, Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                Settings.setRemoteCode(this, code)
+                refreshRemoteLabel()
+                status.text = getString(R.string.remote_waiting)
+                RemoteControl.start(this, code)
+            }
+        }
+
+        playBtn.setOnClickListener { RemoteControl.send("toggle") }
+        prevBtn.setOnClickListener { RemoteControl.send("prev") }
+        nextBtn.setOnClickListener { RemoteControl.send("next") }
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, value: Int, fromUser: Boolean) {}
+            override fun onStartTrackingTouch(sb: SeekBar) { dragging = true }
+            override fun onStopTrackingTouch(sb: SeekBar) {
+                dragging = false
+                RemoteControl.send("seek", sb.progress.toLong())
+            }
+        })
+        vol.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, value: Int, fromUser: Boolean) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {
+                RemoteControl.send("volume", sb.progress)
+            }
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+        })
+
+        dialog.show()
+        if (startCode.length >= 3) RemoteControl.start(this, startCode) else status.text = getString(R.string.remote_subtitle)
+    }
+
+    private fun fmtMs(ms: Long): String {
+        val total = (ms / 1000).coerceAtLeast(0)
+        val m = total / 60
+        val s = total % 60
+        return "%d:%02d".format(m, s)
     }
 
     private fun serverDialog() {

@@ -30,6 +30,7 @@ for f in files("/layout/") + files("/menu/") + files("/xml/"):
     ids |= set(re.findall(r'android:id="@\+id/([A-Za-z0-9_]+)"', open(f, encoding="utf-8").read()))
 
 vals = collections.defaultdict(set)
+styleable_arrays = set()
 for f in files("/values/"):
     txt = open(f, encoding="utf-8").read()
     for m in re.finditer(r'<(string|color|dimen|integer|bool|plurals|attr)\s+[^>]*?name="([^"]+)"', txt):
@@ -40,9 +41,16 @@ for f in files("/values/"):
         vals[m.group(1)].add(m.group(2))
     for m in re.finditer(r'<style\s+name="([\w.]+)"', txt):
         vals["style"].add(m.group(1).replace(".", "_"))
+    for m in re.finditer(r'<declare-styleable\s+name="([\w.]+)"\s*>(.*?)</declare-styleable>',
+                         txt, re.S):
+        nome = m.group(1).replace(".", "_")
+        vals["styleable"].add(nome)
+        styleable_arrays.add(nome)
+        for a in re.finditer(r'<attr\s+name="([\w.]+)"', m.group(2)):
+            vals["styleable"].add(f"{nome}_{a.group(1)}")
 
 grupos["id"] = ids
-for t in ("string", "color", "dimen", "integer", "bool", "plurals", "attr", "array", "style"):
+for t in ("string", "color", "dimen", "integer", "bool", "plurals", "attr", "array", "style", "styleable"):
     grupos[t] = vals[t]
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
@@ -54,7 +62,10 @@ with open(OUT, "w", encoding="utf-8") as f:
             continue
         f.write(f"    public static final class {tipo} {{\n")
         for i, n in enumerate(nomes):
-            f.write(f"        public static final int {n} = {0x7f000000 + i};\n")
+            if tipo == "styleable" and n in styleable_arrays:
+                f.write(f"        public static final int[] {n} = {{}};\n")
+            else:
+                f.write(f"        public static final int {n} = {0x7f000000 + i};\n")
         f.write("    }\n")
     f.write("}\n")
 
@@ -80,5 +91,5 @@ if os.path.exists(CPFILE):
         f.write(os.pathsep.join([CLASSES] + entradas))
     print(f"  classpath.txt apontado para o stub ({len(entradas) + 1} entradas)")
 
-for t in ("string", "drawable", "layout", "id", "style"):
+for t in ("string", "drawable", "layout", "id", "style", "styleable"):
     print(f"  {t}: {len(grupos[t])}")
