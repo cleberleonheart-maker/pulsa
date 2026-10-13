@@ -18,6 +18,12 @@ class InstallReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, -1)
+        // Instalacao nao concluida (pendente de confirmacao, abortada ou falha): libera a marca
+        // de "ja tentado" pra que a proxima abertura volte a oferecer a atualizacao. Sem isto, o
+        // aviso ficava 12h abafado e o usuario achava que o app tinha parado de se atualizar.
+        if (status != PackageInstaller.STATUS_SUCCESS) {
+            UpdateChecker.clearAttempted(context)
+        }
         if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
             try {
                 @Suppress("DEPRECATION")

@@ -524,6 +524,9 @@ object UpdateChecker {
             addAll(fallbackApkHosts)
         }
         val target = File(context.cacheDir, "pulsa-$latestName.apk")
+        // Se o APK desta versao ja foi baixado (ex.: o usuario nao chegou a confirmar a
+        // instalacao), reaproveita em vez de baixar tudo de novo — assim a re-oferta e barata.
+        if (isApkFile(target)) return target
         for (u in urls) {
             try {
                 val conn = URL(u).openConnection() as HttpURLConnection

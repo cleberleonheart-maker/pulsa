@@ -30,11 +30,13 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.22):
+    <string name="changelog">What is new (5.10.23):
 → LISTEN TOGETHER ACTUALLY WORKS
 • Fixed: remote-control and mirror commands played on the wrong device — play/pause/next now reach and play on the phone.
 • When you pick a song on the web, the phone plays along if it has the file.
-• The DJ button now shows the right role ("listening with the DJ" for whoever joins).</string>
+• The DJ button now shows the right role ("listening with the DJ" for whoever joins).
+→ THE UPDATE NO LONGER VANISHES
+• If the install stays pending or fails, the app offers the update again on the next launch (no more 12h hiding) and reuses the download already done.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
