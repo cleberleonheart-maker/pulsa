@@ -51,6 +51,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
       - name: Download APK
@@ -86,3 +88,18 @@ jobs:
             git -C pulsaweb pull --rebase origin main
             git -C pulsaweb push origin main
           fi
+      - name: Cria Release no GitHub (com o APK anexado)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v$NAME"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG ja existe; reenviando o APK"
+            gh release upload "$TAG" apk/app-release.apk --clobber
+          else
+            gh release create "$TAG" apk/app-release.apk \
+              --title "Pulsa $NAME ($CODE)" \
+              --notes "Publicacao automatica da versao $NAME (code $CODE)."
+          fi
+          # Mantem a pagina /releases/latest apontando pra versao mais nova
+          gh release edit "$TAG" --latest 2>/dev/null || true
