@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.19):
-→ SECURE SERVER (tunnel/4G)
-• All server access now uses a shared token (X-Pulsa-Token).
-• Settings → Server token: set the key the app uses to talk to your server.
-• Use the same token on the server and on the other devices; the web enters with ?token=YOUR_TOKEN.</string>
+    <string name="changelog">What is new (5.10.20):
+→ FLEXIBLE ONLINE SERVER
+• The "Automatic online" mode now accepts any HTTPS address published on pulsaweb, not only the Cloudflare tunnel.
+• Your own server with a fixed address (e.g. sslip.io/your own domain) now joins online mode by itself.
+• Still requires the server token (Settings → Server token).</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -840,9 +840,9 @@
     <string name="server_default">Automatic (local network / default)</string>
     <string name="server_hint">https://your-server:8081</string>
     <string name="server_saved">Server updated — everything will use the new address</string>
-    <string name="server_online">Automatic online tunnel (reads the public URL from pulsaweb)</string>
+    <string name="server_online">Automatic online (reads the public URL from pulsaweb)</string>
     <string name="server_opt_lan">Local network / default (192.168.100.7)</string>
-    <string name="server_opt_online">Automatic online (tunnel public address)</string>
+    <string name="server_opt_online">Automatic online (server public address)</string>
     <string name="server_opt_custom">Custom address</string>
     <string name="server_token">Server token</string>
     <string name="server_token_subtitle">Access key for your server. Use the same token on the other devices and on the server.</string>

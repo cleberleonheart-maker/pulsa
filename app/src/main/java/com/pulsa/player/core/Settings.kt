@@ -154,7 +154,7 @@ object Settings {
     private var cachedTunnel: String? = null
     private var lastTunnelFetch = 0L
 
-    /** URL pública atual do túnel, lida do pulsaweb (cache de 120s). */
+    /** URL pública atual do servidor, lida do pulsaweb (cache de 120s). */
     fun onlineServer(context: Context): String? {
         val now = System.currentTimeMillis()
         if (cachedTunnel != null && now - lastTunnelFetch < 120_000L) return cachedTunnel
@@ -166,7 +166,7 @@ object Settings {
             conn.readTimeout = 5000
             val text = conn.inputStream.bufferedReader().use { it.readText() }.trim()
             conn.inputStream.close()
-            if (text.startsWith("https://") && text.contains(".trycloudflare.com")) url = text
+            if (text.startsWith("https://")) url = text
         } catch (t: Throwable) {
         }
         if (url != null) {
