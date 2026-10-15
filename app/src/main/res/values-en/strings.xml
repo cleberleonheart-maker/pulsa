@@ -30,12 +30,9 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.32):
-→ NEW
-• Podcast chapters by voice: "Virgin, next chapter", "back a chapter", "jump to chapter 3" or "list the chapters".
-• Suggestions that read the moment: the Virgin now learns what you usually listen to on each weekday and hour and uses it when suggesting (and the AI gets the day and time).
-→ HOW IT WORKS
-• The more you listen, the better the time-based suggestion gets.</string>
+    <string name="changelog">What is new (5.10.33):
+→ FIXES
+• Voice dedication: "dedicate the next song to [name]" now saves the name and says it when the next track starts — before, the word "next" made the Virgin skip the song and the name was not recognized.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

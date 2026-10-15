@@ -489,20 +489,37 @@ object DjCommander {
     }
 
     fun dedicatee(norm: String): String? {
-        val markers = listOf(
-            "dedica para ", "dedicar para ", "dedica pra ", "dedicar pra ",
-            "dedico para ", "dedique para ", "dedica a ", "dedique a ",
-            "dedicate to ", "dedica pa ", "dedicada para ", "dedicada a "
+        if (!dedicateMatch(norm)) return null
+        val songRefs = listOf(
+            "essa musica", "esta musica", "essa cancion", "esta cancion", "this song",
+            "proxima musica", "a proxima musica", "proxima faixa", "essa faixa",
+            "esta faixa", "essa cancao", "essa", "esta", "proxima", "a musica",
+            "a faixa", "this", "essa faixa", "la"
         )
-        for (m in markers) {
-            val i = norm.indexOf(m)
-            if (i >= 0) {
-                val rest = norm.substring(i + m.length)
-                    .replace("uma musica", "").replace("una cancion", "")
-                    .replace("a song", "").replace("a musica", "")
-                    .trim().trim(',', '.', '!', '?', ' ')
-                if (rest.length >= 2) return rest
+        fun isSongRef(s: String): Boolean = songRefs.any { s == it || s.startsWith("$it ") }
+        fun clean(s: String): String? {
+            var r = s.trim().trim(',', '.', '!', '?', ';', ':')
+            for (art in listOf("a ", "o ", "as ", "os ", "the ", "el ", "la ")) {
+                if (r.startsWith(art)) { r = r.substring(art.length); break }
             }
+            r = r.trim().trim(',', '.', '!', '?', ';', ':')
+            return if (r.length >= 2 && !isSongRef(r)) r else null
+        }
+        // 1) conectivo antes do nome: "dedico a próxima música PARA a Maria".
+        for (m in listOf(
+            " para a ", " para o ", " pra a ", " pra o ",
+            " para ", " pra ", " to ", " for "
+        )) {
+            val i = norm.lastIndexOf(m)
+            if (i >= 0) clean(norm.substring(i + m.length))?.let { return it }
+        }
+        // 2) "dedica a NAME" — só vale se NAME não for referência à faixa.
+        for (m in listOf(
+            "dedica a ", "dedico a ", "dedicar a ", "dedique a ",
+            "dedicada a ", "dedica o ", "dedico o ", "dedicada para "
+        )) {
+            val i = norm.lastIndexOf(m)
+            if (i >= 0) clean(norm.substring(i + m.length))?.let { return it }
         }
         return null
     }
@@ -1225,6 +1242,10 @@ object DjCommander {
         videoOpenMatch(norm) -> "video_open"
         videoBackMatch(norm) -> "video_back"
         videoPauseMatch(norm) -> "video_pause"
+        // Dedicatória bem acima de skip/next/prev/pause: "dedica a próxima pra Ana"
+        // contém "próxima" e era roubada pelo "next", que trocava a música em vez de
+        // só anotar a dedicatória. "dedica essa" também contém "essa" (info).
+        dedicateMatch(norm) -> "dedicate"
         norm.contains("odia") || norm.contains("odeio") || norm.contains("nao gostei") -> "dislike"
         norm.contains("pula") || norm.contains("pular") || norm.contains("pule") ||
             norm.contains("skip") -> "skip"
@@ -1263,9 +1284,6 @@ object DjCommander {
         norm.contains("cancel") || norm.contains("esquece") || norm == "nao" -> "cancel"
         norm.contains("delet") || norm.contains("apag") || norm.contains("exclui") ||
             norm.contains("remove") -> "delete"
-        // Dedicatória antes do ramo genérico de "essa/tocando -> info": "dedica essa pra Ana"
-        // contém "essa" e acabava caindo em "info" sem nunca ver a dedicatória.
-        dedicateMatch(norm) -> "dedicate"
         norm.contains("qual") || norm.contains("essa") || norm.contains("tocando") -> "info"
         norm.contains("suger") || norm.contains("sugest") || norm.contains("recomend") ||
             norm.contains("indica uma") || norm.contains("o que voce tocaria") ||

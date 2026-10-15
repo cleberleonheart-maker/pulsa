@@ -738,6 +738,35 @@ class DjCommanderTest {
     }
 
     @Test
+    fun dedicate_next_is_not_hijacked_by_next_track() {
+        // "dedica a próxima" contém "próxima": antes caía em "next" e trocava a música.
+        assertEquals(
+            "dedicate",
+            DjCommander.action(DjCommander.norm("virgin, dedica a proxima pra ana"))
+        )
+        assertEquals(
+            "dedicate",
+            DjCommander.action(DjCommander.norm("dedico a proxima musica para maria"))
+        )
+        assertFalse(DjCommander.dedicateNow(DjCommander.norm("dedico a proxima musica para maria")))
+    }
+
+    @Test
+    fun dedicatee_extrai_o_nome_do_destinatario() {
+        assertEquals("ana", DjCommander.dedicatee(DjCommander.norm("dedica essa pra ana")))
+        assertEquals("ana", DjCommander.dedicatee(DjCommander.norm("dedica a proxima pra ana")))
+        assertEquals(
+            "maria",
+            DjCommander.dedicatee(DjCommander.norm("dedico a proxima musica para maria"))
+        )
+        assertEquals("ana", DjCommander.dedicatee(DjCommander.norm("dedica a ana")))
+        assertEquals("ana", DjCommander.dedicatee(DjCommander.norm("dedicate this to ana")))
+        // Referência à faixa, sem destinatário, não vira nome.
+        assertNull(DjCommander.dedicatee(DjCommander.norm("dedica a proxima")))
+        assertNull(DjCommander.dedicatee(DjCommander.norm("dedica essa")))
+    }
+
+    @Test
     fun relaunch_matches_stale_phrases() {
         assertEquals("relaunch", DjCommander.action(DjCommander.norm("virgi, relança antigas")))
         assertEquals("relaunch", DjCommander.action(DjCommander.norm("toca umas antigas")))

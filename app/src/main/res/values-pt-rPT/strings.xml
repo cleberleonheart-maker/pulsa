@@ -7,12 +7,9 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.32):
-→ NOVIDADES
-• Capítulos de podcast por voz: "Virgin, próximo capítulo", "volta um capítulo", "pula para o capítulo 3" ou "lista os capítulos".
-• Sugestão que lê o momento: a Virgin passa a aprender o que costumas ouvir em cada dia da semana e hora e usa isso ao sugerir (e a IA recebe o dia e a hora).
-→ COMO FUNCIONA
-• Quanto mais ouves, melhor fica a sugestão por horário.</string>
+    <string name="changelog">Novidades desta versão (5.10.33):
+→ CORREÇÕES
+• Dedicatória por voz: "dedico a próxima música a [nome]" passa a anotar o nome e a dizê-lo quando a faixa seguinte começar — antes a palavra "próxima" fazia a Virgin trocar de música e o nome não era reconhecido.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

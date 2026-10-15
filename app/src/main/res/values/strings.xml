@@ -33,12 +33,9 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.32):
-→ NOVIDADES
-• Capítulos de podcast por voz: "Virgin, próximo capítulo", "volta um capítulo", "pula pro capítulo 3" ou "lista os capítulos".
-• Sugestão que entende o momento: a Virgin agora aprende o que você costuma ouvir em cada dia da semana e horário e usa isso ao sugerir (e a IA recebe o dia e a hora).
-→ COMO FUNCIONA
-• Quanto mais você ouve, melhor a sugestão do horário fica.</string>
+    <string name="changelog">Novidades desta versão (5.10.33):
+→ CORREÇÕES
+• Dedicatória por voz: "dedico a próxima música para [nome]" agora anota o nome e fala quando a próxima faixa começar — antes a palavra "próxima" fazia a Virgin trocar de música e o nome não era reconhecido.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
