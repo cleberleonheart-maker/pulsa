@@ -53,6 +53,7 @@ import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.model.toSong
 import com.pulsa.player.audio.AudioFx
+import com.pulsa.player.audio.SilenceSkipper
 import com.pulsa.player.audio.SpatialAudio
 import com.pulsa.player.audio.SpatialRenderersFactory
 import com.pulsa.player.dj.DjFacts
@@ -413,6 +414,17 @@ class PlaybackService : MediaLibraryService() {
      * fala, e o preset de voz é escolhido justamente pela fonte, não pela tela.
      */
     private fun isPodcastPlaying(): Boolean = currentSong?.isPodcast == true
+
+    /**
+     * Liga o corte de silêncio só enquanto um podcast toca (e se a opção estiver ligada).
+     *
+     * Chamado a cada troca de faixa: o [com.pulsa.player.audio.SilenceSkipper] lê a flag por
+     * buffer, então basta atualizá-la aqui para o efeito entrar/sair na virada. Música desliga
+     * sempre — pausa em faixa é intenção, não ruído a cortar.
+     */
+    private fun syncSilenceSkip() {
+        SilenceSkipper.enabled = isPodcastPlaying() && Settings.skipSilence(this)
+    }
 
     inner class LocalBinder : Binder() {
         val service: PlaybackService get() = this@PlaybackService
@@ -1374,6 +1386,7 @@ class PlaybackService : MediaLibraryService() {
             if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
             notePlay(song)
 
+            syncSilenceSkip()
             maybeQueueNextEpisode(song)
 
 
@@ -1586,6 +1599,7 @@ class PlaybackService : MediaLibraryService() {
         if (isScrobbleable(song)) LastFm.nowPlaying(applicationContext, song, song.durationMs)
         notePlay(song)
 
+        syncSilenceSkip()
         maybeQueueNextEpisode(song)
         // O "próximo" pode já estar na fila por clique manual — aí a maratona acima não faz
         // nada, mas o download antecipado ainda vale. A guarda de id repetido em PodcastPrefetch

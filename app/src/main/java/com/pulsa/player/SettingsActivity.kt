@@ -1,6 +1,6 @@
 package com.pulsa.player
 import com.pulsa.player.util.UpdateChecker
-
+import com.pulsa.player.audio.SilenceSkipper
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -277,6 +277,15 @@ class SettingsActivity : AppCompatActivity() {
             isChecked = Settings.podcastPrefetch(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->
                 Settings.setPodcastPrefetch(this@SettingsActivity, checked)
+            }
+        }
+
+        findViewById<MaterialSwitch>(R.id.skip_silence_switch).apply {
+            isChecked = Settings.skipSilence(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setSkipSilence(this@SettingsActivity, checked)
+                // Vale na hora, sem esperar a próxima faixa: o processador lê a flag por buffer.
+                SilenceSkipper.enabled = checked && Playback.currentSong?.isPodcast == true
             }
         }
 

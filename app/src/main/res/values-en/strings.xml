@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.35):
+    <string name="changelog">What is new (5.10.36):
 → NEW
-• Preload the next episode: while a podcast episode plays, the next one in the queue is already downloaded over Wi-Fi, so the switch does not stop to buffer.
+• Skip silences in podcasts: the long pauses in an episode (breaks and the breath before an ad) are cut. Podcast only; music plays untouched.
 → HOW TO USE
-• On by default. To turn it off, go to Settings and disable the Preload the next episode option. Wi-Fi only, never uses your mobile data.</string>
+• On by default. To hear the episode raw, go to Settings and turn off "Skip silences in podcasts".</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -424,6 +424,8 @@
     <string name="downloads_wifi_only_hint">Big downloads use your mobile data without warning; when on, the queue waits for a Wi-Fi/wired network.</string>
     <string name="podcast_prefetch">Preload the next episode</string>
     <string name="podcast_prefetch_hint">While an episode plays, it downloads the next one in the queue over Wi-Fi so the switch doesn\'t stop to buffer. Wi-Fi only; never uses your mobile data.</string>
+    <string name="skip_silence">Skip silences in podcasts</string>
+    <string name="skip_silence_hint">Cuts the long pauses in an episode (segments, the breath before an ad). Podcasts only; music plays untouched.</string>
 
     <string name="downloads_limit">Storage limit</string>
     <string name="downloads_limit_hint">How much disk downloads may use; past the cap, new downloads fail instead of filling your storage.</string>

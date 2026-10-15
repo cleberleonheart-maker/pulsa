@@ -667,6 +667,21 @@ object Settings {
     fun podcastPrefetch(context: Context): Boolean =
         prefs(context).getBoolean("podcast_prefetch", true)
 
+    /**
+     * Pular silêncios no podcast — corta as pausas longas do episódio (blocos, respiro antes da
+     * propaganda). Só vale para podcast, nunca para música (ver
+     * [com.pulsa.player.audio.SilenceSkipper]): numa faixa, pausa é parte da obra.
+     *
+     * Padrão `true`: é o comportamento que se espera de um player de podcast. Quem prefere ouvir
+     * o episódio cru desliga aqui.
+     */
+    fun setSkipSilence(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("skip_silence", value).apply()
+    }
+
+    fun skipSilence(context: Context): Boolean =
+        prefs(context).getBoolean("skip_silence", true)
+
 
     /**
      * F2 · Download Center — limite de espaço (MB) que o app pode ocupar com downloads.

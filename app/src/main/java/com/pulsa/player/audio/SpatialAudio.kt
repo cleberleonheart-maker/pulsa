@@ -101,7 +101,12 @@ class SpatialRenderersFactory(context: Context) : DefaultRenderersFactory(contex
     ): AudioSink = DefaultAudioSink.Builder(context)
         .setEnableFloatOutput(enableFloatOutput)
         .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-        .setAudioProcessors(arrayOf(SpatialAudio.audioProcessor()))
+        .setAudioProcessors(
+            arrayOf(
+                SilenceSkipper.audioProcessor(),
+                SpatialAudio.audioProcessor()
+            )
+        )
         .build()
 }
 
