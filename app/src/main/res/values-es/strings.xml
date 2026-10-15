@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.40):
+    <string name="changelog">Novedades de esta versión (5.10.41):
 → NUEVO
-• Invitado pide canciones en la sesión: dentro de "Escuchar juntos", el invitado pide un tema por voz y el anfitrión lo pone — ambos siguen sincronizados.
+• Sesión con objetivo: la Virgin arma una sesión por duración sumada, mezclando canciones y un podcast. Di "arma una sesión de 40 minutos para dormir: 2 canciones tranquilas y 1 podcast".
 → CÓMO USAR
-• Con la sesión abierta, en el móvil invitado: di "Virgi, pide &lt;canción&gt;".</string>
+• Di un ánimo o género más la duración. Ej.: "sesión de 1 hora para estudiar" o "sesión de 30 minutos de rock".</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -161,6 +161,8 @@
     <string name="dj_voice_request_nosession">No hay ninguna sesión de Escuchar juntos abierta. Solo se puede pedir dentro de una sesión.</string>
     <string name="dj_voice_request_sent">Le pedí %1$s al anfitrión.</string>
     <string name="dj_voice_request_fail">No pude enviar el pedido ahora.</string>
+    <string name="dj_voice_session">Sesión lista: unos %1$d minutos en %2$d pistas.</string>
+    <string name="dj_voice_session_none">No entendí la sesión. Prueba: "arma una sesión de 40 minutos para dormir".</string>
     <string name="remove_song_confirm">¿Quitar esta canción de la lista?</string>
     <string name="prev_action">Anterior</string>
     <string name="next_action">Siguiente</string>

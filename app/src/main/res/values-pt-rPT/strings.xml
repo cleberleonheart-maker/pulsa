@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.40):
+    <string name="changelog">Novidades desta versão (5.10.41):
 → NOVIDADES
-• Convidado pede música na sessão: dentro do "Ouvir juntos", o convidado pede uma faixa por voz e o anfitrião toca — os dois ficam sincronizados.
+• Sessão com objetivo: a Virgin monta uma sessão pela duração somada, misturando músicas e podcast. Diz "monta uma sessão de 40 minutos para dormir: 2 músicas calmas e 1 podcast".
 → COMO USAR
-• Com a sessão aberta, no telemóvel convidado: diz "Virgi, pede &lt;faixa&gt;".</string>
+• Diz um humor ou género mais a duração. Ex.: "sessão de 1 hora para estudar" ou "sessão de 30 minutos de rock".</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -155,6 +155,8 @@
     <string name="dj_voice_request_nosession">Nenhuma sessão de Ouvir juntos aberta. Só dá para pedir dentro de uma sessão.</string>
     <string name="dj_voice_request_sent">Pedi %1$s ao anfitrião.</string>
     <string name="dj_voice_request_fail">Não consegui enviar o pedido agora.</string>
+    <string name="dj_voice_session">Sessão montada: cerca de %1$d minutos em %2$d faixas.</string>
+    <string name="dj_voice_session_none">Não percebi a sessão. Tenta: "monta uma sessão de 40 minutos para dormir".</string>
 
     <string name="rec_token_subtitle">Grátis em audd.io — identifica a música que está a tocar.</string>
     <string name="tami_radio_status_on">No ar — a tocar todas as suas músicas</string>

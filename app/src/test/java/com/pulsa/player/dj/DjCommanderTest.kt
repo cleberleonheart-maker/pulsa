@@ -879,4 +879,40 @@ class DjCommanderTest {
         assertNull(DjCommander.requestQuery(DjCommander.norm("pede uma musica")))
     }
 
+    @Test
+    fun session_parses_duration_mood_and_counts() {
+        val phrase = "monta uma sessao de 40 minutos pra dormir: 2 musicas calmas e 1 podcast"
+        val p = DjCommander.sessionQuery(DjCommander.norm(phrase))
+        assertNotNull(p)
+        assertEquals(40, p!!.durationMin)
+        assertEquals("dormir", p.mood)
+        assertEquals(2, p.songs)
+        assertEquals(1, p.podcasts)
+        assertEquals("session", DjCommander.action(DjCommander.norm(phrase)))
+    }
+
+    @Test
+    fun session_hour_and_genre() {
+        val p = DjCommander.sessionQuery(DjCommander.norm("sessao de uma hora de rock pra malhar"))
+        assertNotNull(p)
+        assertEquals(60, p!!.durationMin)
+        assertEquals("rock", p.genre)
+        assertEquals("malhar", p.mood)
+        assertNull(p.songs)
+        assertNull(p.podcasts)
+    }
+
+    @Test
+    fun session_sem_duracao_usa_padrao_40() {
+        val p = DjCommander.sessionQuery(DjCommander.norm("monta uma sessao pra dormir"))
+        assertNotNull(p)
+        assertEquals(40, p!!.durationMin)
+        assertEquals("dormir", p.mood)
+    }
+
+    @Test
+    fun sem_detalhe_nao_e_sessao() {
+        assertNull(DjCommander.sessionQuery(DjCommander.norm("abre a sessao")))
+    }
+
 }

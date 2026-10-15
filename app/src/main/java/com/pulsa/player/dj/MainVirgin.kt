@@ -542,6 +542,72 @@ class MainVirgin(
         }
     }
 
+    /**
+     * Item 266: sessão com objetivo escolhida pela duração somada (ver [SessionMix]).
+     * Reúne músicas (filtradas por humor/gênero) e, se pedido, episódios de podcast.
+     */
+    private fun virgSession(plan: DjCommander.SessionPlan?) {
+        if (plan == null) {
+            virginSpeak(say(R.string.dj_voice_session_none))
+            return
+        }
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val songs = Library.allSongs(ctx)
+            val favIds = runCatching {
+                PlaylistDb.get(ctx).favorites().map { it.id }.toSet()
+            }.getOrDefault(emptySet())
+            val learn = DjLearn.learn(ctx)
+            val recent = DjSessionMemory.recentIds()
+
+            var pool = songs.filter { it.id !in recent && it.id !in learn.disliked }
+            if (plan.genre != null) {
+                pool = pool.filter {
+                    DjCommander.matchesGenre(Library.genreOf(ctx, it.id), plan.genre)
+                }
+            }
+            val intensity = when (plan.mood) {
+                "dormir", "estudar", "viajar" -> DjEngine.Intensity.CALM
+                "malhar", "festa" -> DjEngine.Intensity.WILD
+                else -> DjEngine.Intensity.BALANCED
+            }
+            val ordered = DjEngine.build(
+                pool, favIds, DjEngine.Source.ALL, intensity, learn, exclude = recent
+            )
+
+            val podCount = plan.podcasts ?: 0
+            val episodes = if (podCount > 0) {
+                runCatching {
+                    val db = PodcastDb.get(ctx)
+                    db.recentUnplayed(podCount).map { ep ->
+                        db.toSong(db.feed(ep.podcastId)?.title.orEmpty(), ep)
+                    }
+                }.getOrDefault(emptyList())
+            } else {
+                emptyList()
+            }
+
+            val set = SessionMix.build(ordered, episodes, plan)
+            ThreadPool.onUi {
+                if (set.isEmpty()) {
+                    virginSpeak(say(R.string.dj_voice_only_none, ""))
+                    return@onUi
+                }
+                Telemetry.log(
+                    activity,
+                    "Virgin sessao min=${plan.durationMin} mood=${plan.mood} n=${set.size}"
+                )
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(false)
+                Playback.setSleepMix(plan.mood == "dormir")
+                DjSessionMemory.notePlayed(set.map { it.id })
+                Playback.start(set, 0)
+                val minutes = (set.sumOf { it.durationMs.coerceAtLeast(0L) } / 60_000L).toInt()
+                virginSpeak(say(R.string.dj_voice_session, minutes, set.size))
+            }
+        }
+    }
+
     private fun virgMonthMix() {
         ThreadPool.post {
             val ctx = activity.applicationContext
@@ -1381,6 +1447,7 @@ class MainVirgin(
         if (action != "relaunch") relaunchIds = emptySet()
         when (action) {
             "request" -> virgRequestSong(DjCommander.requestQuery(norm))
+            "session" -> virgSession(DjCommander.sessionQuery(norm))
             "mix" -> virginSpeak(say(R.string.dj_voice_mix_main))
             "month_favs" -> virgMonthMix()
             "memory_save" -> virgMemorySave(norm)

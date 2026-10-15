@@ -887,6 +887,68 @@ object DjCommander {
         return DynQuery(genres, maxAge, playsLess, skipsLess, favoritesOnly)
     }
 
+    // ----- Sessão com objetivo ("monta uma sessão de 40 minutos pra dormir") -----
+
+    /** Sessão pedida por voz: a escolha das faixas é pela **duração somada**, não só pelo gênero. */
+    data class SessionPlan(
+        val durationMin: Int,
+        val mood: String?,
+        val genre: String?,
+        val songs: Int?,
+        val podcasts: Int?
+    )
+
+    private val SESSION_WORDS = listOf("sessao", "session", "sesion")
+
+    /** "meia hora" vira 30; "uma hora"/"1 hora" → 60; "40 minutos" → 40. */
+    private fun sessionDurationMin(norm: String): Int? {
+        if (norm.contains("meia hora")) return 30
+        Regex("(\\d+|$NUMBER_WORD_ALT)\\s*(?:min\\b|minutos?)\\b").find(norm)
+            ?.let { return numOf(it.groupValues[1]).coerceIn(1, 600) }
+        Regex("(\\d+|$NUMBER_WORD_ALT)\\s*(?:h\\b|horas?)\\b").find(norm)
+            ?.let { return (numOf(it.groupValues[1]) * 60).coerceIn(1, 600) }
+        return null
+    }
+
+    private fun sessionMood(norm: String): String? = when {
+        listOf("dormir", "dorme", "sono", "dormi", "relaxar", "relaxa",
+            "acalma", "calma", "calmo", "tranquil", "descans").any { norm.contains(it) } -> "dormir"
+        listOf("malhar", "treino", "treinar", "academia", "correr", "corrida",
+            "bike", "pedalar").any { norm.contains(it) } -> "malhar"
+        listOf("estudar", "estudo", "estuda", "trabalhar", "focar", "foco",
+            "concentr").any { norm.contains(it) } -> "estudar"
+        listOf("festa", "animar", "bombar").any { norm.contains(it) } -> "festa"
+        listOf("viajar", "viagem", "estrada").any { norm.contains(it) } -> "viajar"
+        listOf("dirigir", "volante").any { norm.contains(it) } -> "dirigir"
+        else -> null
+    }
+
+    /**
+     * "virgi, monta uma sessão de 40 minutos pra dormir: 2 músicas calmas e 1 podcast".
+     * Exige a palavra "sessão" mais algum detalhe (duração, humor, gênero ou contagem)
+     * para não roubar outros comandos. Sem duração explícita, a sessão dura 40 min.
+     */
+    fun sessionQuery(norm: String): SessionPlan? {
+        if (SESSION_WORDS.none { norm.contains(it) }) return null
+        val duration = sessionDurationMin(norm)
+        val mood = sessionMood(norm)
+        val genre = genresOf(norm).firstOrNull()
+        val songs = Regex("(\\d+|$NUMBER_WORD_ALT)\\s+(?:musicas?|musics?|faixas?|canc(?:o|õ)es?)")
+            .find(norm)?.let { numOf(it.groupValues[1]) }
+        val podcasts = Regex("(\\d+|$NUMBER_WORD_ALT)\\s+(?:podcasts?|episodios?|podres?)")
+            .find(norm)?.let { numOf(it.groupValues[1]) }
+        if (duration == null && mood == null && genre == null && songs == null && podcasts == null) {
+            return null
+        }
+        return SessionPlan(
+            durationMin = duration ?: 40,
+            mood = mood,
+            genre = genre,
+            songs = songs,
+            podcasts = podcasts
+        )
+    }
+
     // ----- Relançar antigas (mix das faixas esquecidas) -----
 
     /**
@@ -1224,6 +1286,11 @@ object DjCommander {
         // Pedir música na sessão "Ouvir juntos" (item 133): verbo de pedido explícito.
         // Fica no topo para o nome da faixa não ser lido como playlist/cena/etc.
         requestMatch(norm) -> "request"
+
+        // Sessão com objetivo (item 266) acima de sleep/scene/mood/dynq: "monta uma
+        // sessão de 40 minutos pra dormir" tem "dormir" (sleep) e "monta" (dynq), mas a
+        // palavra "sessão" com duração é o comando específico.
+        sessionQuery(norm) != null -> "session"
 
 
         // Playlists ficam no topo porque o nome da playlist pode ser qualquer palavra — até

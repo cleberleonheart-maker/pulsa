@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.40):
+    <string name="changelog">Novidades desta versão (5.10.41):
 → NOVIDADES
-• Convidado pede música na sessão: dentro do "Ouvir juntos", o convidado pede uma faixa por voz e o anfitrião toca — os dois seguem juntos.
+• Sessão com objetivo: a Virgin monta uma sessão pela duração somada, misturando músicas e podcast. Diga "monta uma sessão de 40 minutos pra dormir: 2 músicas calmas e 1 podcast".
 → COMO USAR
-• Na sessão aberta, no celular convidado: diga "Virgi, pede &lt;música&gt;".</string>
+• Fale com o humor ou gênero e a duração. Ex.: "sessão de 1 hora pra estudar" ou "sessão de 30 minutos de rock".</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -1039,6 +1039,8 @@
     <string name="dj_voice_request_nosession">Nenhuma sessão de Ouvir juntos aberta. Dá pra pedir só dentro de uma sessão.</string>
     <string name="dj_voice_request_sent">Pedi %1$s pro anfitrião.</string>
     <string name="dj_voice_request_fail">Não consegui mandar o pedido agora.</string>
+    <string name="dj_voice_session">Sessão montada: cerca de %1$d minutos em %2$d faixas.</string>
+    <string name="dj_voice_session_none">Não entendi a sessão. Tenta assim: "monta uma sessão de 40 minutos pra dormir".</string>
 
     <string name="smart_new_playlist">Novidades</string>
     <string name="smart_classics_playlist">Clássicos</string>
