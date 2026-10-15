@@ -9,6 +9,7 @@ import android.os.SystemClock
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import com.pulsa.player.core.Settings
 import java.util.Locale
 
 /**
@@ -43,7 +44,15 @@ class DjCommandListener(
     private val onClosed: ((expired: Boolean) -> Unit)? = null
 ) {
     private val appContext = context.applicationContext
-    private val locale: Locale = Locale.getDefault()
+
+    /**
+     * Idioma do reconhecedor: segue o idioma escolhido no app (não o locale do sistema), para
+     * o microfone casar com a interface — a Virgin responde no idioma da pergunta de qualquer
+     * forma (ver `MainVirgin.languageOf` + `say`), mas o reconhecimento precisa começar certo.
+     */
+    private fun locale(): Locale =
+        runCatching { Locale.forLanguageTag(Settings.languageTag(Settings.language(appContext))) }
+            .getOrNull() ?: Locale.getDefault()
     private val recognizer: SpeechRecognizer? =
         if (SpeechRecognizer.isRecognitionAvailable(appContext))
             SpeechRecognizer.createSpeechRecognizer(appContext)
@@ -236,7 +245,7 @@ class DjCommandListener(
     private fun intent(): Intent {
         return Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, locale.toLanguageTag())
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, locale().toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, appContext.packageName)

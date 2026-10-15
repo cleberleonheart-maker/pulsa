@@ -7,23 +7,14 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.29):
+    <string name="changelog">Novidades desta versão (5.10.30):
 → NOVIDADES
-• Aviso de faixa: se costuma saltar uma música, a Virgin avisa antes de a tocar.
-→ A RÁDIO DA VIRGÍNIA FICOU MAIS CONVERSADA
-• "Relança as antigas": monta uma fila só com músicas que já não ouve há bastante tempo — e diz há quanto tempo era.
-• "Resumo do fim de semana": conta o que mais ouviu no sábado e no domingo.
-• "Resumo do ano": faixas, artista e mês mais forte do seu ano.
-• Rádio do humor: "estou nervoso" monta uma fila calma; "estou em baixo" monta uma mais animada.
-→ CENAS E AMBIENTE
-• "Estuda com chuva" agora toca o som ambiente junto com a música.
-• "Toca chuva com a música": liga o ambiente sem trocar a faixa que está a tocar.
-→ INÍCIO
-• As estatísticas agora mostram também as reproduções e o tempo total ouvido.
-→ IDIOMA
-• Português (Portugal): tradução completa de toda a aplicação.
+• Virgin bilingue: responde no idioma da tua pergunta — fala em português, inglês ou espanhol que a resposta vem no mesmo idioma.
+• O microfone agora reconhece no idioma escolhido na aplicação, não no idioma do sistema.
+→ LIMPEZA POR VOZ
+• "Elimina as músicas que nunca ouvi": a Virgin conta quantas são e só elimina depois de confirmares.
 → CORREÇÕES
-• Estrelas brilhantes: agora cintilam e deslizam de verdade (antes ficavam paradas).</string>
+• Respostas de mãos livres mais fiáveis no idioma escolhido.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -121,6 +112,10 @@
     <string name="dj_voice_hands_free_ui">Essa só faço com o ecrã aberto. Abre a aplicação e pede-me outra vez.</string>
     <string name="dj_voice_delete_failed">Não consegui eliminar. Esse ficheiro pode estar protegido pelo sistema.</string>
     <string name="dj_voice_dup_failed">Não consegui eliminar as repetidas. Pode haver um problema com alguns ficheiros.</string>
+    <string name="dj_voice_unplayed_search">Vou ver quais músicas nunca ouviste.</string>
+    <string name="dj_voice_unplayed_none">Boa! Já ouviste todas as músicas da tua biblioteca.</string>
+    <string name="dj_voice_unplayed_confirm">Encontrei %1$d músicas que nunca ouviste. Diz \"podes eliminar\" que eu limpo.</string>
+    <string name="dj_voice_unplayed_done">Pronto! Eliminei %1$d músicas que nunca ouviste.</string>
     <string name="dj_voice_pen_confirm">Encontrei %1$d músicas novas no pendrive. Quer que eu copie para o seu telemóvel? Diga sim para confirmar.</string>
     <string name="dj_voice_pen_copy_done">Pronto! Copiei %1$d músicas novas do pendrive para o seu telemóvel.</string>
     <string name="dj_voice_pen_copy_done_dups">Encontrei %1$d músicas no pendrive; %2$d já existiam ou estavam repetidas, mas copiei as %3$d novas para o seu telemóvel.</string>

@@ -33,23 +33,14 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.29):
+    <string name="changelog">Novidades desta versão (5.10.30):
 → NOVIDADES
-• Nota prévia da faixa: se você costuma pular uma música, a Virgin avisa antes de tocar.
-→ A RÁDIO DA VIRGÍNIA FICOU MAIS CONVERSADA
-• "Relança as antigas": monta uma fila só com músicas que faz tempo que você não ouve — e fala quanto tempo já era.
-• "Resumo do fim de semana": ela conta o que você mais ouviu no sábado e no domingo.
-• "Resumo do ano": faixas, artista e mês mais forte do seu ano.
-• Rádio do humor: "tô nervoso" monta uma fila calma; "tô pra baixo" monta uma pra cima.
-→ CENAS E AMBIENTE
-• "Estuda com chuva" agora toca o som ambiente junto com a música.
-• "Toca chuva com a música": liga o ambiente sem trocar a faixa que está tocando.
-→ HOME
-• As estatísticas agora mostram também as tocadas e o tempo total ouvido.
-→ IDIOMA
-• Português (Portugal): tradução completa de toda a aplicação.
+• Virgin bilíngue: ela responde no idioma da sua pergunta — fale em português, inglês ou espanhol que a resposta vem no mesmo idioma.
+• O microfone agora reconhece no idioma escolhido no app, não no idioma do sistema.
+→ LIMPEZA POR VOZ
+• "Apaga as músicas que eu nunca ouvi": a Virgin conta quantas são e só apaga depois que você confirma.
 → CORREÇÕES
-• Estrelas brilhantes: agora cintilam e deslizam de verdade (antes ficavam paradas).</string>
+• Respostas de mãos livres mais confiáveis no idioma escolhido.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -679,6 +670,7 @@
     <string name="dj_commands_recognize">"Virgin, reconhecer / que música é essa" — escuta e identifica</string>
     <string name="dj_commands_delete">"Virgin, apaga / deleta" — apaga a música (com confirmação)</string>
     <string name="dj_commands_duplicates">"Virgin, músicas repetidas" — encontra duplicatas</string>
+    <string name="dj_commands_never_played">"Virgin, apaga as que eu nunca ouvi" — limpa as músicas que nunca tocaram</string>
     <string name="dj_commands_pendrive">"Virgin, pendrive / cartão" — importa músicas de um pendrive</string>
     <string name="dj_commands_suggest">"Virgin, me sugere / o que você tocaria" — pede uma sugestão da IA</string>
     <string name="dj_commands_visualizer">"Virgin, visualizador" — liga/desliga as barrinhas</string>
@@ -778,6 +770,10 @@
     <string name="dj_voice_dup_found">Achei %1$d grupos de músicas e vídeos repetidos, totalizando %2$d cópias. Vou apagar as repetidas e deixar só a original.</string>
     <string name="dj_voice_dup_done">Pronto! Apaguei %1$d cópias repetidas de músicas e vídeos e mantive as originais.</string>
     <string name="dj_voice_dup_failed">Não consegui apagar as repetidas. Pode haver um problema com alguns arquivos.</string>
+    <string name="dj_voice_unplayed_search">Vou ver quais músicas você nunca ouviu.</string>
+    <string name="dj_voice_unplayed_none">Boa! Você já ouviu todas as músicas da sua biblioteca.</string>
+    <string name="dj_voice_unplayed_confirm">Encontrei %1$d músicas que você nunca ouviu. Fala \"pode apagar\" que eu limpo.</string>
+    <string name="dj_voice_unplayed_done">Pronto! Apaguei %1$d músicas que você nunca ouviu.</string>
     <string name="dj_voice_pen_search">Vou olhar se tem um pendrive ou cartão conectado e buscar as músicas dele.</string>
     <string name="dj_voice_pen_none">Não encontrei nenhum pendrive ou cartão extra conectado.</string>
     <string name="dj_voice_pen_done">Pronto! Encontrei %1$d músicas novas no pendrive e adicionei à sua coleção.</string>

@@ -297,6 +297,30 @@ object DjCommander {
             "libera espacio", "liberar espacio", "limpiar espacio", "limpiar el espacio"
         ).any { norm.contains(it) }
 
+    /**
+     * Limpeza do que nunca tocou: "apaga as músicas que eu nunca ouvi".
+     *
+     * Só dispara com a marca de "nunca tocou" **e** um verbo de apagar/limpar ou uma pergunta
+     * ("quais/quantas/lista"). Sem essa guarda, "toca uma que eu nunca ouvi" — que é pedir
+     * música nova — cairia aqui e apagaria a biblioteca. Fica antes de "play"/"delete" no
+     * `action` porque "nunca toquei"/"apaga" contêm "toca"/"apag".
+     */
+    fun neverPlayedQuery(norm: String): Boolean {
+        val neverExplicit =
+            norm.contains("nunca ouvi") || norm.contains("nunca escutei") ||
+                norm.contains("nunca toquei") || norm.contains("nunca ouviu") ||
+                norm.contains("nao ouvi") || norm.contains("nao escutei") ||
+                norm.contains("nao toquei") ||
+                norm.contains("never played") || norm.contains("never listened") ||
+                norm.contains("never heard") || norm.contains("nunca escuche") ||
+                norm.contains("nunca oi")
+        if (!neverExplicit) return false
+        val ask = norm.contains("quais") || norm.contains("quantas") || norm.contains("lista")
+        val erase = norm.contains("apag") || norm.contains("exclui") || norm.contains("delet") ||
+            norm.contains("remove") || norm.contains("limpa")
+        return ask || erase
+    }
+
     private val HISTORY_SIGNALS = listOf(
         "historico", "historial", "play history", "recent",
         "o que ja tocou", "o que ja toceu", "o que tocou", "o que toceu", "o que ja passou",
@@ -1075,6 +1099,7 @@ object DjCommander {
         // tem "apaga"/"memoria", que os ramos de delete de música e de pendrive pegariam.
         downloadQuery(norm) -> "download_episode"
         cleanQuery(norm) -> "clean_space"
+        neverPlayedQuery(norm) -> "never_played"
         historyQuery(norm) != null -> "queue_history"
         moveToEndQuery(norm) != null -> "queue_move"
 

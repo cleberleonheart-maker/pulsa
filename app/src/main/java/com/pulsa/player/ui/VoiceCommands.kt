@@ -29,6 +29,7 @@ object VoiceCommands {
         R.string.dj_commands_recognize to R.drawable.ic_mic,
         R.string.dj_commands_delete to R.drawable.ic_delete,
         R.string.dj_commands_duplicates to R.drawable.ic_copy,
+        R.string.dj_commands_never_played to R.drawable.ic_delete,
         R.string.dj_commands_pendrive to R.drawable.ic_download,
         R.string.dj_commands_suggest to R.drawable.ic_play_circle,
         R.string.dj_commands_visualizer to R.drawable.ic_dj,

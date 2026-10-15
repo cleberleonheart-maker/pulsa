@@ -48,6 +48,17 @@ class DjCommanderTest {
     }
 
     @Test
+    fun action_never_played_clean() {
+        assertEquals("never_played", DjCommander.action(DjCommander.norm("apaga as musicas que eu nunca ouvi")))
+        assertEquals("never_played", DjCommander.action(DjCommander.norm("limpa as que eu nunca toquei")))
+        assertEquals("never_played", DjCommander.action(DjCommander.norm("quais musicas eu nunca escutei")))
+        // Pedir música nova contém "nunca ouvi", mas não é limpeza: continua tocando.
+        assertEquals("play", DjCommander.action(DjCommander.norm("toca uma musica que eu nunca ouvi")))
+        // O delete comum não casa com a marca de "nunca tocou".
+        assertEquals("delete", DjCommander.action(DjCommander.norm("apaga essa musica")))
+    }
+
+    @Test
     fun action_basic_navigation() {
         assertEquals("next", DjCommander.action(DjCommander.norm("proxima")))
         assertEquals("skip", DjCommander.action(DjCommander.norm("pula")))

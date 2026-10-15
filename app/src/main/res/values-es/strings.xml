@@ -30,23 +30,14 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.29):
+    <string name="changelog">Novedades de esta versión (5.10.30):
 → NUEVO
-• Aviso de canción: si sueles saltar una, la Virgin te avisa antes de ponerla.
-→ UNA VIRGIN MÁS CONVERSADORA
-• "Relanza las antiguas": una cola solo con canciones que hace tiempo no escuchas, con el tiempo transcurrido dicho en voz.
-• "Resumen del fin de semana": cuenta lo que más escuchaste el sábado y el domingo.
-• "Resumen del año": temas, artista y mes más fuerte de tu año.
-• Radio del ánimo: "estoy nervioso" arma una lista calmada; "estoy abajo", una animada.
-→ ESCENAS Y AMBIENTACIÓN
-• "Estudia con lluvia" ahora suena el ambiente junto con la música.
-• "Pon la lluvia con la música": activa el ambiente sin cambiar de tema.
-→ INICIO
-• Las estadísticas ahora muestran también las reproducciones y el tiempo total escuchado.
-→ IDIOMA
-• Portugués (Portugal): traducción completa de toda la aplicación.
+• Virgin bilingüe: responde en el idioma de tu pregunta — habla en portugués, inglés o español y la respuesta llega en el mismo idioma.
+• El micrófono ahora escucha en el idioma elegido en la app, no en el idioma del sistema.
+→ LIMPIEZA POR VOZ
+• "Borra las canciones que nunca escuché": la Virgin cuenta cuántas son y solo las elimina tras tu confirmación.
 → CORRECCIONES
-• Estrellas brillantes: ahora sí titilan y se desplazan (antes quedaban quietas).</string>
+• Respuestas manos libres más fiables en tu idioma elegido.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -655,6 +646,10 @@
     <string name="dj_voice_delete_cancel">Vale, no borraré nada.</string>
     <string name="dj_voice_delete_no_song">No hay ninguna canción sonando para borrar.</string>
     <string name="dj_voice_delete_failed">No pude borrarla. Puede que el archivo esté protegido por el sistema.</string>
+    <string name="dj_voice_unplayed_search">Voy a ver qué canciones nunca has escuchado.</string>
+    <string name="dj_voice_unplayed_none">¡Bien! Ya escuchaste todas las canciones de tu biblioteca.</string>
+    <string name="dj_voice_unplayed_confirm">Encontré %1$d canciones que nunca escuchaste. Di \"puedes borrar\" y las limpio.</string>
+    <string name="dj_voice_unplayed_done">¡Listo! Borré %1$d canciones que nunca escuchaste.</string>
     <string name="dj_voice_pen_search">Voy a ver si tienes un pendrive o tarjeta conectado y buscar las canciones que tenga.</string>
     <string name="dj_voice_pen_none">No encontré ningún pendrive o tarjeta extra conectado.</string>
     <string name="dj_voice_pen_done">¡Listo! Encontré %1$d canciones nuevas en el pendrive y las agregué a tu colección.</string>

@@ -117,7 +117,7 @@
 
 ### DJ Virgin / voz
 - [x] **Despertador da Virgínia**: "virgi, me acorda às 7h com chuva" — alarme toca som ambiente + uma faixa escolhida na hora definida; também sleep-timer falado ("para em 20 min") (verificado 15/10/2026) — `DjCommander.alarmQuery:858` / `sleepTimerQuery:871`, `MainVirgin.virgAlarmSet` (`AlarmManager`) + `virgAlarmCancel`, e a voz no `onVirginAlarm`
-- [ ] **Virgin bilíngue**: responde na língua da pergunta (pt/en/es), não só no idioma do app — `DjVoice` + strings
+- [x] **Virgin bilíngue**: responde na língua da pergunta (pt/en/es), não só no idioma do app (feito 15/10/2026) — `DjCommander.languageOf` na fala via `MainVirgin.say`/`langContext` (contexto `en`/`es`, e `pt` quando o app está em outro idioma), e o reconhecedor segue `Settings.language` em `DjCommandListener.locale`
 - [x] **Resumo semanal falado**: Virgin resume o `play_log` ("você ouviu 4h de Rock, 12x essa música") com voz, em vez de só dashboard web (verificado 15/10/2026) — intent `weekly` (`DjCommander:798,932`) → `MainVirgin.virgWeekSummary:1664` sobre `DjLearn.rewind(7,10)` + `DjSuggest.weeklySummary`
 - [ ] **Trivia "quanto você conhece a Virgínia"**: quiz usando `DjMemory`/`DjLearn` — "qual minha música favorita?", reconhecimento por trecho de faixa
 
@@ -139,7 +139,7 @@
   - **O restore diz o que não voltou.** `Report` separa "não está na playlist" de "favorita perdida", e sem permissão de mídia devolve um estado próprio em vez de reportar tudo como faltando — senão quem restaura antes de liberar o acesso conclui que o arquivo estragou. O toast de "pronto" virou diálogo: são quatro resultados possíveis e o toast não distinguia nenhum.
   - **As playlists de sistema ficam fora do backup.** `ensureSpecialPlaylists` as recria, e o nome delas é traduzido — exportar gravaria no arquivo o nome em português do aparelho de origem, que em outro idioma viraria uma playlist de sistema errada. E o merge é por nome normalizado (`DjCommander.norm`), porque restaurar o mesmo arquivo duas vezes é o caso normal e não pode duplicar "Batidinhas" umas vinte vezes.
 - [x] **Backup da biblioteca é testável**: `PlaylistBackup.parse` é a única parte pura (sem Context/MediaStore/banco) e o resto do arquivo é I/O — 14 testes em `app/src/test/java/com/pulsa/player/data/PlaylistBackupTest.kt` cobrem backup v1 sem o bloco, item sem nome, caminho em branco, `likedAt` ausente/zero, arquivo truncado e chave desconhecida de uma versão futura. **Precisou de `testImplementation("org.json:json:20240303")`**: o `org.json` do Android é stub nas unidades JVM e qualquer `put` estoura com "not mocked"
-- [ ] **Limpeza guiada por voz**: lista músicas nunca tocadas/duplicadas e apaga com confirmação — `DjMemory` + `DjCommander`
+- [x] **Limpeza guiada por voz**: lista músicas nunca tocadas e apaga com confirmação (feito 15/10/2026) — intent `never_played` (`DjCommander.neverPlayedQuery`), `MainVirgin.virginCleanUnplayed` cruza `Library.allSongs` com `DjLearn.lastPlayedMap`, pede "pode apagar" e reusa o delete em lote das duplicatas (`deleteVirginUnplayed` → `completeVirginDuplicates`). As repetidas por voz já existiam (`virginFindDuplicates`)
 
 ### Polimento
 - [x] **Widget de tela inicial**: mini-player da Virgin com play/pause/próxima sem abrir o app (verificado 15/10/2026) — `widget/PulsaWidget.kt` (`AppWidgetProvider`), registrado em `AndroidManifest.xml:153` (`APPWIDGET_UPDATE` + `appwidget.provider`)

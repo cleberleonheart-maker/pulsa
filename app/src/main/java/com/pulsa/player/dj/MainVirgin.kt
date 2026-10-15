@@ -101,7 +101,7 @@ class MainVirgin(
         private const val RELAUNCH_GAP_DAYS = 180L
         private const val RELAUNCH_MAX = 40
         private val HANDS_FREE_BLOCKED = setOf(
-            "scan", "duplicates", "pendrive", "delete", "confirm", "cancel",
+            "scan", "duplicates", "never_played", "pendrive", "delete", "confirm", "cancel",
             "clean_space",
             "visualizer", "skin", "karaoke"
             // `video_open` NÃO fica bloqueado: era o único jeito de voltar para a tela do
@@ -138,6 +138,8 @@ class MainVirgin(
     private var pendingClean = false
     private var pendingDuplicateSongs: List<Song> = emptyList()
     private var pendingDuplicateVideos: List<Video> = emptyList()
+    private var pendingUnplayedSongs: List<Song> = emptyList()
+    private var pendingBatchUnplayed = false
     private var pendingPendriveFiles: List<VirginMedia.PendriveFile>? = null
     private var pendriveTotalFound = 0
     private var pendriveDuplicatesSkipped = 0
@@ -194,7 +196,7 @@ class MainVirgin(
                 } else if (granted) {
                     virginScanLibrary()
                 } else {
-                    virginSpeak(activity.getString(R.string.dj_voice_scan_denied))
+                    virginSpeak(say(R.string.dj_voice_scan_denied))
                 }
             }
         }
@@ -207,20 +209,22 @@ class MainVirgin(
         if (success && song != null) {
             completeVirginDelete(song, alreadyDeleted = true)
         } else if (song != null) {
-            virginSpeak(activity.getString(R.string.dj_voice_delete_cancel))
+            virginSpeak(say(R.string.dj_voice_delete_cancel))
         }
     }
 
     fun onDuplicatesRequestResult(success: Boolean) {
         val songs = pendingDuplicateSongs
         val videos = pendingDuplicateVideos
+        val unplayed = pendingBatchUnplayed
         pendingDuplicateSongs = emptyList()
         pendingDuplicateVideos = emptyList()
+        pendingBatchUnplayed = false
         virginHandler.removeCallbacksAndMessages(null)
         if (success && (songs.isNotEmpty() || videos.isNotEmpty())) {
-            completeVirginDuplicates(songs, videos, alreadyDeleted = true)
+            completeVirginDuplicates(songs, videos, alreadyDeleted = true, unplayed = unplayed)
         } else if (songs.isNotEmpty() || videos.isNotEmpty()) {
-            virginSpeak(activity.getString(R.string.dj_voice_dup_failed))
+            virginSpeak(say(if (unplayed) R.string.dj_voice_delete_failed else R.string.dj_voice_dup_failed))
         }
     }
 
@@ -230,7 +234,7 @@ class MainVirgin(
             pendingPendriveFiles = null
             virginScanInFlight = false
             resumeVirginSpeech()
-            virginSpeak(activity.getString(R.string.dj_voice_pen_none))
+            virginSpeak(say(R.string.dj_voice_pen_none))
             return
         }
         runCatching {
@@ -349,7 +353,7 @@ class MainVirgin(
         Playback.setMicListening(false)
         virginListener?.stop()
         host.syncVirginIcon()
-        if (!silent) virginSpeak(activity.getString(R.string.dj_voice_goodbye))
+        if (!silent) virginSpeak(say(R.string.dj_voice_goodbye))
         virginVoice?.stop()
         Hotword.startIfNeeded(activity)
     }
@@ -462,11 +466,23 @@ class MainVirgin(
         return runCatching { ctx.getString(resId, *args) }.getOrElse { activity.getString(resId, *args) }
     }
 
+    /**
+     * Contexto no idioma da pergunta. `en`/`es` sempre; `pt` só quando o app está em outro
+     * idioma — aí a resposta sai em português mesmo com a interface em inglês/espanhol. Se o
+     * app já está em português, devolve `null` e a string sai pelo próprio idioma da interface.
+     */
     private fun langContext(): android.content.Context? {
-        if (virginLang !in arrayOf("en", "es")) return null
+        val tag = when (virginLang) {
+            "en", "es" -> virginLang
+            "pt" -> {
+                val app = Settings.language(activity)
+                if (app == Settings.LANG_EN || app == Settings.LANG_ES) "pt" else return null
+            }
+            else -> return null
+        }
         return runCatching {
             val conf = android.content.res.Configuration(activity.resources.configuration)
-            conf.setLocale(java.util.Locale.forLanguageTag(virginLang))
+            conf.setLocale(java.util.Locale.forLanguageTag(tag))
             activity.createConfigurationContext(conf)
         }.getOrNull()
     }
@@ -477,7 +493,7 @@ class MainVirgin(
         ThreadPool.post {
             val songs = Library.allSongs(activity.applicationContext)
             if (songs.isEmpty()) {
-                ThreadPool.onUi { virginSpeak(activity.getString(R.string.dj_voice_only_none, "")) }
+                ThreadPool.onUi { virginSpeak(say(R.string.dj_voice_only_none, "")) }
                 return@post
             }
             val favIds = runCatching {
@@ -491,7 +507,7 @@ class MainVirgin(
             )
             ThreadPool.onUi {
                 if (set.isEmpty()) {
-                    virginSpeak(activity.getString(R.string.dj_voice_only_none, ""))
+                    virginSpeak(say(R.string.dj_voice_only_none, ""))
                     return@onUi
                 }
                 Telemetry.log(activity, "Virgin sleep n=${set.size}")
@@ -500,7 +516,7 @@ class MainVirgin(
                 Playback.setSleepMix(true)
                 DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set, 0)
-                virginSpeak(activity.getString(R.string.dj_voice_sleep, set.size) + avoidNote(learn, songs))
+                virginSpeak(say(R.string.dj_voice_sleep, set.size) + avoidNote(learn, songs))
             }
         }
     }
@@ -547,14 +563,14 @@ class MainVirgin(
     private fun virgArtistOnly(query: String?) {
         val artist = VirginMedia.findArtist(activity, query)
         if (artist == null) {
-            virginSpeak(activity.getString(R.string.dj_voice_only_none, query ?: ""))
+            virginSpeak(say(R.string.dj_voice_only_none, query ?: ""))
             return
         }
         ThreadPool.post {
             val songs = Library.songsByArtist(activity.applicationContext, artist)
             ThreadPool.onUi {
                 if (songs.isEmpty()) {
-                    virginSpeak(activity.getString(R.string.dj_voice_only_none, artist))
+                    virginSpeak(say(R.string.dj_voice_only_none, artist))
                     return@onUi
                 }
                 Telemetry.log(activity, "Virgin only artist=$artist n=${songs.size}")
@@ -562,14 +578,14 @@ class MainVirgin(
                 Playback.setRepeatAll(true)
                 Playback.setSleepMix(false)
                 Playback.start(songs.shuffled(), 0)
-                virginSpeak(activity.getString(R.string.dj_voice_only, artist, songs.size))
+                virginSpeak(say(R.string.dj_voice_only, artist, songs.size))
             }
         }
     }
 
     private fun virgDynamicQueue(query: DjCommander.DynQuery?) {
         if (query == null) {
-            virginSpeak(activity.getString(R.string.dj_voice_dynq_none))
+            virginSpeak(say(R.string.dj_voice_dynq_none))
             return
         }
         ThreadPool.post {
@@ -917,12 +933,12 @@ class MainVirgin(
                 when {
                     video != null -> {
                         Telemetry.log(activity, "Virgin video_by_name local=${video.title}")
-                        virginSpeak(activity.getString(R.string.dj_voice_video_open, video.title))
+                        virginSpeak(say(R.string.dj_voice_video_open, video.title))
                         VideoPlayerActivity.start(activity, listOf(video), 0)
                     }
                     stream != null -> {
                         Telemetry.log(activity, "Virgin video_by_name stream=${stream.title}")
-                        virginSpeak(activity.getString(R.string.dj_voice_video_open, stream.title))
+                        virginSpeak(say(R.string.dj_voice_video_open, stream.title))
                         VideoPlayerActivity.startStream(
                             activity, stream.url, stream.title,
                             uuid = stream.uuid, pageUrl = stream.pageUrl,
@@ -973,7 +989,7 @@ class MainVirgin(
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (ranks.isEmpty()) {
-                    virginSpeak(activity.getString(R.string.dj_voice_history_none))
+                    virginSpeak(say(R.string.dj_voice_history_none))
                     return@onUi
                 }
                 val items = ranks.map { (artist, title) ->
@@ -981,7 +997,7 @@ class MainVirgin(
                         activity.getString(R.string.dj_voice_yesterday_item, artist, title)
                 }
                 Telemetry.log(activity, "Virgin queue_history kind=$t items=${items.size}")
-                virginSpeak(activity.getString(R.string.dj_voice_history_all, items.joinToString("; ")))
+                virginSpeak(say(R.string.dj_voice_history_all, items.joinToString("; ")))
             }
         }
     }
@@ -1133,7 +1149,7 @@ class MainVirgin(
         // sem a tela), então ele cai no caminho de música abaixo.
         val current = Playback.currentSong
         if (current != null && !current.needsVideoScreen) {
-            virginSpeak(activity.getString(R.string.dj_voice_resume_searching))
+            virginSpeak(say(R.string.dj_voice_resume_searching))
             val pos = Playback.position
             if (!Playback.isPlaying) Playback.toggle()
             Telemetry.log(activity, "Virgin resume atual tipo=${ResumeInfo.kindOf(current)} pos=$pos")
@@ -1142,21 +1158,21 @@ class MainVirgin(
         }
         val songId = Settings.resumeSongId(ctx)
         if (songId < 0L) {
-            virginSpeak(activity.getString(R.string.dj_voice_resume_none))
+            virginSpeak(say(R.string.dj_voice_resume_none))
             return
         }
-        virginSpeak(activity.getString(R.string.dj_voice_resume_searching))
+        virginSpeak(say(R.string.dj_voice_resume_searching))
         ThreadPool.post {
             val song = Library.songsById(ctx, songId).firstOrNull()
             ThreadPool.onUi {
                 if (song == null) {
-                    virginSpeak(activity.getString(R.string.dj_voice_resume_none))
+                    virginSpeak(say(R.string.dj_voice_resume_none))
                     return@onUi
                 }
                 Telemetry.log(activity, "Virgin resume id=$songId pos=${Settings.resumePosition(ctx)}")
                 Playback.setSleepMix(false)
                 Playback.start(listOf(song), 0)
-                virginSpeak(activity.getString(R.string.dj_voice_resume, song.title, song.artist))
+                virginSpeak(say(R.string.dj_voice_resume, song.title, song.artist))
             }
         }
     }
@@ -1164,13 +1180,13 @@ class MainVirgin(
     private fun virgMixWithArtist(query: String?) {
         val artist = VirginMedia.findArtist(activity, query)
         if (artist == null) {
-            virginSpeak(activity.getString(R.string.dj_voice_mixwith_none, query ?: ""))
+            virginSpeak(say(R.string.dj_voice_mixwith_none, query ?: ""))
             return
         }
         ThreadPool.post {
             val songs = Library.allSongs(activity.applicationContext)
             if (songs.isEmpty()) {
-                ThreadPool.onUi { virginSpeak(activity.getString(R.string.dj_voice_only_none, "")) }
+                ThreadPool.onUi { virginSpeak(say(R.string.dj_voice_only_none, "")) }
                 return@post
             }
             val favIds = runCatching {
@@ -1184,7 +1200,7 @@ class MainVirgin(
             )
             ThreadPool.onUi {
                 if (set.isEmpty()) {
-                    virginSpeak(activity.getString(R.string.dj_voice_only_none, ""))
+                    virginSpeak(say(R.string.dj_voice_only_none, ""))
                     return@onUi
                 }
                 Telemetry.log(activity, "Virgin mixwith artist=$artist n=${set.size}")
@@ -1193,7 +1209,7 @@ class MainVirgin(
                 Playback.setSleepMix(false)
                 DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set, 0)
-                virginSpeak(activity.getString(R.string.dj_voice_mixwith, artist, set.size) + avoidNote(learn, songs))
+                virginSpeak(say(R.string.dj_voice_mixwith, artist, set.size) + avoidNote(learn, songs))
             }
         }
     }
@@ -1202,7 +1218,7 @@ class MainVirgin(
         ThreadPool.post {
             val songs = Library.allSongs(activity.applicationContext)
             if (songs.isEmpty()) {
-                ThreadPool.onUi { virginSpeak(activity.getString(R.string.dj_voice_only_none, "")) }
+                ThreadPool.onUi { virginSpeak(say(R.string.dj_voice_only_none, "")) }
                 return@post
             }
             val favIds = runCatching {
@@ -1216,7 +1232,7 @@ class MainVirgin(
             )
             ThreadPool.onUi {
                 if (set.isEmpty()) {
-                    virginSpeak(activity.getString(R.string.dj_voice_only_none, ""))
+                    virginSpeak(say(R.string.dj_voice_only_none, ""))
                     return@onUi
                 }
                 Telemetry.log(activity, "Virgin wild n=${set.size}")
@@ -1225,7 +1241,7 @@ class MainVirgin(
                 Playback.setSleepMix(false)
                 DjSessionMemory.notePlayed(set.map { it.id })
                 Playback.start(set.shuffled(), 0)
-                virginSpeak(activity.getString(R.string.dj_voice_mood_wild, set.size) + avoidNote(learn, songs))
+                virginSpeak(say(R.string.dj_voice_mood_wild, set.size) + avoidNote(learn, songs))
             }
         }
     }
@@ -1243,7 +1259,7 @@ class MainVirgin(
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (ranks.isEmpty()) {
-                    virginSpeak(activity.getString(R.string.dj_voice_yesterday_none))
+                    virginSpeak(say(R.string.dj_voice_yesterday_none))
                     return@onUi
                 }
                 val byId = songs.associateBy { it.id }
@@ -1253,9 +1269,9 @@ class MainVirgin(
                     }
                 }
                 if (items.isEmpty()) {
-                    virginSpeak(activity.getString(R.string.dj_voice_yesterday_none))
+                    virginSpeak(say(R.string.dj_voice_yesterday_none))
                 } else {
-                    virginSpeak(activity.getString(
+                    virginSpeak(say(
                         R.string.dj_voice_yesterday_all, items.joinToString("; ")
                     ))
                 }
@@ -1267,9 +1283,9 @@ class MainVirgin(
         val saved = DjMemory.save(activity.applicationContext, norm)
         if (saved != null) {
             DjMemory.log(activity.applicationContext, norm, "memorizado ${saved.first}")
-            virginSpeak(activity.getString(R.string.dj_voice_memory_saved, memoryLabel(saved.first), saved.second))
+            virginSpeak(say(R.string.dj_voice_memory_saved, memoryLabel(saved.first), saved.second))
         } else {
-            virginSpeak(activity.getString(R.string.dj_voice_memory_ask, memoryLabel(DjMemory.PHONE)))
+            virginSpeak(say(R.string.dj_voice_memory_ask, memoryLabel(DjMemory.PHONE)))
         }
     }
 
@@ -1277,9 +1293,9 @@ class MainVirgin(
         val fact = DjMemory.recall(activity.applicationContext, norm)
         if (fact != null) {
             DjMemory.log(activity.applicationContext, norm, "lembra ${fact.first}")
-            virginSpeak(activity.getString(R.string.dj_voice_memory_saved, memoryLabel(fact.first), fact.second))
+            virginSpeak(say(R.string.dj_voice_memory_saved, memoryLabel(fact.first), fact.second))
         } else {
-            virginSpeak(activity.getString(R.string.dj_voice_memory_ask, memoryLabel(DjMemory.PHONE)))
+            virginSpeak(say(R.string.dj_voice_memory_ask, memoryLabel(DjMemory.PHONE)))
         }
     }
 
@@ -1308,6 +1324,7 @@ class MainVirgin(
         }
         if (action !in setOf("confirm", "cancel", "delete", "clean_space")) {
             pendingDelete = null
+            pendingUnplayedSongs = emptyList()
             virginHandler.removeCallbacksAndMessages(null)
         }
         // Um comando novo encerra o mix "Relança antigas" (só ele mantém o aviso de intervalo).
@@ -1450,6 +1467,7 @@ class MainVirgin(
             }
             "scan" -> virginScanLibrary()
             "duplicates" -> virginFindDuplicates()
+            "never_played" -> virginCleanUnplayed()
             "pendrive" -> virginReadPendrive()
             "recognize" -> startVirginRecognize()
             "delete" -> {
@@ -1457,7 +1475,7 @@ class MainVirgin(
                 if (cur == null) {
                     pendingDelete = null
                     virginHandler.removeCallbacksAndMessages(null)
-                    virginSpeak(activity.getString(R.string.dj_voice_delete_no_song))
+                    virginSpeak(say(R.string.dj_voice_delete_no_song))
                 } else if (pendingDelete?.id == cur.id) {
                     pendingDelete = null
                     virginHandler.removeCallbacksAndMessages(null)
@@ -1466,7 +1484,7 @@ class MainVirgin(
                     pendingDelete = cur
                     virginHandler.removeCallbacksAndMessages(null)
                     virginHandler.postDelayed({ pendingDelete = null }, 15000)
-                    virginSpeak(activity.getString(R.string.dj_voice_delete_confirm, cur.title))
+                    virginSpeak(say(R.string.dj_voice_delete_confirm, cur.title))
                 }
             }
             "confirm" -> {
@@ -1479,6 +1497,11 @@ class MainVirgin(
                     pendingClean = false
                     virginHandler.removeCallbacksAndMessages(null)
                     virgCleanSpaceConfirm()
+                } else if (pendingUnplayedSongs.isNotEmpty()) {
+                    val list = pendingUnplayedSongs
+                    pendingUnplayedSongs = emptyList()
+                    virginHandler.removeCallbacksAndMessages(null)
+                    deleteVirginUnplayed(list)
                 } else {
                     val song = pendingDelete
                     pendingDelete = null
@@ -1490,15 +1513,16 @@ class MainVirgin(
                 if (pendingPendriveFiles != null) {
                     pendingPendriveFiles = null
                     virginHandler.removeCallbacksAndMessages(null)
-                    virginSpeak(activity.getString(R.string.dj_voice_pen_cancel))
-                } else if (pendingClean) {
+                    virginSpeak(say(R.string.dj_voice_pen_cancel))
+                } else if (pendingClean || pendingUnplayedSongs.isNotEmpty()) {
                     pendingClean = false
+                    pendingUnplayedSongs = emptyList()
                     virginHandler.removeCallbacksAndMessages(null)
                     virginSpeak(say(R.string.dj_voice_delete_cancel))
                 } else {
                     pendingDelete = null
                     virginHandler.removeCallbacksAndMessages(null)
-                    virginSpeak(activity.getString(R.string.dj_voice_delete_cancel))
+                    virginSpeak(say(R.string.dj_voice_delete_cancel))
                 }
             }
             "thanks" -> virginSpeak(say(R.string.dj_voice_thanks))
@@ -1538,7 +1562,7 @@ class MainVirgin(
             "karaoke" -> toggleKaraoke()
             "suggest" -> virgSuggestSong()
             "identity" -> virginSpeak(DjIdentity.introSpeech())
-            "stems" -> virginSpeak(activity.getString(R.string.dj_voice_stems_soon))
+            "stems" -> virginSpeak(say(R.string.dj_voice_stems_soon))
         }
     }
 
@@ -1548,9 +1572,9 @@ class MainVirgin(
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (n == 0) {
-                    virginSpeak(activity.getString(R.string.dj_voice_count_none))
+                    virginSpeak(say(R.string.dj_voice_count_none))
                 } else {
-                    virginSpeak(activity.getString(R.string.dj_voice_count, n))
+                    virginSpeak(say(R.string.dj_voice_count, n))
                 }
             }
         }
@@ -1563,7 +1587,7 @@ class MainVirgin(
             if (songs.isEmpty()) {
                 ThreadPool.onUi {
                     if (activity.isFinishing || activity.isDestroyed) return@onUi
-                    virginSpeak(activity.getString(R.string.dj_empty))
+                    virginSpeak(say(R.string.dj_empty))
                 }
                 return@post
             }
@@ -1590,7 +1614,7 @@ class MainVirgin(
             if (songs.isEmpty()) {
                 ThreadPool.onUi {
                     if (activity.isFinishing || activity.isDestroyed) return@onUi
-                    virginSpeak(activity.getString(R.string.dj_empty))
+                    virginSpeak(say(R.string.dj_empty))
                 }
                 return@post
             }
@@ -1613,7 +1637,7 @@ class MainVirgin(
                 Playback.setShuffle(false)
                 Playback.setRepeatAll(true)
                 Playback.start(set, 0)
-                virginSpeak(activity.getString(R.string.dj_voice_daily_set, set.size))
+                virginSpeak(say(R.string.dj_voice_daily_set, set.size))
             }
         }
     }
@@ -1746,7 +1770,7 @@ class MainVirgin(
         ThreadPool.post {
             val songs = Library.allSongs(ctx)
             if (songs.isEmpty()) {
-                ThreadPool.onUi { virginSpeak(activity.getString(R.string.dj_empty)) }
+                ThreadPool.onUi { virginSpeak(say(R.string.dj_empty)) }
                 return@post
             }
             val favIds = runCatching { PlaylistDb.get(ctx).favorites().map { it.id }.toSet() }
@@ -1765,7 +1789,7 @@ class MainVirgin(
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (set.isEmpty()) {
-                    virginSpeak(activity.getString(R.string.dj_empty))
+                    virginSpeak(say(R.string.dj_empty))
                     return@onUi
                 }
                 Telemetry.log(ctx, "Virgin $logTag n=${set.size} amb=${ambientMode ?: '-'}")
@@ -1794,7 +1818,7 @@ class MainVirgin(
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (rew.plays == 0) {
-                    virginSpeak(activity.getString(R.string.dj_voice_week_none))
+                    virginSpeak(say(R.string.dj_voice_week_none))
                     return@onUi
                 }
                 val topId = rew.top.firstOrNull()?.first ?: -1L
@@ -1821,7 +1845,7 @@ class MainVirgin(
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (res.plays == 0) {
-                    virginSpeak(activity.getString(R.string.dj_voice_weekend_none))
+                    virginSpeak(say(R.string.dj_voice_weekend_none))
                     return@onUi
                 }
                 val topId = res.top.firstOrNull()?.first ?: -1L
@@ -1878,7 +1902,7 @@ class MainVirgin(
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (rew.plays == 0) {
-                    virginSpeak(activity.getString(R.string.dj_voice_year_none))
+                    virginSpeak(say(R.string.dj_voice_year_none))
                     return@onUi
                 }
                 val byId = songs.associateBy { it.id }
@@ -1994,7 +2018,7 @@ class MainVirgin(
         virginHandler.postDelayed({
             if (activity.isFinishing || activity.isDestroyed) return@postDelayed
             Playback.toggle()
-            virginSpeak(activity.getString(R.string.dj_voice_sleeptimer_done))
+            virginSpeak(say(R.string.dj_voice_sleeptimer_done))
         }, minutes * 60_000L)
     }
 
@@ -2076,7 +2100,7 @@ class MainVirgin(
         // desligada) até a próxima faixa, porque o `Visualizer` vive na sessão do player.
         Playback.refreshFx()
         host.refreshPlayerVisuals()
-        virginSpeak(activity.getString(
+        virginSpeak(say(
             if (on) R.string.dj_voice_visualizer_on else R.string.dj_voice_visualizer_off
         ))
     }
@@ -2093,7 +2117,7 @@ class MainVirgin(
         val on = !Settings.karaokeOn(activity)
         Settings.setKaraokeOn(activity, on)
         Playback.refreshFx()
-        virginSpeak(activity.getString(
+        virginSpeak(say(
             if (on) R.string.dj_voice_karaoke_on else R.string.dj_voice_karaoke_off
         ))
     }
@@ -2134,14 +2158,14 @@ class MainVirgin(
     private fun performVirginScan() {
         if (virginScanInFlight) return
         virginScanInFlight = true
-        virginSpeak(activity.getString(R.string.dj_voice_scan), hold = true)
+        virginSpeak(say(R.string.dj_voice_scan), hold = true)
         GalleryScanner.scan(activity.applicationContext) { songs, videos ->
             virginScanInFlight = false
             if (activity.isFinishing || activity.isDestroyed) {
                 resumeVirginSpeech()
                 return@scan
             }
-            virginSpeak(activity.getString(R.string.dj_voice_scan_result, songs, videos))
+            virginSpeak(say(R.string.dj_voice_scan_result, songs, videos))
             Toast.makeText(
                 activity, activity.getString(R.string.dj_voice_scan_result, songs, videos),
                 Toast.LENGTH_LONG
@@ -2164,7 +2188,7 @@ class MainVirgin(
     private fun performVirginDuplicates() {
         if (virginScanInFlight) return
         virginScanInFlight = true
-        virginSpeak(activity.getString(R.string.dj_voice_dup_search), hold = true)
+        virginSpeak(say(R.string.dj_voice_dup_search), hold = true)
         ThreadPool.post {
             val dup = VirginMedia.findDuplicates(activity.applicationContext)
             ThreadPool.onUi {
@@ -2174,12 +2198,12 @@ class MainVirgin(
                     return@onUi
                 }
                 if (dup.copies == 0) {
-                    virginSpeak(activity.getString(R.string.dj_voice_dup_none))
+                    virginSpeak(say(R.string.dj_voice_dup_none))
                     return@onUi
                 }
                 pendingDuplicateSongs = dup.songsCopies
                 pendingDuplicateVideos = dup.videoCopiesList
-                virginSpeak(activity.getString(R.string.dj_voice_dup_found, dup.pairs, dup.copies))
+                virginSpeak(say(R.string.dj_voice_dup_found, dup.pairs, dup.copies))
                 if (Build.VERSION.SDK_INT >= 30) {
                     val uris = buildList {
                         dup.songsCopies.forEach {
@@ -2193,7 +2217,7 @@ class MainVirgin(
                     if (sender == null) {
                         pendingDuplicateSongs = emptyList()
                         pendingDuplicateVideos = emptyList()
-                        virginSpeak(activity.getString(R.string.dj_voice_dup_failed))
+                        virginSpeak(say(R.string.dj_voice_dup_failed))
                         return@onUi
                     }
                     launcher.duplicates.launch(
@@ -2209,7 +2233,8 @@ class MainVirgin(
     private fun completeVirginDuplicates(
         songsCopies: List<Song>,
         videoCopiesList: List<Video>,
-        alreadyDeleted: Boolean
+        alreadyDeleted: Boolean,
+        unplayed: Boolean = false
     ) {
         ThreadPool.post {
             val deleted = if (alreadyDeleted) true else
@@ -2232,11 +2257,71 @@ class MainVirgin(
                     if (Playback.currentSong?.let { c -> songsCopies.any { it.id == c.id } } == true) {
                         Playback.next()
                     }
-                    virginSpeak(activity.getString(R.string.dj_voice_dup_done, songsCopies.size + videoCopiesList.size))
+                    val n = songsCopies.size + videoCopiesList.size
+                    virginSpeak(
+                        say(if (unplayed) R.string.dj_voice_unplayed_done else R.string.dj_voice_dup_done, n)
+                    )
                 } else {
-                    virginSpeak(activity.getString(R.string.dj_voice_dup_failed))
+                    virginSpeak(say(if (unplayed) R.string.dj_voice_delete_failed else R.string.dj_voice_dup_failed))
                 }
             }
+        }
+    }
+
+    /**
+     * Item 142 · Limpeza guiada por voz — "apaga as músicas que eu nunca ouvi".
+     *
+     * Cruza a biblioteca com o histórico (`DjLearn.lastPlayedMap`): o que nunca apareceu no
+     * `play_log` está intocado. Primeiro fala quantas são e pede o "pode apagar"; o apagar de
+     * verdade reusa o caminho das duplicatas (delete do MediaStore com a caixa do sistema no
+     * Android 11+), então a confirmação dupla é de propósito.
+     */
+    private fun virginCleanUnplayed() {
+        if (virginScanInFlight) return
+        virginScanInFlight = true
+        virginSpeak(say(R.string.dj_voice_unplayed_search), hold = true)
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val played = DjLearn.lastPlayedMap(ctx)
+            val never = runCatching { Library.allSongs(ctx).filter { it.id !in played } }
+                .getOrDefault(emptyList())
+            ThreadPool.onUi {
+                virginScanInFlight = false
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (never.isEmpty()) {
+                    virginSpeak(say(R.string.dj_voice_unplayed_none))
+                    return@onUi
+                }
+                pendingUnplayedSongs = never
+                virginHandler.removeCallbacksAndMessages(null)
+                virginHandler.postDelayed({ pendingUnplayedSongs = emptyList() }, 15000)
+                Telemetry.log(activity, "Virgin never_played count=${never.size}")
+                virginSpeak(say(R.string.dj_voice_unplayed_confirm, never.size))
+            }
+        }
+    }
+
+    private fun deleteVirginUnplayed(songs: List<Song>) {
+        if (songs.isEmpty()) return
+        if (Build.VERSION.SDK_INT >= 30) {
+            val uris = songs.map {
+                android.content.ContentUris.withAppendedId(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, it.id
+                )
+            }
+            val sender = runCatching {
+                MediaStore.createDeleteRequest(activity.contentResolver, uris)
+            }.getOrNull()
+            if (sender == null) {
+                virginSpeak(say(R.string.dj_voice_delete_failed))
+                return
+            }
+            pendingDuplicateSongs = songs
+            pendingDuplicateVideos = emptyList()
+            pendingBatchUnplayed = true
+            launcher.duplicates.launch(IntentSenderRequest.Builder(sender).build())
+        } else {
+            completeVirginDuplicates(songs, emptyList(), alreadyDeleted = false, unplayed = true)
         }
     }
 
@@ -2257,7 +2342,7 @@ class MainVirgin(
         val savedTree = Settings.pendriveTreeUri(activity)
         if (savedTree.isNullOrBlank()) {
             virginScanInFlight = true
-            virginSpeak(activity.getString(R.string.dj_voice_pen_search), hold = true)
+            virginSpeak(say(R.string.dj_voice_pen_search), hold = true)
             launcher.tree.launch(null)
             return
         }
@@ -2267,7 +2352,7 @@ class MainVirgin(
     private fun scanPendriveTree(rootUri: Uri) {
         if (virginScanInFlight) return
         virginScanInFlight = true
-        virginSpeak(activity.getString(R.string.dj_voice_pen_search), hold = true)
+        virginSpeak(say(R.string.dj_voice_pen_search), hold = true)
         ThreadPool.post {
             val scan = VirginMedia.scanPendrive(activity.applicationContext, rootUri)
             ThreadPool.onUi {
@@ -2279,11 +2364,11 @@ class MainVirgin(
                 when {
                     scan.files.isEmpty() -> {
                         virginScanInFlight = false
-                        virginSpeak(activity.getString(R.string.dj_voice_pen_none))
+                        virginSpeak(say(R.string.dj_voice_pen_none))
                     }
                     scan.newFiles.isEmpty() -> {
                         virginScanInFlight = false
-                        virginSpeak(activity.getString(R.string.dj_voice_pen_all_dups, scan.files.size))
+                        virginSpeak(say(R.string.dj_voice_pen_all_dups, scan.files.size))
                     }
                     else -> {
                         pendriveTotalFound = scan.files.size
@@ -2312,16 +2397,16 @@ class MainVirgin(
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (copied == 0) {
-                    virginSpeak(activity.getString(R.string.dj_voice_pen_copy_failed))
+                    virginSpeak(say(R.string.dj_voice_pen_copy_failed))
                     return@onUi
                 }
                 if (pendriveDuplicatesSkipped > 0) {
-                    virginSpeak(activity.getString(
+                    virginSpeak(say(
                         R.string.dj_voice_pen_copy_done_dups,
                         pendriveTotalFound, pendriveDuplicatesSkipped, copied
                     ))
                 } else {
-                    virginSpeak(activity.getString(R.string.dj_voice_pen_copy_done, copied))
+                    virginSpeak(say(R.string.dj_voice_pen_copy_done, copied))
                 }
             }
         }
@@ -2353,7 +2438,7 @@ class MainVirgin(
                 )
             }.getOrNull()
             if (sender == null) {
-                virginSpeak(activity.getString(R.string.dj_voice_delete_failed))
+                virginSpeak(say(R.string.dj_voice_delete_failed))
                 return
             }
             pendingDelete = song
@@ -2380,9 +2465,9 @@ class MainVirgin(
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (deleted) {
                     if (QueueKey.sameType(Playback.currentKey, key)) Playback.next()
-                    virginSpeak(activity.getString(R.string.dj_voice_delete_done, song.title))
+                    virginSpeak(say(R.string.dj_voice_delete_done, song.title))
                 } else {
-                    virginSpeak(activity.getString(R.string.dj_voice_delete_failed))
+                    virginSpeak(say(R.string.dj_voice_delete_failed))
                 }
             }
         }
@@ -2403,20 +2488,20 @@ class MainVirgin(
         if (virginOn) stopVirgin(silent = true)
         virginRecognizing = true
         host.syncVirginIcon()
-        virginSpeak(activity.getString(R.string.dj_voice_recognize))
+        virginSpeak(say(R.string.dj_voice_recognize))
         DjRecognizer.recognize(activity.applicationContext) { result, error ->
             if (activity.isFinishing || activity.isDestroyed) return@recognize
             virginRecognizing = false
             host.syncVirginIcon()
             when {
                 error == "no_token" -> {
-                    virginSpeak(activity.getString(R.string.dj_voice_recognize_configured))
+                    virginSpeak(say(R.string.dj_voice_recognize_configured))
                     Toast.makeText(activity, R.string.dj_voice_recognize_configured, Toast.LENGTH_LONG).show()
                 }
-                error != null -> virginSpeak(activity.getString(R.string.dj_voice_recognize_error))
-                result == null -> virginSpeak(activity.getString(R.string.dj_voice_recognize_none))
+                error != null -> virginSpeak(say(R.string.dj_voice_recognize_error))
+                result == null -> virginSpeak(say(R.string.dj_voice_recognize_none))
                 else -> {
-                    virginSpeak(activity.getString(
+                    virginSpeak(say(
                         R.string.dj_voice_recognize_recognized, result.title, result.artist
                     ))
                     val cur = Playback.currentSong
@@ -2426,7 +2511,7 @@ class MainVirgin(
                             result.title, result.artist, result.albumName
                         ) { ok ->
                             if (ok && !activity.isDestroyed) {
-                                virginSpeak(activity.getString(
+                                virginSpeak(say(
                                     R.string.dj_voice_recognize_renamed, result.title, result.artist
                                 ))
                             }

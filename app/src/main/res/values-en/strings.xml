@@ -30,23 +30,14 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.29):
+    <string name="changelog">What is new (5.10.30):
 → NEW
-• Track heads-up: if you usually skip a song, the Virgin warns you before playing it.
-→ A MORE TALKATIVE VIRGIN DJ
-• "Play the forgotten ones": a queue only of tracks you have not heard in a long time — and she tells you how long it has been.
-• "Weekend recap": she tells you what you listened to most on Saturday and Sunday.
-• "Year recap": top tracks, top artist and strongest month of your year.
-• Mood radio: "I am anxious" builds a calm queue; "I am down" builds an uplifting one.
-→ SCENES AND AMBIENCE
-• "Study with rain" now plays the ambient sound along with the music.
-• "Play rain with the music": turns the ambience on without changing the track.
-→ HOME
-• Stats now also show play counts and total listening time.
-→ LANGUAGE
-• Portuguese (Portugal): full translation of the whole app.
+• Bilingual Virgin: she answers in the language of your question — speak Portuguese, English or Spanish and the reply comes back in the same language.
+• The mic now listens in the language chosen in the app, not the system language.
+→ VOICE CLEANUP
+• "Delete the songs I have never heard": the Virgin counts them and only removes them after you confirm.
 → FIXES
-• Shiny stars: they now actually twinkle and drift (they used to sit still).</string>
+• More reliable hands-free replies in your chosen language.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -655,6 +646,10 @@
     <string name="dj_voice_delete_cancel">Okay, I won\'t delete anything.</string>
     <string name="dj_voice_delete_no_song">There\'s no song playing right now to delete.</string>
     <string name="dj_voice_delete_failed">I couldn\'t delete it. That file may be protected by the system.</string>
+    <string name="dj_voice_unplayed_search">Let me check which songs you\'ve never listened to.</string>
+    <string name="dj_voice_unplayed_none">Nice! You\'ve already listened to every song in your library.</string>
+    <string name="dj_voice_unplayed_confirm">I found %1$d songs you\'ve never listened to. Say \"you can delete\" and I\'ll clean them up.</string>
+    <string name="dj_voice_unplayed_done">Done! I deleted %1$d songs you\'d never listened to.</string>
     <string name="dj_voice_pen_search">Let me check if there\'s a USB drive or card connected and find the music on it.</string>
     <string name="dj_voice_pen_none">I didn\'t find any extra USB drive or card connected.</string>
     <string name="dj_voice_pen_done">Done! I found %1$d new songs on the USB drive and added them to your library.</string>
