@@ -111,6 +111,8 @@
     <string name="dj_voice_week">This week you listened to %1$d tracks across %2$d plays. The top one was %3$s by %4$s, %5$d times. Your strongest day was %6$s.</string>
     <string name="dj_voice_week_none">I have not registered any plays this week yet. Let\'s hit play!</string>
     <string name="dj_voice_week_unknown">a track</string>
+    <string name="dj_voice_year">Your year replay: you listened to %1$d tracks across %2$d plays. The top one was %3$s by %4$s, %5$d times. Artist of the year: %6$s. Your strongest month: %7$s.</string>
+    <string name="dj_voice_year_none">I do not have a full year of history yet. Keep listening and I will build your replay.</string>
     <string name="dj_voice_alarm_set">Alarm set for %1$s%2$s!</string>
     <string name="dj_voice_alarm_with">, with %1$s</string>
     <string name="dj_voice_alarm_hello">Good morning! It\'s %1$s%2$s. Time to wake up!</string>

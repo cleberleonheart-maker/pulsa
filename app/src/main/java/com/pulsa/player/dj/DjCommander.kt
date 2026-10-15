@@ -824,6 +824,23 @@ object DjCommander {
             norm.contains("como fue mi semana") || norm.contains("mi semana") ||
             norm.contains("semana passada")
 
+    /**
+     * Replay anual falado: "resumo do ano", "replay anual", "meu ano", "o que ouvi esse ano".
+     * Só frases fechadas — "anos 80" é coisa do [decadeQuery], não daqui.
+     */
+    private fun yearMatch(norm: String): Boolean {
+        if (norm.contains("resumo") && (norm.contains("ano") || norm.contains("year"))) return true
+        if (norm.contains("replay") &&
+            (norm.contains("anual") || norm.contains("ano") || norm.contains("year"))
+        ) return true
+        return norm.contains("meu ano") || norm.contains("mi ano") ||
+            norm.contains("o que ouvi esse ano") || norm.contains("o que ouvi este ano") ||
+            norm.contains("o que eu ouvi este ano") || norm.contains("o que eu ouvi esse ano") ||
+            norm.contains("ano passado") || norm.contains("last year") ||
+            norm.contains("my year") || norm.contains("annual replay") ||
+            norm.contains("resumen anual") || norm.contains("resumen del ano")
+    }
+
     // ----- Despertador ("me acorda às 7h") + sleep timer ("para em 20 min") -----
 
     data class AlarmSpec(val hour: Int, val minute: Int, val ambient: String?)
@@ -954,6 +971,7 @@ object DjCommander {
         ambientVolume(norm) != null -> "ambient_vol"
         sceneQuery(norm) != null -> "scene"
         weekMatch(norm) -> "weekly"
+        yearMatch(norm) -> "year"
         sleepEndQuery(norm) -> "sleep_end"
         sleepTimerQuery(norm) != null -> "sleeptimer"
         (norm.contains("cancel") || norm.contains("desliga") || norm.contains("remove") ||

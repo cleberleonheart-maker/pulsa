@@ -697,6 +697,8 @@
     <string name="dj_voice_week">Resumo da semana: você ouviu %1$d músicas em %2$d toques. A mais tocada foi %3$s de %4$s, %5$d vezes. Seu dia mais forte foi %6$s.</string>
     <string name="dj_voice_week_none">Essa semana ainda não registrei nenhuma tocada. Bora dar o play!</string>
     <string name="dj_voice_week_unknown">uma faixa</string>
+    <string name="dj_voice_year">Seu replay do ano: você ouviu %1$d músicas em %2$d toques. A campeã foi %3$s de %4$s, %5$d vezes. O artista do ano: %6$s. Seu mês mais forte: %7$s.</string>
+    <string name="dj_voice_year_none">Ainda não tenho um ano de histórico. Continua ouvindo que eu monto seu replay.</string>
     <string name="dj_voice_alarm_set">Alarme marcado para %1$s%2$s!</string>
     <string name="dj_voice_alarm_with">, com %1$s</string>
     <string name="dj_voice_alarm_hello">Bom dia! São %1$s%2$s. Hora de acordar!</string>

@@ -1347,6 +1347,7 @@ class MainVirgin(
             "decade" -> virgDecadeMix(DjCommander.decadeQuery(norm))
             "scene" -> virgScene(DjCommander.sceneQuery(norm))
             "weekly" -> virgWeekSummary()
+            "year" -> virgYearSummary()
             "sleeptimer" -> virgSleepTimer(DjCommander.sleepTimerQuery(norm))
             "alarm" -> virgAlarmSet(DjCommander.alarmQuery(norm))
             "alarm_cancel" -> virgAlarmCancel()
@@ -1759,6 +1760,54 @@ class MainVirgin(
                 ))
             }
         }
+    }
+
+    /**
+     * Replay anual falado: "resumo do ano" / "replay anual". Usa o [DjLearn.rewind] de 365
+     * dias para montar o resumo — músicas distintas, toques, faixa campeã, artista do ano
+     * (quem soma mais toques dentro do top 10) e mês mais forte.
+     */
+    private fun virgYearSummary() {
+        ThreadPool.post {
+            val songs = Library.allSongs(activity.applicationContext)
+            val rew = DjLearn.rewind(activity.applicationContext, 365, 10)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (rew.plays == 0) {
+                    virginSpeak(activity.getString(R.string.dj_voice_year_none))
+                    return@onUi
+                }
+                val byId = songs.associateBy { it.id }
+                val topId = rew.top.firstOrNull()?.first ?: -1L
+                val top = byId[topId]
+                val topCount = rew.top.firstOrNull()?.second ?: 0
+                val title = top?.title ?: activity.getString(R.string.dj_voice_week_unknown)
+                val artist = top?.artist ?: ""
+                val artistTally = HashMap<String, Int>()
+                rew.top.forEach { (id, n) ->
+                    val a = byId[id]?.artist
+                    if (!a.isNullOrBlank()) artistTally[a] = (artistTally[a] ?: 0) + n
+                }
+                val topArtist = artistTally.maxByOrNull { it.value }?.key ?: artist
+                val bestMonth = rew.months.maxByOrNull { it.second }?.first
+                virginSpeak(say(
+                    R.string.dj_voice_year, rew.unique, rew.plays, title, artist, topCount,
+                    topArtist, monthName(bestMonth)
+                ))
+            }
+        }
+    }
+
+    /** "mm/aaaa" → nome do mês no idioma da Virgin (vazio se não der para ler). */
+    private fun monthName(mmyyyy: String?): String {
+        val mm = mmyyyy?.substringBefore("/")?.toIntOrNull() ?: return ""
+        if (mm !in 1..12) return ""
+        val locale = when (Settings.language(activity.applicationContext)) {
+            Settings.LANG_EN -> java.util.Locale.ENGLISH
+            Settings.LANG_ES -> java.util.Locale("es")
+            else -> java.util.Locale("pt")
+        }
+        return runCatching { java.text.DateFormatSymbols(locale).months[mm - 1] }.getOrElse { "" }
     }
 
     private fun bestWeekday(week: IntArray): String {
