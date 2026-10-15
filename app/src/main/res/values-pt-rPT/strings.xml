@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.37):
+    <string name="changelog">Novidades desta versão (5.10.38):
 → NOVIDADES
-• Cartão de música: ao partilhar uma faixa, a imagem passa a trazer o avatar da Virgin junto da capa, pronta a publicar.
+• Ouvir juntos no navegador: a página do Pulsa Web passa a mostrar a capa da faixa que está a tocar no telemóvel, junto do título e dos controlos.
 → COMO USAR
-• Menu de qualquer música (ou vídeo/episódio) → Partilhar → Cartão (imagem). O avatar acompanha quem canta para si (Virgin, Victor ou Vera).</string>
+• No telemóvel, ative em Configurações → Ouvir juntos. No Pulsa Web, abra a área do telemóvel: a capa aparece assim que a app começa a enviar o estado.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

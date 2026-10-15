@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.37):
+    <string name="changelog">Novidades desta versão (5.10.38):
 → NOVIDADES
-• Cartão de música: ao compartilhar uma faixa, a imagem agora traz o avatar da Virgin junto da capa, pronta pra postar.
+• Ouvir juntos no navegador: a página do Pulsa Web agora mostra a capa da faixa que está tocando no celular, junto do título e dos controles.
 → COMO USAR
-• Menu de qualquer música (ou vídeo/episódio) → Compartilhar → Cartão (imagem). O avatar acompanha quem canta pra você (Virgin, Victor ou Vera).</string>
+• No celular, ative em Configurações → Ouvir juntos. No Pulsa Web, abra a área do celular: a capa aparece assim que o app começa a enviar o estado.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>

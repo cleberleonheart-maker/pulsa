@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.37):
+    <string name="changelog">What is new (5.10.38):
 → NEW
-• Music card: when sharing a track, the image now shows the Virgin avatar next to the cover, ready to post.
+• Listen together in the browser: the Pulsa Web page now shows the cover of the track playing on your phone, along with the title and controls.
 → HOW TO USE
-• Menu on any song (or video/episode) → Share → Card (image). The avatar matches the persona that sings for you (Virgin, Victor or Vera).</string>
+• On your phone, enable it in Settings → Listen together. On Pulsa Web, open the phone area: the cover appears as soon as the app starts sending its state.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.37):
+    <string name="changelog">Novedades de esta versión (5.10.38):
 → NUEVO
-• Tarjeta de música: al compartir una canción, la imagen ahora incluye el avatar de Virgin junto a la carátula, lista para publicar.
+• Escuchar juntos en el navegador: la página de Pulsa Web ahora muestra la carátula de la canción que suena en el celular, junto al título y los controles.
 → CÓMO USAR
-• Menú de cualquier canción (o vídeo/episodio) → Compartir → Tarjeta (imagen). El avatar acompaña a quien canta para ti (Virgin, Victor o Vera).</string>
+• En el celular, actívalo en Ajustes → Escuchar juntos. En Pulsa Web, abre el área del celular: la carátula aparece en cuanto la app empieza a enviar su estado.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

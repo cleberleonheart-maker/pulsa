@@ -5,14 +5,18 @@ import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import android.util.Base64
+import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.Library
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
@@ -29,6 +33,9 @@ object RemoteSync {
 
     private const val INTERVAL_MS = 3_000L
     private const val SONGS_MS = 60_000L
+
+    /** Lado maior da miniatura de capa publicada no estado. Pequena de propósito: trafega a cada push. */
+    private const val COVER_PX = 96
 
     private fun hosts(): List<String> {
         val ctx = appContext
@@ -144,7 +151,12 @@ object RemoteSync {
             put("volume", streamVolume(ctx))
             put("app", versionName(ctx))
             put("ts", System.currentTimeMillis())
-            put("current", state.current?.let { songJson(it) } ?: JSONObject.NULL)
+            // A faixa atual leva junto a capa (miniatura base64), para o "ouvir juntos" na web
+            // mostrar a arte e não só o título. Vai só no current: a fila inteira pesaria demais
+            // a cada push. Cacheada por id, então só a troca de faixa paga o custo de codificar.
+            put("current", state.current?.let { cur ->
+                songJson(cur).apply { coverFor(ctx, cur)?.let { c -> put("cover", c) } }
+            } ?: JSONObject.NULL)
             put("queue", JSONArray().apply {
                 for (s in state.queue) put(songJson(s))
             })
@@ -359,6 +371,36 @@ object RemoteSync {
         put("artist", s.artist)
         put("album", s.album)
         put("durationMs", s.durationMs)
+    }
+
+    @Volatile private var coverKey: Long = Long.MIN_VALUE
+    @Volatile private var coverCache: String? = null
+
+    /**
+     * Capa da faixa como data URI. Memoriza por id: o push de estado roda a cada poucos
+     * segundos, mas a codificação só acontece quando a faixa muda — então [ctx] e [s] só
+     * são usados a cada troca, o que mantém barato o caminho repetido.
+     */
+    private fun coverFor(ctx: Context, s: Song): String? {
+        if (s.id == coverKey) return coverCache
+        val data = runCatching { encodeCover(ctx, s) }.getOrNull()
+        coverKey = s.id
+        coverCache = data
+        return data
+    }
+
+    /** Miniatura JPEG. Rádio/stream/vídeo/podcast não têm arte local — devolvem `null` sem tentar rede. */
+    private fun encodeCover(ctx: Context, s: Song): String? {
+        if (s.isRadio || s.isStream || s.isVideo || s.isPodcast) return null
+        if (s.path.isBlank() || s.path.startsWith("http", ignoreCase = true)) return null
+        val art = ArtLoader.decode(ctx, s.albumId, s.path) ?: return null
+        val scale = COVER_PX.toFloat() / maxOf(art.width, art.height).coerceAtLeast(1)
+        val w = (art.width * scale).toInt().coerceAtLeast(1)
+        val h = (art.height * scale).toInt().coerceAtLeast(1)
+        val small = Bitmap.createScaledBitmap(art, w, h, true)
+        val bytes = ByteArrayOutputStream()
+        small.compress(Bitmap.CompressFormat.JPEG, 80, bytes)
+        return "data:image/jpeg;base64," + Base64.encodeToString(bytes.toByteArray(), Base64.NO_WRAP)
     }
 
     private fun versionName(ctx: Context): String = try {
