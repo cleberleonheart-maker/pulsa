@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.42):
+    <string name="changelog">What is new (5.10.43):
 → NEW
-• Video data saver: on 4G/5G the resolution drops to ~480p on its own, so video doesn\'t burn your data. On Wi-Fi nothing changes.
+• Ambience tone: a real band-pass filter can now muffle (rain more closed) or open the presence (ocean with more presence) of the background sound.
 → HOW TO USE
-• Turn it on or off in Settings, under "Video data saver". A video already playing changes right away.</string>
+• In the ambient sound picker, tap "Ambience tone" and drag. Or say "rain more closed" / "ocean with more presence" / "normal tone".</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -93,8 +93,13 @@
     <string name="ambient_started">Ambient sound: %1$s</string>
     <string name="ambient_stopped">Ambient sound off</string>
     <string name="ambient_volume">Volume: %1$d%%</string>
+    <string name="ambient_tone">Ambience tone</string>
+    <string name="ambient_tone_hint">Drag to muffle (more closed) or open the presence. In the middle the sound stays as it always was.</string>
     <string name="dj_voice_ambient_vol">Ambient sound at %1$d percent.</string>
     <string name="dj_voice_ambient_mix">Turning on %1$s with the music.</string>
+    <string name="dj_voice_ambient_tone_dark">I made the ambience more closed.</string>
+    <string name="dj_voice_ambient_tone_bright">I opened the ambience, with more presence.</string>
+    <string name="dj_voice_ambient_tone_neutral">Ambience back to the normal tone.</string>
     <string name="dj_voice_dynq_done">Built %1$d tracks: %2$s.</string>
     <string name="dj_voice_dynq_none">I could not find tracks with that filter. Try something like \"play rock I have not heard in 2 months\".</string>
     <string name="dj_voice_dynq_fav">favorites</string>

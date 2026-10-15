@@ -639,6 +639,40 @@ object DjCommander {
         return if (withMusic.any { norm.contains(it) }) mode else null
     }
 
+    /** Item 76 — direção do tom do passa-banda do som ambiente. */
+    enum class AmbientTone { DARKER, BRIGHTER, NEUTRAL }
+
+    private val AMBIENT_DARK_WORDS = listOf(
+        "mais fechad", "fechad", "abafad", "mais abafad", "mais surd", "surdin",
+        "mais grave", "mais escur", "mais morna", "mais morno"
+    )
+
+    private val AMBIENT_BRIGHT_WORDS = listOf(
+        "mais presenc", "presenc", "mais present", "mais brilhante", "mais brilho", "brilho",
+        "mais viv", "mais abert", "mais clar", "mais agud", "mais nitid"
+    )
+
+    private val AMBIENT_TONE_NEUTRAL_WORDS = listOf(
+        "tom normal", "tom padrao", "tom neutr", "neutr", "sem filtro",
+        "ambiente normal", "ambiente padrao", "tom de fabrica"
+    )
+
+    /**
+     * Item 76 — "ambiente mais fechado" / "chuva mais abafada" afundam o tom; "oceano com mais
+     * presença" / "ambiente mais brilhante" abrem; "tom normal" volta ao neutro.
+     *
+     * Exige uma palavra de ambiente ([AMBIENT_WORDS]) para não roubar frases soltas como "mais
+     * brilhante" ou "normal" (que pertencem ao despertador). O neutro é checado antes: "tom
+     * normal" contém "normal" e não deve virar outra coisa.
+     */
+    fun ambientTone(norm: String): AmbientTone? {
+        if (!AMBIENT_WORDS.any { norm.contains(it) }) return null
+        if (AMBIENT_TONE_NEUTRAL_WORDS.any { norm.contains(it) }) return AmbientTone.NEUTRAL
+        if (AMBIENT_DARK_WORDS.any { norm.contains(it) }) return AmbientTone.DARKER
+        if (AMBIENT_BRIGHT_WORDS.any { norm.contains(it) }) return AmbientTone.BRIGHTER
+        return null
+    }
+
     // ----- Playlist dinâmica com regras faladas ("rock que nao toco ha 2 meses") -----
 
     data class DynQuery(
@@ -1299,6 +1333,10 @@ object DjCommander {
         // o comando para a fila dinâmica normal.
         playlistCreate(norm) -> "playlist_new"
         playlistPlay(norm) -> "playlist_play"
+        // Tom do passa-banda (item 76) antes do volume: "ambiente com tom mais grave" tem
+        // palavra de tom e não deve virar "abaixa o volume". As frases de tom não usam as
+        // palavras de volume (alta/baixa), então não há sobreposição real.
+        ambientTone(norm) != null -> "ambient_tone"
         ambientVolume(norm) != null -> "ambient_vol"
         ambientMix(norm) != null -> "ambient_mix"
         // Cronômetro/quiz antes de "scene": "treino" é palavra de cena e "para o treino"

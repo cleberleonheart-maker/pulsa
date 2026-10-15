@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.42):
+    <string name="changelog">Novedades de esta versión (5.10.43):
 → NUEVO
-• Ahorro de datos en vídeo: en 4G/5G la resolución baja a ~480p sola, para no gastar tus datos. En Wi‑Fi nada cambia.
+• Tono del ambiente: un filtro pasa-banda de verdad ahora apaga (lluvia más cerrada) o abre la presencia (océano con más presencia) del sonido de fondo.
 → CÓMO USAR
-• Actívalo o desactívalo en Ajustes, en "Ahorro de datos en vídeo". El vídeo que ya se está reproduciendo cambia al momento.</string>
+• En el selector de sonido ambiente, toca "Tono del ambiente" y arrastra. O di "lluvia más cerrada" / "océano con más presencia" / "tono normal".</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -93,8 +93,13 @@
     <string name="ambient_started">Sonido ambiental: %1$s</string>
     <string name="ambient_stopped">Sonido ambiental desactivado</string>
     <string name="ambient_volume">Volumen: %1$d%%</string>
+    <string name="ambient_tone">Tono del ambiente</string>
+    <string name="ambient_tone_hint">Arrastra para apagar (más cerrado) o abrir la presencia. En el medio el sonido queda como siempre.</string>
     <string name="dj_voice_ambient_vol">Sonido ambiental al %1$d por ciento.</string>
     <string name="dj_voice_ambient_mix">Activando %1$s con la música.</string>
+    <string name="dj_voice_ambient_tone_dark">Dejé el ambiente más cerrado.</string>
+    <string name="dj_voice_ambient_tone_bright">Abrí el ambiente, con más presencia.</string>
+    <string name="dj_voice_ambient_tone_neutral">Volví el ambiente al tono normal.</string>
     <string name="dj_voice_dynq_done">Armé %1$d canciones: %2$s.</string>
     <string name="dj_voice_dynq_none">No encontré canciones con ese filtro. Prueba algo como \"pon rock que no escucho desde hace 2 meses\".</string>
     <string name="dj_voice_dynq_fav">favoritas</string>

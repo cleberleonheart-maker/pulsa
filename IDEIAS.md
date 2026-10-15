@@ -73,7 +73,7 @@
 
 ## Áudio/qualidade de som
 - [x] **Mais bandas/presets no equalizador** (4.3.0): EQ com bandas reais do aparelho + presets Acústico/Clássico/Sonoridade
-- [ ] Filtro passa-banda no som ambiente (ex.: chuva mais fechada / oceano com mais presença)
+- [x] **Filtro passa-banda no som ambiente** (5.10.43, ex.: chuva mais fechada / oceano com mais presença): `AmbientFilter` + `Biquad`/`BandPass` (passa-altas em série com passa-baixas, RBJ) aplicado no `Ambient` a cada buffer; um "tom" de 0 a 1 (`Settings.ambientTone`, 0.5 = neutro/passa reto) fecha (corta agudo) ou abre (corta grave). Controle na tela (seletor de ambiente → "Tom do ambiente") e por voz ("chuva mais fechada"/"oceano com mais presença"/"tom normal"). Testado na JVM (`AmbientFilterTest`)
 
 ## Uso/dados
 - [x] **Espelhar DjLearn pra nuvem** (4.3.0): Virgin aprende entre sessões/dispositivos (push/pull `/djlearn`)

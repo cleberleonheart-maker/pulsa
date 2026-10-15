@@ -2,6 +2,7 @@ package com.pulsa.player
 
 import android.app.Application
 import android.content.pm.PackageManager
+import com.pulsa.player.audio.Ambient
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Migrations
 import com.pulsa.player.sync.MirrorSync
@@ -35,6 +36,13 @@ class PulsaApp : Application() {
             Telemetry.log(this, "APP start ${info.versionName} (${info.versionCode})")
         } catch (e: Exception) {
             Telemetry.log(this, "APP start (sem versao)")
+        }
+        try {
+            // Item 76 — o `Ambient` guarda o tom num campo estático; repõe do disco no arranque
+            // para o som nascer já com o ajuste salvo (inclusive quando quem liga é o alarme,
+            // sem passar pela tela). O `Ambient` não tem `Context`, então a ponte fica aqui.
+            Ambient.setTone(Settings.ambientTone(this))
+        } catch (t: Throwable) {
         }
         try {
             RemoteSync.start(this)

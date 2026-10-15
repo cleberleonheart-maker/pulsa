@@ -552,6 +552,43 @@ class NowPlayingFragment : Fragment() {
                 d.dismiss()
                 showAmbientVolume()
             }
+            .setNegativeButton(R.string.ambient_tone) { d, _ ->
+                d.dismiss()
+                showAmbientTone()
+            }
+            .show()
+    }
+
+    /**
+     * Item 76 — tom do passa-banda: 0% afofa (chuva mais fechada), 100% abre a presença
+     * (oceano com mais presença), 50% é neutro. Vale na hora e fica salvo.
+     */
+    private fun showAmbientTone() {
+        val slider = SeekBar(requireContext()).apply {
+            max = 100
+            progress = (Settings.ambientTone(requireContext()) * 100).toInt()
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (!fromUser) return
+                    val tone = progress / 100f
+                    Settings.setAmbientTone(requireContext(), tone)
+                    Ambient.setTone(tone)
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            })
+        }
+        val box = LinearLayout(requireContext()).apply {
+            setPadding(56, 24, 56, 8)
+            addView(slider)
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.ambient_tone)
+            .setMessage(R.string.ambient_tone_hint)
+            .setView(box)
+            .setPositiveButton(android.R.string.ok, null)
             .show()
     }
 

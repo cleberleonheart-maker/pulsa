@@ -1467,6 +1467,26 @@ class MainVirgin(
                 Ambient.setVolume(target.coerceIn(0.05f, 1f))
                 virginSpeak(say(R.string.dj_voice_ambient_vol, (Ambient.state().volume * 100).toInt()))
             }
+            "ambient_tone" -> {
+                val dir = DjCommander.ambientTone(norm) ?: return
+                val step = 0.25f
+                val cur = Settings.ambientTone(activity)
+                val target = when (dir) {
+                    DjCommander.AmbientTone.DARKER -> (cur - step).coerceIn(0f, 1f)
+                    DjCommander.AmbientTone.BRIGHTER -> (cur + step).coerceIn(0f, 1f)
+                    DjCommander.AmbientTone.NEUTRAL -> 0.5f
+                }
+                // Fica salvo e vale na hora: mesmo com o ambiente desligado o ajuste é
+                // preferência, então aplica no `Ambient` (que relê a cada buffer) e persiste.
+                Settings.setAmbientTone(activity, target)
+                Ambient.setTone(target)
+                val res = when {
+                    target < 0.5f -> R.string.dj_voice_ambient_tone_dark
+                    target > 0.5f -> R.string.dj_voice_ambient_tone_bright
+                    else -> R.string.dj_voice_ambient_tone_neutral
+                }
+                virginSpeak(say(res))
+            }
             "ambient_mix" -> {
                 val mode = DjCommander.ambientMix(norm) ?: return
                 if (!Permissions.hasAccess(activity)) {

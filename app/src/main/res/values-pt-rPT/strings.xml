@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.42):
+    <string name="changelog">Novidades desta versão (5.10.43):
 → NOVIDADES
-• Poupança de dados no vídeo: no 4G/5G a resolução baixa para ~480p sozinha, para o vídeo não gastar os seus dados. No Wi‑Fi nada muda.
+• Tom do som ambiente: um filtro passa-banda a sério agora abafa (chuva mais fechada) ou abre a presença (oceano com mais presença) do som de fundo.
 → COMO USAR
-• Liga ou desliga nas Configurações, em "Poupança de dados no vídeo". O vídeo que já está a tocar muda na hora.</string>
+• No seletor de som ambiente, toca em "Tom do ambiente" e arrasta. Ou diz "chuva mais fechada" / "oceano com mais presença" / "tom normal".</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -151,6 +151,11 @@
     <string name="dj_voice_sleeptimer_none">Não há nada a tocar agora para eu pausar.</string>
     <string name="dj_voice_delete_no_song">Não há nenhuma música a tocar para eliminar.</string>
     <string name="dj_voice_ambient_off">Nenhum som ambiente a tocar agora.</string>
+    <string name="ambient_tone">Tom do ambiente</string>
+    <string name="ambient_tone_hint">Arrasta para abafar (mais fechado) ou abrir a presença. No meio, o som fica como sempre foi.</string>
+    <string name="dj_voice_ambient_tone_dark">Deixei o ambiente mais fechado.</string>
+    <string name="dj_voice_ambient_tone_bright">Abri o ambiente, com mais presença.</string>
+    <string name="dj_voice_ambient_tone_neutral">Voltei o ambiente ao tom normal.</string>
     <string name="dj_voice_request_ask">Que música queres que eu peça?</string>
     <string name="dj_voice_request_nosession">Nenhuma sessão de Ouvir juntos aberta. Só dá para pedir dentro de uma sessão.</string>
     <string name="dj_voice_request_sent">Pedi %1$s ao anfitrião.</string>

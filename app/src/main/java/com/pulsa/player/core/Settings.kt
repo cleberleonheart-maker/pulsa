@@ -287,6 +287,19 @@ object Settings {
     fun equalizerOn(context: Context): Boolean =
         prefs(context).getBoolean("equalizer_on", false)
 
+    /**
+     * Item 76 — tom do passa-banda do som ambiente: `0` fecha/abafa (chuva mais fechada),
+     * `1` abre/presença (oceano com mais presença) e `0.5` é neutro (passa reto). O
+     * [com.pulsa.player.audio.Ambient] lê este valor ao iniciar e a cada vez que o usuário
+     * mexe no controle pela tela ou por voz.
+     */
+    fun setAmbientTone(context: Context, value: Float) {
+        prefs(context).edit().putFloat("ambient_tone", value.coerceIn(0f, 1f)).apply()
+    }
+
+    fun ambientTone(context: Context): Float =
+        prefs(context).getFloat("ambient_tone", 0.5f).coerceIn(0f, 1f)
+
     fun setAudio8d(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("audio_8d", value).apply()
     }

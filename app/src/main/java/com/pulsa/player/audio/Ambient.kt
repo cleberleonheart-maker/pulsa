@@ -31,6 +31,12 @@ private const val STEP_TWO_PI = 0.00014248f
 @Volatile private var duckFactor = 1f
 @Volatile private var outGain = 1f
 
+/**
+ * Item 76 — "tom" do passa-banda (0 fecha/abafa, 1 abre/presença, 0.5 neutro). Volátil porque
+ * é lido a cada buffer pela thread de áudio e escrito pela UI/voz.
+ */
+@Volatile private var tone = AmbientFilter.NEUTRAL
+
     private var thread: Thread? = null
     private var track: AudioTrack? = null
     private val rand = Random()
@@ -89,6 +95,18 @@ private const val STEP_TWO_PI = 0.00014248f
     }
 
     fun duckFactor(): Float = duckFactor
+
+    /**
+     * Item 76 — define o tom do passa-banda (0 fechado, 1 presença, 0.5 neutro). Vale na hora:
+     * a thread de áudio relê a cada buffer e reconfigura os filtros. Um `reset` da memória
+     * dos biquads evita estalo quando o corte muda no meio do som.
+     */
+    @Synchronized
+    fun setTone(value: Float) {
+        tone = value.coerceIn(AmbientFilter.MIN, AmbientFilter.MAX)
+    }
+
+    fun tone(): Float = tone
 
     fun isOn(): Boolean = running
 
@@ -163,8 +181,22 @@ private const val STEP_TWO_PI = 0.00014248f
             val buf = ShortArray(FRAME)
             val sbuf = ShortArray(FRAME * 2)
             var written = 0
+            // Item 76 — passa-banda do tom. Configurado preguiçosamente: só quando o tom muda
+            // é que os coeficientes são recalculados (e a memória dos filtros, zerada).
+            val filter = BandPass()
+            var lastTone = Float.NaN
             while (running) {
                 gen.invoke(buf, buf.size)
+                if (tone != lastTone) {
+                    filter.reset()
+                    filter.configure(SAMPLE_RATE.toFloat(), tone)
+                    lastTone = tone
+                }
+                if (!AmbientFilter.isNeutral(tone)) {
+                    for (i in buf.indices) {
+                        buf[i] = filter.process(buf[i].toFloat()).toInt().coerceIn(-32768, 32767).toShort()
+                    }
+                }
                 if (written < fade.size) {
                     for (i in buf.indices) {
                         val idx = written + i
