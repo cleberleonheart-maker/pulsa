@@ -1070,15 +1070,4 @@
     <string name="server_token_hint">Cole aqui o token do servidor</string>
     <string name="server_token_saved">Token salvo!</string>
     <string name="server_token_missing">Padrão do app (sem token próprio)</string>
-    <string name="downloaded_only">Só baixados</string>
-    <string name="not_played">Nunca tocados</string>
-
-    <string name="search_kind_video">Vídeo</string>
-    <string name="search_kind_episode">Episódio</string>
-    <string name="search_kind_podcast">Podcast</string>
-    <plurals name="search_artist_songs">
-        <item quantity="one">%d música</item>
-        <item quantity="other">%d músicas</item>
-    </plurals>
-    <string name="search_empty_hint">Comece a digitar para buscar músicas, vídeos, podcasts e artistas.</string>
 </resources>

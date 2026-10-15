@@ -1,4 +1,5 @@
 package com.pulsa.player.ui.adapter
+import com.pulsa.player.util.TvFocus
 
 import android.view.LayoutInflater
 import android.view.View
@@ -7,52 +8,158 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
-import com.pulsa.player.core.Helper
 import com.pulsa.player.data.ArtLoader
-import com.pulsa.player.search.SearchResult
+import com.pulsa.player.model.Album
+import com.pulsa.player.model.Artist
+import com.pulsa.player.model.Song
+import com.pulsa.player.model.Video
+import com.pulsa.player.podcast.Episode
+import com.pulsa.player.core.Helper
 
 /**
- * F5 — A lista da busca unificada. Reaproveita a linha de música (`item_song`) porque a
- * informação é a mesma (arte, título, subtítulo, duração); o que muda é a ação do clique, que
- * quem decide é a [com.pulsa.player.ui.SearchActivity].
+ * F5 — os tipos que a busca unificada sabe desenhar.
+ *
+ * Cada resultado carrega o modelo cru ([Song], [Video], [Episode]...): quem sabe tocar é o
+ * chamador, não o adapter. Foi assim que a busca deixou de ser só de música sem que o adapter
+ * precisasse conhecer `Playback`.
  */
+sealed class SearchResult {
+    data class Header(val label: String) : SearchResult()
+    data class SongResult(val song: Song) : SearchResult()
+    data class AlbumResult(val album: Album) : SearchResult()
+    data class ArtistResult(val artist: Artist) : SearchResult()
+    data class VideoResult(val video: Video) : SearchResult()
+
+    /**
+     * Um episódio com o título do feed ao lado.
+     *
+     * O [feedTitle] não vem do [Episode]: o model guarda só o `podcastId`, e resolver o título
+     * na hora de desenhar exigiria consultar o banco na `onBindViewHolder`, que roda na main
+     * thread. Ele é resolvido uma vez no carregamento da busca e viaja junto.
+     */
+    data class EpisodeResult(val episode: Episode, val feedTitle: String) : SearchResult()
+}
+
 class SearchAdapter(
-    private val onClick: (SearchResult) -> Unit
-) : RecyclerView.Adapter<SearchAdapter.VH>() {
+    private val onSong: (List<Song>, Int) -> Unit,
+    private val onAlbum: (Album) -> Unit,
+    private val onArtist: (Artist) -> Unit,
+    private val onVideo: (Video) -> Unit,
+    private val onEpisode: (Episode, String) -> Unit
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val items = mutableListOf<SearchResult>()
+    var items: List<SearchResult> = emptyList()
+        set(value) {
+            field = value
+            notifyDataSetChanged()
+        }
 
-    fun submit(list: List<SearchResult>) {
-        items.clear()
-        items.addAll(list)
-        notifyDataSetChanged()
+    override fun getItemViewType(position: Int): Int {
+        return when (items[position]) {
+            is SearchResult.Header -> TYPE_HEADER
+            is SearchResult.SongResult -> TYPE_SONG
+            is SearchResult.AlbumResult -> TYPE_ALBUM
+            is SearchResult.ArtistResult -> TYPE_ARTIST
+            is SearchResult.VideoResult -> TYPE_VIDEO
+            is SearchResult.EpisodeResult -> TYPE_EPISODE
+        }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_song, parent, false)
-        return VH(view)
-    }
-
-    override fun getItemCount() = items.size
-
-    override fun onBindViewHolder(holder: VH, position: Int) = holder.bind(items[position])
-
-    inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val art: ImageView = itemView.findViewById(R.id.song_art)
-        private val title: TextView = itemView.findViewById(R.id.song_title)
-        private val subtitle: TextView = itemView.findViewById(R.id.song_subtitle)
-
-        fun bind(r: SearchResult) {
-            title.text = r.title
-            val dur = if (r.durationMs > 0) " · " + Helper.formatDuration(r.durationMs) else ""
-            subtitle.text = r.subtitle + dur
-            itemView.findViewById<ImageView>(R.id.song_menu).visibility = View.GONE
-            itemView.findViewById<ImageView>(R.id.song_check).visibility = View.GONE
-            ArtLoader.load(r.albumId, r.artPath, art)
-            itemView.setOnClickListener {
-                val pos = bindingAdapterPosition
-                if (pos != RecyclerView.NO_POSITION) onClick(items[pos])
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return when (viewType) {
+            TYPE_HEADER -> HeaderVH(inflater.inflate(R.layout.item_search_header, parent, false))
+            else -> {
+                val view = inflater.inflate(R.layout.item_search_result, parent, false)
+                TvFocus.apply(view)
+                RowVH(view)
             }
         }
+    }
+
+    override fun getItemCount(): Int = items.size
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = items[position]) {
+            is SearchResult.Header -> (holder as HeaderVH).bind(item)
+            is SearchResult.SongResult -> (holder as RowVH).bindSong(item.song)
+            is SearchResult.AlbumResult -> (holder as RowVH).bindAlbum(item.album)
+            is SearchResult.ArtistResult -> (holder as RowVH).bindArtist(item.artist)
+            is SearchResult.VideoResult -> (holder as RowVH).bindVideo(item.video)
+            is SearchResult.EpisodeResult -> (holder as RowVH).bindEpisode(item.episode, item.feedTitle)
+        }
+    }
+
+    inner class HeaderVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val label: TextView = itemView as TextView
+        fun bind(item: SearchResult.Header) {
+            label.text = item.label
+        }
+    }
+
+    inner class RowVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val art: ImageView = itemView.findViewById(R.id.result_art)
+        private val title: TextView = itemView.findViewById(R.id.result_title)
+        private val subtitle: TextView = itemView.findViewById(R.id.result_subtitle)
+
+        fun bindSong(song: Song) {
+            ArtLoader.load(song.albumId, song.path, art)
+            title.text = song.title
+            subtitle.text = song.artist + " · " + song.album
+            itemView.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    val songs = items.filterIsInstance<SearchResult.SongResult>().map { it.song }
+                    val offset = songs.indexOf(song)
+                    onSong(songs, offset.coerceAtLeast(0))
+                }
+            }
+        }
+
+        fun bindAlbum(album: Album) {
+            ArtLoader.load(album.id, "", art)
+            title.text = album.name
+            subtitle.text = album.artist + " · " + Helper.trackCount(album.numSongs, itemView.context.resources)
+            itemView.setOnClickListener { onAlbum(album) }
+        }
+
+        fun bindArtist(artist: Artist) {
+            art.setImageResource(R.drawable.ic_music_note)
+            art.background = itemView.context.getDrawable(R.drawable.bg_circle)
+            title.text = artist.name
+            subtitle.text = Helper.trackCount(artist.numSongs, itemView.context.resources)
+            itemView.setOnClickListener { onArtist(artist) }
+        }
+
+        fun bindVideo(video: Video) {
+            // O `path` de vídeo é o que faz o [ArtLoader] extrair um frame em vez de desenhar a
+            // nota musical: com `albumId = 0` ele cairia no ícone, e vídeo em resultado de busca
+            // sem miniatura some no meio das músicas.
+            ArtLoader.load(0L, Song.VIDEO_PREFIX + video.id, art)
+            title.text = video.title
+            subtitle.text = Helper.formatDuration(video.durationMs)
+            itemView.setOnClickListener { onVideo(video) }
+        }
+
+        fun bindEpisode(episode: Episode, feedTitle: String) {
+            art.setImageResource(R.drawable.ic_mic)
+            art.background = itemView.context.getDrawable(R.drawable.bg_circle)
+            title.text = episode.title
+            subtitle.text = if (episode.durationSec > 0) {
+                feedTitle + " · " + Helper.formatDuration(episode.durationSec * 1000L)
+            } else {
+                feedTitle
+            }
+            itemView.setOnClickListener { onEpisode(episode, feedTitle) }
+        }
+    }
+
+    companion object {
+        private const val TYPE_HEADER = 0
+        private const val TYPE_SONG = 1
+        private const val TYPE_ALBUM = 2
+        private const val TYPE_ARTIST = 3
+        private const val TYPE_VIDEO = 4
+        private const val TYPE_EPISODE = 5
     }
 }
