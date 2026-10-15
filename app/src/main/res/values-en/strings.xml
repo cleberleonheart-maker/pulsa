@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.41):
+    <string name="changelog">What is new (5.10.42):
 → NEW
-• Session with a goal: the Virgin builds a session by summed duration, mixing songs and a podcast. Say "build a 40 minute session to sleep: 2 calm songs and 1 podcast".
+• Video data saver: on 4G/5G the resolution drops to ~480p on its own, so video doesn\'t burn your data. On Wi-Fi nothing changes.
 → HOW TO USE
-• Say a mood or genre plus the duration. E.g.: "1 hour session to study" or "30 minute rock session".</string>
+• Turn it on or off in Settings, under "Video data saver". A video already playing changes right away.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -428,6 +428,8 @@
     <string name="downloads_no_space">Not enough storage</string>
     <string name="downloads_wifi_only">Download on Wi-Fi only</string>
     <string name="downloads_wifi_only_hint">Big downloads use your mobile data without warning; when on, the queue waits for a Wi-Fi/wired network.</string>
+    <string name="data_saver">Video data saver</string>
+    <string name="data_saver_hint">On 4G/5G, video drops to ~480p so it doesn\'t burn your data; on Wi-Fi the quality is unchanged.</string>
     <string name="podcast_prefetch">Preload the next episode</string>
     <string name="podcast_prefetch_hint">While an episode plays, it downloads the next one in the queue over Wi-Fi so the switch doesn\'t stop to buffer. Wi-Fi only; never uses your mobile data.</string>
     <string name="skip_silence">Skip silences in podcasts</string>

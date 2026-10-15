@@ -10,6 +10,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
@@ -64,6 +67,8 @@ import com.pulsa.player.widget.PulsaWidget
 import com.pulsa.player.audio.MusicVisualizer
 import com.pulsa.player.audio.SleepTimer
 
+import com.pulsa.player.core.DataSaver
+import com.pulsa.player.core.NetworkStatus
 import com.pulsa.player.core.RadioStations
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
@@ -243,6 +248,63 @@ class PlaybackService : MediaLibraryService() {
         if (!noisyReceiverRegistered) return
         noisyReceiverRegistered = false
         runCatching { unregisterReceiver(noisyReceiver) }
+    }
+
+    /**
+     * Item 291 — reavalia a economia de dados quando a rede troca (Wi-Fi ↔ 4G).
+     *
+     * Sem isto o teto de resolução ficaria preso à rede que estava no ar quando o player
+     * nasceu: sair do Wi-Fi no meio de um vídeo continuaria em 1080p e chegar em casa
+     * continuaria em 480p até algo reabrir o player.
+     */
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+            // O callback chega numa thread de binder; o `ExoPlayer` só pode ser tocado na
+            // thread que o criou (a main). Sem este post, mudar a rede no meio de um vídeo
+            // seria uma escrita cruzada de thread no player.
+            mainHandler.post { refreshDataSaver() }
+        }
+
+        override fun onLost(network: Network) {
+            mainHandler.post { refreshDataSaver() }
+        }
+    }
+
+    private var networkCallbackRegistered = false
+
+    private fun registerNetworkCallback() {
+        if (networkCallbackRegistered) return
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return
+        networkCallbackRegistered = runCatching {
+            cm.registerDefaultNetworkCallback(networkCallback)
+        }.isSuccess
+    }
+
+    private fun unregisterNetworkCallback() {
+        if (!networkCallbackRegistered) return
+        networkCallbackRegistered = false
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return
+        runCatching { cm.unregisterNetworkCallback(networkCallback) }
+    }
+
+    /**
+     * Item 291 — aplica (ou solta) o teto de resolução de vídeo conforme o ajuste e a rede.
+     *
+     * Público porque a troca do ajuste em Configurações precisa valer **na hora**, e não só
+     * na próxima troca de faixa ou de rede. O que sobra para o áudio é nulo: o
+     * `setMaxVideoSize`/`setMaxVideoBitrate` só restringem a seleção da trilha de vídeo.
+     */
+    fun refreshDataSaver() {
+        val p = player ?: return
+        val enabled = Settings.dataSaver(this)
+        val metered = NetworkStatus.isMetered(this)
+        val (w, h) = DataSaver.maxSize(enabled, metered)
+        runCatching {
+            p.trackSelectionParameters = p.trackSelectionParameters.buildUpon()
+                .setMaxVideoSize(w, h)
+                .setMaxVideoBitrate(DataSaver.maxBitrate(enabled, metered))
+                .build()
+        }
     }
 
     private val focusListener = object : AudioManager.OnAudioFocusChangeListener {
@@ -478,6 +540,7 @@ class PlaybackService : MediaLibraryService() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         registerNoisyReceiver()
+        registerNetworkCallback()
         createChannel()
         SpatialAudio.sync(this)
         player = ExoPlayer.Builder(this, SpatialRenderersFactory(this))
@@ -518,6 +581,9 @@ class PlaybackService : MediaLibraryService() {
             )
             .build()
             .also { it.addListener(playerListener) }
+        // Item 291 — já nasce com o teto certo: se o app subiu no 4G, o primeiro vídeo não
+        // chega a baixar em 1080p antes do callback de rede corrigir.
+        refreshDataSaver()
         // E6: o callback vai no CONSTRUTOR do `MediaLibrarySession.Builder` (é o único lugar
         // que aceita `MediaLibrarySession.Callback`), e é o mesmo objeto do E3b. Não chamar
         // `.setCallback()` aqui: o `MediaSession.Builder` base devolveria o `MediaSession`
@@ -753,6 +819,7 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onDestroy() {
         unregisterNoisyReceiver()
+        unregisterNetworkCallback()
         // Última chance de gravar a fila. numa instalação de versão nova o Android pode
         // matar o processo sem chamar isto, e aí quem salva é o tick de 5s — por isso o
         // start já grava na hora e isto aqui é só a rede de segurança.

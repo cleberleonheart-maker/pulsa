@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.41):
+    <string name="changelog">Novedades de esta versión (5.10.42):
 → NUEVO
-• Sesión con objetivo: la Virgin arma una sesión por duración sumada, mezclando canciones y un podcast. Di "arma una sesión de 40 minutos para dormir: 2 canciones tranquilas y 1 podcast".
+• Ahorro de datos en vídeo: en 4G/5G la resolución baja a ~480p sola, para no gastar tus datos. En Wi‑Fi nada cambia.
 → CÓMO USAR
-• Di un ánimo o género más la duración. Ej.: "sesión de 1 hora para estudiar" o "sesión de 30 minutos de rock".</string>
+• Actívalo o desactívalo en Ajustes, en "Ahorro de datos en vídeo". El vídeo que ya se está reproduciendo cambia al momento.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -428,6 +428,8 @@
     <string name="downloads_no_space">Sin espacio en el dispositivo</string>
     <string name="downloads_wifi_only">Descargar solo con Wi‑Fi</string>
     <string name="downloads_wifi_only_hint">Las descargas grandes gastan tus datos sin avisar; al activarlo, la cola espera a una red Wi‑Fi/cable.</string>
+    <string name="data_saver">Ahorro de datos en vídeo</string>
+    <string name="data_saver_hint">En 4G/5G, el vídeo baja a ~480p para no gastar tus datos; en Wi‑Fi la calidad no cambia.</string>
     <string name="podcast_prefetch">Adelantar el próximo episodio</string>
     <string name="podcast_prefetch_hint">Mientras suena un episodio, descarga el siguiente de la cola por Wi‑Fi para que el cambio no se detenga a cargar. Solo por Wi‑Fi; nunca usa tus datos móviles.</string>
     <string name="skip_silence">Saltar silencios en el podcast</string>

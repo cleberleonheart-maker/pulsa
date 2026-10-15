@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.41):
+    <string name="changelog">Novidades desta versão (5.10.42):
 → NOVIDADES
-• Sessão com objetivo: a Virgin monta uma sessão pela duração somada, misturando músicas e podcast. Diz "monta uma sessão de 40 minutos para dormir: 2 músicas calmas e 1 podcast".
+• Poupança de dados no vídeo: no 4G/5G a resolução baixa para ~480p sozinha, para o vídeo não gastar os seus dados. No Wi‑Fi nada muda.
 → COMO USAR
-• Diz um humor ou género mais a duração. Ex.: "sessão de 1 hora para estudar" ou "sessão de 30 minutos de rock".</string>
+• Liga ou desliga nas Configurações, em "Poupança de dados no vídeo". O vídeo que já está a tocar muda na hora.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -321,6 +321,8 @@
     <string name="downloads_idle">Nenhuma transferência em curso</string>
     <string name="downloads_no_space">Sem espaço no dispositivo</string>
     <string name="downloads_wifi_only_hint">Uma transferência grande numa rede medida consome o seu plafond sem aviso; quando ligado, a fila espera pela rede Wi‑Fi/cabo.</string>
+    <string name="data_saver">Poupança de dados no vídeo</string>
+    <string name="data_saver_hint">No 4G/5G, o vídeo baixa para ~480p para não gastar os seus dados; no Wi‑Fi a qualidade não muda.</string>
     <string name="podcast_prefetch">Adiantar o próximo episódio</string>
     <string name="podcast_prefetch_hint">Enquanto um episódio toca, transfere o seguinte da fila por Wi‑Fi para a mudança não parar a carregar. Só por Wi‑Fi; nunca usa os seus dados móveis.</string>
     <string name="skip_silence">Saltar silêncios no podcast</string>

@@ -653,6 +653,20 @@ object Settings {
         prefs(context).getBoolean("download_wifi_only", true)
 
     /**
+     * Item 291 — economia de dados: rebaixar o vídeo quando a rede é medida (4G/5G).
+     *
+     * Padrão `true`: fora do Wi-Fi, um vídeo em 1080p vira uma conta de dados sem aviso nenhum.
+     * Ligado, o `PlaybackService` limita a trilha a ~480p (ver [DataSaver]); no Wi-Fi a
+     * qualidade não muda. Quem tem plano folgado desliga aqui e assiste em 1080p/4K no 4G.
+     */
+    fun setDataSaver(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("data_saver", value).apply()
+    }
+
+    fun dataSaver(context: Context): Boolean =
+        prefs(context).getBoolean("data_saver", true)
+
+    /**
      * Prefetch da fila de podcast — baixar o episódio **seguinte** enquanto o atual toca.
      *
      * Padrão `true`: é o que faz "tocar um episódio" já adiantar o próximo e a virada abrir

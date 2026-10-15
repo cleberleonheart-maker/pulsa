@@ -290,6 +290,16 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        findViewById<MaterialSwitch>(R.id.data_saver_switch).apply {
+            isChecked = Settings.dataSaver(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setDataSaver(this@SettingsActivity, checked)
+                // Vale na hora: o teto de resolução do vídeo que já está tocando muda agora,
+                // sem esperar a próxima faixa nem uma troca de rede.
+                Playback.refreshDataSaver()
+            }
+        }
+
         findViewById<MaterialSwitch>(R.id.podcast_prefetch_switch).apply {
             isChecked = Settings.podcastPrefetch(this@SettingsActivity)
             setOnCheckedChangeListener { _, checked ->

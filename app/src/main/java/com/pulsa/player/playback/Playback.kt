@@ -211,6 +211,11 @@ object Playback {
         link?.refreshFx()
     }
 
+    /** Item 291 — economia de dados: reaplica o teto de resolução de vídeo agora. */
+    fun refreshDataSaver() {
+        link?.refreshDataSaver()
+    }
+
     /** Reaplica velocidade/pitch depois de mudar a qualidade: era o `furo 1` da auditoria. */
     fun reapplyDanceParams() {
         link?.reapplyDanceParams()
