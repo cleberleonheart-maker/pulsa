@@ -903,7 +903,8 @@
     <string name="v_rec_thinking">Deixa eu pensar numa boa recomendação...</string>
     <string name="v_rec_fail">Não consegui pensar em nada agora. Tente de novo.</string>
     <string name="v_stats_title">Estatísticas</string>
-    <string name="v_stats_msg">Músicas: %1$d\nFavoritas: %2$d\nPlaylists: %3$d\nCache: %4$d MB</string>
+    <string name="v_stats_msg">Músicas: %1$d\nFavoritas: %2$d\nPlaylists: %3$d\nCache: %4$d MB\nTocadas: %5$d\nTempo ouvido: %6$s</string>
+    <string name="v_stats_sub_dyn">%1$d tocadas · %2$s</string>
     <string name="v_mic_off">Configurar</string>
     <string name="status_on">Ligado</string>
     <string name="status_off">Desligado</string>
@@ -983,6 +984,8 @@
     <string name="dj_voice_mem_days">Essa você não ouvia há %1$d dias!</string>
     <string name="dj_voice_mem_weeks">Essa você não ouvia há %1$d semanas!</string>
     <string name="dj_voice_mem_months">Essa você não ouvia há %1$d meses!</string>
+    <string name="dj_voice_relaunch_done">Relançando %1$d antigas que fazia tempo que não tocavam. Ouça os avisos.</string>
+    <string name="dj_voice_relaunch_none">Não achei músicas paradas há tanto tempo. Daqui a pouco aparece mais histórico.</string>
     <string name="dj_voice_ambient_off">Nenhum som ambiente tocando agora.</string>
 
     <string name="smart_new_playlist">Novidades</string>

@@ -9,6 +9,22 @@ object Helper {
         return "%d:%02d".format(minutes, seconds)
     }
 
+    /**
+     * Tempo total ouvido em formato curto e legível: "2h 15min", "45min" ou "3h".
+     * Devolve string vazia quando não há nada ouvido.
+     */
+    fun formatListenTime(ms: Long): String {
+        if (ms <= 0L) return ""
+        val totalMin = ms / 60000L
+        val hours = totalMin / 60L
+        val minutes = totalMin % 60L
+        return when {
+            hours <= 0L -> "$minutes min"
+            minutes <= 0L -> "${hours}h"
+            else -> "${hours}h ${minutes}min"
+        }
+    }
+
     fun trackCount(n: Int, res: android.content.res.Resources): String {
         return if (n == 1) {
             res.getString(com.pulsa.player.R.string.one_song)

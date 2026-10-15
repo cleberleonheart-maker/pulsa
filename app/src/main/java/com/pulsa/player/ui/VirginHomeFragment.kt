@@ -21,6 +21,7 @@ import com.pulsa.player.MainActivity
 import com.pulsa.player.NowPlayingActivity
 import com.pulsa.player.R
 import com.pulsa.player.RadioActivity
+import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.ResumeInfo
 import com.pulsa.player.core.Settings
@@ -61,6 +62,9 @@ class VirginHomeFragment : Fragment() {
     private var voice: DjVoice? = null
     private val rowRefs = mutableListOf<View>()
 
+    /** Subtítulo dinâmico da linha "Estatísticas" (tocadas · tempo ouvido). Vazio = fallback. */
+    private var statsSub: String? = null
+
     override fun onCreateView(
         inflater: android.view.LayoutInflater,
         container: ViewGroup?,
@@ -94,6 +98,7 @@ class VirginHomeFragment : Fragment() {
         refreshResume()
         renderHero()
         loadRecents(view)
+        loadStats()
         view?.findViewById<ViewGroup>(R.id.skin_row)?.let { buildSkinRow(it) }
     }
 
@@ -335,7 +340,7 @@ class VirginHomeFragment : Fragment() {
             AssistantData("🎯", getString(R.string.v_rec),
                 { getString(R.string.v_rec_sub) }, { false }, { recommend() }),
             AssistantData("📊", getString(R.string.v_stats),
-                { getString(R.string.v_stats_sub) }, { false }, { showStats() }),
+                { statsSub ?: getString(R.string.v_stats_sub) }, { false }, { showStats() }),
             AssistantData("📂", getString(R.string.v_scan),
                 {
                     val n = settingsSongs()
@@ -592,6 +597,30 @@ class VirginHomeFragment : Fragment() {
         })
     }
 
+    /** Subtítulo da linha "Estatísticas": "N tocadas · Xh Ymin"; cai no fallback sem toques. */
+    private fun statsSubtitle(plays: Int, listenMs: Long): String? {
+        if (plays <= 0) return null
+        val time = Helper.formatListenTime(listenMs)
+        return if (time.isEmpty()) {
+            getString(R.string.v_stats_sub_dyn, plays, getString(R.string.v_stats_sub))
+        } else {
+            getString(R.string.v_stats_sub_dyn, plays, time)
+        }
+    }
+
+    private fun loadStats() {
+        val act = activity ?: return
+        ThreadPool.post {
+            val ctx = act.applicationContext
+            val totals = runCatching { DjLearn.totals(ctx) }.getOrDefault(DjLearn.Totals(0, 0L, 0))
+            ThreadPool.onUi {
+                if (act.isFinishing || act.isDestroyed) return@onUi
+                statsSub = statsSubtitle(totals.plays, totals.listenMs)
+                refresh()
+            }
+        }
+    }
+
     private fun showStats() {
         val act = requireActivity()
         ThreadPool.post {
@@ -600,11 +629,18 @@ class VirginHomeFragment : Fragment() {
             val favs = runCatching { PlaylistDb.get(ctx).favorites().size }.getOrDefault(0)
             val playlists = runCatching { PlaylistDb.get(ctx).playlists().size }.getOrDefault(0)
             val cacheMb = Settings.cacheSize(ctx) / (1024L * 1024L)
+            val totals = runCatching { DjLearn.totals(ctx) }.getOrDefault(DjLearn.Totals(0, 0L, 0))
+            val listen = Helper.formatListenTime(totals.listenMs).ifEmpty { "0 min" }
             ThreadPool.onUi {
                 if (act.isFinishing || act.isDestroyed) return@onUi
                 MaterialAlertDialogBuilder(act)
                     .setTitle(R.string.v_stats_title)
-                    .setMessage(getString(R.string.v_stats_msg, songs, favs, playlists, cacheMb))
+                    .setMessage(
+                        getString(
+                            R.string.v_stats_msg,
+                            songs, favs, playlists, cacheMb, totals.plays, listen
+                        )
+                    )
                     .setPositiveButton(R.string.close, null)
                     .show()
             }

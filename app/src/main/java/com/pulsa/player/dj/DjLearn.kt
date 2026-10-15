@@ -40,6 +40,12 @@ object DjLearn {
     /** "Quantas vezes toquei essa": total + primeiro/último toque (ts em segundos). */
     data class PlayCount(val total: Int, val firstTs: Long?, val lastTs: Long?)
 
+    /**
+     * Totais agregados de tudo que já passou pela cabine: toques somados, tempo ouvido
+     * somado e quantas faixas distintas já tocaram (`plays > 0`).
+     */
+    data class Totals(val plays: Int, val listenMs: Long, val tracks: Int)
+
     class Learner(context: Context) :
         SQLiteOpenHelper(context.applicationContext, "dj_learn.db", null, 4) {
 
@@ -312,6 +318,18 @@ object DjLearn {
             return PlayCount(total, firstTs, lastTs)
         }
 
+        /** Soma global da biblioteca aprendida: toques, tempo ouvido e faixas distintas. */
+        fun totals(): Totals = runCatching {
+            readableDatabase.rawQuery(
+                "SELECT IFNULL(SUM(plays),0), IFNULL(SUM(listen_ms),0), " +
+                    "SUM(CASE WHEN plays > 0 THEN 1 ELSE 0 END) FROM dj_stats",
+                null
+            ).use { c ->
+                if (c.moveToFirst()) Totals(c.getInt(0), c.getLong(1), c.getInt(2))
+                else Totals(0, 0L, 0)
+            }
+        }.getOrElse { Totals(0, 0L, 0) }
+
         fun recordSkip(songId: Long) {
             bump(songId, "skips", 1)
         }
@@ -509,6 +527,9 @@ object DjLearn {
 
     fun playCount(context: Context, songId: Long): PlayCount? =
         learner(context).playCount(songId)
+
+    /** Totais globais (toques somados, tempo ouvido, faixas distintas) da biblioteca. */
+    fun totals(context: Context): Totals = learner(context).totals()
 
     fun rewind(context: Context, days: Int, limit: Int): RewindResult =
         learner(context).rewind(System.currentTimeMillis() / 1000L, days, limit)

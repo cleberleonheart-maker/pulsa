@@ -145,6 +145,8 @@
     <string name="dj_voice_mem_days">¡Hacía %1$d días que no escuchabas esta!</string>
     <string name="dj_voice_mem_weeks">¡Hacía %1$d semanas que no escuchabas esta!</string>
     <string name="dj_voice_mem_months">¡Hacía %1$d meses que no escuchabas esta!</string>
+    <string name="dj_voice_relaunch_done">Relanzando %1$d viejas que hacía tiempo que no sonaban. Escucha los avisos.</string>
+    <string name="dj_voice_relaunch_none">No encontré nada parado tanto tiempo. Pronto habrá más historial.</string>
     <string name="dj_voice_ambient_off">No hay sonido ambiental reproduciéndose.</string>
     <string name="remove_song_confirm">¿Quitar esta canción de la lista?</string>
     <string name="prev_action">Anterior</string>
@@ -771,7 +773,8 @@
     <string name="v_rec_thinking">Déjame pensar una buena recomendación...</string>
     <string name="v_rec_fail">No pude pensar nada ahora. Inténtalo de nuevo.</string>
     <string name="v_stats_title">Estadísticas</string>
-    <string name="v_stats_msg">Canciones: %1$d\nFavoritas: %2$d\nListas: %3$d\nCaché: %4$d MB</string>
+    <string name="v_stats_msg">Canciones: %1$d\nFavoritas: %2$d\nListas: %3$d\nCaché: %4$d MB\nReproducidas: %5$d\nTiempo escuchado: %6$s</string>
+    <string name="v_stats_sub_dyn">%1$d reproducidas · %2$s</string>
     <string name="v_mic_off">Configurar</string>
     <string name="status_on">Encendido</string>
     <string name="status_off">Apagado</string>

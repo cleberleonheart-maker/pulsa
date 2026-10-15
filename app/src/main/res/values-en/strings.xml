@@ -145,6 +145,8 @@
     <string name="dj_voice_mem_days">You have not heard this one in %1$d days!</string>
     <string name="dj_voice_mem_weeks">You have not heard this one in %1$d weeks!</string>
     <string name="dj_voice_mem_months">You have not heard this one in %1$d months!</string>
+    <string name="dj_voice_relaunch_done">Relaunching %1$d old ones you had not played in ages. Listen to the notes.</string>
+    <string name="dj_voice_relaunch_none">I found nothing left untouched for that long. More history will show up soon.</string>
     <string name="dj_voice_ambient_off">No ambient sound playing right now.</string>
     <string name="remove_song_confirm">Remove this song from the playlist?</string>
     <string name="prev_action">Previous</string>
@@ -771,7 +773,8 @@
     <string name="v_rec_thinking">Let me think of a good pick...</string>
     <string name="v_rec_fail">I could not think of anything right now. Try again.</string>
     <string name="v_stats_title">Statistics</string>
-    <string name="v_stats_msg">Songs: %1$d\nFavorites: %2$d\nPlaylists: %3$d\nCache: %4$d MB</string>
+    <string name="v_stats_msg">Songs: %1$d\nFavorites: %2$d\nPlaylists: %3$d\nCache: %4$d MB\nPlays: %5$d\nTime listened: %6$s</string>
+    <string name="v_stats_sub_dyn">%1$d plays · %2$s</string>
     <string name="v_mic_off">Set up</string>
     <string name="status_on">On</string>
     <string name="status_off">Off</string>

@@ -734,6 +734,30 @@ object DjCommander {
         return DynQuery(genres, maxAge, playsLess, skipsLess, favoritesOnly)
     }
 
+    // ----- Relançar antigas (mix das faixas esquecidas) -----
+
+    /**
+     * "Relança antigas", "toca umas antigas", "toca as esquecidas" → verdadeiro.
+     *
+     * Fica logo **depois** de [dynamicQuery]: "toca rock que não ouço há 6 meses" tem gênero
+     * e vira fila dinâmica; aqui só entram os pedidos genéricos de coisas paradas há muito
+     * tempo sem filtro. Frases de playlist ("toca a playlist antiga") já foram pegas antes.
+     */
+    fun relaunchQuery(norm: String): Boolean {
+        if (norm.contains("relanc")) return true
+        if (norm.contains("esquecid")) return true
+        if (norm.contains("antigas") || norm.contains("velhas") ||
+            norm.contains("antigona") || norm.contains("antigonas")
+        ) return true
+        val stale = norm.contains("faz tempo") || norm.contains("muito tempo") ||
+            norm.contains("ha tempos") || norm.contains("nao ouvia")
+        if (stale && (norm.contains("nao toco") || norm.contains("nao toca") ||
+                norm.contains("nao ouco") || norm.contains("nao ouvi") ||
+                norm.contains("nao escuto") || norm.contains("sem tocar"))
+        ) return true
+        return false
+    }
+
     // ----- Som ambiente por palavra falada (modo para o alarme/cenas) -----
 
     /** "com chuva", "com trovoada", "com oceano" → identifica o modo do ambiente. */
@@ -937,6 +961,7 @@ object DjCommander {
             (norm.contains("alarme") || norm.contains("alarm") || norm.contains("despertad")) -> "alarm_cancel"
         alarmQuery(norm) != null -> "alarm"
         dynamicQuery(norm) != null -> "dynq"
+        relaunchQuery(norm) -> "relaunch"
         decadeQuery(norm) != null -> "decade"
         playCountQuery(norm) -> "playcount"
         countMatch(norm) -> "count"

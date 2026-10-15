@@ -96,6 +96,10 @@ class MainVirgin(
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
         private const val AMBIENT_DUCK_FACTOR = 0.2f
+
+        /** Relançar antigas: só entra o que está sem toque há 6 meses ou mais. */
+        private const val RELAUNCH_GAP_DAYS = 180L
+        private const val RELAUNCH_MAX = 40
         private val HANDS_FREE_BLOCKED = setOf(
             "scan", "duplicates", "pendrive", "delete", "confirm", "cancel",
             "clean_space",
@@ -123,6 +127,9 @@ class MainVirgin(
     private var welcomeVoice: DjVoice? = null
     private var virginVoice: DjVoice? = null
     private var radioLastId = -1L
+
+    /** Faixas do último mix "Relança antigas" — recebem o aviso de intervalo em [announceRadioSong]. */
+    private var relaunchIds: Set<Long> = emptySet()
     private var virginListener: DjCommandListener? = null
     private var virginOn = false
     private var virginRecognizing = false
@@ -374,7 +381,17 @@ class MainVirgin(
     }
 
     fun announceRadioSong(song: Song) {
-        if (activity.isFinishing || activity.isDestroyed || !Settings.djRadio(activity) || !Settings.djVoice(activity)) return
+        if (activity.isFinishing || activity.isDestroyed) return
+        // "Relança antigas": a cada faixa do mix, a Virgin avisa quanto tempo ela ficou parada.
+        // Independente do modo rádio — o mix foi pedido, o aviso é o combinado dele.
+        if (song.id in relaunchIds && Settings.djVoice(activity)) {
+            val note = lastHeardNote(activity.applicationContext, song.id)
+            if (note != null) {
+                virginSpeak(note)
+                return
+            }
+        }
+        if (!Settings.djRadio(activity) || !Settings.djVoice(activity)) return
         DjSessionMemory.notePlayed(song.id)
         val newId = song.id
         if (radioLastId == newId) return
@@ -604,6 +621,64 @@ class MainVirgin(
                 Playback.start(set, 0)
                 virginSpeak(say(R.string.dj_voice_dynq_done, set.size, dynqReason(query)) + avoidNoteStr)
             }
+        }
+    }
+
+    /**
+     * "Relança antigas": mix das faixas que você não ouve há 6 meses ou mais.
+     *
+     * O oposto do "Rádio com memória": lá o aviso de intervalo aparece por acaso, aqui o mix
+     * é montado só com as esquecidas (sem toque em [RELAUNCH_GAP_DAYS] dias, fora do que já
+     * tocou por perto e das odiadas). Ao começar cada faixa, [announceRadioSong] avisa o
+     * intervalo — "essa você não ouvia há 8 meses".
+     */
+    private fun virgRelaunch() {
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val songs = Library.allSongs(ctx)
+            if (songs.isEmpty()) {
+                ThreadPool.onUi { virginSpeak(say(R.string.dj_voice_relaunch_none)) }
+                return@post
+            }
+            val learn = DjLearn.learn(ctx)
+            val lastPlayed = DjLearn.lastPlayedMap(ctx)
+            val nowSec = System.currentTimeMillis() / 1000L
+            val gapSec = RELAUNCH_GAP_DAYS * 86400L
+            val recent = DjSessionMemory.recentIds()
+            val forgotten = songs.filter { s ->
+                if (recent.contains(s.id)) return@filter false
+                if (learn.disliked.contains(s.id)) return@filter false
+                val last = lastPlayed[s.id] ?: return@filter false
+                nowSec - last >= gapSec
+            }.sortedByDescending { nowSec - (lastPlayed[it.id] ?: nowSec) }
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (forgotten.isEmpty()) {
+                    virginSpeak(say(R.string.dj_voice_relaunch_none))
+                    return@onUi
+                }
+                val set = forgotten.take(RELAUNCH_MAX)
+                relaunchIds = set.map { it.id }.toSet()
+                Telemetry.log(activity, "Virgin relança antigas n=${set.size}")
+                Playback.setShuffle(false)
+                Playback.setRepeatAll(true)
+                Playback.setSleepMix(false)
+                DjSessionMemory.notePlayed(set.map { it.id })
+                Playback.start(set, 0)
+                virginSpeak(say(R.string.dj_voice_relaunch_done, set.size))
+            }
+        }
+    }
+
+    /** Régua de intervalo da mesma família do "Rádio com memória" ([DjSession.lastHeardNote]). */
+    private fun lastHeardNote(app: Context, songId: Long): String? {
+        val last = DjLearn.lastPlayedMap(app)[songId] ?: return null
+        val gapDays = (System.currentTimeMillis() / 1000L - last) / 86400L
+        if (gapDays < 5) return null
+        return when {
+            gapDays < 14 -> activity.getString(R.string.dj_voice_mem_days, gapDays)
+            gapDays < 60 -> activity.getString(R.string.dj_voice_mem_weeks, gapDays / 7)
+            else -> activity.getString(R.string.dj_voice_mem_months, gapDays / 30)
         }
     }
 
@@ -1235,6 +1310,8 @@ class MainVirgin(
             pendingDelete = null
             virginHandler.removeCallbacksAndMessages(null)
         }
+        // Um comando novo encerra o mix "Relança antigas" (só ele mantém o aviso de intervalo).
+        if (action != "relaunch") relaunchIds = emptySet()
         when (action) {
             "mix" -> virginSpeak(say(R.string.dj_voice_mix_main))
             "month_favs" -> virgMonthMix()
@@ -1264,6 +1341,7 @@ class MainVirgin(
             }
             "only" -> virgArtistOnly(DjCommander.onlyArtist(norm))
             "dynq" -> virgDynamicQueue(DjCommander.dynamicQuery(norm))
+            "relaunch" -> virgRelaunch()
             "playlist_new" -> virgPlaylistCreate(norm)
             "playlist_play" -> virgPlaylistPlay(norm)
             "decade" -> virgDecadeMix(DjCommander.decadeQuery(norm))
