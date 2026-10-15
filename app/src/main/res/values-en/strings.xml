@@ -30,7 +30,9 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.28):
+    <string name="changelog">What is new (5.10.29):
+→ NEW
+• Track heads-up: if you usually skip a song, the Virgin warns you before playing it.
 → A MORE TALKATIVE VIRGIN DJ
 • "Play the forgotten ones": a queue only of tracks you have not heard in a long time — and she tells you how long it has been.
 • "Weekend recap": she tells you what you listened to most on Saturday and Sunday.
@@ -114,6 +116,7 @@
     <string name="dj_voice_decade_done">Let\'s go! I put together %1$d tracks from the %2$s!</string>
     <string name="dj_voice_decade_none">I could not find any tracks from those years in your library.</string>
     <string name="dj_voice_avoid_note">I left %1$d out because you always skip them.</string>
+    <string name="dj_voice_skip_note">You usually skip this one, skip it?</string>
     <string name="dj_voice_scene">Let\'s go! %1$s radio set built with %2$d tracks.</string>
     <string name="dj_voice_scene_amb">Let\'s go! %1$s set with %2$s in the background, %3$d tracks.</string>
     <string name="dj_scene_malhar">workout</string>

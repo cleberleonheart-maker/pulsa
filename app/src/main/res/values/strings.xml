@@ -33,7 +33,9 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.28):
+    <string name="changelog">Novidades desta versão (5.10.29):
+→ NOVIDADES
+• Nota prévia da faixa: se você costuma pular uma música, a Virgin avisa antes de tocar.
 → A RÁDIO DA VIRGÍNIA FICOU MAIS CONVERSADA
 • "Relança as antigas": monta uma fila só com músicas que faz tempo que você não ouve — e fala quanto tempo já era.
 • "Resumo do fim de semana": ela conta o que você mais ouviu no sábado e no domingo.
@@ -999,6 +1001,7 @@
     <string name="dj_voice_decade_done">Bora! Montei %1$d músicas dos anos %2$s!</string>
     <string name="dj_voice_decade_none">Não achei músicas desses anos na sua biblioteca.</string>
     <string name="dj_voice_avoid_note">Deixei %1$d de fora porque você sempre pula.</string>
+    <string name="dj_voice_skip_note">Essa aí você costuma pular, pulo?</string>
     <string name="dj_voice_mem_first">Essa você ainda não ouviu comigo!</string>
     <string name="dj_voice_mem_days">Essa você não ouvia há %1$d dias!</string>
     <string name="dj_voice_mem_weeks">Essa você não ouvia há %1$d semanas!</string>

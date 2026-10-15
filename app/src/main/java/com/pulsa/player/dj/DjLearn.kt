@@ -439,7 +439,7 @@ object DjLearn {
                             plays[id] = playsHere
                             liked[id] = c.getInt(4)
                             if (c.getInt(3) > 0) disliked.add(id)
-                            else if (skipsHere >= 3 && skipsHere >= playsHere) avoided.add(id)
+                            else if (skipProne(skipsHere, playsHere)) avoided.add(id)
                         }
                     }
             }
@@ -544,6 +544,13 @@ object DjLearn {
     }
 
     fun learn(context: Context): DjEngine.Learn = learner(context).learn()
+
+    /**
+     * True quando o ouvinte costuma pular a faixa: pelo menos 3 pulos e sem mais toques do
+     * que pulos. É a mesma regra que marca a faixa como `avoided` no motor — usada aqui para
+     * a Virgin avisar antes de tocar ("essa você costuma pular").
+     */
+    fun skipProne(skips: Int, plays: Int): Boolean = skips >= 3 && skips >= plays
 
     fun stats(context: Context, songId: Long): Stats? = learner(context).stats(songId)
 

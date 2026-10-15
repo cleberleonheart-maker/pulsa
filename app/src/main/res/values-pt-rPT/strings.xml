@@ -7,7 +7,9 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.28):
+    <string name="changelog">Novidades desta versão (5.10.29):
+→ NOVIDADES
+• Aviso de faixa: se costuma saltar uma música, a Virgin avisa antes de a tocar.
 → A RÁDIO DA VIRGÍNIA FICOU MAIS CONVERSADA
 • "Relança as antigas": monta uma fila só com músicas que já não ouve há bastante tempo — e diz há quanto tempo era.
 • "Resumo do fim de semana": conta o que mais ouviu no sábado e no domingo.
@@ -232,6 +234,7 @@
     <string name="dj_voice_only">Só %1$s daqui para a frente! São %2$d músicas.</string>
     <string name="dj_voice_pen_search">Vou ver se tem uma pen drive ou cartão ligado e procurar as músicas dele.</string>
     <string name="dj_voice_pen_none">Não encontrei nenhuma pen drive ou cartão extra ligado.</string>
+    <string name="dj_voice_skip_note">Essa costumas saltar, salto-a?</string>
 
     <string name="home_greet_after">Boa tarde! Está relaxado? Eu trato da banda sonora para si.</string>
     <string name="home_greet_night">Boa noite! Deixe-me escolher uma faixa calma para fechar o dia.</string>

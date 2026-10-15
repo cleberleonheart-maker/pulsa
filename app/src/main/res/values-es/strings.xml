@@ -30,7 +30,9 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.28):
+    <string name="changelog">Novedades de esta versión (5.10.29):
+→ NUEVO
+• Aviso de canción: si sueles saltar una, la Virgin te avisa antes de ponerla.
 → UNA VIRGIN MÁS CONVERSADORA
 • "Relanza las antiguas": una cola solo con canciones que hace tiempo no escuchas, con el tiempo transcurrido dicho en voz.
 • "Resumen del fin de semana": cuenta lo que más escuchaste el sábado y el domingo.
@@ -114,6 +116,7 @@
     <string name="dj_voice_decade_done">¡Vamos! Armé %1$d canciones de los años %2$s!</string>
     <string name="dj_voice_decade_none">No encontré canciones de esos años en tu biblioteca.</string>
     <string name="dj_voice_avoid_note">Dejé %1$d fuera porque siempre las saltas.</string>
+    <string name="dj_voice_skip_note">Esta sueles saltarla, ¿la salto?</string>
     <string name="dj_voice_scene">¡Vamos! Radio %1$s preparada con %2$d canciones.</string>
     <string name="dj_voice_scene_amb">¡Vamos! %1$s con %2$s de fondo, %3$d canciones.</string>
     <string name="dj_scene_malhar">para entrenar</string>

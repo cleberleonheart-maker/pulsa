@@ -260,10 +260,14 @@ class DjSession(
             val base = activity.getString(R.string.dj_voice_track, song?.title, song?.artist)
             announce = curiosityBody(song)?.let { "$it $base" } ?: base
         }
-        if (song != null) {
+        if (song != null && announce != null) {
             val note = lastHeardNote(app, lastPlayedBefore, song.id)
-            if (note != null && announce != null) {
+            if (note != null) {
                 announce = "$note $announce"
+            }
+            val skip = skipNote(app, song.id)
+            if (skip != null) {
+                announce = "$announce $skip"
             }
         }
         val dedication = if (announce != null) DjDedication.take() else null
@@ -273,6 +277,16 @@ class DjSession(
             }
             speak(announce)
         }
+    }
+
+    /**
+     * Nota prévia da faixa: se o ouvinte costuma pular esta, a Virgin avisa antes de tocar.
+     * Vem depois da locução da faixa ("Tocando agora: … Essa você costuma pular, pulo?").
+     */
+    private fun skipNote(app: Context, songId: Long): String? {
+        val s = DjLearn.stats(app, songId) ?: return null
+        if (!DjLearn.skipProne(s.skips, s.plays)) return null
+        return activity.getString(R.string.dj_voice_skip_note)
     }
 
     /** Rádio com memória: se a faixa está há dias sem ser ouvida, a Virgin avisa. */
