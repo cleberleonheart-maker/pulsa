@@ -33,14 +33,12 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.30):
+    <string name="changelog">Novidades desta versão (5.10.31):
 → NOVIDADES
-• Virgin bilíngue: ela responde no idioma da sua pergunta — fale em português, inglês ou espanhol que a resposta vem no mesmo idioma.
-• O microfone agora reconhece no idioma escolhido no app, não no idioma do sistema.
-→ LIMPEZA POR VOZ
-• "Apaga as músicas que eu nunca ouvi": a Virgin conta quantas são e só apaga depois que você confirma.
+• Cronômetro de treino por voz: "Virgin, cronometra 3 rounds de 1 min com chuva". Ela fala cada round, conta 3-2-1 e ainda toca o ambiente de fundo.
+• Quiz "quanto você conhece a Virgin": ela pergunta números do seu histórico (quantas vezes tocou a faixa top, o total...) e você adivinha.
 → CORREÇÕES
-• Respostas de mãos livres mais confiáveis no idioma escolhido.</string>
+• Comando novo encerra o cronômetro de treino em andamento.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -671,6 +669,8 @@
     <string name="dj_commands_delete">"Virgin, apaga / deleta" — apaga a música (com confirmação)</string>
     <string name="dj_commands_duplicates">"Virgin, músicas repetidas" — encontra duplicatas</string>
     <string name="dj_commands_never_played">"Virgin, apaga as que eu nunca ouvi" — limpa as músicas que nunca tocaram</string>
+    <string name="dj_commands_interval">"Virgin, cronometra 3 rounds de 1 min com chuva" — cronômetro de treino com ambiente</string>
+    <string name="dj_commands_quiz">"Virgin, quiz" — ela faz perguntas sobre o seu histórico</string>
     <string name="dj_commands_pendrive">"Virgin, pendrive / cartão" — importa músicas de um pendrive</string>
     <string name="dj_commands_suggest">"Virgin, me sugere / o que você tocaria" — pede uma sugestão da IA</string>
     <string name="dj_commands_visualizer">"Virgin, visualizador" — liga/desliga as barrinhas</string>
@@ -774,6 +774,27 @@
     <string name="dj_voice_unplayed_none">Boa! Você já ouviu todas as músicas da sua biblioteca.</string>
     <string name="dj_voice_unplayed_confirm">Encontrei %1$d músicas que você nunca ouviu. Fala \"pode apagar\" que eu limpo.</string>
     <string name="dj_voice_unplayed_done">Pronto! Apaguei %1$d músicas que você nunca ouviu.</string>
+    <string name="dj_voice_interval_ask">Fala assim: cronometra 3 rounds de 1 minuto com chuva.</string>
+    <string name="dj_voice_interval_minutes">%1$d minutos</string>
+    <string name="dj_voice_interval_seconds">%1$d segundos</string>
+    <string name="dj_voice_interval_start">Começando treino de %1$d rounds de %2$s.</string>
+    <string name="dj_voice_interval_round">Round %1$d de %2$d.</string>
+    <string name="dj_voice_interval_count">%1$d!</string>
+    <string name="dj_voice_interval_done">Treino concluído! Foram %1$d rounds.</string>
+    <string name="dj_voice_interval_canceled">Cronômetro cancelado.</string>
+    <string name="dj_voice_interval_none">Não tem nenhum cronômetro rodando.</string>
+    <string name="dj_voice_quiz_ask">Vamos brincar! Eu pergunto e você adivinha o número.</string>
+    <string name="dj_voice_quiz_q_song">Quantas vezes você já tocou %1$s? Fala um número.</string>
+    <string name="dj_voice_quiz_q_total">Quantas músicas você já tocou no total? Adivinha.</string>
+    <string name="dj_voice_quiz_q_unique">Quantas músicas diferentes já passaram por aqui? Fala um número.</string>
+    <string name="dj_voice_quiz_q_current">Quantas vezes você já ouviu a música que está tocando? Fala um número.</string>
+    <string name="dj_voice_quiz_exact">Acertou em cheio! Foram %1$d vezes.</string>
+    <string name="dj_voice_quiz_close">Quase! Eram %1$d vezes.</string>
+    <string name="dj_voice_quiz_wrong">Não foi dessa vez. Eram %1$d vezes.</string>
+    <string name="dj_voice_quiz_nonumber">Não peguei o número. Fala só o número, por favor.</string>
+    <string name="dj_voice_quiz_done">Fim de jogo! Você acertou %1$d de %2$d.</string>
+    <string name="dj_voice_quiz_none">Ainda não tenho histórico suficiente pra brincar. Me escuta um pouco mais e me chama de novo.</string>
+    <string name="dj_voice_quiz_cancel">Beleza, paramos por aqui. Você acertou %1$d de %2$d.</string>
     <string name="dj_voice_pen_search">Vou olhar se tem um pendrive ou cartão conectado e buscar as músicas dele.</string>
     <string name="dj_voice_pen_none">Não encontrei nenhum pendrive ou cartão extra conectado.</string>
     <string name="dj_voice_pen_done">Pronto! Encontrei %1$d músicas novas no pendrive e adicionei à sua coleção.</string>

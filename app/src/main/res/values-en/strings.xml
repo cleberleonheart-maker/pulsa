@@ -30,14 +30,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.30):
+    <string name="changelog">What is new (5.10.31):
 → NEW
-• Bilingual Virgin: she answers in the language of your question — speak Portuguese, English or Spanish and the reply comes back in the same language.
-• The mic now listens in the language chosen in the app, not the system language.
-→ VOICE CLEANUP
-• "Delete the songs I have never heard": the Virgin counts them and only removes them after you confirm.
+• Workout timer by voice: "Virgin, time 3 rounds of 1 minute with rain". She calls each round, counts 3-2-1 and even plays the background ambience.
+• "How well do you know the Virgin" quiz: she asks numbers from your history (how many times you played the top track, the total...) and you guess.
 → FIXES
-• More reliable hands-free replies in your chosen language.</string>
+• A new command stops a running workout timer.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -650,6 +648,27 @@
     <string name="dj_voice_unplayed_none">Nice! You\'ve already listened to every song in your library.</string>
     <string name="dj_voice_unplayed_confirm">I found %1$d songs you\'ve never listened to. Say \"you can delete\" and I\'ll clean them up.</string>
     <string name="dj_voice_unplayed_done">Done! I deleted %1$d songs you\'d never listened to.</string>
+    <string name="dj_voice_interval_ask">Say something like: time 3 rounds of 1 minute with rain.</string>
+    <string name="dj_voice_interval_minutes">%1$d minutes</string>
+    <string name="dj_voice_interval_seconds">%1$d seconds</string>
+    <string name="dj_voice_interval_start">Starting a workout of %1$d rounds of %2$s.</string>
+    <string name="dj_voice_interval_round">Round %1$d of %2$d.</string>
+    <string name="dj_voice_interval_count">%1$d!</string>
+    <string name="dj_voice_interval_done">Workout done! That was %1$d rounds.</string>
+    <string name="dj_voice_interval_canceled">Timer canceled.</string>
+    <string name="dj_voice_interval_none">There\'s no timer running.</string>
+    <string name="dj_voice_quiz_ask">Let\'s play! I ask and you guess the number.</string>
+    <string name="dj_voice_quiz_q_song">How many times have you played %1$s? Say a number.</string>
+    <string name="dj_voice_quiz_q_total">How many songs have you played in total? Take a guess.</string>
+    <string name="dj_voice_quiz_q_unique">How many different songs have passed through here? Say a number.</string>
+    <string name="dj_voice_quiz_q_current">How many times have you heard the song playing now? Say a number.</string>
+    <string name="dj_voice_quiz_exact">Spot on! It was %1$d times.</string>
+    <string name="dj_voice_quiz_close">So close! It was %1$d times.</string>
+    <string name="dj_voice_quiz_wrong">Not this time. It was %1$d times.</string>
+    <string name="dj_voice_quiz_nonumber">I didn\'t catch a number. Just say the number, please.</string>
+    <string name="dj_voice_quiz_done">Game over! You got %1$d out of %2$d.</string>
+    <string name="dj_voice_quiz_none">I don\'t have enough history to play yet. Listen to a bit more and call me again.</string>
+    <string name="dj_voice_quiz_cancel">Alright, let\'s stop here. You got %1$d out of %2$d.</string>
     <string name="dj_voice_pen_search">Let me check if there\'s a USB drive or card connected and find the music on it.</string>
     <string name="dj_voice_pen_none">I didn\'t find any extra USB drive or card connected.</string>
     <string name="dj_voice_pen_done">Done! I found %1$d new songs on the USB drive and added them to your library.</string>

@@ -634,6 +634,40 @@ object DjCommander {
         else -> n
     }
 
+    /** Números falados de 0 a 100 (o reconhecimento às vezes volta escrito, não em dígitos). */
+    private val NUMBER_WORDS = mapOf(
+        "zero" to 0, "um" to 1, "uma" to 1, "dois" to 2, "duas" to 2, "tres" to 3,
+        "quatro" to 4, "cinco" to 5, "seis" to 6, "meia" to 6, "sete" to 7, "oito" to 8,
+        "nove" to 9, "dez" to 10, "onze" to 11, "doze" to 12, "treze" to 13,
+        "quatorze" to 14, "catorze" to 14, "quinze" to 15, "dezesseis" to 16,
+        "dezessete" to 17, "dezoito" to 18, "dezenove" to 19, "vinte" to 20,
+        "trinta" to 30, "quarenta" to 40, "cinquenta" to 50, "sessenta" to 60,
+        "setenta" to 70, "oitenta" to 80, "noventa" to 90, "cem" to 100, "cento" to 100
+    )
+
+    private val NUMBER_WORD_ALT =
+        "(?:\\d+|zero|um|uma|dois|duas|tres|quatro|cinco|seis|meia|sete|oito|nove|dez|" +
+            "onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|" +
+            "vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento)"
+
+    /**
+     * Primeiro número falado da frase, em dígito ou por extenso ("vinte e um" → 21). `null`
+     * quando não há número. Usado pelo quiz ("adivinha quantas vezes") para comparar o chute.
+     */
+    fun spokenNumber(norm: String): Int? {
+        Regex("""\b(\d{1,4})\b""").find(norm)?.let { return it.groupValues[1].toIntOrNull() }
+        val toks = norm.split(Regex("[^a-z0-9]+")).filter { it.isNotBlank() }
+        for (i in toks.indices) {
+            val base = NUMBER_WORDS[toks[i]] ?: continue
+            if (base >= 20 && base % 10 == 0 && i + 2 < toks.size && toks[i + 1] == "e") {
+                val unit = NUMBER_WORDS[toks[i + 2]]
+                if (unit != null && unit in 1..9) return base + unit
+            }
+            return base
+        }
+        return null
+    }
+
     /** Tokens de gênero presentes (deduplica: "pop" sai quando "pop rock" já casou). */
     private fun genresOf(norm: String): List<String> {
         val found = GENRES.filter { it.length >= 3 && norm.contains(it) }
@@ -1009,6 +1043,59 @@ object DjCommander {
         return null
     }
 
+    // ----- Cronômetro de treino por voz ("cronometra 3 rounds de 1 min com chuva") -----
+
+    data class IntervalSpec(val rounds: Int, val seconds: Int, val ambient: String?)
+
+    private val INTERVAL_TRIGGERS = listOf(
+        "cronometra", "cronometro", "cronometrar", "round", "rounds", "tabata",
+        "hiit", "hitt", "circuito", "timer de treino"
+    )
+
+    /** Cancelar o cronômetro: "cancela o treino", "para o cronômetro", "acaba o intervalo". */
+    fun intervalCancelQuery(norm: String): Boolean {
+        val target = norm.contains("cronometro") || norm.contains("cronometra") ||
+            norm.contains("timer") || norm.contains("treino") || norm.contains("intervalo") ||
+            norm.contains("round")
+        val stop = norm.contains("cancela") || norm.contains("cancelar") ||
+            norm.contains("acaba") || norm.contains("acabar") || norm.contains("encerra") ||
+            norm.contains("encerrar") || norm.contains("para o") || norm.contains("parar o") ||
+            norm.contains("para a ") || norm.contains("para as ") || norm.contains("para os ")
+        return target && stop
+    }
+
+    /**
+     * Cronômetro de treino: "cronometra 3 rounds de 1 min com chuva" → 3 rounds de 60s com
+     * ambiente de chuva. Sem número de rounds assume 4; sem duração assume 1 min. A guarda
+     * do "intervalo" só dispara com duração explícita, para não roubar "no intervalo de X".
+     */
+    fun intervalQuery(norm: String): IntervalSpec? {
+        if (intervalCancelQuery(norm)) return null
+        val strong = INTERVAL_TRIGGERS.any { norm.contains(it) }
+        val loose = norm.contains("intervalo") &&
+            Regex("""($NUMBER_WORD_ALT)\s*(?:seg|segundo|min|minuto)""").containsMatchIn(norm)
+        if (!strong && !loose) return null
+        val rounds = Regex(
+            """($NUMBER_WORD_ALT)\s*(?:rounds?|series?|circuitos?|blocos?|repeticoes?|repeticoes|vezes)"""
+        ).find(norm)?.groupValues?.get(1)?.let { numOf(it) }
+        val sec = Regex("""($NUMBER_WORD_ALT)\s*(seg|segundos?|min|minutos?)\b""")
+            .find(norm)?.let {
+                val n = numOf(it.groupValues[1])
+                if (it.groupValues[2].startsWith("min")) n * 60 else n
+            }
+        val roundsN = (rounds ?: 4).coerceIn(1, 30)
+        val secN = (sec ?: 60).coerceIn(5, 3600)
+        return IntervalSpec(roundsN, secN, ambientModeOf(norm))
+    }
+
+    /** "virgi, vamos brincar / quiz / adivinha quantas" → abre o jogo de adivinhação. */
+    fun quizQuery(norm: String): Boolean =
+        norm.contains("quiz") || norm.contains("trivia") ||
+            norm.contains("brincar") || norm.contains("brinca") ||
+            (norm.contains("adivinha") &&
+                (norm.contains("quanto") || norm.contains("quantas") ||
+                    norm.contains("quantos") || norm.contains("numero")))
+
     // ----- Túnel do tempo por década ("anos 80", "década de 90", "anos 2000") -----
 
     private val DECADE_WORD_YEARS = mapOf(
@@ -1050,6 +1137,11 @@ object DjCommander {
         playlistPlay(norm) -> "playlist_play"
         ambientVolume(norm) != null -> "ambient_vol"
         ambientMix(norm) != null -> "ambient_mix"
+        // Cronômetro/quiz antes de "scene": "treino" é palavra de cena e "para o treino"
+        // seria lido como pausa. A cancelagem vem antes do próprio cronômetro.
+        intervalCancelQuery(norm) -> "interval_cancel"
+        intervalQuery(norm) != null -> "interval"
+        quizQuery(norm) -> "quiz"
         sceneQuery(norm) != null -> "scene"
         weekendMatch(norm) -> "weekend"
         weekMatch(norm) -> "weekly"

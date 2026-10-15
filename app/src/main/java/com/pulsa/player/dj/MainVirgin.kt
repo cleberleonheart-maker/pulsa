@@ -102,7 +102,7 @@ class MainVirgin(
         private const val RELAUNCH_MAX = 40
         private val HANDS_FREE_BLOCKED = setOf(
             "scan", "duplicates", "never_played", "pendrive", "delete", "confirm", "cancel",
-            "clean_space",
+            "clean_space", "quiz",
             "visualizer", "skin", "karaoke"
             // `video_open` NÃO fica bloqueado: era o único jeito de voltar para a tela do
             // vídeo depois que ela fecha sozinha. Travar o comando só entregava o vídeo
@@ -141,6 +141,17 @@ class MainVirgin(
     private var pendingUnplayedSongs: List<Song> = emptyList()
     private var pendingBatchUnplayed = false
     private var pendingPendriveFiles: List<VirginMedia.PendriveFile>? = null
+
+    /** Item 122 · quiz falado: a pergunta pendente (o próximo texto vira resposta). */
+    private data class QuizQuestion(val prompt: String, val answer: Long, val tol: Long)
+    private var pendingQuiz: QuizQuestion? = null
+    private var quizQuestions: List<QuizQuestion> = emptyList()
+    private var quizIndex = 0
+    private var quizScore = 0
+
+    /** Item 159 · cronômetro de treino: ativo e se foi ele quem ligou o ambiente. */
+    private var intervalActive = false
+    private var intervalStartedAmbient = false
     private var pendriveTotalFound = 0
     private var pendriveDuplicatesSkipped = 0
     private var virginSpeechPaused = false
@@ -1301,6 +1312,12 @@ class MainVirgin(
 
     private fun resolveVirginCommand(text: String) {
         if (activity.isFinishing || activity.isDestroyed) return
+        // Quiz pendente: o próximo texto é a resposta da pergunta, não um comando novo.
+        val quiz = pendingQuiz
+        if (quiz != null) {
+            answerQuiz(quiz, text)
+            return
+        }
         dispatchVirginCommand(text)
     }
 
@@ -1322,9 +1339,11 @@ class MainVirgin(
             if (hasWake) virginSpeak(say(R.string.dj_voice_unknown))
             return
         }
-        if (action !in setOf("confirm", "cancel", "delete", "clean_space")) {
+        if (action !in setOf("confirm", "cancel", "delete", "clean_space", "interval_cancel")) {
             pendingDelete = null
             pendingUnplayedSongs = emptyList()
+            // Comando novo encerra o cronômetro de treino (senão o ambiente ficaria solto).
+            stopInterval()
             virginHandler.removeCallbacksAndMessages(null)
         }
         // Um comando novo encerra o mix "Relança antigas" (só ele mantém o aviso de intervalo).
@@ -1379,6 +1398,9 @@ class MainVirgin(
             "sleeptimer" -> virgSleepTimer(DjCommander.sleepTimerQuery(norm))
             "alarm" -> virgAlarmSet(DjCommander.alarmQuery(norm))
             "alarm_cancel" -> virgAlarmCancel()
+            "interval" -> virgInterval(DjCommander.intervalQuery(norm))
+            "interval_cancel" -> virgIntervalCancel()
+            "quiz" -> virgQuiz()
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
             "video_by_name" -> virgVideoByName(DjCommander.videoQuery(norm))
             "video_play" -> virgVideoPlay()
@@ -2020,6 +2042,175 @@ class MainVirgin(
             Playback.toggle()
             virginSpeak(say(R.string.dj_voice_sleeptimer_done))
         }, minutes * 60_000L)
+    }
+
+    /**
+     * Item 159 · Cronômetro de treino — "virgi, cronometra 3 rounds de 1 min com chuva".
+     *
+     * Fala o round, conta os 3 últimos segundos e emenda o próximo. O ambiente (se pedido)
+     * fica de fundo e é desligado no fim, no cancelamento ou quando chega um comando novo.
+     * Tudo agendado no `virginHandler` (mesmo handler do sleep-timer): um comando novo limpa
+     * a fila e encerra o treino, como já acontece com os outros timers falados.
+     */
+    private fun virgInterval(spec: DjCommander.IntervalSpec?) {
+        if (spec == null) {
+            virginSpeak(say(R.string.dj_voice_interval_ask))
+            return
+        }
+        val amb = spec.ambient
+        intervalActive = true
+        intervalStartedAmbient = amb != null
+        if (amb != null) Ambient.start(amb, 0.7f)
+        val dur = if (spec.seconds % 60 == 0) {
+            say(R.string.dj_voice_interval_minutes, spec.seconds / 60)
+        } else {
+            say(R.string.dj_voice_interval_seconds, spec.seconds)
+        }
+        Telemetry.log(
+            activity,
+            "Virgin interval rounds=${spec.rounds} sec=${spec.seconds} amb=${spec.ambient ?: '-'}"
+        )
+        // Intro + "Round 1" numa locução só: duas chamadas seguidas de `virginSpeak` cortam
+        // a primeira (o TTS usa QUEUE_FLUSH).
+        val intro = say(R.string.dj_voice_interval_start, spec.rounds, dur) + " " +
+            say(R.string.dj_voice_interval_round, 1, spec.rounds)
+        virginSpeak(intro)
+        scheduleIntervalTicks(1, spec)
+    }
+
+    private fun scheduleIntervalTicks(round: Int, spec: DjCommander.IntervalSpec) {
+        if (!intervalActive) return
+        val secs = spec.seconds
+        val last = round >= spec.rounds
+        for (s in intArrayOf(3, 2, 1)) {
+            if (secs <= s + 1) continue
+            virginHandler.postDelayed({
+                if (intervalActive) virginSpeak(say(R.string.dj_voice_interval_count, s))
+            }, (secs - s) * 1000L)
+        }
+        virginHandler.postDelayed({
+            if (!intervalActive || activity.isFinishing || activity.isDestroyed) return@postDelayed
+            if (last) {
+                stopInterval()
+                virginSpeak(say(R.string.dj_voice_interval_done, spec.rounds))
+            } else {
+                virginSpeak(say(R.string.dj_voice_interval_round, round + 1, spec.rounds))
+                scheduleIntervalTicks(round + 1, spec)
+            }
+        }, secs * 1000L)
+    }
+
+    private fun virgIntervalCancel() {
+        if (!intervalActive) {
+            virginSpeak(say(R.string.dj_voice_interval_none))
+            return
+        }
+        stopInterval()
+        virginHandler.removeCallbacksAndMessages(null)
+        virginSpeak(say(R.string.dj_voice_interval_canceled))
+    }
+
+    /** Encerra o cronômetro e desliga o ambiente, se foi ele quem ligou. */
+    private fun stopInterval() {
+        intervalActive = false
+        if (intervalStartedAmbient) {
+            intervalStartedAmbient = false
+            Ambient.stop()
+        }
+    }
+
+    /**
+     * Item 122 · Quiz falado — "virgi, quiz". A Virgin pergunta um número do seu histórico
+     * (quantas vezes tocou a faixa top, o total, etc.) e você adivinha. Os números são
+     * robustos no reconhecimento (ao contrário de acertar o nome de uma música); perto do
+     * valor conta como "quase".
+     */
+    private fun virgQuiz() {
+        val cur = Playback.currentSong
+        ThreadPool.post {
+            val ctx = activity.applicationContext
+            val songs = Library.allSongs(ctx)
+            val byId = songs.associateBy { it.id }
+            val rew = DjLearn.rewind(ctx, Int.MAX_VALUE, 10)
+            val qs = ArrayList<QuizQuestion>()
+            rew.top.firstOrNull()?.let { (id, n) ->
+                byId[id]?.let {
+                    qs.add(QuizQuestion(say(R.string.dj_voice_quiz_q_song, it.title), n.toLong(), maxOf(2L, (n * 0.2).toLong())))
+                }
+            }
+            if (rew.plays > 0) {
+                qs.add(QuizQuestion(say(R.string.dj_voice_quiz_q_total), rew.plays.toLong(), maxOf(20L, (rew.plays * 0.15).toLong())))
+            }
+            if (rew.unique > 0) {
+                qs.add(QuizQuestion(say(R.string.dj_voice_quiz_q_unique), rew.unique.toLong(), maxOf(20L, (rew.unique * 0.15).toLong())))
+            }
+            rew.top.getOrNull(1)?.let { (id, n) ->
+                byId[id]?.let {
+                    qs.add(QuizQuestion(say(R.string.dj_voice_quiz_q_song, it.title), n.toLong(), maxOf(2L, (n * 0.2).toLong())))
+                }
+            }
+            if (cur != null) {
+                val pc = DjLearn.playCount(ctx, DjLearn.typedKey(cur) ?: cur.id)
+                if (pc != null && pc.total > 0) {
+                    qs.add(QuizQuestion(say(R.string.dj_voice_quiz_q_current), pc.total.toLong(), maxOf(2L, (pc.total * 0.2).toLong())))
+                }
+            }
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (qs.isEmpty()) {
+                    virginSpeak(say(R.string.dj_voice_quiz_none))
+                    return@onUi
+                }
+                quizQuestions = qs.take(5)
+                quizIndex = 0
+                quizScore = 0
+                val first = quizQuestions[0]
+                pendingQuiz = first
+                virginSpeak(say(R.string.dj_voice_quiz_ask) + " " + first.prompt)
+            }
+        }
+    }
+
+    private fun answerQuiz(q: QuizQuestion, text: String) {
+        val norm = DjCommander.norm(text)
+        val quit = listOf("para", "cancela", "cancelar", "sai", "sair", "chega", "desisto", "acabou", "stop", "encerra")
+        if (quit.any { norm == it || norm.startsWith("$it ") || norm.endsWith(" $it") }) {
+            pendingQuiz = null
+            virginSpeak(say(R.string.dj_voice_quiz_cancel, quizScore, quizQuestions.size))
+            return
+        }
+        val skips = listOf("nao sei", "passa", "pula", "proxima", "skip", "nao lembro", "nao faco ideia", "desisto")
+        if (skips.any { norm.contains(it) }) {
+            finishQuizRound(say(R.string.dj_voice_quiz_wrong, q.answer))
+            return
+        }
+        val guess = DjCommander.spokenNumber(norm)
+        if (guess == null) {
+            virginSpeak(say(R.string.dj_voice_quiz_nonumber))
+            return
+        }
+        val exact = guess.toLong() == q.answer
+        val close = !exact && kotlin.math.abs(guess.toLong() - q.answer) <= q.tol
+        if (exact) quizScore++
+        val line = when {
+            exact -> say(R.string.dj_voice_quiz_exact, q.answer)
+            close -> say(R.string.dj_voice_quiz_close, q.answer)
+            else -> say(R.string.dj_voice_quiz_wrong, q.answer)
+        }
+        finishQuizRound(line)
+    }
+
+    /** Fecha a rodada atual e emenda a próxima pergunta na mesma locução (evita o corte). */
+    private fun finishQuizRound(line: String) {
+        quizIndex++
+        val next = quizQuestions.getOrNull(quizIndex)
+        if (next == null) {
+            pendingQuiz = null
+            virginSpeak(line + " " + say(R.string.dj_voice_quiz_done, quizScore, quizQuestions.size))
+        } else {
+            pendingQuiz = next
+            virginSpeak(line + " " + next.prompt)
+        }
     }
 
     /** Despertador disparou: abre a atividade, liga o ambiente e toca uma seleção. */

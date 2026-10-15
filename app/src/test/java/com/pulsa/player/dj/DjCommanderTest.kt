@@ -59,6 +59,47 @@ class DjCommanderTest {
     }
 
     @Test
+    fun action_interval_timer() {
+        val spec = DjCommander.intervalQuery(DjCommander.norm("cronometra 3 rounds de 1 min com chuva"))
+        assertNotNull(spec)
+        assertEquals(3, spec!!.rounds)
+        assertEquals(60, spec.seconds)
+        assertEquals("rain", spec.ambient)
+        assertEquals("interval", DjCommander.action(DjCommander.norm("cronometra 3 rounds de 1 min com chuva")))
+        // Sem números: 4 rounds de 1 min.
+        val def = DjCommander.intervalQuery(DjCommander.norm("virgin, cronometro"))
+        assertEquals(4, def!!.rounds)
+        assertEquals(60, def.seconds)
+        assertNull(def.ambient)
+        // "intervalo" só dispara com duração explícita, para não roubar frases comuns.
+        assertNull(DjCommander.intervalQuery(DjCommander.norm("no intervalo dessa musica")))
+        assertEquals("interval", DjCommander.action(DjCommander.norm("cronometra 2 rounds de 30 segundos")))
+    }
+
+    @Test
+    fun action_interval_cancel() {
+        assertEquals("interval_cancel", DjCommander.action(DjCommander.norm("cancela o treino")))
+        assertEquals("interval_cancel", DjCommander.action(DjCommander.norm("para o cronometro")))
+        assertNull(DjCommander.intervalQuery(DjCommander.norm("cancela o treino")))
+    }
+
+    @Test
+    fun action_quiz() {
+        assertEquals("quiz", DjCommander.action(DjCommander.norm("quiz")))
+        assertEquals("quiz", DjCommander.action(DjCommander.norm("virgin, vamos brincar")))
+        assertEquals("quiz", DjCommander.action(DjCommander.norm("adivinha quantas musicas eu ja toquei")))
+    }
+
+    @Test
+    fun spoken_number_parsing() {
+        assertEquals(7, DjCommander.spokenNumber(DjCommander.norm("sete")))
+        assertEquals(21, DjCommander.spokenNumber(DjCommander.norm("vinte e um")))
+        assertEquals(42, DjCommander.spokenNumber(DjCommander.norm("acho que 42")))
+        assertEquals(0, DjCommander.spokenNumber(DjCommander.norm("zero")))
+        assertNull(DjCommander.spokenNumber(DjCommander.norm("nao sei")))
+    }
+
+    @Test
     fun action_basic_navigation() {
         assertEquals("next", DjCommander.action(DjCommander.norm("proxima")))
         assertEquals("skip", DjCommander.action(DjCommander.norm("pula")))
