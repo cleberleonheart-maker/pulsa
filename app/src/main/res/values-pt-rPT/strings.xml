@@ -7,7 +7,7 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.27):
+    <string name="changelog">Novidades desta versão (5.10.28):
 → A RÁDIO DA VIRGÍNIA FICOU MAIS CONVERSADA
 • "Relança as antigas": monta uma fila só com músicas que já não ouve há bastante tempo — e diz há quanto tempo era.
 • "Resumo do fim de semana": conta o que mais ouviu no sábado e no domingo.
@@ -19,7 +19,7 @@
 → INÍCIO
 • As estatísticas agora mostram também as reproduções e o tempo total ouvido.
 → IDIOMA
-• Novo idioma: Português (Portugal).
+• Português (Portugal): tradução completa de toda a aplicação.
 → CORREÇÕES
 • Estrelas brilhantes: agora cintilam e deslizam de verdade (antes ficavam paradas).</string>
 
@@ -138,5 +138,201 @@
     <string name="radio_welcome_format">Está a ouvir a Rádio %1$s F.M., a tocar %2$d músicas de todos os estilos!</string>
     <string name="dj_voice_ambient_mix">A ligar %1$s com a música.</string>
     <string name="remote_nothing">Nada a tocar na sessão</string>
+
+    <string name="update_downloading">A transferir nova versão… %1$d%%</string>
+    <string name="update_from_site">Transferir atualização do site</string>
+    <string name="covers_download">Transferir capas das músicas</string>
+    <string name="covers_done">%1$d capas transferidas</string>
+    <string name="covers_failed">Não foi possível transferir as capas</string>
+    <string name="ringtone_phone">Toque do telemóvel</string>
+    <string name="quality_auto">Automático (por género)</string>
+    <string name="cache_confirm">Limpar a cache da Pulsa? Ficheiros temporários e capas serão eliminados.</string>
+
+    <string name="delete_song">Eliminar música</string>
+    <string name="delete_song_confirm">Eliminar \"%1$s\" do dispositivo? Esta ação não pode ser desfeita.</string>
+    <string name="song_deleted">Música eliminada</string>
+    <string name="delete_cancelled">Eliminação cancelada</string>
+    <string name="delete_songs">Eliminar músicas</string>
+    <string name="delete_songs_confirm">Eliminar %1$d músicas do dispositivo? Esta ação não pode ser desfeita.</string>
+    <string name="songs_deleted">%1$d músicas eliminadas</string>
+    <string name="delete_videos">Eliminar vídeos</string>
+    <string name="delete_videos_confirm">Eliminar %1$d vídeos do dispositivo? Esta ação não pode ser desfeita.</string>
+    <string name="videos_deleted">%1$d vídeos eliminados</string>
+    <string name="delete_selected">Eliminar o que está selecionado</string>
+
+    <string name="login_subtitle_create">Crie o seu acesso à Pulsa</string>
+    <string name="login_forgot">Esqueci-me do meu acesso</string>
+    <string name="login_forgot_confirm">Apagar o acesso atual? Poderá criar uma nova conta.</string>
+
+    <string name="rw_playing">A tocar o Top %1$d</string>
+    <string name="videos_header">Vídeos do telemóvel</string>
+    <string name="video_rotate">Rodar o ecrã</string>
+
+    <string name="downloads_active">A transferir</string>
+    <string name="downloads_tab">Transferidos</string>
+    <string name="shortcut_downloads_short">Transferidos</string>
+    <string name="shortcut_downloads_long">Transferidos offline</string>
+    <string name="downloads_empty">Nada transferido ainda</string>
+    <string name="downloads_add_url">Transferir por URL</string>
+    <string name="downloads_empty_hint">Abra a pesquisa do PeerTube e use o menu do vídeo para transferir.</string>
+    <string name="downloads_running">A transferir…</string>
+    <string name="downloads_done">Transferido</string>
+    <string name="downloads_wifi_only">Transferir só por Wi‑Fi</string>
+    <string name="offline_cleanup">Limpar transferências antigas</string>
+    <string name="offline_cleanup_hint">Elimina sozinho as transferências que já não ouve há um tempo, libertando espaço no cartão.</string>
+    <string name="downloads_warning_limit">Limite atingido. Elimine alguma transferência para transferir mais.</string>
+    <string name="download_start_queued">Na fila para transferir</string>
+    <string name="download_not_available">Este vídeo não tem MP4 para transferir</string>
+    <string name="download_already">Já está nos transferidos</string>
+    <string name="download_start_running">A começar a transferir…</string>
+    <string name="podcast_unsubscribe_message">Sair de \"%1$s\"? Os episódios transferidos também são eliminados.</string>
+    <string name="podcast_download">Transferir episódio</string>
+    <string name="podcast_download_done">Episódio transferido</string>
+    <string name="podcast_downloaded">transferido</string>
+    <string name="peertube_download">Transferir</string>
+    <string name="peertube_instance_saved">Instância guardada: %1$s</string>
+    <string name="video_subtitle_downloading">A transferir as legendas…</string>
+    <string name="video_subtitle_none">Esse vídeo não tem legendas carregadas</string>
+    <string name="logout_confirm">Deseja sair da conta? A Pulsa voltará ao ecrã de início de sessão.</string>
+    <string name="radio_status_connecting">A ligar…</string>
+    <string name="radio_add_subtitle">Procurar ou guardar uma estação de rádio</string>
+    <string name="radio_add_save">Guardar estação</string>
+    <string name="radio_saved">Estação guardada: %1$s</string>
+
+    <string name="dj_deck_now">A tocar agora</string>
+    <string name="dj_mic_on">A ouvir…</string>
+    <string name="dj_mic_hint">A ouvir… diga: Virgin, próxima música.</string>
+    <string name="hotword_notif_listening">A ouvir… diga o comando</string>
+    <string name="dj_voice_track">A tocar agora: %1$s, de %2$s.</string>
+    <string name="dj_voice_play">A tocar de novo!</string>
+    <string name="dj_voice_resume">Voltei! A tocar %1$s, de %2$s, de onde parou.</string>
+    <string name="resume_spoken_music">A voltar para %1$s, de %2$s.</string>
+    <string name="resume_spoken_podcast">A voltar para o episódio %1$s, de %2$s.</string>
+    <string name="resume_spoken_video">A voltar para o vídeo %1$s.</string>
+    <string name="resume_spoken_radio">A voltar para a rádio %1$s.</string>
+    <string name="dj_voice_download_already">Esse episódio já está transferido: %1$s.</string>
+    <string name="dj_voice_download_start">A transferir %1$s para ouvir no carro.</string>
+    <string name="dj_voice_download_done">Pronto, transferi %1$s.</string>
+    <string name="dj_voice_clean_none">Não há transferências para limpar.</string>
+    <string name="dj_voice_clean_confirm">Tem %1$s de vídeos e %2$s de episódios transferidos. Quer que eu elimine?</string>
+    <string name="dj_voice_clean_auto">Fiz uma limpeza no offline: eliminei %2$d transferências antigas e libertei %1$s de espaço.</string>
+    <string name="dj_voice_month_favs">Vamos! A tocar %d favoritas deste mês.</string>
+    <string name="dj_voice_thanks">De nada! Vemo-nos na próxima.</string>
+    <string name="dj_voice_scene">Vamos! Rádio %1$s montada com %2$d músicas.</string>
+    <string name="dj_voice_scene_amb">Vamos! Rádio %1$s com %2$s de fundo, %3$d músicas.</string>
+    <string name="dj_voice_week_none">Esta semana ainda não registei nenhuma reprodução. Vamos dar o play!</string>
+    <string name="dj_voice_year_none">Ainda não tenho um ano de histórico. Continua a ouvir que eu monto o seu replay.</string>
+    <string name="dj_voice_queue_save_empty">A fila está vazia, não há nada para guardar.</string>
+    <string name="dj_voice_queue_save_ask">Com que nome? Diga: salva a fila como playlist e o nome.</string>
+    <string name="dj_voice_queue_save_done">Guardei %2$d músicas na playlist %1$s.</string>
+    <string name="dj_voice_playlist_created">Criei a playlist %1$s. É só dizer \"adiciona a playlist %1$s\" para guardar as músicas.</string>
+    <string name="dj_voice_playlist_playing">A tocar a playlist %1$s: %2$d músicas.</string>
+    <string name="dj_voice_decade_done">Vamos! Montei %1$d músicas dos anos %2$s!</string>
+    <string name="dj_voice_mood_wild">E aí, energia total! Preparei %1$d músicas para animar.</string>
+    <string name="dj_voice_only">Só %1$s daqui para a frente! São %2$d músicas.</string>
+    <string name="dj_voice_pen_search">Vou ver se tem uma pen drive ou cartão ligado e procurar as músicas dele.</string>
+    <string name="dj_voice_pen_none">Não encontrei nenhuma pen drive ou cartão extra ligado.</string>
+
+    <string name="home_greet_after">Boa tarde! Está relaxado? Eu trato da banda sonora para si.</string>
+    <string name="home_greet_night">Boa noite! Deixe-me escolher uma faixa calma para fechar o dia.</string>
+
+    <string name="dj_commands_sleep">\"Virgin, toca uma para eu dormir\" — fila calma e curta</string>
+    <string name="dj_commands_info">\"Virgin, qual música / o que está a tocar\" — mostra a atual</string>
+    <string name="dj_commands_scene">\"Virgin, toca para malhar / estudar / viajar / dirigir\" — rádio por cena com fila curada</string>
+    <string name="dj_commands_video_open">\"Virgin, mostra o vídeo / volta para o filme\" — abre o ecrã do vídeo que está a tocar</string>
+    <string name="dj_commands_video_back">\"Virgin, volta 30 segundos do filme / pausa o filme\" — mexe no vídeo sem tocar no ecrã</string>
+    <string name="dj_commands_dedicate">\"Virgin, dedica esta para [nome] / dedica a próxima para [nome]\" — dedicatória falada</string>
+    <string name="dj_scene_malhar">para malhar</string>
+    <string name="dj_scene_estudar">para estudar</string>
+    <string name="dj_scene_viajar">para viajar</string>
+    <string name="dj_scene_dirigir">para dirigir</string>
+    <string name="dj_mood_up">para cima</string>
+
+    <string name="hero_status_playing">● A tocar</string>
+    <string name="rec_token_saved">Token guardado!</string>
+    <string name="gemini_key_saved">Chave guardada!</string>
+    <string name="server_token_saved">Token guardado!</string>
+    <string name="server_token_subtitle">Chave de acesso ao seu servidor. Use o mesmo token nos outros dispositivos e no servidor.</string>
+    <string name="ban_loading">A carregar dispositivos…</string>
+    <string name="eq_saved">Equalizador personalizado guardado</string>
+    <string name="eq_fallback_bands">O dispositivo não expôs o equalizador; a usar 5 bandas padrão</string>
+    <string name="lyrics_downloaded">Letra sincronizada guardada localmente</string>
+    <string name="remote_connect">Ligar</string>
+    <string name="remote_waiting">A ligar…</string>
+    <string name="backup_done">Cópia de segurança guardada!</string>
+    <string name="restore_failed">Ficheiro inválido ou sem dados da PULSA</string>
+    <string name="restore_empty">O ficheiro é da PULSA, mas não tinha nada para restaurar.</string>
+    <string name="restore_needs_permission_body">O ficheiro está inteiro, mas a PULSA ainda não pode ler a sua biblioteca para emparelhar as músicas pelo caminho.\n\nConceda o acesso às músicas e restaure de novo.</string>
+
+    <string name="widget_pulsa_desc">Leitor Pulsa: tocar, pausar e trocar de faixa</string>
+    <string name="update_uptodate">Já está na última versão!</string>
+    <string name="audio_3d_subtitle">Roda o som à volta da cabeça, a sério (melhor com auscultadores)</string>
+    <string name="covers_download_hint">Procura no iTunes a arte dos álbuns sem capa e guarda no dispositivo</string>
+    <string name="covers_started">A procurar capas…</string>
+
+    <string name="search">Pesquisar</string>
+    <string name="login_password_hint">Palavra-passe</string>
+    <string name="login_confirm_hint">Confirmar palavra-passe</string>
+    <string name="login_password_short">A palavra-passe deve ter pelo menos 4 caracteres</string>
+    <string name="login_password_mismatch">As palavras-passe não coincidem</string>
+    <string name="login_wrong">Sessão ou palavra-passe incorretos</string>
+    <string name="login_created_toast">Conta criada! Bem-vindo à Pulsa</string>
+    <string name="login_google_gms">O Google não está disponível neste dispositivo</string>
+    <string name="login_google_not_configured">Início de sessão com Google ainda não configurado</string>
+    <string name="login_google_error_dev">Esta aplicação não está autorizada no Google. Registe a impressão digital SHA-1 %1$s em \"Credenciais OAuth\" na Google Cloud.</string>
+    <string name="show_password">Mostrar palavra-passe</string>
+    <string name="hide_password">Ocultar palavra-passe</string>
+
+    <string name="favorite_add">Marcar como favorita</string>
+    <string name="favorite_added">Música marcada como favorita</string>
+    <string name="favorite_error">Não foi possível marcar como favorita</string>
+    <string name="empty_favorites">Nenhuma música favorita ainda. Use o menu de cada música para marcar como favorita.</string>
+
+    <string name="video_pip_unsupported">Este dispositivo não tem Picture-in-Picture</string>
+    <string name="downloads_channel">Transferências</string>
+    <string name="downloads_active_count">%1$d transferências em curso</string>
+    <string name="downloads_idle">Nenhuma transferência em curso</string>
+    <string name="downloads_no_space">Sem espaço no dispositivo</string>
+    <string name="downloads_wifi_only_hint">Uma transferência grande numa rede medida consome o seu plafond sem aviso; quando ligado, a fila espera pela rede Wi‑Fi/cabo.</string>
+    <string name="downloads_limit_hint">Quanto as transferências podem ocupar no dispositivo; depois do limite, as novas transferências falham em vez de encher o cartão.</string>
+    <string name="downloads_limit_reached">Limite de espaço atingido — elimine uma transferência para continuar</string>
+    <string name="downloads_warning_free">Pouco espaço livre no dispositivo: %1$s. Considere eliminar transferências.</string>
+    <string name="download_deleted">Transferência eliminada</string>
+    <string name="podcast_download_delete">Eliminar transferência</string>
+
+    <string name="podcast_search">Procurar podcast</string>
+    <string name="podcast_search_error">A pesquisa não respondeu. Tente de novo quando a internet voltar.</string>
+    <string name="podcast_loading">A procurar o feed…</string>
+    <string name="podcast_unsubscribe">Cancelar subscrição</string>
+    <string name="peertube_search">Pesquisar</string>
+    <string name="peertube_title">Pesquisar no PeerTube</string>
+    <string name="peertube_resolving">A procurar o stream…</string>
+    <string name="video_stream_browse">Pesquisar no PeerTube</string>
+    <string name="video_stream_detected_hls">HLS (.m3u8) — reproduz por segmentos</string>
+    <string name="video_stream_detected_dash">DASH (.mpd) — reproduz por segmentos</string>
+    <string name="video_subtitle_failed">Não consegui ler essas legendas. Verifique se o link aponta diretamente para um .srt ou .vtt.</string>
+    <string name="lyrics_searching">A procurar letras…</string>
+
+    <string name="radio_error">Não foi possível tocar esta rádio. Verifique a sua ligação.</string>
+    <string name="radio_add_search_btn">Procurar estações online</string>
+    <string name="radio_tune_fail">Não foi possível procurar rádios</string>
+    <string name="radio_search_fail">Não foi possível procurar estações. Verifique a sua ligação.</string>
+
+    <string name="gestures_desc">Agite o dispositivo para trocar de música e incline para mudar o volume</string>
+    <string name="v_scan">Procurar no dispositivo</string>
+    <string name="v_scan_done">Biblioteca analisada: %1$d músicas.</string>
+    <string name="v_stats_msg">Músicas: %1$d\nFavoritas: %2$d\nPlaylists: %3$d\nCache: %4$d MB\nReproduzidas: %5$d\nTempo ouvido: %6$s</string>
+    <string name="eq_device_bands">Bandas reais do dispositivo: %d</string>
+    <string name="restore_missing_title">%1$d músicas não estão neste dispositivo:</string>
+
+    <string name="dj_scan">Procurar novidades</string>
+    <string name="dj_voice_count_none">Ainda não encontrei nenhuma música. Procure no dispositivo primeiro.</string>
+    <string name="dj_voice_greeting">Olá! Eu sou a Virgin, a sua DJ virtual. Como posso ajudar?</string>
+    <string name="dj_voice_goodbye">Até breve! Qualquer coisa é só chamar.</string>
+    <string name="dj_voice_speed_fan">Gosta de acelerar, hein? Deixo assim, então.</string>
+    <string name="dj_voice_sleep">Aqui vai! Preparei uma seleção calma e curta de %1$d músicas para dormir.</string>
+    <string name="dj_voice_memory_ask">Ainda não guardei isso. Diz-me o seu %1$s que eu guardo.</string>
+    <string name="dj_voice_year">O seu replay do ano: ouviu %1$d músicas em %2$d reproduções. A campeã foi %3$s de %4$s, %5$d vezes. O artista do ano: %6$s. O seu mês mais forte: %7$s.</string>
+    <string name="dj_voice_scan_denied">Preciso da permissão de multimédia para procurar novidades. Ative no botão acima.</string>
 
 </resources>
