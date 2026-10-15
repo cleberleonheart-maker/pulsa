@@ -652,6 +652,21 @@ object Settings {
     fun downloadWifiOnly(context: Context): Boolean =
         prefs(context).getBoolean("download_wifi_only", true)
 
+    /**
+     * Prefetch da fila de podcast — baixar o episódio **seguinte** enquanto o atual toca.
+     *
+     * Padrão `true`: é o que faz "tocar um episódio" já adiantar o próximo e a virada abrir
+     * do disco, sem a pausa do "carregando". Só roda no Wi-Fi (ver
+     * [com.pulsa.player.podcast.PodcastPrefetch]), então ligar por padrão não gasta dados.
+     * Quem não quer o arquivo ocupando espaço desliga aqui.
+     */
+    fun setPodcastPrefetch(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("podcast_prefetch", value).apply()
+    }
+
+    fun podcastPrefetch(context: Context): Boolean =
+        prefs(context).getBoolean("podcast_prefetch", true)
+
 
     /**
      * F2 · Download Center — limite de espaço (MB) que o app pode ocupar com downloads.

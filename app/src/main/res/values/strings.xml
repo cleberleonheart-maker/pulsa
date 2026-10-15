@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.34):
+    <string name="changelog">Novidades desta versão (5.10.35):
 → NOVIDADES
-• Despertador progressivo: no alarme o som sobe devagar em vez de estourar. Vale para a música e para o som de fundo (ex.: chuva).
+• Adiantar o próximo episódio: enquanto um episódio de podcast toca, o próximo da fila já é baixado no Wi‑Fi para a troca não parar para carregar.
 → COMO USAR
-• "Virgin, me acorda às 7h com chuva" já começa suave; diga "de uma vez" para o alarme tocar no volume cheio.</string>
+• Já vem ligado. Para desligar, vá em Configurações e desative a opção Adiantar o próximo episódio. Só age no Wi‑Fi, nunca nos seus dados móveis.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -365,6 +365,8 @@
     <string name="downloads_no_space">Sem espaço no aparelho</string>
     <string name="downloads_wifi_only">Baixar só no Wi‑Fi</string>
     <string name="downloads_wifi_only_hint">Download grande em rede medida consome sua franquia sem aviso; quando ligado, a fila espera a rede Wi‑Fi/cabo chegar.</string>
+    <string name="podcast_prefetch">Adiantar o próximo episódio</string>
+    <string name="podcast_prefetch_hint">Enquanto um episódio toca, baixa o próximo da fila no Wi‑Fi para a troca não parar para carregar. Só no Wi‑Fi; nunca usa seus dados móveis.</string>
 
     <string name="downloads_limit">Limite de espaço</string>
     <string name="downloads_limit_hint">Quanto os downloads podem ocupar no aparelho; depois do teto, novos downloads falham em vez de encher o cartão.</string>

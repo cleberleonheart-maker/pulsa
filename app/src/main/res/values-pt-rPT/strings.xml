@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.34):
+    <string name="changelog">Novidades desta versão (5.10.35):
 → NOVIDADES
-• Despertador progressivo: no alarme o som sobe devagar em vez de estourar. Vale para a música e para o som de fundo (p. ex. chuva).
+• Adiantar o próximo episódio: enquanto um episódio de podcast toca, o seguinte da fila é transferido por Wi‑Fi — a mudança não para a carregar.
 → COMO USAR
-• "Virgin, acorda-me às 7h com chuva" já começa suave; diz "de uma vez" para o alarme tocar no volume máximo.</string>
+• Já vem ligado. Para desligar, abra as Configurações e desative a opção Adiantar o próximo episódio. Só por Wi‑Fi, nunca usa os seus dados móveis.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -315,6 +315,8 @@
     <string name="downloads_idle">Nenhuma transferência em curso</string>
     <string name="downloads_no_space">Sem espaço no dispositivo</string>
     <string name="downloads_wifi_only_hint">Uma transferência grande numa rede medida consome o seu plafond sem aviso; quando ligado, a fila espera pela rede Wi‑Fi/cabo.</string>
+    <string name="podcast_prefetch">Adiantar o próximo episódio</string>
+    <string name="podcast_prefetch_hint">Enquanto um episódio toca, transfere o seguinte da fila por Wi‑Fi para a mudança não parar a carregar. Só por Wi‑Fi; nunca usa os seus dados móveis.</string>
     <string name="downloads_limit_hint">Quanto as transferências podem ocupar no dispositivo; depois do limite, as novas transferências falham em vez de encher o cartão.</string>
     <string name="downloads_limit_reached">Limite de espaço atingido — elimine uma transferência para continuar</string>
     <string name="downloads_warning_free">Pouco espaço livre no dispositivo: %1$s. Considere eliminar transferências.</string>

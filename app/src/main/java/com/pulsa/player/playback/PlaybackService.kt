@@ -69,6 +69,7 @@ import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.podcast.PodcastCache
 import com.pulsa.player.podcast.PodcastDb
+import com.pulsa.player.podcast.PodcastPrefetch
 import com.pulsa.player.podcast.nextEpisodeToPlay
 import com.pulsa.player.dj.DjLearn
 import java.io.File
@@ -1556,6 +1557,10 @@ class PlaybackService : MediaLibraryService() {
                 val already = queue.any { it.path == nextSong.path }
                 if (already) return@onUi
                 enqueue(listOf(nextSong))
+                // Maratona é exatamente o caso do prefetch: o episódio já está na fila, então
+                // baixá-lo agora evita o "carregando" na virada. Guarda de Wi-Fi e de já
+                // pedido ficam no PodcastPrefetch.
+                PodcastPrefetch.maybePrefetch(app, song, nextSong)
             }
         }
     }
@@ -1582,6 +1587,10 @@ class PlaybackService : MediaLibraryService() {
         notePlay(song)
 
         maybeQueueNextEpisode(song)
+        // O "próximo" pode já estar na fila por clique manual — aí a maratona acima não faz
+        // nada, mas o download antecipado ainda vale. A guarda de id repetido em PodcastPrefetch
+        // cobre o caso dos dois caminhos apontarem para o mesmo episódio.
+        PodcastPrefetch.maybePrefetch(applicationContext, song, queue.getOrNull(index + 1))
 
 
         loadLargeIcon(song)

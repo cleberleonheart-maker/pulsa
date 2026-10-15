@@ -112,6 +112,30 @@ object PulsaWork {
     }
 
     /**
+     * O download automático do próximo episódio (o "prefetch" da fila de podcast).
+     *
+     * Diferente do [download] do botão: aqui a constraint é [NetworkType.UNMETERED], porque
+     * ninguém pediu o arquivo — quem decide é a heurística do [com.pulsa.player.podcast
+     * .PodcastPrefetch]. Baixar sozinho no plano de dados seria surpresa caro, então o Wi-Fi é
+     * obrigatório; e `KEEP` para a mesma chamada repetida na troca de faixa não recomeçar um
+     * download já rodando.
+     */
+    fun prefetch(context: Context, url: String, name: String): UUID? {
+        val request = OneTimeWorkRequestBuilder<DownloadWorker>()
+            .setInputData(workDataOf(DownloadWorker.KEY_URL to url, DownloadWorker.KEY_NAME to name))
+            .setConstraints(
+                Constraints.Builder().setRequiredNetworkType(NetworkType.UNMETERED).build()
+            )
+            .setBackoffCriteria(BackoffPolicy.LINEAR, 30, TimeUnit.SECONDS)
+            .build()
+        return runCatching {
+            WorkManager.getInstance(context)
+                .enqueueUniqueWork("$DOWNLOAD/$name", ExistingWorkPolicy.KEEP, request)
+            request.id
+        }.getOrNull()
+    }
+
+    /**
      * Avisa quando o download acabou, para a UI ainda falar com o usuário.
      *
      * A callback é sempre no main thread, mas quem cria o Toast é o chamador — vale passar o

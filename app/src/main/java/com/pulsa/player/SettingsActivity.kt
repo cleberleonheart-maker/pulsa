@@ -273,6 +273,13 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        findViewById<MaterialSwitch>(R.id.podcast_prefetch_switch).apply {
+            isChecked = Settings.podcastPrefetch(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setPodcastPrefetch(this@SettingsActivity, checked)
+            }
+        }
+
 
         val limitValue = viewOrNull<TextView>(R.id.download_limit_value)
         refreshDownloadLimit(limitValue)
