@@ -30,11 +30,17 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.24):
-→ ESCUCHAR JUNTOS MEJOR ALINEADO
-• El móvil ahora reposiciona la canción en el mismo punto que la web. Antes solo corregía diferencias de más de 6 segundos, así que quedaba unos segundos adelantado.
-• Cuando empieza a sonar, ya entra en el punto correcto (ya no empieza desde cero).
-• La comprobación es más frecuente (cada 3 segundos).</string>
+    <string name="changelog">Novedades de esta versión (5.10.25):
+→ UNA VIRGIN MÁS CONVERSADORA
+• "Relanza las antiguas": una cola solo con canciones que hace tiempo no escuchas, con el tiempo transcurrido dicho en voz.
+• "Resumen del fin de semana": cuenta lo que más escuchaste el sábado y el domingo.
+• "Resumen del año": temas, artista y mes más fuerte de tu año.
+• Radio del ánimo: "estoy nervioso" arma una lista calmada; "estoy abajo", una animada.
+→ ESCENAS Y AMBIENTACIÓN
+• "Estudia con lluvia" ahora suena el ambiente junto con la música.
+• "Pon la lluvia con la música": activa el ambiente sin cambiar de tema.
+→ INICIO
+• Las estadísticas ahora muestran también las reproducciones y el tiempo total escuchado.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

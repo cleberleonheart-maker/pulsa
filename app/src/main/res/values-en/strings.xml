@@ -30,11 +30,17 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.24):
-→ LISTEN TOGETHER, BETTER ALIGNED
-• The phone now repositions the song to the same point as the web. Before, it only corrected gaps over 6 seconds, so it stayed a few seconds ahead.
-• When it starts playing, it jumps straight to the right point (no longer starts from zero).
-• Checks are more frequent now (every 3 seconds).</string>
+    <string name="changelog">What is new (5.10.25):
+→ A MORE TALKATIVE VIRGIN DJ
+• "Play the forgotten ones": a queue only of tracks you haven't heard in a long time — and she tells you how long it's been.
+• "Weekend recap": she tells you what you listened to most on Saturday and Sunday.
+• "Year recap": top tracks, top artist and strongest month of your year.
+• Mood radio: "I'm anxious" builds a calm queue; "I'm down" builds an uplifting one.
+→ SCENES AND AMBIENCE
+• "Study with rain" now plays the ambient sound along with the music.
+• "Play rain with the music": turns the ambience on without changing the track.
+→ HOME
+• Stats now also show play counts and total listening time.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
