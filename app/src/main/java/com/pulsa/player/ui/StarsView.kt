@@ -1,7 +1,6 @@
 package com.pulsa.player.ui
 import com.pulsa.player.core.Settings
 
-import android.animation.ValueAnimator
 import android.app.Activity
 import android.content.Context
 import android.graphics.Canvas
@@ -10,30 +9,41 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.sin
 import kotlin.random.Random
 
 class StarsView(context: Context) : View(context) {
 
     private inner class Star {
-        var fx = 0f
-        var fy = 0f
+        var x0 = 0f
+        var y0 = 0f
         var radius = 1f
         var phase = 0f
-        var speed = 1f
+        var twinkle = 1f
+        var drift = 0f
         var weight = 1f
     }
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFEAF6FF.toInt() }
     private val stars = mutableListOf<Star>()
     private val random = Random(System.nanoTime())
-    private var t = 0f
-    private var animator: ValueAnimator? = null
+    private val baseNanos = System.nanoTime()
 
-    private var opacity = 0.55f
+    private var running = false
+    private var opacity = 0.6f
     private var drawWidth = 0
     private var drawHeight = 0
+
+    // Laço de frames próprio: ao contrário do ValueAnimator, NÃO é desligado pela
+    // escala global de animação ("remover animações"/economia de bateria, comum no
+    // MIUI/HyperOS) — que era o motivo das estrelas ficarem paradas.
+    private val tick = object : Runnable {
+        override fun run() {
+            if (!running) return
+            invalidate()
+            postOnAnimation(this)
+        }
+    }
 
     init {
         isClickable = false
@@ -53,11 +63,12 @@ class StarsView(context: Context) : View(context) {
         for ((count, size) in layers) {
             repeat(count) {
                 stars += Star().apply {
-                    fx = random.nextFloat()
-                    fy = random.nextFloat()
+                    x0 = random.nextFloat()
+                    y0 = random.nextFloat()
                     radius = size * densityFactor * (0.6f + random.nextFloat() * 0.9f)
                     phase = random.nextFloat() * PI.toFloat() * 2f
-                    speed = 0.6f + random.nextFloat() * 1.4f
+                    twinkle = 0.5f + random.nextFloat() * 1.3f
+                    drift = (random.nextFloat() - 0.5f) * 0.02f
                     weight = 0.5f + random.nextFloat() * 0.5f
                 }
             }
@@ -75,19 +86,27 @@ class StarsView(context: Context) : View(context) {
         refresh()
     }
 
+    override fun onDetachedFromWindow() {
+        stopTween()
+        super.onDetachedFromWindow()
+    }
+
     override fun onDraw(canvas: Canvas) {
         if (drawWidth <= 0 || drawHeight <= 0) return
-        val value = t * PI.toFloat() * 2f
+        val seconds = (System.nanoTime() - baseNanos) / 1_000_000_000f
+        val twoPi = (PI * 2).toFloat()
         for (star in stars) {
-            val twinkle = abs(sin(value * star.speed + star.phase)).toFloat()
-            val alpha = (0.10f + 0.55f * twinkle) * star.weight * opacity
+            val glow = 0.5f + 0.5f * sin(seconds * star.twinkle * twoPi + star.phase)
+            val alpha = (0.10f + 0.7f * glow) * star.weight * opacity
             paint.alpha = (255 * alpha).toInt().coerceIn(0, 255)
             if (paint.alpha <= 0) continue
+            var x = (star.x0 + star.drift * seconds) % 1f
+            if (x < 0f) x += 1f
             var r = star.radius
             if (star.weight > 0.9f) {
-                r += 0.6f * densityScale() * twinkle
+                r += 0.8f * densityScale() * glow
             }
-            canvas.drawCircle(star.fx * drawWidth, star.fy * drawHeight, r, paint)
+            canvas.drawCircle(x * drawWidth, star.y0 * drawHeight, r, paint)
         }
     }
 
@@ -95,20 +114,15 @@ class StarsView(context: Context) : View(context) {
         resources.displayMetrics.density.coerceAtLeast(1f)
 
     fun startTween() {
-        stopTween()
-        animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 5000
-            repeatCount = ValueAnimator.INFINITE
-            addUpdateListener { a ->
-                t = (a.animatedValue as Float) % 1f
-                invalidate()
-            }
-        }.also { it.start() }
+        if (running) return
+        running = true
+        removeCallbacks(tick)
+        postOnAnimation(tick)
     }
 
     fun stopTween() {
-        animator?.cancel()
-        animator = null
+        running = false
+        removeCallbacks(tick)
     }
 
     fun refresh() {

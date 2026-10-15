@@ -7,7 +7,7 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.26):
+    <string name="changelog">Novidades desta versão (5.10.27):
 → A RÁDIO DA VIRGÍNIA FICOU MAIS CONVERSADA
 • "Relança as antigas": monta uma fila só com músicas que já não ouve há bastante tempo — e diz há quanto tempo era.
 • "Resumo do fim de semana": conta o que mais ouviu no sábado e no domingo.
@@ -19,7 +19,9 @@
 → INÍCIO
 • As estatísticas agora mostram também as reproduções e o tempo total ouvido.
 → IDIOMA
-• Novo idioma: Português (Portugal).</string>
+• Novo idioma: Português (Portugal).
+→ CORREÇÕES
+• Estrelas brilhantes: agora cintilam e deslizam de verdade (antes ficavam paradas).</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
