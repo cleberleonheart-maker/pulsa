@@ -45,8 +45,9 @@ object DjSuggest {
         val prompt = buildString {
             append(DjIdentity.personalityPrompt())
             appendLine()
-            appendLine("Agora, abaixo está uma lista de músicas da biblioteca do usuário (título - artista).")
-            appendLine("Escolha a MELHOR música para tocar agora, considerando variedade e o momento.")
+        appendLine("Agora, abaixo está uma lista de músicas da biblioteca do usuário (título - artista).")
+        appendLine("Momento atual: ${momentLabel(System.currentTimeMillis())}.")
+        appendLine("Escolha a MELHOR música para tocar agora, considerando variedade, o dia da semana e o horário.")
             appendLine("Responda APENAS em português do Brasil, neste formato exato em UMA linha:")
             appendLine("TITULO | ARTISTA | motivo curto em até 10 palavras")
             appendLine()
@@ -85,6 +86,37 @@ object DjSuggest {
         "É a que você mais ouviu por aqui e combina com o momento.",
         "Faz tempo que não rola no teu som."
     )
+    private val REASONS_MOMENT = listOf(
+        "É a que costuma tocar neste dia e horário.",
+        "Combina com o que você geralmente ouve agora."
+    )
+
+    /**
+     * Ordena as candidatas pelo "momento": afinidade de dia/hora primeiro (ver
+     * [DjLearn.timeAffinity]), depois favorita, depois histórico geral. Função pura para poder
+     * ser testada sem banco nem Player.
+     */
+    fun rankForMoment(
+        candidates: List<Song>,
+        affinity: Map<Long, Int>,
+        favIds: Set<Long>,
+        plays: Map<Long, Int>
+    ): List<Song> = candidates.sortedWith(
+        compareByDescending<Song> { affinity[it.id] ?: 0 }
+            .thenByDescending { if (it.id in favIds) 1 else 0 }
+            .thenByDescending { plays[it.id] ?: 0 }
+    )
+
+    private val WEEKDAYS_MOMENT = arrayOf(
+        "domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"
+    )
+
+    /** "sábado, 22h" — rótulo do momento atual para o prompt da IA. */
+    fun momentLabel(nowMillis: Long): String {
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = nowMillis }
+        val dow = WEEKDAYS_MOMENT[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1]
+        return "%s, %dh".format(dow, cal.get(java.util.Calendar.HOUR_OF_DAY))
+    }
 
     /**
      * Sugestão OFFLINE (sem Gemini): usa favoritas e o histórico da DjLearn.
@@ -94,6 +126,7 @@ object DjSuggest {
         val favIds = runCatching { PlaylistDb.get(context).favorites().map { it.id }.toSet() }
             .getOrDefault(emptySet())
         val learn = DjLearn.learn(context)
+        val affinity = runCatching { DjLearn.timeAffinity(context) }.getOrDefault(emptyMap())
         val currentId = Playback.currentSong?.id
         val pool = songs.filter {
             it.id != currentId &&
@@ -106,13 +139,12 @@ object DjSuggest {
             if (any != null) return Suggestion(any.title, any.artist, REASONS_PLAY[0])
             return Suggestion("", "", "")
         }
-        val byFav = candidates.filter { it.id in favIds }
-        val pick = if (byFav.isNotEmpty()) {
-            byFav.sortedByDescending { learn.plays[it.id] ?: 0 }.first()
-        } else {
-            candidates.sortedByDescending { learn.plays[it.id] ?: 0 }.first()
+        val pick = rankForMoment(candidates, affinity, favIds, learn.plays).first()
+        val reason = when {
+            (affinity[pick.id] ?: 0) > 0 -> REASONS_MOMENT.random()
+            pick.id in favIds -> REASONS_FAV.random()
+            else -> REASONS_PLAY.random()
         }
-        val reason = if (pick.id in favIds) REASONS_FAV.random() else REASONS_PLAY.random()
         return Suggestion(pick.title, pick.artist, reason)
     }
 

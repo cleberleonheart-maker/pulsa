@@ -33,12 +33,12 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.31):
+    <string name="changelog">Novidades desta versão (5.10.32):
 → NOVIDADES
-• Cronômetro de treino por voz: "Virgin, cronometra 3 rounds de 1 min com chuva". Ela fala cada round, conta 3-2-1 e ainda toca o ambiente de fundo.
-• Quiz "quanto você conhece a Virgin": ela pergunta números do seu histórico (quantas vezes tocou a faixa top, o total...) e você adivinha.
-→ CORREÇÕES
-• Comando novo encerra o cronômetro de treino em andamento.</string>
+• Capítulos de podcast por voz: "Virgin, próximo capítulo", "volta um capítulo", "pula pro capítulo 3" ou "lista os capítulos".
+• Sugestão que entende o momento: a Virgin agora aprende o que você costuma ouvir em cada dia da semana e horário e usa isso ao sugerir (e a IA recebe o dia e a hora).
+→ COMO FUNCIONA
+• Quanto mais você ouve, melhor a sugestão do horário fica.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -671,6 +671,7 @@
     <string name="dj_commands_never_played">"Virgin, apaga as que eu nunca ouvi" — limpa as músicas que nunca tocaram</string>
     <string name="dj_commands_interval">"Virgin, cronometra 3 rounds de 1 min com chuva" — cronômetro de treino com ambiente</string>
     <string name="dj_commands_quiz">"Virgin, quiz" — ela faz perguntas sobre o seu histórico</string>
+    <string name="dj_commands_chapter">"Virgin, próximo capítulo" — pula capítulos do podcast tocando</string>
     <string name="dj_commands_pendrive">"Virgin, pendrive / cartão" — importa músicas de um pendrive</string>
     <string name="dj_commands_suggest">"Virgin, me sugere / o que você tocaria" — pede uma sugestão da IA</string>
     <string name="dj_commands_visualizer">"Virgin, visualizador" — liga/desliga as barrinhas</string>
@@ -795,6 +796,11 @@
     <string name="dj_voice_quiz_done">Fim de jogo! Você acertou %1$d de %2$d.</string>
     <string name="dj_voice_quiz_none">Ainda não tenho histórico suficiente pra brincar. Me escuta um pouco mais e me chama de novo.</string>
     <string name="dj_voice_quiz_cancel">Beleza, paramos por aqui. Você acertou %1$d de %2$d.</string>
+    <string name="dj_voice_chapter_not">Isso não é um podcast tocando agora.</string>
+    <string name="dj_voice_chapter_go">Capítulo %1$d: %2$s.</string>
+    <string name="dj_voice_chapter_list">São %1$d capítulos: %2$s.</string>
+    <string name="dj_voice_chapter_last">Esse já é o último capítulo.</string>
+    <string name="dj_voice_chapter_first">Esse já é o primeiro capítulo.</string>
     <string name="dj_voice_pen_search">Vou olhar se tem um pendrive ou cartão conectado e buscar as músicas dele.</string>
     <string name="dj_voice_pen_none">Não encontrei nenhum pendrive ou cartão extra conectado.</string>
     <string name="dj_voice_pen_done">Pronto! Encontrei %1$d músicas novas no pendrive e adicionei à sua coleção.</string>

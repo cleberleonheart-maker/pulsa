@@ -1096,6 +1096,29 @@ object DjCommander {
                 (norm.contains("quanto") || norm.contains("quantas") ||
                     norm.contains("quantos") || norm.contains("numero")))
 
+    // ----- Capítulos de podcast por voz ("pula pro capítulo 3", "próximo capítulo") -----
+
+    /** `mode`: "next" | "prev" | "list" | "go" (com `index` 1-based). */
+    data class ChapterQuery(val mode: String, val index: Int?)
+
+    /**
+     * Reconhece o comando de capítulo. Só dispara quando a frase cita "capítulo"/"chapter" —
+     * por isso pode vir antes do skip/next genérico ("pula o capítulo" seria skip de faixa).
+     */
+    fun chapterQuery(norm: String): ChapterQuery? {
+        if (!norm.contains("capitulo") && !norm.contains("capitulos") &&
+            !norm.contains("chapter") && !norm.contains("chapters")
+        ) return null
+        if (listOf("lista", "quais", "mostra", "ver os", "todos", "o que tem").any { norm.contains(it) }) {
+            return ChapterQuery("list", null)
+        }
+        if (listOf("anterior", "volta", "voltar", "retrocede", "precedente", "pra tras", "para tras").any { norm.contains(it) }) {
+            return ChapterQuery("prev", null)
+        }
+        spokenNumber(norm)?.let { return ChapterQuery("go", it) }
+        return ChapterQuery("next", null)
+    }
+
     // ----- Túnel do tempo por década ("anos 80", "década de 90", "anos 2000") -----
 
     private val DECADE_WORD_YEARS = mapOf(
@@ -1142,6 +1165,7 @@ object DjCommander {
         intervalCancelQuery(norm) -> "interval_cancel"
         intervalQuery(norm) != null -> "interval"
         quizQuery(norm) -> "quiz"
+        chapterQuery(norm) != null -> "chapter"
         sceneQuery(norm) != null -> "scene"
         weekendMatch(norm) -> "weekend"
         weekMatch(norm) -> "weekly"

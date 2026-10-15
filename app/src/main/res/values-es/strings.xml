@@ -30,12 +30,12 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.31):
+    <string name="changelog">Novedades de esta versión (5.10.32):
 → NUEVO
-• Cronómetro de entrenamiento por voz: "Virgin, cronometra 3 rondas de 1 minuto con lluvia". Anuncia cada ronda, cuenta 3-2-1 y además pone el ambiente de fondo.
-• Quiz "cuánto conoces a la Virgin": pregunta números de tu historial y tú adivinas.
-→ CORRECCIONES
-• Un comando nuevo detiene el cronómetro de entrenamiento en marcha.</string>
+• Capítulos de podcast por voz: "Virgin, siguiente capítulo", "vuelve un capítulo", "salta al capítulo 3" o "lista los capítulos".
+• Sugerencias que leen el momento: la Virgin aprende qué sueles escuchar cada día de la semana y a cada hora y lo usa al sugerir (y la IA recibe el día y la hora).
+→ CÓMO FUNCIONA
+• Cuanto más escuchas, mejor se vuelve la sugerencia por horario.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -669,6 +669,11 @@
     <string name="dj_voice_quiz_done">¡Fin del juego! Acertaste %1$d de %2$d.</string>
     <string name="dj_voice_quiz_none">Todavía no tengo suficiente historial para jugar. Escúchame un poco más y llámame de nuevo.</string>
     <string name="dj_voice_quiz_cancel">Vale, paramos aquí. Acertaste %1$d de %2$d.</string>
+    <string name="dj_voice_chapter_not">Esto no es un podcast sonando ahora.</string>
+    <string name="dj_voice_chapter_go">Capítulo %1$d: %2$s.</string>
+    <string name="dj_voice_chapter_list">Son %1$d capítulos: %2$s.</string>
+    <string name="dj_voice_chapter_last">Este ya es el último capítulo.</string>
+    <string name="dj_voice_chapter_first">Este ya es el primer capítulo.</string>
     <string name="dj_voice_pen_search">Voy a ver si tienes un pendrive o tarjeta conectado y buscar las canciones que tenga.</string>
     <string name="dj_voice_pen_none">No encontré ningún pendrive o tarjeta extra conectado.</string>
     <string name="dj_voice_pen_done">¡Listo! Encontré %1$d canciones nuevas en el pendrive y las agregué a tu colección.</string>

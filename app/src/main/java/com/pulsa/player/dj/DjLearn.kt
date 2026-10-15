@@ -257,6 +257,37 @@ object DjLearn {
             return RewindResult(total, top, count.size, firstTs, firstSongId, months, weekOf, hourOf, bestDay, nightOwl)
         }
 
+        /**
+         * Afinidade "deste momento": pontua cada música pelo quanto ela costuma tocar no mesmo
+         * dia da semana e na mesma hora de [nowSec] (ver [DjLearn.momentWeight]). Só entram as
+         * músicas com peso > 0 — é a lista curta que a sugestão usa para escolher.
+         */
+        fun timeAffinity(nowSec: Long, days: Int): Map<Long, Int> {
+            val out = HashMap<Long, Int>()
+            runCatching {
+                val from = nowSec - days * 86400L
+                val now = java.util.Calendar.getInstance().apply { timeInMillis = nowSec * 1000L }
+                val nowDow = now.get(java.util.Calendar.DAY_OF_WEEK)
+                val nowHour = now.get(java.util.Calendar.HOUR_OF_DAY)
+                val cal = java.util.Calendar.getInstance()
+                readableDatabase.rawQuery(
+                    "SELECT song_id, ts FROM play_log WHERE ts >= ?", arrayOf(from.toString())
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        val id = c.getLong(0)
+                        cal.timeInMillis = c.getLong(1) * 1000L
+                        val w = DjLearn.momentWeight(
+                            cal.get(java.util.Calendar.DAY_OF_WEEK),
+                            cal.get(java.util.Calendar.HOUR_OF_DAY),
+                            nowDow, nowHour
+                        )
+                        if (w > 0) out[id] = (out[id] ?: 0) + w
+                    }
+                }
+            }
+            return out
+        }
+
         fun topSongs(nowSec: Long, days: Int, limit: Int): List<Pair<Long, Int>> {
             val result = ArrayList<Pair<Long, Int>>()
             runCatching {
@@ -575,7 +606,26 @@ object DjLearn {
     fun rewind(context: Context, days: Int, limit: Int): RewindResult =
         learner(context).rewind(System.currentTimeMillis() / 1000L, days, limit)
 
-    /** Último toque (ts, em segundos) por música, de todas as músicas já vistas. */
+    /**
+     * Afinidade "deste momento" (item 80): pontua cada música pelo quanto ela costuma tocar
+     * **neste dia da semana e nesta faixa de hora**. Mapa `song_id` → peso, descartando as
+     * sem nenhum toque no padrão. Alimenta a escolha do `DjSuggest.offline`.
+     */
+    fun timeAffinity(context: Context, days: Int = 90): Map<Long, Int> =
+        learner(context).timeAffinity(System.currentTimeMillis() / 1000L, days)
+
+    /**
+     * Peso de um toque para a sugestão "deste momento". Recebe e compara valores crus de
+     * `Calendar.DAY_OF_WEEK`/`HOUR_OF_DAY`: mesmo dia da semana soma 1; mesma hora soma 2 e
+     * hora vizinha soma 1 (com volta do 23h ↔ 0h). `0` quando não tem relação nenhuma.
+     */
+    fun momentWeight(playDow: Int, playHour: Int, nowDow: Int, nowHour: Int): Int {
+        var w = if (playDow == nowDow) 1 else 0
+        val dh = kotlin.math.abs(playHour - nowHour)
+        val dist = minOf(dh, 24 - dh)
+        if (dist == 0) w += 2 else if (dist == 1) w += 1
+        return w
+    }
     fun lastPlayedMap(context: Context): Map<Long, Long> {
         val out = HashMap<Long, Long>()
         runCatching {

@@ -46,6 +46,8 @@ import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.media.OfflineCleanupRunner
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
+import com.pulsa.player.podcast.Chapter
+import com.pulsa.player.podcast.Chapters
 import com.pulsa.player.podcast.Episode
 import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.podcast.PodcastFiles
@@ -93,6 +95,7 @@ class MainVirgin(
 
         /** Janela unica de escuta da Virgin na tela, antes de fechar sozinha. */
         private const val VIRGIN_WINDOW_MS = 6000L
+        private const val CHAPTER_RESTART_MS = 3000L
         private const val CHAIN_DELAY_MS = 1800L
         private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
         private const val AMBIENT_DUCK_FACTOR = 0.2f
@@ -1401,6 +1404,7 @@ class MainVirgin(
             "interval" -> virgInterval(DjCommander.intervalQuery(norm))
             "interval_cancel" -> virgIntervalCancel()
             "quiz" -> virgQuiz()
+            "chapter" -> virgChapter(DjCommander.chapterQuery(norm))
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
             "video_by_name" -> virgVideoByName(DjCommander.videoQuery(norm))
             "video_play" -> virgVideoPlay()
@@ -2211,6 +2215,80 @@ class MainVirgin(
             pendingQuiz = next
             virginSpeak(line + " " + next.prompt)
         }
+    }
+
+    /**
+     * Item 280 (voz) · Capítulos de podcast — "Virgin, próximo capítulo", "volta um capítulo",
+     * "pula pro capítulo 3" ou "lista os capítulos". Reaproveita o parser do feed
+     * ([Chapters.parse] sobre a descrição do episódio) e pula com `Playback.seekTo`, o mesmo
+     * caminho da folha de capítulos da tela.
+     */
+    private fun virgChapter(query: DjCommander.ChapterQuery?) {
+        val song = Playback.currentSong
+        val epId = song?.podcastId
+        if (song == null || epId == null) {
+            virginSpeak(say(R.string.dj_voice_chapter_not))
+            return
+        }
+        val mode = query?.mode ?: "next"
+        val wanted = query?.index
+        val pos = Playback.position
+        val duration = song.durationMs
+        val ctx = activity.applicationContext
+        ThreadPool.post {
+            val desc = runCatching { PodcastDb.get(ctx).episode(epId)?.description }
+                .getOrNull().orEmpty()
+            val chapters = Chapters.parse(desc)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (chapters.isEmpty()) {
+                    virginSpeak(say(R.string.chapters_empty))
+                    return@onUi
+                }
+                val current = chapterIndexAt(chapters, pos, duration)
+                when (mode) {
+                    "list" -> {
+                        val shown = minOf(chapters.size, 6)
+                        val list = chapters.take(shown).joinToString("; ") {
+                            "${Chapters.formatTime(it.startMs)} ${it.title}"
+                        }
+                        val extra = if (chapters.size > shown) " e mais ${chapters.size - shown}" else ""
+                        virginSpeak(say(R.string.dj_voice_chapter_list, chapters.size, list + extra))
+                    }
+                    "go" -> {
+                        val idx = ((wanted ?: 1) - 1).coerceIn(0, chapters.size - 1)
+                        seekChapter(chapters, idx)
+                    }
+                    "prev" -> {
+                        val idx = if (pos - chapters[current].startMs > CHAPTER_RESTART_MS) current else current - 1
+                        if (idx < 0) virginSpeak(say(R.string.dj_voice_chapter_first))
+                        else seekChapter(chapters, idx)
+                    }
+                    else -> {
+                        val idx = current + 1
+                        if (idx >= chapters.size) virginSpeak(say(R.string.dj_voice_chapter_last))
+                        else seekChapter(chapters, idx)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun chapterIndexAt(chapters: List<Chapter>, posMs: Long, durationMs: Long): Int {
+        for (i in chapters.indices) {
+            val start = chapters[i].startMs
+            val end = chapters.getOrNull(i + 1)?.startMs
+                ?: if (durationMs > 0L) durationMs else Long.MAX_VALUE
+            if (posMs >= start && posMs < end) return i
+        }
+        return 0
+    }
+
+    private fun seekChapter(chapters: List<Chapter>, index: Int) {
+        val chapter = chapters[index]
+        Playback.seekTo(chapter.startMs)
+        Telemetry.log(activity, "Virgin chapter -> ${index + 1} (${Chapters.formatTime(chapter.startMs)})")
+        virginSpeak(say(R.string.dj_voice_chapter_go, index + 1, chapter.title))
     }
 
     /** Despertador disparou: abre a atividade, liga o ambiente e toca uma seleção. */

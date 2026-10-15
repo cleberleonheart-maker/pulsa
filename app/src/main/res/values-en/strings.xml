@@ -30,12 +30,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.31):
+    <string name="changelog">What is new (5.10.32):
 → NEW
-• Workout timer by voice: "Virgin, time 3 rounds of 1 minute with rain". She calls each round, counts 3-2-1 and even plays the background ambience.
-• "How well do you know the Virgin" quiz: she asks numbers from your history (how many times you played the top track, the total...) and you guess.
-→ FIXES
-• A new command stops a running workout timer.</string>
+• Podcast chapters by voice: "Virgin, next chapter", "back a chapter", "jump to chapter 3" or "list the chapters".
+• Suggestions that read the moment: the Virgin now learns what you usually listen to on each weekday and hour and uses it when suggesting (and the AI gets the day and time).
+→ HOW IT WORKS
+• The more you listen, the better the time-based suggestion gets.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -669,6 +669,11 @@
     <string name="dj_voice_quiz_done">Game over! You got %1$d out of %2$d.</string>
     <string name="dj_voice_quiz_none">I don\'t have enough history to play yet. Listen to a bit more and call me again.</string>
     <string name="dj_voice_quiz_cancel">Alright, let\'s stop here. You got %1$d out of %2$d.</string>
+    <string name="dj_voice_chapter_not">That\'s not a podcast playing right now.</string>
+    <string name="dj_voice_chapter_go">Chapter %1$d: %2$s.</string>
+    <string name="dj_voice_chapter_list">There are %1$d chapters: %2$s.</string>
+    <string name="dj_voice_chapter_last">This is already the last chapter.</string>
+    <string name="dj_voice_chapter_first">This is already the first chapter.</string>
     <string name="dj_voice_pen_search">Let me check if there\'s a USB drive or card connected and find the music on it.</string>
     <string name="dj_voice_pen_none">I didn\'t find any extra USB drive or card connected.</string>
     <string name="dj_voice_pen_done">Done! I found %1$d new songs on the USB drive and added them to your library.</string>

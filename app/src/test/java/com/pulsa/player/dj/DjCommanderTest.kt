@@ -96,7 +96,27 @@ class DjCommanderTest {
         assertEquals(21, DjCommander.spokenNumber(DjCommander.norm("vinte e um")))
         assertEquals(42, DjCommander.spokenNumber(DjCommander.norm("acho que 42")))
         assertEquals(0, DjCommander.spokenNumber(DjCommander.norm("zero")))
-        assertNull(DjCommander.spokenNumber(DjCommander.norm("nao sei")))
+        assertNull(DjCommander.spokenNumber(DjCommander.norm("nada")))
+    }
+
+    @Test
+    fun action_chapter_navigation() {
+        // Antes do skip/next genérico: "pula o capítulo" não é pulo de faixa.
+        assertEquals("chapter", DjCommander.action(DjCommander.norm("pula o capitulo")))
+        assertEquals("chapter", DjCommander.action(DjCommander.norm("proximo capitulo")))
+        val next = DjCommander.chapterQuery(DjCommander.norm("proximo capitulo"))
+        assertEquals("next", next!!.mode)
+        assertNull(next.index)
+        // Numeração explícita vira "go" (1-based).
+        val go = DjCommander.chapterQuery(DjCommander.norm("pula pro capitulo 3"))
+        assertEquals("go", go!!.mode)
+        assertEquals(3, go.index)
+        // "volta um capítulo" retrocede.
+        assertEquals("prev", DjCommander.chapterQuery(DjCommander.norm("volta um capitulo"))!!.mode)
+        assertEquals("list", DjCommander.chapterQuery(DjCommander.norm("lista os capitulos"))!!.mode)
+        // Sem a palavra capítulo, não é comando de capítulo.
+        assertNull(DjCommander.chapterQuery(DjCommander.norm("pula essa musica")))
+        assertEquals("skip", DjCommander.action(DjCommander.norm("pula essa musica")))
     }
 
     @Test

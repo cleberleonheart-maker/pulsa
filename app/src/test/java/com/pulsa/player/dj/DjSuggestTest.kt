@@ -1,5 +1,6 @@
 package com.pulsa.player.dj
 
+import com.pulsa.player.model.Song
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -150,5 +151,41 @@ class DjSuggestTest {
         assertTrue(prompt.contains("Falamos de tudo um pouco."))
         assertTrue(!prompt.contains("<p>"))
         assertTrue(prompt.contains("três frases"))
+    }
+
+    private fun song(id: Long) = Song(id, "t$id", "a", "al", 0L, 1000L, "/x/$id.mp3", 2020)
+
+    @Test
+    fun rankForMoment_prefers_time_affinity_then_favorite_then_plays() {
+        val a = song(1) // só plays alto
+        val b = song(2) // afinidade de momento
+        val c = song(3) // favorita
+        val ranked = DjSuggest.rankForMoment(
+            candidates = listOf(a, b, c),
+            affinity = mapOf(2L to 5),
+            favIds = setOf(3L),
+            plays = mapOf(1L to 100, 2L to 1, 3L to 1)
+        )
+        assertEquals(listOf(2L, 3L, 1L), ranked.map { it.id })
+    }
+
+    @Test
+    fun rankForMoment_without_affinity_keeps_favorite_first() {
+        val a = song(1)
+        val c = song(3)
+        val ranked = DjSuggest.rankForMoment(
+            candidates = listOf(a, c),
+            affinity = emptyMap(),
+            favIds = setOf(3L),
+            plays = mapOf(1L to 100, 3L to 1)
+        )
+        assertEquals(listOf(3L, 1L), ranked.map { it.id })
+    }
+
+    @Test
+    fun momentLabel_includes_weekday_and_hour() {
+        val cal = java.util.Calendar.getInstance()
+        cal.set(2026, java.util.Calendar.OCTOBER, 17, 22, 0, 0) // sábado
+        assertEquals("sábado, 22h", DjSuggest.momentLabel(cal.timeInMillis))
     }
 }

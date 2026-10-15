@@ -7,12 +7,12 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.31):
+    <string name="changelog">Novidades desta versão (5.10.32):
 → NOVIDADES
-• Cronómetro de treino por voz: "Virgin, cronometra 3 rounds de 1 minuto com chuva". Ela anuncia cada round, conta 3-2-1 e ainda toca o ambiente de fundo.
-• Quiz "quanto conheces a Virgin": ela pergunta números do teu histórico (quantas vezes tocaste a faixa top, o total...) e tu adivinhas.
-→ CORREÇÕES
-• Um comando novo interrompe o cronómetro de treino em curso.</string>
+• Capítulos de podcast por voz: "Virgin, próximo capítulo", "volta um capítulo", "pula para o capítulo 3" ou "lista os capítulos".
+• Sugestão que lê o momento: a Virgin passa a aprender o que costumas ouvir em cada dia da semana e hora e usa isso ao sugerir (e a IA recebe o dia e a hora).
+→ COMO FUNCIONA
+• Quanto mais ouves, melhor fica a sugestão por horário.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -135,6 +135,11 @@
     <string name="dj_voice_quiz_done">Fim de jogo! Acertaste %1$d de %2$d.</string>
     <string name="dj_voice_quiz_none">Ainda não tenho histórico suficiente para brincar. Ouve-me mais um pouco e chama-me de novo.</string>
     <string name="dj_voice_quiz_cancel">Está bem, ficamos por aqui. Acertaste %1$d de %2$d.</string>
+    <string name="dj_voice_chapter_not">Isto não é um podcast a tocar agora.</string>
+    <string name="dj_voice_chapter_go">Capítulo %1$d: %2$s.</string>
+    <string name="dj_voice_chapter_list">São %1$d capítulos: %2$s.</string>
+    <string name="dj_voice_chapter_last">Este já é o último capítulo.</string>
+    <string name="dj_voice_chapter_first">Este já é o primeiro capítulo.</string>
     <string name="dj_voice_pen_confirm">Encontrei %1$d músicas novas no pendrive. Quer que eu copie para o seu telemóvel? Diga sim para confirmar.</string>
     <string name="dj_voice_pen_copy_done">Pronto! Copiei %1$d músicas novas do pendrive para o seu telemóvel.</string>
     <string name="dj_voice_pen_copy_done_dups">Encontrei %1$d músicas no pendrive; %2$d já existiam ou estavam repetidas, mas copiei as %3$d novas para o seu telemóvel.</string>
