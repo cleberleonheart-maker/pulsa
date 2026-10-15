@@ -1,158 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_aurora"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@drawable/bg_aurora">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_header_grad"
-        android:elevation="6dp"
-        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="12dp">
-
-        <ImageButton
-            android:id="@+id/btn_search_back"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="10dp"
-            android:src="@drawable/ic_arrow_back"
-            android:contentDescription="@string/cancel"
-            android:tint="@color/text_primary" />
+        android:padding="12dp"
+        android:gravity="center_vertical">
 
         <EditText
             android:id="@+id/search_input"
             android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_marginStart="8dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/bg_input"
-            android:hint="@string/search_hint"
+            android:hint="@string/search"
             android:imeOptions="actionSearch"
-            android:importantForAutofill="no"
             android:inputType="text"
             android:maxLines="1"
-            android:paddingHorizontal="16dp"
-            android:singleLine="true"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_secondary"
-            android:textSize="15sp" />
+            android:background="@drawable/bg_search_pill"
+            android:padding="12dp"
+            android:textColor="?attr/colorOnSurface"
+            android:textColorHint="?attr/colorOnSurfaceVariant" />
+
+        <ImageView
+            android:id="@+id/search_clear"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:tint="?attr/colorPrimary" />
     </LinearLayout>
 
-    <HorizontalScrollView
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/search_chips"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:clipToPadding="false"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="6dp"
-        android:scrollbars="none">
+        android:paddingHorizontal="12dp"
+        app:singleSelection="false">
 
-        <LinearLayout
-            android:id="@+id/search_chip_strip"
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_downloaded"
+            style="@style/Widget.Material3.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="3dp">
+            android:text="@string/downloaded_only" />
 
-            <TextView
-                android:id="@+id/search_chip_all"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/search_filter_all" />
-
-            <TextView
-                android:id="@+id/search_chip_songs"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/sections_header_songs" />
-
-            <TextView
-                android:id="@+id/search_chip_albums"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/tab_albums" />
-
-            <TextView
-                android:id="@+id/search_chip_artists"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/tab_artists" />
-
-            <TextView
-                android:id="@+id/search_chip_videos"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/tab_videos" />
-
-            <TextView
-                android:id="@+id/search_chip_podcasts"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/sections_header_podcasts" />
-        </LinearLayout>
-    </HorizontalScrollView>
-
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clipToPadding="false"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="6dp"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:id="@+id/search_chip_content_strip"
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_not_played"
+            style="@style/Widget.Material3.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="3dp">
+            android:text="@string/not_played" />
+    </com.google.android.material.chip.ChipGroup>
 
-            <TextView
-                android:id="@+id/search_chip_content_all"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/search_filter_all" />
-
-            <TextView
-                android:id="@+id/search_chip_content_downloaded"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/search_filter_downloaded" />
-
-            <TextView
-                android:id="@+id/search_chip_content_unplayed"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/search_filter_unplayed" />
-
-            <TextView
-                android:id="@+id/search_chip_content_short"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/search_filter_short" />
-
-            <TextView
-                android:id="@+id/search_chip_content_recent"
-                style="@style/Widget.Pulsa.TabItem"
-                android:text="@string/search_filter_recent" />
-        </LinearLayout>
-    </HorizontalScrollView>
-
-    <FrameLayout
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/search_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/search_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingVertical="8dp" />
-
-        <TextView
-            android:id="@+id/search_empty"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:padding="32dp"
-            android:textColor="@color/text_secondary"
-            android:textSize="15sp"
-            android:visibility="gone" />
-    </FrameLayout>
+        android:layout_weight="1"
+        android:padding="8dp"
+        android:clipToPadding="false" />
 </LinearLayout>
