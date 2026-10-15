@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.38):
+    <string name="changelog">What is new (5.10.39):
 → NEW
-• Listen together in the browser: the Pulsa Web page now shows the cover of the track playing on your phone, along with the title and controls.
+• Listen together by QR: whoever creates the session shows a QR and the other phone scans it — no typing the code.
 → HOW TO USE
-• On your phone, enable it in Settings → Listen together. On Pulsa Web, open the phone area: the cover appears as soon as the app starts sending its state.</string>
+• Settings → Listen together → Create session: the QR appears. On the other phone: Listen together → Join → Scan QR.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -866,6 +866,12 @@
     <string name="mirror_left">Left the session</string>
     <string name="mirror_error">Could not reach the server</string>
     <string name="mirror_not_found">This track is not in your library: %1$s</string>
+    <string name="mirror_qr_title">Listen together by QR</string>
+    <string name="mirror_qr_hint">On the other phone: Settings → Listen together → Join → Scan QR</string>
+    <string name="mirror_join_type">Type the code</string>
+    <string name="mirror_join_scan">Scan QR</string>
+    <string name="mirror_scan_prompt">Point at the session QR</string>
+    <string name="mirror_scan_invalid">That QR is not from a Pulsa session</string>
     <string name="remote_title">Session remote</string>
     <string name="remote_subtitle">Control what plays on another Pulsa or the web</string>
     <string name="remote_code_hint">Session code (5 letters)</string>

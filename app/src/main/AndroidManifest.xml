@@ -19,6 +19,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Ouvir juntos: ler o QR do código da sessão no convidado. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- Central multimídia: TV leanback. `required="false"` porque o app é primeiro
          de celular — o TV ganha o launcher extra sem afastar quem não tem TV. -->

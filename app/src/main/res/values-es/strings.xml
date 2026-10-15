@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.38):
+    <string name="changelog">Novedades de esta versión (5.10.39):
 → NUEVO
-• Escuchar juntos en el navegador: la página de Pulsa Web ahora muestra la carátula de la canción que suena en el celular, junto al título y los controles.
+• Escuchar juntos por QR: quien crea la sesión muestra un QR y el otro celular lo escanea, sin escribir el código.
 → CÓMO USAR
-• En el celular, actívalo en Ajustes → Escuchar juntos. En Pulsa Web, abre el área del celular: la carátula aparece en cuanto la app empieza a enviar su estado.</string>
+• Ajustes → Escuchar juntos → Crear sesión: aparece el QR. En el otro celular: Escuchar juntos → Entrar → Escanear QR.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -866,6 +866,12 @@
     <string name="mirror_left">Saliste de la sesión</string>
     <string name="mirror_error">No se pudo contactar el servidor</string>
     <string name="mirror_not_found">Esta canción no está en tu biblioteca: %1$s</string>
+    <string name="mirror_qr_title">Escuchar juntos por QR</string>
+    <string name="mirror_qr_hint">En el otro celular: Ajustes → Escuchar juntos → Entrar → Escanear QR</string>
+    <string name="mirror_join_type">Escribir el código</string>
+    <string name="mirror_join_scan">Escanear QR</string>
+    <string name="mirror_scan_prompt">Apunta al QR de la sesión</string>
+    <string name="mirror_scan_invalid">Ese QR no es de una sesión de Pulsa</string>
     <string name="remote_title">Control de sesión</string>
     <string name="remote_subtitle">Controla lo que suena en otro Pulsa o en la web</string>
     <string name="remote_code_hint">Código de sesión (5 letras)</string>

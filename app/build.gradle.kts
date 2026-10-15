@@ -22,8 +22,8 @@ android {
         minSdk = 23
 targetSdk = 34
 
-        versionCode = 169
-        versionName = "5.10.38"
+        versionCode = 170
+        versionName = "5.10.39"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
@@ -55,6 +55,9 @@ targetSdk = 34
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // O leitor de QR (zxing) usa APIs de java.* que não existem antes do Android 8; o
+        // desugaring as reescreve para o minSdk 23 sem precisar subir o mínimo do app.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -88,6 +91,11 @@ dependencies {
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    // Sessão "ouvir juntos": QR do código. O core gera a imagem no host; o embedded traz a
+    // câmera/prévia pronta pro convidado escanear — tudo offline, sem Play Services.
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     ksp("androidx.room:room-compiler:2.6.1")
     testImplementation("junit:junit:4.13.2")
     // `org.json` do Android é stub nas unidades JVM ("not mocked"): qualquer `put` estoura.

@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.38):
+    <string name="changelog">Novidades desta versão (5.10.39):
 → NOVIDADES
-• Ouvir juntos no navegador: a página do Pulsa Web passa a mostrar a capa da faixa que está a tocar no telemóvel, junto do título e dos controlos.
+• Ouvir juntos por QR: quem cria a sessão mostra um QR e o outro telemóvel lê-o — sem escrever o código.
 → COMO USAR
-• No telemóvel, ative em Configurações → Ouvir juntos. No Pulsa Web, abra a área do telemóvel: a capa aparece assim que a app começa a enviar o estado.</string>
+• Configurações → Ouvir juntos → Criar sessão: aparece o QR. No outro telemóvel: Ouvir juntos → Entrar → Ler QR.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

@@ -131,7 +131,7 @@
 
 ### Conexão / sincronia
 - [ ] **Convidado pede música na sessão**: dentro do "Ouvir juntos", o convidado manda faixa por voz e o host toca — `MirrorSync` + `DjCommander`
-- [ ] **QR code pra sessão**: host mostra QR, convidado escaneia em vez de digitar o código — `MirrorSync` + `SettingsActivity`
+- [x] **QR code pra sessão** (5.10.39): ao criar a sessão, o host vê o QR (`MirrorQr.bitmap`, ZXing core) + o código; o convidado escolhe Entrar → Digitar ou Escanear QR (`zxing-android-embedded`, `ScanContract`) — o QR carrega `pulsa://sessao/<CODIGO>` e `MirrorQr.codeFrom` aceita URI ou código cru. Requer `CAMERA` + `coreLibraryDesugaring`
 
 ### Dados / memória
 - [x] **Backup/restaurar preferências** (5.9.4) — a parte antiga já existia e foi mantida: `SettingsActivity.buildBackup()`/`applyRestore()` exporta `DjLearn` + `DjMemory` + EQ + 3D/surround (esses dois vão juntos de propósito — quem reinstalava perdia o ajuste junto com o botão) num `pulsa-backup.json` via SAF. **Faltava o que a pessoa mais sente falta**, e que era a real lacuna: as playlists, as favoritas e os nomes corrigidos à mão. Agora em `data/PlaylistBackup.kt` + `backupVersion` 2. Três decisões que não são óbvias:

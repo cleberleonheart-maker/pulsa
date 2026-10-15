@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -24,6 +25,8 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import com.pulsa.player.dj.DjLearn
 import com.pulsa.player.dj.DjMemory
 import com.pulsa.player.dj.Hotword
@@ -32,6 +35,7 @@ import com.pulsa.player.core.Account
 import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.core.Changelog
 import com.pulsa.player.core.Helper
+import com.pulsa.player.sync.MirrorQr
 import com.pulsa.player.sync.MirrorSync
 import com.pulsa.player.sync.RemoteControl
 import com.pulsa.player.sync.RemoteProtocol
@@ -102,6 +106,19 @@ class SettingsActivity : AppCompatActivity() {
             if (granted) Hotword.startIfNeeded(this) else Hotword.stopIfRunning(this)
             if (!granted) {
                 Toast.makeText(this, R.string.hands_free_no_mic, Toast.LENGTH_LONG).show()
+            }
+        }
+
+    /** QR lido pelo convidado: entra na sessão se o conteúdo for o código do Pulsa. */
+    private val scanLauncher =
+        registerForActivityResult(ScanContract()) { result ->
+            val contents = result?.contents
+            if (contents == null) return@registerForActivityResult
+            val code = MirrorQr.codeFrom(contents)
+            if (code == null) {
+                Toast.makeText(this, R.string.mirror_scan_invalid, Toast.LENGTH_SHORT).show()
+            } else {
+                joinWithCode(code)
             }
         }
 
@@ -477,7 +494,7 @@ class SettingsActivity : AppCompatActivity() {
             .setItems(options) { _, which ->
                 when {
                     which == 0 -> createSession()
-                    activeCode.isBlank() || which == 1 -> joinSessionDialog()
+                    activeCode.isBlank() || which == 1 -> chooseJoinMethod()
                     else -> leaveSession()
                 }
             }
@@ -498,12 +515,70 @@ class SettingsActivity : AppCompatActivity() {
                 Settings.setMirrorHost(this, true)
                 MirrorSync.start(this)
                 refreshMirrorLabel()
-                shareCode(code)
+                showSessionQr(code)
             }
         }
     }
 
-    private fun joinSessionDialog() {
+    /** Host mostra o QR + o código; o convidado pode escanear em vez de digitar. */
+    private fun showSessionQr(code: String) {
+        val density = resources.displayMetrics.density
+        val pad = (20 * density).toInt()
+        val px = (248 * density).toInt().coerceAtLeast(248)
+        val qr = MirrorQr.bitmap(MirrorQr.encode(code), px)
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+            setPadding(pad, pad, pad, 0)
+        }
+        if (qr != null) {
+            box.addView(ImageView(this).apply {
+                setImageBitmap(qr)
+                contentDescription = getString(R.string.mirror_qr_title)
+            })
+        }
+        box.addView(TextView(this).apply {
+            text = getString(R.string.mirror_qr_hint)
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+            setPadding(0, (12 * density).toInt(), 0, (6 * density).toInt())
+        })
+        box.addView(TextView(this).apply {
+            text = code
+            textSize = 30f
+            letterSpacing = 0.35f
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        })
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.mirror_qr_title)
+            .setView(box)
+            .setPositiveButton(R.string.mirror_share_title) { _, _ -> shareCode(code) }
+            .setNegativeButton(R.string.close, null)
+            .show()
+    }
+
+    private fun chooseJoinMethod() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.mirror_join)
+            .setItems(
+                arrayOf(getString(R.string.mirror_join_type), getString(R.string.mirror_join_scan))
+            ) { _, which ->
+                if (which == 0) joinByTypingDialog() else startScan()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun startScan() {
+        val options = ScanOptions()
+            .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+            .setPrompt(getString(R.string.mirror_scan_prompt))
+            .setBeepEnabled(false)
+            .setOrientationLocked(false)
+        scanLauncher.launch(options)
+    }
+
+    private fun joinByTypingDialog() {
         val input = EditText(this).apply {
             hint = getString(R.string.mirror_code_hint)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or
@@ -514,29 +589,33 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle(R.string.mirror_join)
             .setView(input)
             .setPositiveButton(R.string.mirror_join) { _, _ ->
-                val code = input.text.toString().trim().uppercase()
-                if (code.length < 3) {
+                val code = MirrorQr.codeFrom(input.text.toString())
+                if (code == null) {
                     Toast.makeText(this, R.string.mirror_code_hint, Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                ThreadPool.postNetwork {
-                    val res = sessionGet(code)
-                    val ok = runCatching { JSONObject(res) }.getOrNull()?.optBoolean("ok", false) == true
-                    runOnUiThread {
-                        if (!ok) {
-                            Toast.makeText(this, R.string.mirror_error, Toast.LENGTH_SHORT).show()
-                            return@runOnUiThread
-                        }
-                        Settings.setMirrorCode(this, code)
-                        Settings.setMirrorHost(this, false)
-                        MirrorSync.start(this)
-                        refreshMirrorLabel()
-                        Toast.makeText(this, getString(R.string.mirror_joined, code), Toast.LENGTH_SHORT).show()
-                    }
-                }
+                joinWithCode(code)
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun joinWithCode(code: String) {
+        ThreadPool.postNetwork {
+            val res = sessionGet(code)
+            val ok = runCatching { JSONObject(res) }.getOrNull()?.optBoolean("ok", false) == true
+            runOnUiThread {
+                if (!ok) {
+                    Toast.makeText(this, R.string.mirror_error, Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+                Settings.setMirrorCode(this, code)
+                Settings.setMirrorHost(this, false)
+                MirrorSync.start(this)
+                refreshMirrorLabel()
+                Toast.makeText(this, getString(R.string.mirror_joined, code), Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun leaveSession() {

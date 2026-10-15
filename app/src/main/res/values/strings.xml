@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.38):
+    <string name="changelog">Novidades desta versão (5.10.39):
 → NOVIDADES
-• Ouvir juntos no navegador: a página do Pulsa Web agora mostra a capa da faixa que está tocando no celular, junto do título e dos controles.
+• Ouvir juntos por QR: quem cria a sessão mostra um QR e o outro celular escaneia — sem precisar digitar o código.
 → COMO USAR
-• No celular, ative em Configurações → Ouvir juntos. No Pulsa Web, abra a área do celular: a capa aparece assim que o app começa a enviar o estado.</string>
+• Configurações → Ouvir juntos → Criar sessão: aparece o QR. No outro celular: Ouvir juntos → Entrar → Escanear QR.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -1079,6 +1079,12 @@
     <string name="mirror_left">Saiu da sessão</string>
     <string name="mirror_error">Não foi possível falar com o servidor</string>
     <string name="mirror_not_found">Esta música não está na sua biblioteca: %1$s</string>
+    <string name="mirror_qr_title">Ouvir juntos por QR</string>
+    <string name="mirror_qr_hint">No outro celular: Configurações → Ouvir juntos → Entrar → Escanear QR</string>
+    <string name="mirror_join_type">Digitar o código</string>
+    <string name="mirror_join_scan">Escanear QR</string>
+    <string name="mirror_scan_prompt">Aponte para o QR da sessão</string>
+    <string name="mirror_scan_invalid">Esse QR não é de uma sessão do Pulsa</string>
     <string name="remote_title">Controle de sessão</string>
     <string name="remote_subtitle">Comande o que toca em outro Pulsa ou na web</string>
     <string name="remote_code_hint">Código da sessão (5 letras)</string>
