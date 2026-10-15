@@ -703,4 +703,20 @@ class DjCommanderTest {
         assertEquals("weekly", DjCommander.action(DjCommander.norm("minha semana")))
     }
 
+    @Test
+    fun mood_state_matches_calm_and_up() {
+        assertEquals("mood", DjCommander.action(DjCommander.norm("virgi, to nervoso")))
+        assertEquals("mood", DjCommander.action(DjCommander.norm("estou ansioso")))
+        assertEquals("mood", DjCommander.action(DjCommander.norm("me acalma")))
+        assertEquals("mood", DjCommander.action(DjCommander.norm("to pra baixo")))
+        assertEquals("mood", DjCommander.action(DjCommander.norm("estou triste")))
+        assertEquals("mood", DjCommander.action(DjCommander.norm("to sem energia")))
+        assertEquals("calm", DjCommander.moodStateMatch(DjCommander.norm("estou nervoso")))
+        assertEquals("up", DjCommander.moodStateMatch(DjCommander.norm("estou desanimado")))
+        // "toca triste" (música chamada Triste) não é pedido de fila do humor
+        assertNull(DjCommander.moodStateMatch(DjCommander.norm("toca triste")))
+        // humor selvagem continua separado
+        assertEquals("mood_wild", DjCommander.action(DjCommander.norm("bora bombar")))
+    }
+
 }

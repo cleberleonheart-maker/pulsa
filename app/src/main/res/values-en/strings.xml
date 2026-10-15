@@ -109,6 +109,8 @@
     <string name="dj_scene_estudar">study</string>
     <string name="dj_scene_viajar">travel</string>
     <string name="dj_scene_dirigir">driving</string>
+    <string name="dj_mood_calm">calming</string>
+    <string name="dj_mood_up">uplifting</string>
     <string name="dj_voice_week">This week you listened to %1$d tracks across %2$d plays. The top one was %3$s by %4$s, %5$d times. Your strongest day was %6$s.</string>
     <string name="dj_voice_week_none">I have not registered any plays this week yet. Let\'s hit play!</string>
     <string name="dj_voice_weekend">Over the weekend you listened to %1$d tracks across %2$d plays. The top one was %3$s by %4$s, %5$d times.</string>

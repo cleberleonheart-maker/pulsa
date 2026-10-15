@@ -109,6 +109,8 @@
     <string name="dj_scene_estudar">para estudiar</string>
     <string name="dj_scene_viajar">para viajar</string>
     <string name="dj_scene_dirigir">para conducir</string>
+    <string name="dj_mood_calm">relajante</string>
+    <string name="dj_mood_up">para arriba</string>
     <string name="dj_voice_week">Resumen de la semana: escuchaste %1$d canciones en %2$d reproducciones. La más sonada fue %3$s de %4$s, %5$d veces. Tu día más fuerte fue %6$s.</string>
     <string name="dj_voice_week_none">Esta semana aún no registré ninguna reproducción. ¡Dale play!</string>
     <string name="dj_voice_weekend">El fin de semana escuchaste %1$d canciones en %2$d reproducciones. La más sonada fue %3$s de %4$s, %5$d veces.</string>

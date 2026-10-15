@@ -1346,6 +1346,7 @@ class MainVirgin(
             "playlist_play" -> virgPlaylistPlay(norm)
             "decade" -> virgDecadeMix(DjCommander.decadeQuery(norm))
             "scene" -> virgScene(DjCommander.sceneQuery(norm), norm)
+            "mood" -> virgMoodState(DjCommander.moodStateMatch(norm))
             "weekend" -> virgWeekendSummary()
             "weekly" -> virgWeekSummary()
             "year" -> virgYearSummary()
@@ -1681,12 +1682,6 @@ class MainVirgin(
 
     private fun virgScene(scene: String?, norm: String = "") {
         if (scene == null) return
-        if (!Permissions.hasAccess(activity)) {
-            Toast.makeText(activity, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
-            return
-        }
-        // "toca pra estudar com chuva" liga o ambiente de fundo junto da fila da cena.
-        val ambientMode = DjCommander.ambientModeOf(norm)
         val genres = when (scene) {
             DjCommander.SCENE_MALHAR -> listOf("eletronica", "dance", "rock", "funk", "pop rock")
             DjCommander.SCENE_ESTUDAR -> listOf("instrumental", "clasica", "classica", "mpb", "jazz", "bossa nova", "pop")
@@ -1705,6 +1700,38 @@ class MainVirgin(
             DjCommander.SCENE_ESTUDAR -> R.string.dj_scene_estudar
             DjCommander.SCENE_VIAJAR -> R.string.dj_scene_viajar
             else -> R.string.dj_scene_dirigir
+        }
+        // "toca pra estudar com chuva" liga o ambiente de fundo junto da fila da cena.
+        virgCurated(genres, intensity, labelRes, DjCommander.ambientModeOf(norm), "cena $scene")
+    }
+
+    /**
+     * Rádio do humor: "virgi, tô nervoso" monta uma fila calmante; "tô pra baixo" uma pra
+     * cima. Mesmo motor das cenas, mas guiado pelo estado de espírito.
+     */
+    private fun virgMoodState(mood: String?) {
+        if (mood == null) return
+        val genres = if (mood == "calm") {
+            listOf("instrumental", "clasica", "classica", "mpb", "jazz", "bossa nova", "acustico", "chill")
+        } else {
+            listOf("eletronica", "dance", "rock", "funk", "pop rock", "pop")
+        }
+        val intensity = if (mood == "calm") DjEngine.Intensity.CALM else DjEngine.Intensity.WILD
+        val labelRes = if (mood == "calm") R.string.dj_mood_calm else R.string.dj_mood_up
+        virgCurated(genres, intensity, labelRes, null, "humor $mood")
+    }
+
+    /** Motor compartilhado das cenas/humor: fila curada por gênero + intensidade e fala. */
+    private fun virgCurated(
+        genres: List<String>,
+        intensity: DjEngine.Intensity,
+        labelRes: Int,
+        ambientMode: String?,
+        logTag: String
+    ) {
+        if (!Permissions.hasAccess(activity)) {
+            Toast.makeText(activity, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+            return
         }
         val ctx = activity.applicationContext
         ThreadPool.post {
@@ -1732,7 +1759,7 @@ class MainVirgin(
                     virginSpeak(activity.getString(R.string.dj_empty))
                     return@onUi
                 }
-                Telemetry.log(ctx, "Virgin cena $scene n=${set.size} amb=${ambientMode ?: '-'}")
+                Telemetry.log(ctx, "Virgin $logTag n=${set.size} amb=${ambientMode ?: '-'}")
                 if (ambientMode != null) Ambient.start(ambientMode, 0.7f)
                 Playback.setShuffle(true)
                 Playback.setRepeatAll(true)

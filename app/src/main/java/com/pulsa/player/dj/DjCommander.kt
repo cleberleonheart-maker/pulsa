@@ -138,6 +138,30 @@ object DjCommander {
         listOf("bombar", "bombra", "anima", "animar", "acelera", "acelerar",
             "festa", "agit", "empolg", "firmeza", "pancadao").any { norm.contains(it) }
 
+    /**
+     * Rádio do humor: "tô nervoso" → fila calmante; "tô pra baixo" → fila pra cima.
+     * Devolve "calm" / "up" / null. Frases fechadas ("tô ...", "me acalma") para não
+     * confundir com prédio de música — "toca triste" não casa (não tem "tô triste").
+     */
+    fun moodStateMatch(norm: String): String? {
+        val calm = listOf(
+            "to nervoso", "estou nervoso", "to ansioso", "estou ansioso",
+            "estressado", "to bravo", "estou bravo", "to irritado", "estou irritado",
+            "to pilhado", "estou pilhado", "to preocupado", "estou preocupado",
+            "me acalma", "me acalmar", "to precisando de calma", "quero calma"
+        )
+        if (calm.any { norm.contains(it) }) return "calm"
+        val up = listOf(
+            "to pra baixo", "estou pra baixo", "to desanimado", "estou desanimado",
+            "to triste", "estou triste", "to na bad", "to na pior",
+            "to sem energia", "estou sem energia", "to cansado", "estou cansado",
+            "to deprimido", "estou deprimido", "me levanta", "levanta meu astral",
+            "meu astral", "quero animo", "to desmotivado", "estou desmotivado"
+        )
+        if (up.any { norm.contains(it) }) return "up"
+        return null
+    }
+
     private fun resumeMatch(norm: String): Boolean =
         norm.contains("de onde parou") || norm.contains("da onde parou") ||
             norm.contains("de onde eu parei") || norm.contains("onde parei") ||
@@ -1004,6 +1028,7 @@ object DjCommander {
         dailySetMatch(norm) -> "daily_set"
         memorySave(norm) -> "memory_save"
         memoryRecall(norm) -> "memory_recall"
+        moodStateMatch(norm) != null -> "mood"
         moodWildMatch(norm) -> "mood_wild"
         sleepMatch(norm) -> "sleep"
         monthFavsMatch(norm) -> "month_favs"
