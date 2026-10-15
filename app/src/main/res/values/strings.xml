@@ -971,6 +971,7 @@
     <string name="ambient_stopped">Som ambiente desligado</string>
     <string name="ambient_volume">Volume: %1$d%%</string>
     <string name="dj_voice_ambient_vol">Som ambiente em %1$d por cento.</string>
+    <string name="dj_voice_ambient_mix">Ligando %1$s com a música.</string>
     <string name="dj_voice_dynq_done">Montei %1$d músicas: %2$s.</string>
     <string name="dj_voice_dynq_none">Não achei músicas com esse filtro. Tenta algo como \"toca rock que não ouço há 2 meses\".</string>
     <string name="dj_voice_dynq_fav">favoritas</string>

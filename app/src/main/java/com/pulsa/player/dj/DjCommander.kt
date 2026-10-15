@@ -544,6 +544,21 @@ object DjCommander {
         return AmbientVol(up = up)
     }
 
+    /**
+     * Mistura ambiente + música: "toca chuva com a música" liga o som ambiente SEM trocar a
+     * faixa que está tocando (a fila fica intocada, ao contrário das cenas). Devolve o modo
+     * do ambiente ou null quando a frase não pede a mistura.
+     */
+    fun ambientMix(norm: String): String? {
+        val mode = ambientModeOf(norm) ?: return null
+        val withMusic = listOf(
+            "com a musica", "com musica", "com a faixa", "junto com a musica",
+            "junto da musica", "junto a musica", "por cima da musica",
+            "som de fundo", "de fundo", "mais a musica", "e a musica"
+        )
+        return if (withMusic.any { norm.contains(it) }) mode else null
+    }
+
     // ----- Playlist dinâmica com regras faladas ("rock que nao toco ha 2 meses") -----
 
     data class DynQuery(
@@ -1010,6 +1025,7 @@ object DjCommander {
         playlistCreate(norm) -> "playlist_new"
         playlistPlay(norm) -> "playlist_play"
         ambientVolume(norm) != null -> "ambient_vol"
+        ambientMix(norm) != null -> "ambient_mix"
         sceneQuery(norm) != null -> "scene"
         weekendMatch(norm) -> "weekend"
         weekMatch(norm) -> "weekly"

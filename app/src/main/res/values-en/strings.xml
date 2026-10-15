@@ -94,6 +94,7 @@
     <string name="ambient_stopped">Ambient sound off</string>
     <string name="ambient_volume">Volume: %1$d%%</string>
     <string name="dj_voice_ambient_vol">Ambient sound at %1$d percent.</string>
+    <string name="dj_voice_ambient_mix">Turning on %1$s with the music.</string>
     <string name="dj_voice_dynq_done">Built %1$d tracks: %2$s.</string>
     <string name="dj_voice_dynq_none">I could not find tracks with that filter. Try something like \"play rock I have not heard in 2 months\".</string>
     <string name="dj_voice_dynq_fav">favorites</string>

@@ -719,4 +719,15 @@ class DjCommanderTest {
         assertEquals("mood_wild", DjCommander.action(DjCommander.norm("bora bombar")))
     }
 
+    @Test
+    fun ambient_mix_starts_sound_without_touching_queue() {
+        assertEquals("ambient_mix", DjCommander.action(DjCommander.norm("toca chuva com a musica")))
+        assertEquals("ambient_mix", DjCommander.action(DjCommander.norm("coloca oceano junto com a musica")))
+        assertNotNull(DjCommander.ambientMix(DjCommander.norm("chuva com a musica de fundo")))
+        // volume continua sendo outro comando
+        assertEquals("ambient_vol", DjCommander.action(DjCommander.norm("chuva mais alta")))
+        // cena com chuva continua sendo cena, não mistura
+        assertEquals("scene", DjCommander.action(DjCommander.norm("toca pra estudar com chuva")))
+    }
+
 }

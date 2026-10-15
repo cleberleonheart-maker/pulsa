@@ -122,7 +122,7 @@
 - [ ] **Trivia "quanto você conhece a Virgínia"**: quiz usando `DjMemory`/`DjLearn` — "qual minha música favorita?", reconhecimento por trecho de faixa
 
 ### Áudio / UX
-- [ ] **Mistura ambiente + música**: "virgi, toca chuva com a música" — som ambiente e faixa somando no mesmo fone (ganho misturado) — `Ambient` + `Playback` + `DjCommander`
+- [x] **Mistura ambiente + música** (feito 15/10/2026): "virgi, toca chuva com a música" / "coloca oceano junto com a música" liga o `Ambient` (pista própria, com ducking) **sem mexer na fila** — `DjCommander.ambientMix` → action `ambient_mix` → `MainVirgin` chama `Ambient.start`; strings `dj_voice_ambient_mix` — `Playback` intocado
 - [ ] **Karaokê sincronizado de verdade**: letras com highlight palavra-a-palavra (falta o sync temporal ao `Lyrics.kt`) na tela da dança — `DancingVirginView` + `Lyrics`
 - [~] **Fila por energia** (re-auditado 15/10/2026): **por gênero FEITO** — "toca pra malhar/dirigir" cai na mesma cena do item "Rádio por cena" (`DjCommander.sceneQuery` → `MainVirgin.virgScene`, filtra por gênero + intensidade). **Falta:** o **BPM** (detecção/uso de tempo não existe no código) — `Library` + `DjCommander`
 - [ ] **Notificação com seek + letra**: mini-player na notificação com barra de progresso arrastável e letra da faixa — service + `NotificationCompat`

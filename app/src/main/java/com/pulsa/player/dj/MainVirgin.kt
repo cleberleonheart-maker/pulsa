@@ -1332,6 +1332,15 @@ class MainVirgin(
                 Ambient.setVolume(target.coerceIn(0.05f, 1f))
                 virginSpeak(say(R.string.dj_voice_ambient_vol, (Ambient.state().volume * 100).toInt()))
             }
+            "ambient_mix" -> {
+                val mode = DjCommander.ambientMix(norm) ?: return
+                if (!Permissions.hasAccess(activity)) {
+                    Toast.makeText(activity, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
+                    return
+                }
+                Ambient.start(mode, 0.7f)
+                virginSpeak(say(R.string.dj_voice_ambient_mix, ambientLabel(mode)))
+            }
             "repeat" -> {
                 val on = !Playback.repeatOne
                 Playback.setRepeatOne(on)
