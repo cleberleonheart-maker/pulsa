@@ -91,10 +91,14 @@
 > estavam **feitos** no código (fila no Now Playing, painel de letras, skin na home, favoritas
 > do mês, recém-adicionadas, despertador, resumo semanal falado, widget, hotword, Shazam,
 > controle web do "Ouvir juntos", continuar de onde parei cruzando mídias, busca unificada e
-> baixar por voz) e viraram `[x]`. Outros 2 são **parciais** e ganharam `[~]` (estatística do
-> card mostra contagens de biblioteca, não tocadas/tempo; rádio por cena/fila por energia usam
-> gênero mas **não** BPM nem ambiente de fundo). Revisar sempre o código antes de implementar:
+> baixar por voz) e viraram `[x]`. Outro item ficou **parcial** e ganhou `[~]` (rádio por
+> cena/fila por energia usam gênero mas **não** BPM nem ambiente de fundo). Revisar sempre o
+> código antes de implementar:
 > o checkbox deste arquivo não é fonte da verdade.
+>
+> **Implementado no mesmo dia (15/10/2026):** **101** estatística com tocadas/tempo (`DjLearn.totals`
+> + subtítulo dinâmico), **148** replay anual falado (`yearMatch` → `virgYearSummary`) e **162**
+> relançar antigas (`relaunchQuery` → `virgRelaunch` com aviso de intervalo) — todos viraram `[x]`.
 
 ### Esqueleto novo / home dashboard (em andamento 5.0)
 - [x] **Bottom nav + home dashboard**: barra inferior (Virgin/Músicas/Biblioteca/Buscar/Perfil) no lugar das abas de texto; home com seções em vez da grade de cards; Biblioteca como hub com seções Álbuns/Artistas/Favoritas/Playlists/Vídeos; Now Playing virou Activity própria; DJ/Rádio saíram da toolbar para a home
@@ -107,7 +111,7 @@
 - [x] **Painel de letras sincronizadas** embutido no Now Playing (verificado 15/10/2026: já **não** é dialog) — `np_lyrics_panel` + `lyricsList`/`lyricsAdapter` em `ui/NowPlayingFragment.kt` (visibilidade alternada em `:343-380,707`); `Lyrics` + `LyricsAdapter` destacam a linha atual
 - [x] **Mini visualizador de áudio sempre visível** no Now Playing (sem ter que abrir o EQ) (5.9.4) — `np_visualizer` com 64dp, visível por padrão, no `fragment_now_playing.xml`. Três coisas que só apareceram ligando: (1) `AudioVisualizerView.refresh()` passou a respeitar `Settings.visualizerOn`, senão o botão "desligar visualizador" só escondia as barras e **continuava capturando áudio**; (2) `MusicVisualizer.sync(context, sessionId)` substituiu o `attach` cru, porque a sessão de áudio morre com o `ExoPlayer` e um visualizador ligado à sessão velha é um `IllegalStateException` esperando; (3) `NowPlayingFragment.onPause()` precisa parar o visualizador, não só o shader. `PlaybackService.refreshFx()` chama o `sync` para o botão por voz (`MainVirgin.toggleVisualizer`) ter efeito na hora — antes ele só mudava o ícone
 - [x] **Seletor de skin rápido na home**: troca o tema sem ir para Configurações (verificado 15/10/2026) — `buildSkinRow()` em `ui/VirginHomeFragment.kt:83,193` (linha `skin_row` com `Settings.skin`/`skinColor`)
-- [~] **Estatística de reprodução resumida** no card da Virgin (re-auditado 15/10/2026): **existe um card de estatística** (`v_stats` em `VirginHomeFragment:337` → `showStats()`), mas ele mostra **contagens de biblioteca** (`v_stats_msg`: Músicas/Favoritas/Playlists/Cache), não o pedido "tocadas/tempo" — `DjLearn` tem `playCount`/`rewind` que dariam isso. Falta trocar o conteúdo do card para tocadas + tempo ouvido (`DjLearn` + `VirginHomeFragment`)
+- [x] **Estatística de reprodução resumida** no card da Virgin (feito 15/10/2026): além das contagens de biblioteca, o card agora mostra **Tocadas** e **Tempo ouvido** — `DjLearn.totals()` (novo `Totals(plays, listenMs, tracks)`, `SELECT SUM(plays), SUM(listen_ms)`) alimenta `VirginHomeFragment.showStats()` (dialog) e o **subtítulo dinâmico** da linha `v_stats` (`statsSubtitle()` → `v_stats_sub_dyn`, fallback `v_stats_sub`); `Helper.formatListenTime()` formata "Xh Ymin" (`DjLearn` + `Helper` + `VirginHomeFragment`)
 - [x] **Favoritas do mês**: atalho que monta mix só com músicas curtidas do mês (verificado 15/10/2026) — intent `month_favs` (`DjCommander.monthFavsMatch:129,948`) → `DjSession.startMonthMix` / `MainVirgin.virgMonthMix` (pool = curtidas do mês, com fallback pras favoritas)
 - [x] **"Adicionadas recentemente"**: sessão horizontal de capas na home (verificado 15/10/2026) — `Library.recentSongs()` + `loadRecents()` em `ui/VirginHomeFragment.kt:118` (seção `home_section_recent`/`recents_scroll`/`recents_row`)
 
@@ -154,7 +158,7 @@
 - [~] **Pulsa Cloud: backup de playlists/favoritas**: **resolvido pelo arquivo** em 5.9.4 (`data/PlaylistBackup.kt`, caminho em vez de id, com relatório do que não voltou). O que sobra é o **espelhamento automático pelo servidor** — o usuário não precisa lembrar de exportar o arquivo antes de trocar de celular. O `RemoteSync.syncHeavy` já tem o gancho: `maybePushSongs`/`maybeSyncDjLearn` empurram pro servidor em background a cada 15 min, e é aí que entraria `maybePushLibrary`. Diferença do arquivo: o servidor não tem caminho confiável de faixa (o `MediaStore` é do aparelho), então aqui a identidade tem de ser **hash de conteúdo ou (artista,título,duração)** em vez de `DATA` — o que é um problema bem mais difícil, e por isso ficou de fora
 - [ ] **Interval timer vocal**: "virgi, cronometra 3 rounds de 1 min com chuva" — timer de treino com o ambiente de fundo e contagem falada — `DjCommander` + `Ambient`
 - [ ] **Tela de dirigir**: modo fullscreen com capa gigante + botões grandes, tudo controlado por voz (sem ler nada) — `DjActivity` + modo
-- [ ] **Replay do ano falado**: "virgi, qual foi minha música do ano?" — resumo anual narrado com seus tops (o semanal já existe) — `DjLearn.rewind` + `DjVoice`
+- [x] **Replay do ano falado** (feito 15/10/2026): "virgi, resumo do ano" / "replay anual" / "meu ano" / "o que ouvi esse ano" — `DjCommander.yearMatch` → action `year` → `MainVirgin.virgYearSummary()` usa `DjLearn.rewind(365, 10)` e narra músicas distintas, toques, faixa campeã, **artista do ano** (maior soma de toques no top 10) e **mês mais forte** (`monthName()`); strings `dj_voice_year`/`_none` (pt/en/es) — `DjLearn.rewind` + `DjVoice`
 
 ### Novas ideias (set/2026)
 - [x] **Túnel do tempo por década** (5.7.0): "virgi, toca anos 80", "anos 2000", "década de 90" — monta fila filtrando por década/faixa de anos da biblioteca (``DjCommander.decadeQuery`` + `MainVirgin.virgDecadeMix`); aceita dígitos ("anos 80"/"anos 2000") e por extenso ("anos oitenta")
@@ -168,7 +172,7 @@
 
 ### Novas ideias (out/2026)
 - [x] **"Quantas vezes toquei essa?"** (feito 10/10): a faixa atual responde pela voz — vezes tocadas, último toque e primeira vez, lidos do `play_log` — `DjLearn` + `DjCommander`. O `play_log` grava música por `song.id` positivo e as demais mídias por chave negativa (`DjLearn.typedKey`), então a leitura usa a mesma chave com que o `notePlay` grava. Token `playcount` nos **dois** dispatchers (`MainVirgin`/`DjSession`); fica acima de `count` porque "quantas vezes" também casa o contador de biblioteca. O resumo do último toque vira "hoje/ontem/há N dias/meses" (novas strings `dj_voice_playcount*`)
-- [ ] **Relançar antigas**: mix das faixas que você não ouve há 6+ meses, com a Virgin avisando o intervalo (""essa fazia 8 meses que não tocava"") — o oposto do "Rádio com memória" que já existe — `DjLearn.lastPlayedMap` + `DjEngine`
+- [x] **Relançar antigas** (feito 15/10/2026): "relança antigas" / "toca umas antigas" / "toca as esquecidas" — `DjCommander.relaunchQuery` → action `relaunch` → `MainVirgin.virgRelaunch()` monta mix das faixas **sem toque há 180+ dias** (mais antigas primeiro, fora das odiadas e do que tocou por perto) via `DjLearn.lastPlayedMap`. A cada faixa, `announceRadioSong` avisa o intervalo (`lastHeardNote` → `dj_voice_mem_days/weeks/months`), independente do modo rádio — o oposto do "Rádio com memória"; `relaunchIds` some no próximo comando — `DjLearn.lastPlayedMap` + `DjEngine`
 - [ ] **Rádio do humor**: "virgi, tô nervoso" monta fila calmante; "tô pra baixo" energizante — mesmo motor das cenas, mas guiado por estado de espírito — `DjCommander` + `DjEngine` + `Ambient`
 - [x] **Dedicação à próxima** (feito 10/10): a dedicatória agora tem os dois modos — "dedica a próxima pra Ana" deixa o nome em `DjDedication.pending` (a nota dizia que só existia a faixa atual; o `pending` já era consumido no início da próxima, e agora o "dedica essa" também fala na hora). `DjCommander.dedicateNow` separa "essa/esta" (toca agora) de "a próxima" (pendente)
 - [ ] **Prefetch da próxima**: baixa em cache a faixa seguinte da fila quando o Wi-Fi está ocioso, para a troca vir sem buffer — reaproveita o `DownloadService` + `Playback.queue`
