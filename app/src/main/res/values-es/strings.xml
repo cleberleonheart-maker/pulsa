@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.36):
+    <string name="changelog">Novedades de esta versión (5.10.37):
 → NUEVO
-• Saltar silencios en el podcast: se recortan las pausas largas del episodio (bloques y el respiro antes de la publicidad). Solo en podcast; la música sigue entera.
+• Tarjeta de música: al compartir una canción, la imagen ahora incluye el avatar de Virgin junto a la carátula, lista para publicar.
 → CÓMO USAR
-• Viene activado. Para oír el episodio tal cual, ve a Ajustes y desactiva la opción Saltar silencios en el podcast.</string>
+• Menú de cualquier canción (o vídeo/episodio) → Compartir → Tarjeta (imagen). El avatar acompaña a quien canta para ti (Virgin, Victor o Vera).</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

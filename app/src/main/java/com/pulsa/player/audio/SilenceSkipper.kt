@@ -117,12 +117,12 @@ object SilenceSkipper {
 
             // Limpa a pausa pendente quando o interruptor muda: senão um estado a meio caminho
             // (pausa começada com o efeito ligado) vazaria para quando ele voltasse.
-            if (enabled != lastEnabled) {
-                lastEnabled = enabled
+            if (SilenceSkipper.enabled != lastEnabled) {
+                lastEnabled = SilenceSkipper.enabled
                 resetState()
             }
 
-            if (!supported || !enabled || size < frameBytes) {
+            if (!supported || !SilenceSkipper.enabled || size < frameBytes) {
                 val out = replaceOutputBuffer(size)
                 out.put(bytes)
                 out.flip()

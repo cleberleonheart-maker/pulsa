@@ -13,9 +13,11 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.net.Uri
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.FileProvider
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R
+import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import java.io.File
 
@@ -39,6 +41,9 @@ import java.io.File
 object ShareCard {
 
     private const val SIZE = 1080
+
+    /** Resolução do avatar antes do recorte: sobra para o selo redondo sair nítido. */
+    private const val AVATAR_PX = 216
 
     /**
      * Quebra o texto em linhas que caibam em [maxWidth], no máximo [maxLines].
@@ -124,7 +129,8 @@ object ShareCard {
     fun share(context: Context, title: String, subtitle: String, art: () -> Bitmap?) {
         val app = context.applicationContext
         ThreadPool.post {
-            val bitmap = runCatching { render(title, subtitle, art()) }.getOrNull()
+            val avatar = avatarBitmap(app)
+            val bitmap = runCatching { render(title, subtitle, art(), avatar) }.getOrNull()
             val file = bitmap?.let { runCatching { writePng(app, it) }.getOrNull() }
             ThreadPool.onUi {
                 if (bitmap == null || file == null) {
@@ -215,7 +221,7 @@ object ShareCard {
         return file
     }
 
-    private fun render(title: String, subtitle: String, art: Bitmap?): Bitmap {
+    private fun render(title: String, subtitle: String, art: Bitmap?, avatar: Bitmap?): Bitmap {
         val size = SIZE
         val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
@@ -276,7 +282,53 @@ object ShareCard {
         }
         canvas.drawText("PULSA", cover.right, size - size * 0.03f, footer)
 
+        // Arte Pulsa: o avatar da persona atual como selo redondo no canto oposto à assinatura,
+        // alinhado ao centro do texto de pé. Sem avatar (não deveria acontecer) fica só o anel.
+        val badge = size * 0.115f
+        drawAvatar(canvas, avatar, cover.left + badge / 2f, size - size * 0.045f, badge)
+
         return bmp
+    }
+
+    /** Rasteriza o avatar da persona atual num quadrado de [AVATAR_PX]. Roda fora da main. */
+    private fun avatarBitmap(context: Context): Bitmap? = runCatching {
+        val drawable = AppCompatResources.getDrawable(context, avatarRes(Settings.avatarStyle(context)))
+            ?: return null
+        val bmp = Bitmap.createBitmap(AVATAR_PX, AVATAR_PX, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        drawable.setBounds(0, 0, AVATAR_PX, AVATAR_PX)
+        drawable.draw(canvas)
+        bmp
+    }.getOrNull()
+
+    /**
+     * Que recurso de avatar usar por persona. Pura de propósito: é a decisão que dá para testar
+     * sem aparelho, e a que erraria trocando a cara de quem canta pelo avatar errado.
+     */
+    fun avatarRes(style: Int): Int = when (style) {
+        Settings.VICTOR -> R.drawable.avatar_masculino
+        Settings.VERA -> R.drawable.avatar_vera
+        else -> R.drawable.virgin_avatar
+    }
+
+    /** Desenha [avatar] recortado num círculo de diâmetro [diameter], centrado em (cx, cy). */
+    private fun drawAvatar(canvas: Canvas, avatar: Bitmap?, cx: Float, cy: Float, diameter: Float) {
+        val r = diameter / 2f
+        canvas.drawCircle(cx, cy, r, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#241A3A") })
+        if (avatar != null) {
+            val dst = RectF(cx - r, cy - r, cx + r, cy + r)
+            val path = Path().apply { addCircle(cx, cy, r, Path.Direction.CW) }
+            canvas.save()
+            canvas.clipPath(path)
+            canvas.drawBitmap(avatar, centerCrop(avatar, diameter.toInt()), dst, Paint(Paint.FILTER_BITMAP_FLAG))
+            canvas.restore()
+        }
+        val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = diameter * 0.05f
+            color = Color.parseColor("#FF8AD0")
+        }
+        canvas.drawCircle(cx, cy, r, ring)
     }
 
     private fun drawCover(canvas: Canvas, art: Bitmap?, dst: RectF) {

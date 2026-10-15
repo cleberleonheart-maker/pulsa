@@ -1,5 +1,7 @@
 package com.pulsa.player.ui
 
+import com.pulsa.player.R
+import com.pulsa.player.core.Settings
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -59,5 +61,14 @@ class ShareCardTest {
         assertEquals(1, lines.size)
         // "aaaa" + "…" não cabe em 4, então cai para "aaa…".
         assertEquals("aaa…", lines[0])
+    }
+
+    @Test
+    fun avatarDaPersonaAtual() {
+        assertEquals(R.drawable.avatar_masculino, ShareCard.avatarRes(Settings.VICTOR))
+        assertEquals(R.drawable.avatar_vera, ShareCard.avatarRes(Settings.VERA))
+        assertEquals(R.drawable.virgin_avatar, ShareCard.avatarRes(Settings.VIRGIN))
+        // Estilo não guardado (-1 no Settings) cai no padrão da Virgin.
+        assertEquals(R.drawable.virgin_avatar, ShareCard.avatarRes(-1))
     }
 }

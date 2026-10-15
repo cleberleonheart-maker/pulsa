@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.36):
+    <string name="changelog">Novidades desta versão (5.10.37):
 → NOVIDADES
-• Saltar silêncios no podcast: as pausas longas do episódio (blocos e o respirar antes da publicidade) são cortadas. Só no podcast; a música continua inteira.
+• Cartão de música: ao partilhar uma faixa, a imagem passa a trazer o avatar da Virgin junto da capa, pronta a publicar.
 → COMO USAR
-• Já vem ligado. Para ouvir o episódio cru, abra as Configurações e desative a opção Saltar silêncios no podcast.</string>
+• Menu de qualquer música (ou vídeo/episódio) → Partilhar → Cartão (imagem). O avatar acompanha quem canta para si (Virgin, Victor ou Vera).</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
