@@ -111,6 +111,8 @@
     <string name="dj_scene_dirigir">para conducir</string>
     <string name="dj_voice_week">Resumen de la semana: escuchaste %1$d canciones en %2$d reproducciones. La más sonada fue %3$s de %4$s, %5$d veces. Tu día más fuerte fue %6$s.</string>
     <string name="dj_voice_week_none">Esta semana aún no registré ninguna reproducción. ¡Dale play!</string>
+    <string name="dj_voice_weekend">El fin de semana escuchaste %1$d canciones en %2$d reproducciones. La más sonada fue %3$s de %4$s, %5$d veces.</string>
+    <string name="dj_voice_weekend_none">Aún no registré ninguna reproducción este fin de semana.</string>
     <string name="dj_voice_week_unknown">una canción</string>
     <string name="dj_voice_year">Tu replay del año: escuchaste %1$d canciones en %2$d reproducciones. La más sonada fue %3$s de %4$s, %5$d veces. Artista del año: %6$s. Tu mes más fuerte: %7$s.</string>
     <string name="dj_voice_year_none">Aún no tengo un año de historial. Sigue escuchando y armo tu replay.</string>

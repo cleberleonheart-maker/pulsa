@@ -46,6 +46,13 @@ object DjLearn {
      */
     data class Totals(val plays: Int, val listenMs: Long, val tracks: Int)
 
+    /** Resumo de um intervalo de tempo: toques, faixas distintas e top de músicas. */
+    data class RangeResult(
+        val plays: Int,
+        val unique: Int,
+        val top: List<Pair<Long, Int>>
+    )
+
     class Learner(context: Context) :
         SQLiteOpenHelper(context.applicationContext, "dj_learn.db", null, 4) {
 
@@ -265,6 +272,30 @@ object DjLearn {
                 }
             }
             return result
+        }
+
+        /**
+         * Resumo de um intervalo [fromSec, toSec): total de toques, faixas distintas e o top
+         * de músicas. Usado pelo resumo do fim de semana ("o que eu ouvi no sábado e domingo").
+         */
+        fun rangeSummary(fromSec: Long, toSec: Long, limit: Int): RangeResult {
+            val count = HashMap<Long, Int>()
+            var total = 0
+            runCatching {
+                readableDatabase.rawQuery(
+                    "SELECT song_id, COUNT(*) AS n FROM play_log WHERE ts >= ? AND ts < ? " +
+                        "GROUP BY song_id ORDER BY n DESC",
+                    arrayOf(fromSec.toString(), toSec.toString())
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        val n = c.getInt(1)
+                        count[c.getLong(0)] = n
+                        total += n
+                    }
+                }
+            }
+            val top = count.toList().sortedByDescending { it.second }.take(limit)
+            return RangeResult(total, count.size, top)
         }
 
         /** Músicas tocadas em um dia específico (dayOffset 0 = hoje, -1 = ontem). */
@@ -524,6 +555,9 @@ object DjLearn {
 
     fun playedOnDay(context: Context, dayOffset: Int, limit: Int): List<Pair<Long, Int>> =
         learner(context).playedOnDay(System.currentTimeMillis() / 1000L, dayOffset, limit)
+
+    fun rangeSummary(context: Context, fromSec: Long, toSec: Long, limit: Int): RangeResult =
+        learner(context).rangeSummary(fromSec, toSec, limit)
 
     fun playCount(context: Context, songId: Long): PlayCount? =
         learner(context).playCount(songId)

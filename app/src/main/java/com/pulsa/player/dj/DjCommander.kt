@@ -813,6 +813,23 @@ object DjCommander {
 
     // ----- Resumo semanal falado -----
 
+    /**
+     * Resumo do fim de semana: "resumo do fim de semana", "como foi meu fim de semana",
+     * "o que ouvi no sábado". Fica **antes** do [weekMatch] de propósito — "fim de semana"
+     * contém "semana" e o resumo semanal o pegaria primeiro.
+     */
+    private fun weekendMatch(norm: String): Boolean {
+        if (norm.contains("fim de semana") || norm.contains("final de semana") ||
+            norm.contains("weekend") || norm.contains("fin de semana")
+        ) return true
+        val day = norm.contains("sabado") || norm.contains("domingo") ||
+            norm.contains("saturday") || norm.contains("sunday")
+        val ask = norm.contains("resumo") || norm.contains("como foi") ||
+            norm.contains("o que ouvi") || norm.contains("o que eu ouvi") ||
+            norm.contains("o que tocou") || norm.contains("recap") || norm.contains("resumen")
+        return day && ask
+    }
+
     private fun weekMatch(norm: String): Boolean =
         (norm.contains("resumo") && norm.contains("semana")) ||
             norm.contains("o que ouvi essa semana") || norm.contains("o que eu ouvi essa semana") ||
@@ -970,6 +987,7 @@ object DjCommander {
         playlistPlay(norm) -> "playlist_play"
         ambientVolume(norm) != null -> "ambient_vol"
         sceneQuery(norm) != null -> "scene"
+        weekendMatch(norm) -> "weekend"
         weekMatch(norm) -> "weekly"
         yearMatch(norm) -> "year"
         sleepEndQuery(norm) -> "sleep_end"

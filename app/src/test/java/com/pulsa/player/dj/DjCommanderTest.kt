@@ -665,5 +665,42 @@ class DjCommanderTest {
         )
     }
 
+    @Test
+    fun relaunch_matches_stale_phrases() {
+        assertEquals("relaunch", DjCommander.action(DjCommander.norm("virgi, relança antigas")))
+        assertEquals("relaunch", DjCommander.action(DjCommander.norm("toca umas antigas")))
+        assertEquals("relaunch", DjCommander.action(DjCommander.norm("toca as esquecidas")))
+        assertEquals("relaunch", DjCommander.action(DjCommander.norm("toca as velhas")))
+        assertTrue(DjCommander.relaunchQuery(DjCommander.norm("toca as que nao ouco ha muito tempo")))
+    }
+
+    @Test
+    fun relaunch_does_not_steal_dynq_or_decade() {
+        assertEquals("dynq", DjCommander.action(DjCommander.norm("toca rock que nao ouco ha 2 meses")))
+        assertEquals("decade", DjCommander.action(DjCommander.norm("toca anos 80")))
+        // "favoritas" tem regra de fila dinâmica própria: o relaunch genérico não rouba
+        assertEquals("dynq", DjCommander.action(DjCommander.norm("toca minhas favoritas antigas")))
+    }
+
+    @Test
+    fun year_matches_replay_phrases() {
+        assertEquals("year", DjCommander.action(DjCommander.norm("virgi, resumo do ano")))
+        assertEquals("year", DjCommander.action(DjCommander.norm("meu replay anual")))
+        assertEquals("year", DjCommander.action(DjCommander.norm("o que eu ouvi esse ano")))
+        assertEquals("year", DjCommander.action(DjCommander.norm("my year")))
+        // não rouba a década
+        assertEquals("decade", DjCommander.action(DjCommander.norm("toca anos 90")))
+    }
+
+    @Test
+    fun weekend_matches_and_beats_weekly() {
+        assertEquals("weekend", DjCommander.action(DjCommander.norm("resumo do fim de semana")))
+        assertEquals("weekend", DjCommander.action(DjCommander.norm("como foi meu fim de semana")))
+        assertEquals("weekend", DjCommander.action(DjCommander.norm("o que eu ouvi no sabado")))
+        assertEquals("weekend", DjCommander.action(DjCommander.norm("weekend recap")))
+        // "semana" sem "fim de semana" continua sendo o resumo semanal
+        assertEquals("weekly", DjCommander.action(DjCommander.norm("resumo da semana")))
+        assertEquals("weekly", DjCommander.action(DjCommander.norm("minha semana")))
+    }
 
 }

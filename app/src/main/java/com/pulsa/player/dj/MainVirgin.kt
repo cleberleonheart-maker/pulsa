@@ -1346,6 +1346,7 @@ class MainVirgin(
             "playlist_play" -> virgPlaylistPlay(norm)
             "decade" -> virgDecadeMix(DjCommander.decadeQuery(norm))
             "scene" -> virgScene(DjCommander.sceneQuery(norm), norm)
+            "weekend" -> virgWeekendSummary()
             "weekly" -> virgWeekSummary()
             "year" -> virgYearSummary()
             "sleeptimer" -> virgSleepTimer(DjCommander.sleepTimerQuery(norm))
@@ -1770,6 +1771,63 @@ class MainVirgin(
                 ))
             }
         }
+    }
+
+    /**
+     * Resumo do fim de semana falado: "resumo do fim de semana" / "como foi meu fim de semana".
+     * Soma o sábado + domingo mais recentes (se hoje for sábado/domingo, só o que já rolou).
+     */
+    private fun virgWeekendSummary() {
+        ThreadPool.post {
+            val songs = Library.allSongs(activity.applicationContext)
+            val (fromSec, toSec) = lastWeekendRange()
+            val res = DjLearn.rangeSummary(activity.applicationContext, fromSec, toSec, 1)
+            ThreadPool.onUi {
+                if (activity.isFinishing || activity.isDestroyed) return@onUi
+                if (res.plays == 0) {
+                    virginSpeak(activity.getString(R.string.dj_voice_weekend_none))
+                    return@onUi
+                }
+                val topId = res.top.firstOrNull()?.first ?: -1L
+                val top = songs.firstOrNull { it.id == topId }
+                val topCount = res.top.firstOrNull()?.second ?: 0
+                virginSpeak(say(
+                    R.string.dj_voice_weekend, res.unique, res.plays,
+                    top?.title ?: activity.getString(R.string.dj_voice_week_unknown),
+                    top?.artist ?: "", topCount
+                ))
+            }
+        }
+    }
+
+    /** [início, fim) em segundos do último fim de semana (sábado 00:00 até domingo/agora). */
+    private fun lastWeekendRange(): Pair<Long, Long> {
+        val now = java.util.Calendar.getInstance()
+        val nowSec = now.timeInMillis / 1000L
+        val dow = now.get(java.util.Calendar.DAY_OF_WEEK) // 1=domingo .. 7=sábado
+        val backToSat = when (dow) {
+            java.util.Calendar.SATURDAY -> 0
+            java.util.Calendar.SUNDAY -> 1
+            java.util.Calendar.MONDAY -> 2
+            java.util.Calendar.TUESDAY -> 3
+            java.util.Calendar.WEDNESDAY -> 4
+            java.util.Calendar.THURSDAY -> 5
+            else -> 6 // sexta
+        }
+        val sat = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+            add(java.util.Calendar.DAY_OF_YEAR, -backToSat)
+        }
+        val fromSec = sat.timeInMillis / 1000L
+        val toSec = if (dow == java.util.Calendar.SATURDAY || dow == java.util.Calendar.SUNDAY) {
+            nowSec
+        } else {
+            fromSec + 2 * 86400L
+        }
+        return fromSec to toSec
     }
 
     /**
