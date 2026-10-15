@@ -2,141 +2,179 @@ package com.pulsa.player.search
 
 import android.content.Context
 import com.pulsa.player.data.Library
-import com.pulsa.player.media.VideoLibrary
+import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.sync.DjLearn
 import java.util.Locale
-import kotlin.math.abs
 
+/**
+ * F5 — A busca unificada: procura em música, vídeo, episódio, artista e feed de podcast de
+ * uma vez.
+ *
+ * Roda fora da main thread (quem chama coloca num `ThreadPool`/IO); o Room e o MediaStore são
+ * consultados direto, como no resto do app. O `DjLearn.lastPlayedMap` é lido **uma vez** por
+ * busca, e não por faixa, porque abrir o banco de aprendizado a cada música de uma biblioteca
+ * grande era o custo que não valia a pena pela informação.
+ */
 class SearchEngine(private val context: Context) {
 
+    /**
+     * Os filtros da barra de chips. `downloadedOnly` só olha mídia que existe no aparelho
+     * (vídeo com caminho local, episódio baixado); `notPlayed` deixa passar só o que o DJ
+     * nunca registrou como tocado.
+     */
     data class Filter(
         val downloadedOnly: Boolean = false,
         val notPlayed: Boolean = false,
         val sortBy: Sort = Sort.RELEVANT
     ) {
-        enum class Sort { RELEVANT, MOST_PLAYED, RECENT, OLDEST, LONGEST, SHORTEST }
+        enum class Sort { RELEVANT, RECENT, OLDEST, LONGEST, SHORTEST }
     }
 
     fun search(query: String, filter: Filter = Filter()): List<SearchResult> {
-        if (query.isBlank()) return emptyList()
-        val q = query.lowercase(Locale.getDefault())
-        val results = mutableListOf<SearchResult>()
+        val q = query.trim().lowercase(Locale.getDefault())
+        if (q.isBlank()) return emptyList()
+
+        val played = runCatching { DjLearn.lastPlayedMap(context) }.getOrDefault(emptyMap())
+        val out = mutableListOf<SearchResult>()
 
         // Músicas
-        Library.allSongs(context).forEach { song ->
-            if (!matches(song.title, song.artist, song.album, q)) return@forEach
-            if (filter.downloadedOnly && !Library.isLocal(song.path)) return@forEach
-            val last = DjLearn.lastPlayedAt(context, song.id, false)
-            if (filter.notPlayed && last > 0) return@forEach
-            results.add(
-                SearchResult(
+        runCatching {
+            Library.allSongs(context).forEach { s ->
+                if (!matches(q, s.title, s.artist, s.album)) return@forEach
+                val lastSec = played[s.id] ?: 0L
+                if (filter.notPlayed && lastSec > 0) return@forEach
+                out += SearchResult(
                     type = SearchResult.Type.SONG,
-                    title = song.title,
-                    subtitle = "${song.artist} · ${song.album}",
-                    albumId = song.albumId,
-                    durationMs = song.durationMs,
-                    lastPlayedMs = last,
-                    addedAt = song.addedAt,
-                    song = song
+                    title = s.title,
+                    subtitle = if (s.artist.isBlank()) s.album else s.artist,
+                    albumId = s.albumId,
+                    artPath = s.path,
+                    durationMs = s.durationMs,
+                    isDownloaded = true,
+                    lastPlayedMs = lastSec * 1000L,
+                    addedAt = s.dateAdded,
+                    song = s
                 )
-            )
+            }
         }
 
         // Vídeos
-        VideoLibrary.all(context).forEach { v ->
-            if (!matches(v.title, v.artist, "", q)) return@forEach
-            if (filter.downloadedOnly && v.path.startsWith("http")) return@forEach
-            results.add(
-                SearchResult(
+        runCatching {
+            VideoLibrary.all(context).forEach { v ->
+                if (!matches(q, v.title)) return@forEach
+                val local = v.path.isNotBlank() && !v.path.startsWith("http")
+                if (filter.downloadedOnly && !local) return@forEach
+                out += SearchResult(
                     type = SearchResult.Type.VIDEO,
                     title = v.title,
-                    subtitle = v.artist.ifEmpty { v.duration.toString() },
-                    videoId = v.id,
-                    durationMs = v.duration * 1000L,
-                    isDownloaded = !v.path.startsWith("http"),
-                    addedAt = v.addedAt
+                    subtitle = context.getString(com.pulsa.player.R.string.search_kind_video),
+                    albumId = 0L,
+                    artPath = com.pulsa.player.model.Song.VIDEO_PREFIX + v.id,
+                    durationMs = v.durationMs,
+                    isDownloaded = local,
+                    addedAt = 0L,
+                    video = v
                 )
-            )
+            }
         }
 
         // Artistas
-        Library.artists(context).forEach { a ->
-            if (a.name.lowercase(Locale.getDefault()).contains(q)) {
-                results.add(
-                    SearchResult(
-                        type = SearchResult.Type.ARTIST,
-                        title = a.name,
-                        subtitle = "${a.count} músicas",
-                        artistName = a.name
-                    )
+        runCatching {
+            Library.artists(context).forEach { a ->
+                if (!a.name.lowercase(Locale.getDefault()).contains(q)) return@forEach
+                out += SearchResult(
+                    type = SearchResult.Type.ARTIST,
+                    title = a.name,
+                    subtitle = context.resources.getQuantityString(
+                        com.pulsa.player.R.plurals.search_artist_songs, a.numSongs, a.numSongs
+                    ),
+                    artistName = a.name
                 )
             }
         }
 
         // Feeds de podcast
-        PodcastDb.feeds(context).forEach { f ->
-            if (matches(f.title, f.author, f.description, q)) {
-                results.add(
-                    SearchResult(
-                        type = SearchResult.Type.FEED,
-                        title = f.title,
-                        subtitle = f.author.ifEmpty { "Podcast" },
-                        feed = f,
-                        isDownloaded = true
-                    )
+        val db = runCatching { PodcastDb.get(context) }.getOrNull()
+        runCatching {
+            db?.feeds()?.forEach { f ->
+                val title = f.title.orEmpty()
+                val author = f.author.orEmpty()
+                val desc = f.description.orEmpty()
+                if (!matches(q, title, author, desc)) return@forEach
+                out += SearchResult(
+                    type = SearchResult.Type.FEED,
+                    title = title,
+                    subtitle = author.ifBlank {
+                        context.getString(com.pulsa.player.R.string.search_kind_podcast)
+                    },
+                    artPath = f.artworkUrl,
+                    isDownloaded = true,
+                    feedId = f.id
                 )
             }
         }
 
         // Episódios de podcast
-        PodcastDb.episodes(context).forEach { e ->
-            if (matches(e.title, e.feedTitle, e.description, q)) {
-                if (filter.downloadedOnly && e.filePath.isNullOrBlank()) return@forEach
-                results.add(
-                    SearchResult(
-                        type = SearchResult.Type.EPISODE,
-                        title = e.title,
-                        subtitle = e.feedTitle,
-                        episode = e,
-                        durationMs = e.durationMs,
-                        isDownloaded = !e.filePath.isNullOrBlank(),
-                        addedAt = e.pubDate
-                    )
+        runCatching {
+            db?.allEpisodes()?.forEach { e ->
+                if (!matches(q, e.title, e.description)) return@forEach
+                val downloaded = e.filePath.isNotBlank()
+                if (filter.downloadedOnly && !downloaded) return@forEach
+                out += SearchResult(
+                    type = SearchResult.Type.EPISODE,
+                    title = e.title,
+                    subtitle = context.getString(com.pulsa.player.R.string.search_kind_episode),
+                    artPath = e.artworkUrl,
+                    durationMs = e.durationSec * 1000L,
+                    isDownloaded = downloaded,
+                    addedAt = e.publishedAt,
+                    episode = e
                 )
             }
         }
 
-        return sort(results, filter.sortBy, q)
+        return sort(out, filter.sortBy, q)
     }
 
-    private fun matches(vararg fields: String): Boolean {
-        val q = "" // será passado externamente? simplifica: vamos reimplementar
-        return false
-    }
+    private fun matches(q: String, vararg fields: String): Boolean =
+        fields.any { it.lowercase(Locale.getDefault()).contains(q) }
 
-    private fun matches(t: String, a: String, b: String, q: String): Boolean {
-        return t.lowercase(Locale.getDefault()).contains(q) ||
-            a.lowercase(Locale.getDefault()).contains(q) ||
-            b.lowercase(Locale.getDefault()).contains(q)
-    }
-
-    private fun sort(list: List<SearchResult>, sort: Filter.Sort, q: String): List<SearchResult> {
-        return when (sort) {
-            Filter.Sort.RELEVANT -> list.sortedBy {
-                val t = it.title.lowercase(Locale.getDefault())
-                when {
-                    t == q -> 0
-                    t.startsWith(q) -> 1
-                    t.contains(q) -> 2
-                    else -> 3
-                }
-            }
-            Filter.Sort.MOST_PLAYED -> list.sortedByDescending { it.lastPlayedMs }
+    /**
+     * A ordenação. "Relevante" é a única que olha o texto: título exato na frente, depois
+     * começa-com, depois contém — empate resolvido por quem tem mais "peso" de tipo (música e
+     * episódio antes de vídeo).
+     */
+    private fun sort(list: List<SearchResult>, sort: Filter.Sort, q: String): List<SearchResult> =
+        when (sort) {
+            Filter.Sort.RELEVANT -> list.sortedWith(
+                compareBy(
+                    { relevance(it, q) },
+                    { typeRank(it.type) },
+                    { it.title.lowercase(Locale.getDefault()) }
+                )
+            )
             Filter.Sort.RECENT -> list.sortedByDescending { it.addedAt }
             Filter.Sort.OLDEST -> list.sortedBy { it.addedAt }
             Filter.Sort.LONGEST -> list.sortedByDescending { it.durationMs }
             Filter.Sort.SHORTEST -> list.sortedBy { it.durationMs }
         }
+
+    private fun relevance(r: SearchResult, q: String): Int {
+        val t = r.title.lowercase(Locale.getDefault())
+        return when {
+            t == q -> 0
+            t.startsWith(q) -> 1
+            t.contains(q) -> 2
+            else -> 3
+        }
+    }
+
+    private fun typeRank(type: SearchResult.Type): Int = when (type) {
+        SearchResult.Type.SONG -> 0
+        SearchResult.Type.EPISODE -> 1
+        SearchResult.Type.ARTIST -> 2
+        SearchResult.Type.VIDEO -> 3
+        SearchResult.Type.FEED -> 4
     }
 }

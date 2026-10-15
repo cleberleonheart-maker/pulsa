@@ -849,4 +849,16 @@
     <string name="server_token_hint">Paste your server token here</string>
     <string name="server_token_saved">Token saved!</string>
     <string name="server_token_missing">App default (no custom token)</string>
+
+    <string name="search_kind_video">Video</string>
+    <string name="search_kind_episode">Episode</string>
+    <string name="search_kind_podcast">Podcast</string>
+    <plurals name="search_artist_songs">
+        <item quantity="one">%d song</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
+
+    <string name="downloaded_only">Downloaded only</string>
+    <string name="not_played">Never played</string>
+    <string name="search_empty_hint">Start typing to search songs, videos, podcasts and artists.</string>
 </resources>
