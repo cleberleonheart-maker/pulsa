@@ -693,7 +693,8 @@
     <string name="dj_scene_estudar">pra estudar</string>
     <string name="dj_scene_viajar">pra viajar</string>
     <string name="dj_scene_dirigir">pra dirigir</string>
-    <string name="dj_voice_scene">Bora! Rádio %2$s montada com %1$d músicas.</string>
+    <string name="dj_voice_scene">Bora! Rádio %1$s montada com %2$d músicas.</string>
+    <string name="dj_voice_scene_amb">Bora! Rádio %1$s com %2$s de fundo, %3$d músicas.</string>
     <string name="dj_voice_week">Resumo da semana: você ouviu %1$d músicas em %2$d toques. A mais tocada foi %3$s de %4$s, %5$d vezes. Seu dia mais forte foi %6$s.</string>
     <string name="dj_voice_week_none">Essa semana ainda não registrei nenhuma tocada. Bora dar o play!</string>
     <string name="dj_voice_week_unknown">uma faixa</string>

@@ -103,7 +103,8 @@
     <string name="dj_voice_decade_done">¡Vamos! Armé %1$d canciones de los años %2$s!</string>
     <string name="dj_voice_decade_none">No encontré canciones de esos años en tu biblioteca.</string>
     <string name="dj_voice_avoid_note">Dejé %1$d fuera porque siempre las saltas.</string>
-    <string name="dj_voice_scene">¡Vamos! Radio %2$s preparada con %1$d canciones.</string>
+    <string name="dj_voice_scene">¡Vamos! Radio %1$s preparada con %2$d canciones.</string>
+    <string name="dj_voice_scene_amb">¡Vamos! %1$s con %2$s de fondo, %3$d canciones.</string>
     <string name="dj_scene_malhar">para entrenar</string>
     <string name="dj_scene_estudar">para estudiar</string>
     <string name="dj_scene_viajar">para viajar</string>

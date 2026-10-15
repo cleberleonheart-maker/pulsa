@@ -103,7 +103,8 @@
     <string name="dj_voice_decade_done">Let\'s go! I put together %1$d tracks from the %2$s!</string>
     <string name="dj_voice_decade_none">I could not find any tracks from those years in your library.</string>
     <string name="dj_voice_avoid_note">I left %1$d out because you always skip them.</string>
-    <string name="dj_voice_scene">Let\'s go! %2$s radio set built with %1$d tracks.</string>
+    <string name="dj_voice_scene">Let\'s go! %1$s radio set built with %2$d tracks.</string>
+    <string name="dj_voice_scene_amb">Let\'s go! %1$s set with %2$s in the background, %3$d tracks.</string>
     <string name="dj_scene_malhar">workout</string>
     <string name="dj_scene_estudar">study</string>
     <string name="dj_scene_viajar">travel</string>

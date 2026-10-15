@@ -1345,7 +1345,7 @@ class MainVirgin(
             "playlist_new" -> virgPlaylistCreate(norm)
             "playlist_play" -> virgPlaylistPlay(norm)
             "decade" -> virgDecadeMix(DjCommander.decadeQuery(norm))
-            "scene" -> virgScene(DjCommander.sceneQuery(norm))
+            "scene" -> virgScene(DjCommander.sceneQuery(norm), norm)
             "weekly" -> virgWeekSummary()
             "year" -> virgYearSummary()
             "sleeptimer" -> virgSleepTimer(DjCommander.sleepTimerQuery(norm))
@@ -1678,12 +1678,14 @@ class MainVirgin(
         }
     }
 
-    private fun virgScene(scene: String?) {
+    private fun virgScene(scene: String?, norm: String = "") {
         if (scene == null) return
         if (!Permissions.hasAccess(activity)) {
             Toast.makeText(activity, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
             return
         }
+        // "toca pra estudar com chuva" liga o ambiente de fundo junto da fila da cena.
+        val ambientMode = DjCommander.ambientModeOf(norm)
         val genres = when (scene) {
             DjCommander.SCENE_MALHAR -> listOf("eletronica", "dance", "rock", "funk", "pop rock")
             DjCommander.SCENE_ESTUDAR -> listOf("instrumental", "clasica", "classica", "mpb", "jazz", "bossa nova", "pop")
@@ -1729,13 +1731,21 @@ class MainVirgin(
                     virginSpeak(activity.getString(R.string.dj_empty))
                     return@onUi
                 }
-                Telemetry.log(ctx, "Virgin cena $scene n=${set.size}")
+                Telemetry.log(ctx, "Virgin cena $scene n=${set.size} amb=${ambientMode ?: '-'}")
+                if (ambientMode != null) Ambient.start(ambientMode, 0.7f)
                 Playback.setShuffle(true)
                 Playback.setRepeatAll(true)
                 Playback.setSleepMix(false)
                 Playback.start(set, 0)
                 host.syncMiniPlayer()
-                virginSpeak(say(R.string.dj_voice_scene, activity.getString(labelRes), set.size))
+                val label = activity.getString(labelRes)
+                if (ambientMode != null) {
+                    virginSpeak(say(
+                        R.string.dj_voice_scene_amb, label, ambientLabel(ambientMode), set.size
+                    ))
+                } else {
+                    virginSpeak(say(R.string.dj_voice_scene, label, set.size))
+                }
             }
         }
     }
