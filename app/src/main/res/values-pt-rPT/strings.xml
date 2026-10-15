@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Português de Portugal (pt-PT).
+  Overlay sobre o pt-BR: só ficam aqui as strings que diferem. Qualquer chave não
+  presente neste ficheiro cai automaticamente no valor por omissão (pt-BR), pelo
+  que a tradução pode ser alargada aos poucos.
+-->
+<resources>
+
+    <string name="changelog">Novidades desta versão (5.10.26):
+→ A RÁDIO DA VIRGÍNIA FICOU MAIS CONVERSADA
+• "Relança as antigas": monta uma fila só com músicas que já não ouve há bastante tempo — e diz há quanto tempo era.
+• "Resumo do fim de semana": conta o que mais ouviu no sábado e no domingo.
+• "Resumo do ano": faixas, artista e mês mais forte do seu ano.
+• Rádio do humor: "estou nervoso" monta uma fila calma; "estou em baixo" monta uma mais animada.
+→ CENAS E AMBIENTE
+• "Estuda com chuva" agora toca o som ambiente junto com a música.
+• "Toca chuva com a música": liga o ambiente sem trocar a faixa que está a tocar.
+→ INÍCIO
+• As estatísticas agora mostram também as reproduções e o tempo total ouvido.
+→ IDIOMA
+• Novo idioma: Português (Portugal).</string>
+
+    <string name="now_playing">A tocar agora</string>
+    <string name="now_playing_subtitle">A tocar agora</string>
+
+    <string name="search_hint">Procurar músicas, vídeos, podcasts, álbuns ou artistas</string>
+    <string name="search_empty">Sem resultados para \"%1$s\"</string>
+    <string name="search_filter_all">Tudo</string>
+    <string name="search_filter_downloaded">Transferidos</string>
+    <string name="search_filter_unplayed">Não ouvidos</string>
+    <string name="search_filter_short">Curtos</string>
+    <string name="search_filter_recent">Recentes</string>
+
+    <string name="empty_no_music">Nenhuma música encontrada neste dispositivo</string>
+    <string name="empty_no_permission">Permita o acesso às músicas para começar</string>
+    <string name="grant_permission">Permitir acesso</string>
+    <string name="empty_playlist">Ainda não há playlists. Crie a primeira com o botão abaixo — depois é só ir adicionando músicas pelo menu de cada uma.</string>
+
+    <string name="play">Reproduzir</string>
+    <string name="play_from_menu">Tocar agora</string>
+    <string name="add_to_playlist">Adicionar à playlist</string>
+    <string name="add_to_playlist_title">Adicionar à playlist</string>
+    <string name="add_to_queue">Adicionar à fila</string>
+    <string name="new_playlist">Nova playlist</string>
+    <string name="one_playlist">1 playlist</string>
+    <string name="playlist_created">Playlist criada</string>
+
+    <string name="m3u_share">Partilhar (.m3u)</string>
+    <string name="m3u_save">Guardar ficheiro (.m3u)</string>
+    <string name="m3u_empty">Playlist vazia</string>
+    <string name="m3u_saved">Playlist exportada</string>
+    <string name="m3u_failed">Não foi possível exportar</string>
+    <string name="m3u_import_empty">Nenhuma música do ficheiro está neste dispositivo</string>
+
+    <string name="save">Guardar</string>
+    <string name="create">Criar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Eliminar</string>
+    <string name="delete_playlist">Eliminar playlist</string>
+    <string name="delete_confirm">Eliminar esta playlist e todas as suas músicas?</string>
+    <string name="remove_songs_confirm">Remover %1$d músicas desta playlist? Os ficheiros continuam no dispositivo.</string>
+    <string name="next_action">Seguinte</string>
+
+    <string name="notif_channel">Reprodução de música</string>
+    <string name="notif_channel_desc">Controlos e estado da reprodução</string>
+    <string name="playing_next">A tocar a seguir</string>
+
+    <string name="share_music">Partilhar</string>
+    <string name="share_failed">Não foi possível partilhar</string>
+    <string name="share_audio_file">Ficheiro de música</string>
+    <string name="share_video_file">Ficheiro de vídeo</string>
+
+    <string name="download">Transferir</string>
+    <string name="download_title">Transferir música</string>
+    <string name="download_invalid_url">Indique um link válido (http/https)</string>
+    <string name="download_direct_only">Este site não entrega um link direto de ficheiro. Cole o link do ficheiro (ex.: termina em .mp3, .m4a, .ogg)</string>
+    <string name="download_html_error">O servidor não enviou um ficheiro de áudio/vídeo. Verifique se o link é direto.</string>
+    <string name="download_started">A transferir…</string>
+    <string name="download_done">Transferido: %1$s</string>
+    <string name="download_failed">Falha ao transferir %1$s</string>
+    <string name="download_hint">Transfira músicas e vídeos pelo link direto do ficheiro (mp3, flac, ogg, m4a, wav, mp4, webm). Os vídeos vão para a pasta Filmes e aparecem no separador Vídeos.</string>
+
+    <string name="settings">Definições</string>
+    <string name="sect_download">Transferências</string>
+    <string name="sect_maintenance">Manutenção</string>
+    <string name="bg_animated_subtitle">Gradiente animado em toda a aplicação</string>
+    <string name="stars_bg_subtitle">Estrelas a cintilar sobre o ecrã</string>
+
+    <string name="language">Idioma</string>
+    <string name="pick_language">Escolha o idioma</string>
+    <string name="language_pt">Português (Brasil)</string>
+    <string name="language_pt_pt">Português (Portugal)</string>
+
+    <string name="update_failed">Não foi possível transferir. Toque para tentar novamente.</string>
+    <string name="update_installed_message">A sua aplicação foi atualizada para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
+
+    <string name="ringtone_need_write_settings">Permita à Pulsa modificar as definições do sistema para definir o toque</string>
+    <string name="edit_db_only">Sem permissão para alterar o ficheiro. Guardado apenas na Pulsa</string>
+    <string name="edit_failed">Não foi possível guardar as alterações</string>
+    <string name="delete_failed">Não foi possível eliminar a música (permissão negada)</string>
+
+    <string name="backup_subtitle">Guarda a aprendizagem, memórias e equalizador num ficheiro</string>
+    <string name="backup_failed">Não foi possível guardar a cópia de segurança</string>
+    <string name="restore_subtitle">Aplica um ficheiro de cópia de segurança guardado antes</string>
+
+    <string name="lyrics_none">Nenhum ficheiro LRC encontrado para esta música.</string>
+
+    <string name="video_subtitle_from_file">Escolher ficheiro no telemóvel…</string>
+    <string name="video_stream_url_blocked">Link de página bloqueado (YouTube, Spotify e afins). Precisa de ser o link direto do ficheiro de vídeo.</string>
+    <string name="video_stream_detected_progressive">Vídeo comum (ficheiro único)</string>
+    <string name="peertube_no_stream">Esse vídeo já não tem stream tocável: o ficheiro foi removido do servidor ou o endereço que a instância guardou está morto. Tente outro resultado.</string>
+
+    <string name="dj_no_permission">Permita o acesso à música para o DJ misturar a sua biblioteca.</string>
+    <string name="dj_mic_denied">Permita o acesso ao microfone para dar ordens à Virgin.</string>
+    <string name="hands_free_no_mic">Sem o acesso ao microfone não dá para ficar de mãos livres.</string>
+    <string name="dj_voice_hands_free_ui">Essa só faço com o ecrã aberto. Abre a aplicação e pede-me outra vez.</string>
+    <string name="dj_voice_delete_failed">Não consegui eliminar. Esse ficheiro pode estar protegido pelo sistema.</string>
+    <string name="dj_voice_dup_failed">Não consegui eliminar as repetidas. Pode haver um problema com alguns ficheiros.</string>
+    <string name="dj_voice_pen_confirm">Encontrei %1$d músicas novas no pendrive. Quer que eu copie para o seu telemóvel? Diga sim para confirmar.</string>
+    <string name="dj_voice_pen_copy_done">Pronto! Copiei %1$d músicas novas do pendrive para o seu telemóvel.</string>
+    <string name="dj_voice_pen_copy_done_dups">Encontrei %1$d músicas no pendrive; %2$d já existiam ou estavam repetidas, mas copiei as %3$d novas para o seu telemóvel.</string>
+    <string name="dj_voice_pen_copy_failed">Não consegui copiar as músicas do pendrive para o telemóvel.</string>
+    <string name="dj_voice_recognize_none">Não reconheci. Aproxime o telemóvel do som e tente novamente.</string>
+    <string name="dj_voice_stems_soon">A separação em instrumentos e vocais ainda não está disponível no telemóvel, mas o modo karaoke já reduz o vocal da música.</string>
+    <string name="dj_voice_download_fail">Não consegui transferir esse episódio.</string>
+    <string name="dj_voice_video_none">Não há vídeo a tocar agora.</string>
+    <string name="dj_voice_download_no_ep">Não há episódio a tocar agora.</string>
+    <string name="dj_voice_sleeptimer_none">Não há nada a tocar agora para eu pausar.</string>
+    <string name="dj_voice_delete_no_song">Não há nenhuma música a tocar para eliminar.</string>
+    <string name="dj_voice_ambient_off">Nenhum som ambiente a tocar agora.</string>
+
+    <string name="rec_token_subtitle">Grátis em audd.io — identifica a música que está a tocar.</string>
+    <string name="tami_radio_status_on">No ar — a tocar todas as suas músicas</string>
+    <string name="tami_radio_welcome">Está a ouvir a Rádio Virgin F.M., a tocar %1$d músicas de todos os estilos!</string>
+    <string name="radio_welcome_format">Está a ouvir a Rádio %1$s F.M., a tocar %2$d músicas de todos os estilos!</string>
+    <string name="dj_voice_ambient_mix">A ligar %1$s com a música.</string>
+    <string name="remote_nothing">Nada a tocar na sessão</string>
+
+</resources>

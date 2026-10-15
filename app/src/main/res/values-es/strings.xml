@@ -30,7 +30,7 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.25):
+    <string name="changelog">Novedades de esta versión (5.10.26):
 → UNA VIRGIN MÁS CONVERSADORA
 • "Relanza las antiguas": una cola solo con canciones que hace tiempo no escuchas, con el tiempo transcurrido dicho en voz.
 • "Resumen del fin de semana": cuenta lo que más escuchaste el sábado y el domingo.
@@ -40,7 +40,9 @@
 • "Estudia con lluvia" ahora suena el ambiente junto con la música.
 • "Pon la lluvia con la música": activa el ambiente sin cambiar de tema.
 → INICIO
-• Las estadísticas ahora muestran también las reproducciones y el tiempo total escuchado.</string>
+• Las estadísticas ahora muestran también las reproducciones y el tiempo total escuchado.
+→ IDIOMA
+• Nuevo idioma: Portugués (Portugal).</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -235,7 +237,8 @@
     <string name="accent_teal">Azul verdoso</string>
     <string name="language">Idioma</string>
     <string name="pick_language">Elige el idioma</string>
-    <string name="language_pt">Portugués</string>
+    <string name="language_pt">Portugués (Brasil)</string>
+    <string name="language_pt_pt">Portugués (Portugal)</string>
     <string name="language_en">Inglés</string>
     <string name="language_es">Español</string>
     <string name="audio_quality">Calidad de audio</string>

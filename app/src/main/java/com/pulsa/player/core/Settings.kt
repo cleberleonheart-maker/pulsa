@@ -66,6 +66,7 @@ object Settings {
     const val LANG_PT = "pt"
     const val LANG_EN = "en"
     const val LANG_ES = "es"
+    const val LANG_PT_PT = "pt-PT"
 
     const val DJ_ALL = "all"
     const val DJ_FAVORITES = "favorites"
@@ -424,12 +425,14 @@ object Settings {
     fun languageLabelRes(language: String): Int = when (language) {
         LANG_EN -> R.string.language_en
         LANG_ES -> R.string.language_es
+        LANG_PT_PT -> R.string.language_pt_pt
         else -> R.string.language_pt
     }
 
     fun languageTag(language: String): String = when (language) {
         LANG_EN -> "en"
         LANG_ES -> "es"
+        LANG_PT_PT -> "pt-PT"
         else -> "pt"
     }
 

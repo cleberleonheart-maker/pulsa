@@ -30,17 +30,19 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.25):
+    <string name="changelog">What is new (5.10.26):
 → A MORE TALKATIVE VIRGIN DJ
-• "Play the forgotten ones": a queue only of tracks you haven't heard in a long time — and she tells you how long it's been.
+• "Play the forgotten ones": a queue only of tracks you have not heard in a long time — and she tells you how long it has been.
 • "Weekend recap": she tells you what you listened to most on Saturday and Sunday.
 • "Year recap": top tracks, top artist and strongest month of your year.
-• Mood radio: "I'm anxious" builds a calm queue; "I'm down" builds an uplifting one.
+• Mood radio: "I am anxious" builds a calm queue; "I am down" builds an uplifting one.
 → SCENES AND AMBIENCE
 • "Study with rain" now plays the ambient sound along with the music.
 • "Play rain with the music": turns the ambience on without changing the track.
 → HOME
-• Stats now also show play counts and total listening time.</string>
+• Stats now also show play counts and total listening time.
+→ LANGUAGE
+• New language: Portuguese (Portugal).</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -235,7 +237,8 @@
     <string name="accent_teal">Teal</string>
     <string name="language">Language</string>
     <string name="pick_language">Choose the language</string>
-    <string name="language_pt">Portuguese</string>
+    <string name="language_pt">Portuguese (Brazil)</string>
+    <string name="language_pt_pt">Portuguese (Portugal)</string>
     <string name="language_en">English</string>
     <string name="language_es">Spanish</string>
     <string name="audio_quality">Audio quality</string>

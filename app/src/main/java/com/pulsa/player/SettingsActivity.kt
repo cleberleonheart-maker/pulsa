@@ -424,6 +424,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun pickLanguage() {
         val keys = arrayOf(
             Settings.LANG_PT,
+            Settings.LANG_PT_PT,
             Settings.LANG_EN,
             Settings.LANG_ES
         )

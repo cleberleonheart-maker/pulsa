@@ -33,7 +33,7 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.25):
+    <string name="changelog">Novidades desta versão (5.10.26):
 → A RÁDIO DA VIRGÍNIA FICOU MAIS CONVERSADA
 • "Relança as antigas": monta uma fila só com músicas que faz tempo que você não ouve — e fala quanto tempo já era.
 • "Resumo do fim de semana": ela conta o que você mais ouviu no sábado e no domingo.
@@ -43,7 +43,9 @@
 • "Estuda com chuva" agora toca o som ambiente junto com a música.
 • "Toca chuva com a música": liga o ambiente sem trocar a faixa que está tocando.
 → HOME
-• As estatísticas agora mostram também as tocadas e o tempo total ouvido.</string>
+• As estatísticas agora mostram também as tocadas e o tempo total ouvido.
+→ IDIOMA
+• Novo idioma: Português (Portugal).</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -162,7 +164,8 @@
     <string name="accent_teal">Verde-água</string>
     <string name="language">Idioma</string>
     <string name="pick_language">Escolha o idioma</string>
-    <string name="language_pt">Português</string>
+    <string name="language_pt">Português (Brasil)</string>
+    <string name="language_pt_pt">Português (Portugal)</string>
     <string name="language_en">Inglês</string>
     <string name="language_es">Espanhol</string>
     <string name="audio_quality">Qualidade do áudio</string>

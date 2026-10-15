@@ -509,6 +509,7 @@ class VirginHomeFragment : Fragment() {
         val next = when (Settings.language(ctx)) {
             Settings.LANG_PT -> Settings.LANG_EN
             Settings.LANG_EN -> Settings.LANG_ES
+            Settings.LANG_ES -> Settings.LANG_PT_PT
             else -> Settings.LANG_PT
         }
         Settings.setLanguage(ctx, next)
