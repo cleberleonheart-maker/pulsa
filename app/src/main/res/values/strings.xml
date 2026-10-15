@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.39):
+    <string name="changelog">Novidades desta versão (5.10.40):
 → NOVIDADES
-• Ouvir juntos por QR: quem cria a sessão mostra um QR e o outro celular escaneia — sem precisar digitar o código.
+• Convidado pede música na sessão: dentro do "Ouvir juntos", o convidado pede uma faixa por voz e o anfitrião toca — os dois seguem juntos.
 → COMO USAR
-• Configurações → Ouvir juntos → Criar sessão: aparece o QR. No outro celular: Ouvir juntos → Entrar → Escanear QR.</string>
+• Na sessão aberta, no celular convidado: diga "Virgi, pede &lt;música&gt;".</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -1035,6 +1035,10 @@
     <string name="dj_voice_relaunch_done">Relançando %1$d antigas que fazia tempo que não tocavam. Ouça os avisos.</string>
     <string name="dj_voice_relaunch_none">Não achei músicas paradas há tanto tempo. Daqui a pouco aparece mais histórico.</string>
     <string name="dj_voice_ambient_off">Nenhum som ambiente tocando agora.</string>
+    <string name="dj_voice_request_ask">Qual música você quer que eu peça?</string>
+    <string name="dj_voice_request_nosession">Nenhuma sessão de Ouvir juntos aberta. Dá pra pedir só dentro de uma sessão.</string>
+    <string name="dj_voice_request_sent">Pedi %1$s pro anfitrião.</string>
+    <string name="dj_voice_request_fail">Não consegui mandar o pedido agora.</string>
 
     <string name="smart_new_playlist">Novidades</string>
     <string name="smart_classics_playlist">Clássicos</string>

@@ -46,6 +46,10 @@ object MirrorSync {
     private var lastSeekPos = -1L
     private var lastMissing = ""
 
+    /** Id do dispositivo anfitrião, descoberto em GET /session (item 133: pedidos por voz). */
+    @Volatile
+    private var hostDevice = ""
+
     private val handler = Handler(Looper.getMainLooper())
     private val tick = object : Runnable {
         override fun run() {
@@ -64,6 +68,7 @@ object MirrorSync {
         running = true
         appContext = context.applicationContext
         lastSeekPos = -1L
+        hostDevice = ""
         handler.removeCallbacks(tick)
         handler.post(tick)
         Telemetry.log(context, "MIRROR inicio code=$code")
@@ -71,8 +76,53 @@ object MirrorSync {
 
     fun stop() {
         running = false
+        hostDevice = ""
         handler.removeCallbacks(tick)
         appContext?.let { Telemetry.log(it, "MIRROR parado") }
+    }
+
+    /**
+     * Convidado pede uma faixa na sessão (item 133): enfileira `play_song` no host.
+     * O host resolve o nome na própria biblioteca (RemoteSync.execute) e toca; o
+     * espelho então faz este aparelho seguir. O callback roda na thread principal.
+     */
+    fun request(songName: String, onResult: ((Boolean) -> Unit)? = null) {
+        val ctx = appContext
+        val name = songName.trim()
+        val target = hostDevice
+        if (ctx == null || name.isEmpty() || target.isBlank() || Settings.mirrorHost(ctx)) {
+            onResult?.let { handler.post { it(false) } }
+            return
+        }
+        val body = RemoteProtocol.cmdJson("play_song", name)
+        ThreadPool.postNetwork {
+            val ok = postCmd(ctx, target, body)
+            if (ok) Telemetry.log(ctx, "MIRROR pedido '$name' -> $target")
+            onResult?.let { handler.post { it(ok) } }
+        }
+    }
+
+    private fun postCmd(ctx: Context, target: String, body: String): Boolean {
+        val payload = body.toByteArray()
+        for (base in hosts()) {
+            try {
+                val conn = URL("$base/cmd").openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.connectTimeout = 1500
+                conn.readTimeout = 2000
+                conn.doOutput = true
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                conn.setRequestProperty("X-Pulsa-Device", target)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
+                conn.setFixedLengthStreamingMode(payload.size)
+                conn.outputStream.use { it.write(payload) }
+                conn.responseCode
+                runCatching { conn.inputStream.close() }
+                return true
+            } catch (t: Throwable) {
+            }
+        }
+        return false
     }
 
     private fun step() {
@@ -89,6 +139,8 @@ object MirrorSync {
             stop()
             return
         }
+        val host = info.optString("host")
+        if (host.isNotBlank()) hostDevice = host
         // A busca roda na thread de rede, mas o ExoPlayer foi criado no `onCreate` do service
         // (thread principal): aplicar o estado (play/pause/seek/start) de qualquer outra thread
         // estoura "wrong thread" e a música fica parada. Então a decisão é tomada na main.

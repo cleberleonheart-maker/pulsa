@@ -53,6 +53,7 @@ import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.podcast.PodcastFiles
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.QueueKey
+import com.pulsa.player.sync.MirrorSync
 import com.pulsa.player.sync.Telemetry
 
 import com.pulsa.player.work.PulsaWork
@@ -1319,6 +1320,27 @@ class MainVirgin(
         }
     }
 
+    /**
+     * Item 133: convidado pede música na sessão "Ouvir juntos". Só o convidado pede;
+     * o anfitrião toca a faixa na própria biblioteca e o espelho faz o convidado seguir.
+     */
+    private fun virgRequestSong(name: String?) {
+        if (name.isNullOrBlank()) {
+            virginSpeak(say(R.string.dj_voice_request_ask))
+            return
+        }
+        if (!MirrorSync.active || Settings.mirrorHost(activity)) {
+            virginSpeak(say(R.string.dj_voice_request_nosession))
+            return
+        }
+        MirrorSync.request(name) { ok ->
+            virginSpeak(
+                if (ok) say(R.string.dj_voice_request_sent, name)
+                else say(R.string.dj_voice_request_fail)
+            )
+        }
+    }
+
     private fun resolveVirginCommand(text: String) {
         if (activity.isFinishing || activity.isDestroyed) return
         // Quiz pendente: o próximo texto é a resposta da pergunta, não um comando novo.
@@ -1358,6 +1380,7 @@ class MainVirgin(
         // Um comando novo encerra o mix "Relança antigas" (só ele mantém o aviso de intervalo).
         if (action != "relaunch") relaunchIds = emptySet()
         when (action) {
+            "request" -> virgRequestSong(DjCommander.requestQuery(norm))
             "mix" -> virginSpeak(say(R.string.dj_voice_mix_main))
             "month_favs" -> virgMonthMix()
             "memory_save" -> virgMemorySave(norm)

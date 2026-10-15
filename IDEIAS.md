@@ -130,7 +130,7 @@
 - [ ] **Crossfade/fade sem gaps**: detectar BPM por DSP e transicionar em batida entre faixas (sem silêncio) — modo festa contínuo — `Playback` + `AudioFx`
 
 ### Conexão / sincronia
-- [ ] **Convidado pede música na sessão**: dentro do "Ouvir juntos", o convidado manda faixa por voz e o host toca — `MirrorSync` + `DjCommander`
+- [x] **Convidado pede música na sessão** (5.10.40): o convidado fala "Virgi, pede <faixa>" e o host toca. `DjCommander.requestMatch`/`requestQuery` (verbo exato de pedido, para não roubar o "toca" local) + `MainVirgin.virgRequestSong` → `MirrorSync.request` enfileira `play_song` no `/cmd` do anfitrião (X-Pulsa-Device = `host` lido de GET /session); o host resolve na própria biblioteca (`RemoteSync.resolveSong`) e o espelho faz o convidado seguir. Só o convidado pede; o anfitrião resolve sozinho
 - [x] **QR code pra sessão** (5.10.39): ao criar a sessão, o host vê o QR (`MirrorQr.bitmap`, ZXing core) + o código; o convidado escolhe Entrar → Digitar ou Escanear QR (`zxing-android-embedded`, `ScanContract`) — o QR carrega `pulsa://sessao/<CODIGO>` e `MirrorQr.codeFrom` aceita URI ou código cru. Requer `CAMERA` + `coreLibraryDesugaring`
 
 ### Dados / memória

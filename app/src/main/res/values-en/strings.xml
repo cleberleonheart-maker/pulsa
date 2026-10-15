@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.39):
+    <string name="changelog">What is new (5.10.40):
 → NEW
-• Listen together by QR: whoever creates the session shows a QR and the other phone scans it — no typing the code.
+• Guest requests songs in the session: inside "Listen together", the guest asks for a track by voice and the host plays it — both stay in sync.
 → HOW TO USE
-• Settings → Listen together → Create session: the QR appears. On the other phone: Listen together → Join → Scan QR.</string>
+• With the session open, on the guest phone: say "Virgi, request &lt;song&gt;".</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -157,6 +157,10 @@
     <string name="dj_voice_relaunch_done">Relaunching %1$d old ones you had not played in ages. Listen to the notes.</string>
     <string name="dj_voice_relaunch_none">I found nothing left untouched for that long. More history will show up soon.</string>
     <string name="dj_voice_ambient_off">No ambient sound playing right now.</string>
+    <string name="dj_voice_request_ask">Which song do you want me to request?</string>
+    <string name="dj_voice_request_nosession">No Listen together session is open. You can only request inside a session.</string>
+    <string name="dj_voice_request_sent">I requested %1$s from the host.</string>
+    <string name="dj_voice_request_fail">I couldn\'t send the request right now.</string>
     <string name="remove_song_confirm">Remove this song from the playlist?</string>
     <string name="prev_action">Previous</string>
     <string name="next_action">Next</string>

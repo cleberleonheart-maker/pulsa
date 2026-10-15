@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.39):
+    <string name="changelog">Novidades desta versão (5.10.40):
 → NOVIDADES
-• Ouvir juntos por QR: quem cria a sessão mostra um QR e o outro telemóvel lê-o — sem escrever o código.
+• Convidado pede música na sessão: dentro do "Ouvir juntos", o convidado pede uma faixa por voz e o anfitrião toca — os dois ficam sincronizados.
 → COMO USAR
-• Configurações → Ouvir juntos → Criar sessão: aparece o QR. No outro telemóvel: Ouvir juntos → Entrar → Ler QR.</string>
+• Com a sessão aberta, no telemóvel convidado: diz "Virgi, pede &lt;faixa&gt;".</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -151,6 +151,10 @@
     <string name="dj_voice_sleeptimer_none">Não há nada a tocar agora para eu pausar.</string>
     <string name="dj_voice_delete_no_song">Não há nenhuma música a tocar para eliminar.</string>
     <string name="dj_voice_ambient_off">Nenhum som ambiente a tocar agora.</string>
+    <string name="dj_voice_request_ask">Que música queres que eu peça?</string>
+    <string name="dj_voice_request_nosession">Nenhuma sessão de Ouvir juntos aberta. Só dá para pedir dentro de uma sessão.</string>
+    <string name="dj_voice_request_sent">Pedi %1$s ao anfitrião.</string>
+    <string name="dj_voice_request_fail">Não consegui enviar o pedido agora.</string>
 
     <string name="rec_token_subtitle">Grátis em audd.io — identifica a música que está a tocar.</string>
     <string name="tami_radio_status_on">No ar — a tocar todas as suas músicas</string>

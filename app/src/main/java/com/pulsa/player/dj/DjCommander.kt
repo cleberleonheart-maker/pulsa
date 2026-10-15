@@ -405,6 +405,45 @@ object DjCommander {
             .takeIf { it.isNotBlank() }
     }
 
+    /**
+     * Pedido de música na sessão "Ouvir juntos" (item 133): o convidado fala
+     * "viri, pede <faixa>" e o anfitrião toca. Dispara só com verbo de pedido
+     * explícito (não rouba o "toca <faixa>" normal, que é reprodução local).
+     */
+    private val REQUEST_VERBS = setOf(
+        "pede", "pedir", "pedi", "solicita", "solicitar", "encomenda", "encomendar"
+    )
+
+    /** Índice do token do verbo de pedido, ou -1. Casa só o token exato ("pedido" não conta). */
+    private fun requestVerbAt(clean: List<String>): Int =
+        clean.indexOfFirst { it in REQUEST_VERBS }
+
+    /** Há verbo de pedido explícito (mesmo sem nome de faixa: aí a Virgin pergunta qual). */
+    fun requestMatch(norm: String): Boolean {
+        val clean = norm.split(' ')
+            .filter { it.isNotBlank() }
+            .map { it.trim(',', '.', '!', '?', ' ', '-', ':') }
+        return requestVerbAt(clean) >= 0
+    }
+
+    /** Nome da faixa pedida, ou null se não há verbo de pedido ou não sobra nome. */
+    fun requestQuery(norm: String): String? {
+        val clean = norm.split(' ')
+            .filter { it.isNotBlank() }
+            .map { it.trim(',', '.', '!', '?', ' ', '-', ':') }
+        val idx = requestVerbAt(clean)
+        if (idx < 0) return null
+        val stop = setOf(
+            "que", "pra", "para", "pro", "o", "a", "os", "as", "um", "uma",
+            "no", "na", "de", "do", "da", "ai", "ao", "ele", "ela",
+            "essa", "esse", "esta", "este", "aquela", "aquele",
+            "musica", "musicas", "faixa", "som", "toca", "tocar", "toque", "poe", "coloca"
+        )
+        var start = idx + 1
+        while (start < clean.size && clean[start] in stop) start++
+        return clean.drop(start).joinToString(" ").trim().takeIf { it.isNotBlank() }
+    }
+
     private fun playedYesterdayMatch(norm: String): Boolean =
         norm.contains("que toquei ontem") || norm.contains("toquei ontem") ||
             norm.contains("cantei ontem") || norm.contains("ouvi ontem") ||
@@ -1181,6 +1220,10 @@ object DjCommander {
         // palavra "playlist" (e o "play" dentro dela faz o [playlistPlay] casar), então sem
         // esta prioridade o comando viraria "toca a playlist X" em vez de salvar a fila.
         queueSaveQuery(norm) -> "queue_save"
+
+        // Pedir música na sessão "Ouvir juntos" (item 133): verbo de pedido explícito.
+        // Fica no topo para o nome da faixa não ser lido como playlist/cena/etc.
+        requestMatch(norm) -> "request"
 
 
         // Playlists ficam no topo porque o nome da playlist pode ser qualquer palavra — até

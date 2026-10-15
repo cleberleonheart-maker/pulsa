@@ -2,6 +2,7 @@ package com.pulsa.player.dj
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -843,6 +844,39 @@ class DjCommanderTest {
         assertEquals("ambient_vol", DjCommander.action(DjCommander.norm("chuva mais alta")))
         // cena com chuva continua sendo cena, não mistura
         assertEquals("scene", DjCommander.action(DjCommander.norm("toca pra estudar com chuva")))
+    }
+
+    @Test
+    fun request_matches_explicit_ask_verbs() {
+        assertEquals("request", DjCommander.action(DjCommander.norm("pede a musica do radiohead")))
+        assertEquals("request", DjCommander.action(DjCommander.norm("solicita essa faixa")))
+        assertEquals("request", DjCommander.action(DjCommander.norm("pede pra tocar aquela musica")))
+    }
+
+    @Test
+    fun request_extracts_song_name_after_verb_and_stopwords() {
+        assertEquals(
+            "radiohead creep",
+            DjCommander.requestQuery(DjCommander.norm("viri pede a musica radiohead creep"))
+        )
+        assertEquals(
+            "creep",
+            DjCommander.requestQuery(DjCommander.norm("pede pra tocar creep"))
+        )
+    }
+
+    @Test
+    fun request_ignores_plain_play_and_noun_pedido() {
+        // "toca X" continua sendo reprodução local, não pedido de sessão.
+        assertNull(DjCommander.requestQuery(DjCommander.norm("toca creep")))
+        assertNotEquals("request", DjCommander.action(DjCommander.norm("toca creep")))
+        // "pedido" não é o verbo "pedi".
+        assertNull(DjCommander.requestQuery(DjCommander.norm("qual foi o ultimo pedido")))
+    }
+
+    @Test
+    fun request_without_song_name_returns_null() {
+        assertNull(DjCommander.requestQuery(DjCommander.norm("pede uma musica")))
     }
 
 }
