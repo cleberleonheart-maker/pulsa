@@ -90,6 +90,11 @@ class MainVirgin(
         const val EXTRA_ALARM_AMBIENT = "virgin_alarm_ambient"
         private const val RESUME_LISTENER_DELAY_MS = 800L
 
+        /** Item 170 — despertador progressivo: tempo do ramp e faixa de volume do ambiente. */
+        private const val ALARM_RAMP_MS = 45_000L
+        private const val ALARM_AMBIENT_START = 0.12f
+        private const val ALARM_AMBIENT_FULL = 0.7f
+
         /** F2 · Vídeo por voz: o quanto "volta o filme" recua quando não há 30s na frase. */
         private const val VIDEO_BACK_MS = 30_000L
 
@@ -159,6 +164,7 @@ class MainVirgin(
     private var pendriveDuplicatesSkipped = 0
     private var virginSpeechPaused = false
     private var virginScanInFlight = false
+    private var alarmAmbientRamp: Runnable? = null
     private val virginHandler = Handler(Looper.getMainLooper())
     private val chainHandler = Handler(Looper.getMainLooper())
     private val resumeListenerRunnable = Runnable { doResumeVirginListener() }
@@ -2000,6 +2006,7 @@ class MainVirgin(
                 .setAlarmClock(AlarmManager.AlarmClockInfo(next, show), op)
         }
         Settings.setAlarm(activity.applicationContext, spec.hour, spec.minute, spec.ambient)
+        spec.gentle?.let { Settings.setAlarmGentle(activity.applicationContext, it) }
         val with = spec.ambient?.let { " " + say(R.string.dj_voice_alarm_with, ambientLabel(it)) } ?: ""
         virginSpeak(say(R.string.dj_voice_alarm_set, sayClock(spec.hour, spec.minute), with))
     }
@@ -2295,14 +2302,36 @@ class MainVirgin(
     fun onVirginAlarm(intent: Intent?) {
         if (intent == null || activity.isFinishing || activity.isDestroyed) return
         val ambient = intent.getStringExtra(EXTRA_ALARM_AMBIENT)
-        if (ambient != null) Ambient.start(ambient, 0.7f)
+        val gentle = Settings.alarmGentle(activity)
+        if (ambient != null) {
+            Ambient.start(ambient, if (gentle) ALARM_AMBIENT_START else ALARM_AMBIENT_FULL)
+        }
+        if (gentle && ambient != null) rampAlarmAmbient()
         val cal = java.util.Calendar.getInstance()
         val time = sayClock(
             cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE)
         )
         val with = ambient?.let { " " + say(R.string.dj_voice_alarm_with, ambientLabel(it)) } ?: ""
         virginSpeak(say(R.string.dj_voice_alarm_hello, time, with))
-        virgAlarmMix()
+        virgAlarmMix(gentle)
+    }
+
+    /** Item 170 — sobe o volume do ambiente aos poucos (o do player sobe pelo motor). */
+    private fun rampAlarmAmbient() {
+        alarmAmbientRamp?.let { virginHandler.removeCallbacks(it) }
+        val steps = (ALARM_RAMP_MS / 1000L).toInt().coerceAtLeast(2)
+        var step = 0
+        val r = object : Runnable {
+            override fun run() {
+                step++
+                val vol = ALARM_AMBIENT_START +
+                    (ALARM_AMBIENT_FULL - ALARM_AMBIENT_START) * (step.toFloat() / steps)
+                Ambient.setVolume(vol.coerceIn(0f, ALARM_AMBIENT_FULL))
+                if (step < steps) virginHandler.postDelayed(this, 1000L) else alarmAmbientRamp = null
+            }
+        }
+        alarmAmbientRamp = r
+        virginHandler.postDelayed(r, 1000L)
     }
 
     private fun ambientLabel(mode: String): String = activity.getString(when (mode) {
@@ -2330,7 +2359,7 @@ class MainVirgin(
         }
     }
 
-    private fun virgAlarmMix() {
+    private fun virgAlarmMix(gentle: Boolean = false) {
         if (!Permissions.hasAccess(activity)) return
         ThreadPool.post {
             val ctx = activity.applicationContext
@@ -2345,20 +2374,21 @@ class MainVirgin(
                 maxSize = 20, exclude = DjSessionMemory.recentIds()
             )
             if (set.isEmpty()) return@post
-            ThreadPool.onUi { playWhenBound(set, 0) }
+            ThreadPool.onUi { playWhenBound(set, 0, gentle) }
         }
     }
 
     /** Aguarda o motor ficar disponível (o app acabou de abrir pelo alarme). */
-    private fun playWhenBound(set: List<Song>, tries: Int) {
+    private fun playWhenBound(set: List<Song>, tries: Int, gentle: Boolean = false) {
         if (activity.isFinishing || activity.isDestroyed) return
         if (Playback.isReady) {
             Playback.setShuffle(true)
             Playback.setRepeatAll(true)
             Playback.setSleepMix(false)
             Playback.start(set, 0)
+            if (gentle) Playback.rampVolumeUp(ALARM_RAMP_MS.toInt())
         } else if (tries < 8) {
-            virginHandler.postDelayed({ playWhenBound(set, tries + 1) }, 250)
+            virginHandler.postDelayed({ playWhenBound(set, tries + 1, gentle) }, 250)
         }
     }
 

@@ -7,9 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.33):
-→ CORREÇÕES
-• Dedicatória por voz: "dedico a próxima música a [nome]" passa a anotar o nome e a dizê-lo quando a faixa seguinte começar — antes a palavra "próxima" fazia a Virgin trocar de música e o nome não era reconhecido.</string>
+    <string name="changelog">Novidades desta versão (5.10.34):
+→ NOVIDADES
+• Despertador progressivo: no alarme o som sobe devagar em vez de estourar. Vale para a música e para o som de fundo (p. ex. chuva).
+→ COMO USAR
+• "Virgin, acorda-me às 7h com chuva" já começa suave; diz "de uma vez" para o alarme tocar no volume máximo.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

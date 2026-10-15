@@ -539,6 +539,20 @@ class DjCommanderTest {
     }
 
     @Test
+    fun alarm_gentle_flag() {
+        assertEquals(true, DjCommander.alarmQuery(DjCommander.norm("me acorda as 7h suave"))!!.gentle)
+        assertEquals(
+            true,
+            DjCommander.alarmQuery(DjCommander.norm("despertador progressivo as 6h"))!!.gentle
+        )
+        assertEquals(
+            false,
+            DjCommander.alarmQuery(DjCommander.norm("me acorda as 7h de uma vez"))!!.gentle
+        )
+        assertNull(DjCommander.alarmQuery(DjCommander.norm("me acorda as 7h"))!!.gentle)
+    }
+
+    @Test
     fun alarm_action() {
         assertEquals("alarm", DjCommander.action(DjCommander.norm("virgin, me acorda as 6h")))
         assertEquals("alarm_cancel", DjCommander.action(DjCommander.norm("virgin, cancela o alarme")))

@@ -30,9 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.33):
-→ FIXES
-• Voice dedication: "dedicate the next song to [name]" now saves the name and says it when the next track starts — before, the word "next" made the Virgin skip the song and the name was not recognized.</string>
+    <string name="changelog">What is new (5.10.34):
+→ NEW
+• Progressive alarm: the alarm sound now rises slowly instead of blasting. Works for the music and the background sound (e.g. rain).
+→ HOW TO USE
+• "Virgin, wake me at 7am with rain" already starts soft; say "all at once" to make the alarm play at full volume.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

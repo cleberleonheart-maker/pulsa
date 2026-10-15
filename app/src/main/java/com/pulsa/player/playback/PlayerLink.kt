@@ -74,6 +74,9 @@ interface PlayerLink {
     fun clearAbLoop()
     fun setMicListening(on: Boolean)
     fun cycleRepeat()
+
+    /** Item 170 — sobe o volume aos poucos (despertador progressivo). */
+    fun rampVolumeUp(ms: Int)
 }
 
 /**
@@ -133,5 +136,6 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
     override fun clearAbLoop() = service.clearAbLoop()
     override fun setMicListening(on: Boolean) = service.setMicListening(on)
     override fun cycleRepeat() = service.cycleRepeat()
+    override fun rampVolumeUp(ms: Int) = service.rampVolumeUp(ms)
     override fun stop() = service.stop()
 }

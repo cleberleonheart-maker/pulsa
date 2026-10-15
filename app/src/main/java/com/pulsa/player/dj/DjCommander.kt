@@ -974,7 +974,21 @@ object DjCommander {
 
     // ----- Despertador ("me acorda às 7h") + sleep timer ("para em 20 min") -----
 
-    data class AlarmSpec(val hour: Int, val minute: Int, val ambient: String?)
+    data class AlarmSpec(
+        val hour: Int,
+        val minute: Int,
+        val ambient: String?,
+        /** Item 170: `true` = progressivo (suave), `false` = de uma vez, `null` = manter. */
+        val gentle: Boolean? = null
+    )
+
+    private fun alarmGentleQuery(norm: String): Boolean? = when {
+        listOf("progressiv", "suave", "sem susto", "devagarinho", "bem devagar",
+            "gentle", "soft", "despacito", "sin ruido", "tranquilo").any { norm.contains(it) } -> true
+        listOf("de uma vez", "de repente", "normal", "nao progressiv", "sem suavidade",
+            "sin suavidad", "fuerte", "alto").any { norm.contains(it) } -> false
+        else -> null
+    }
 
     private val HOUR_WORDS = mapOf(
         "uma" to 1, "um" to 1, "duas" to 2, "dois" to 2, "tres" to 3, "quatro" to 4,
@@ -1036,7 +1050,7 @@ object DjCommander {
         val t = alarmTime(norm) ?: return null
         var hour = t.first
         if (isAfternoonNorm(norm) && hour in 1..11) hour += 12
-        return AlarmSpec(hour, t.second, ambientAlarmMode(norm))
+        return AlarmSpec(hour, t.second, ambientAlarmMode(norm), alarmGentleQuery(norm))
     }
 
     /** "para em 20 min", "pausa em meia hora" → minutos (1..720). */

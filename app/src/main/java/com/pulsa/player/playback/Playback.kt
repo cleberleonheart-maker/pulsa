@@ -224,6 +224,11 @@ object Playback {
         link?.start(songs, startIndex)
     }
 
+    /** Item 170 — despertador progressivo: sobe o volume aos poucos em vez de estourar. */
+    fun rampVolumeUp(ms: Int) {
+        link?.rampVolumeUp(ms)
+    }
+
     /**
      * F2b — junta ao fim da fila sem trocar o que está tocando.
      *

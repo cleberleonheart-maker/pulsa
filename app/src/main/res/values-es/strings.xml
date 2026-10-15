@@ -30,9 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.33):
-→ CORRECCIONES
-• Dedicación por voz: "dedico la próxima canción a [nombre]" ahora guarda el nombre y lo dice cuando empieza la siguiente pista — antes la palabra "próxima" hacía que la Virgin cambiara de canción y el nombre no se reconocía.</string>
+    <string name="changelog">Novedades de esta versión (5.10.34):
+→ NUEVO
+• Despertador progresivo: en la alarma el sonido sube despacio en vez de estallar. Vale para la música y para el sonido de fondo (p. ej. lluvia).
+→ CÓMO USAR
+• "Virgin, despiértame a las 7 con lluvia" ya empieza suave; di "de una vez" para que la alarma suene a volumen máximo.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

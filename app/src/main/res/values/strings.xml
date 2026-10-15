@@ -33,9 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.33):
-→ CORREÇÕES
-• Dedicatória por voz: "dedico a próxima música para [nome]" agora anota o nome e fala quando a próxima faixa começar — antes a palavra "próxima" fazia a Virgin trocar de música e o nome não era reconhecido.</string>
+    <string name="changelog">Novidades desta versão (5.10.34):
+→ NOVIDADES
+• Despertador progressivo: no alarme o som sobe devagar em vez de estourar. Vale para a música e para o som de fundo (ex.: chuva).
+→ COMO USAR
+• "Virgin, me acorda às 7h com chuva" já começa suave; diga "de uma vez" para o alarme tocar no volume cheio.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -680,7 +682,7 @@
     <string name="dj_commands_decade">"Virgin, toca anos 80 / década de 90 / anos 2000" — fila só com músicas daquela década</string>
     <string name="dj_commands_scene">"Virgin, toca pra malhar / estudar / viajar / dirigir" — rádio por cena com fila curada</string>
     <string name="dj_commands_weekly">"Virgin, resumo da minha semana / o que ouvi essa semana" — resumo semanal falado</string>
-    <string name="dj_commands_alarm">"Virgin, me acorda às 7h (com chuva)" — despertador com som de fundo</string>
+    <string name="dj_commands_alarm">"Virgin, me acorda às 7h com chuva (ou \"me acorda às 7h suave\")" — despertador com som de fundo; "suave" sobe o volume aos poucos</string>
     <string name="dj_commands_sleeptimer">"Virgin, para em 20 minutos" — sleep timer falado</string>
     <string name="dj_commands_video">"Virgin, continua o filme / retoma o filme" — volta a tocar o vídeo, com o app fechado</string>
     <string name="dj_commands_video_open">"Virgin, mostra o vídeo / volta pro filme" — abre a tela do vídeo que está tocando</string>

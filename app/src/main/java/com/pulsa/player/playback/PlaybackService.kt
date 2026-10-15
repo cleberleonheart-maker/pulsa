@@ -189,6 +189,10 @@ class PlaybackService : MediaLibraryService() {
     private var fadeInRunnable: Runnable? = null
     private var sleepMix = false
     private var sleepFadeRunnable: Runnable? = null
+
+    /** Item 170 — ramp do despertador: runnable ativo e duração pedida antes do player ficar pronto. */
+    private var volumeRampRunnable: Runnable? = null
+    private var pendingAlarmRampMs = 0
     private var consecutiveErrors = 0
     private var lastResumeSaveMs = 0L
     private val progressTick = object : Runnable {
@@ -949,6 +953,9 @@ class PlaybackService : MediaLibraryService() {
 
     fun start(songs: List<Song>, startIndex: Int) {
         if (songs.isEmpty()) return
+        // Uma fila nova não herda um ramp de alarme pendente (o alarme chama `rampVolumeUp`
+        // logo depois, e aí sim ele vale).
+        pendingAlarmRampMs = 0
         queue = songs.toList()
         index = startIndex.coerceIn(0, queue.size - 1)
         prepareCurrent()
@@ -957,6 +964,42 @@ class PlaybackService : MediaLibraryService() {
         // cada 5s de reprodução. No restore isso é suprimido (ver suppressQueueSave) para
         // não sobrescrever a posição salva com 0 logo antes de aplicá-la.
         saveQueueState()
+    }
+
+    /**
+     * Item 170 — despertador progressivo. Sobe o volume do player aos poucos (ex.: 45s) para
+     * o alarme não estourar de uma vez. Chamado logo depois de [start]; se o player ainda não
+     * está pronto, a duração fica pendente e o ramp começa no `onPlayerReady` — senão o fade
+     * do crossfade sobrescreveria o começo do ramp.
+     */
+    fun rampVolumeUp(ms: Int) {
+        val p = player
+        if (p != null && !awaitingReady) {
+            startVolumeRamp(p, ms)
+        } else {
+            pendingAlarmRampMs = ms
+        }
+    }
+
+    private fun startVolumeRamp(p: ExoPlayer, ms: Int) {
+        fadeInRunnable?.let { fadeHandler.removeCallbacks(it) }
+        fadeInRunnable = null
+        volumeRampRunnable?.let { fadeHandler.removeCallbacks(it) }
+        val total = ms.coerceIn(2000, 5 * 60 * 1000)
+        val steps = (total / 1000).coerceAtLeast(2)
+        val stepMs = (total / steps).toLong()
+        var step = 0
+        runCatching { p.setVolume(0f) }
+        val r = object : Runnable {
+            override fun run() {
+                step++
+                val volume = (step.toFloat() / steps).coerceIn(0f, 1f)
+                runCatching { p.setVolume(volume) }
+                if (step < steps) fadeHandler.postDelayed(this, stepMs) else volumeRampRunnable = null
+            }
+        }
+        volumeRampRunnable = r
+        fadeHandler.post(r)
     }
 
     /**
@@ -1750,9 +1793,18 @@ class PlaybackService : MediaLibraryService() {
             publishState()
             return
         }
-        runCatching { p.setVolume(if (fadeMs > 0) 0f else 1f) }
-        runCatching { p.play() }
-        if (fadeMs > 0) fadeIn(p, fadeMs)
+        val rampMs = pendingAlarmRampMs
+        pendingAlarmRampMs = 0
+        if (rampMs > 0) {
+            // Despertador progressivo: começa do zero e sobe devagar, ignorando o crossfade.
+            runCatching { p.setVolume(0f) }
+            runCatching { p.play() }
+            startVolumeRamp(p, rampMs)
+        } else {
+            runCatching { p.setVolume(if (fadeMs > 0) 0f else 1f) }
+            runCatching { p.play() }
+            if (fadeMs > 0) fadeIn(p, fadeMs)
+        }
         requestAudioFocus()
         publishState()
         scheduleTick()

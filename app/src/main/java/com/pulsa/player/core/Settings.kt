@@ -26,6 +26,7 @@ object Settings {
     private const val KEY_ALARM_HOUR = "alarm_hour"
     private const val KEY_ALARM_MINUTE = "alarm_minute"
     private const val KEY_ALARM_AMBIENT = "alarm_ambient"
+    private const val KEY_ALARM_GENTLE = "alarm_gentle"
 
     const val SERVER_LAN = ""
     const val SERVER_ONLINE = "auto"
@@ -457,6 +458,13 @@ object Settings {
             .putInt(KEY_ALARM_MINUTE, 0)
             .putString(KEY_ALARM_AMBIENT, "")
             .apply()
+    }
+
+    /** Item 170 — despertador progressivo (volume sobe devagar). Ligado por padrão. */
+    fun alarmGentle(context: Context): Boolean = prefs(context).getBoolean(KEY_ALARM_GENTLE, true)
+
+    fun setAlarmGentle(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean(KEY_ALARM_GENTLE, value).apply()
     }
 
     fun crossfadeMs(value: String): Int = when (value) {
