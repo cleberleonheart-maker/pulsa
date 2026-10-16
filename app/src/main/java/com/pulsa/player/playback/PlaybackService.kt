@@ -2500,7 +2500,7 @@ class PlaybackService : MediaLibraryService() {
         ThreadPool.postNetwork {
             val result = Lyrics.resolve(song, applicationContext)
             ThreadPool.onUi {
-                if (QueueKey.sameType(QueueKey.encode(currentSong), key)) {
+                if (QueueKey.sameType(QueueKey.encode(currentSong ?: return@onUi), key)) {
                     lyricLines = result?.lines.orEmpty()
                 }
             }
