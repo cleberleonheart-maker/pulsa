@@ -400,6 +400,20 @@
                 android:text="@string/lyrics_button"
                 app:icon="@drawable/ic_queue_music"
                 app:iconTint="?attr/colorPrimary" />
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/np_karaoke"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/karaoke_button"
+                app:icon="@drawable/ic_mic"
+                app:iconTint="?attr/colorPrimary" />
         </LinearLayout>
 
         <LinearLayout

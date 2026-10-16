@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.46):
+    <string name="changelog">Novidades desta versão (5.10.47):
  → NOVIDADES
- • Karaoke sincronizado: a letra agora acende palavra a palavra ao ritmo da música, em vez de destacar só a linha inteira.
+ • Karaoke de viagem: letra em ecrã inteiro no modo paisagem, com o avatar a dançar — perfeito para o painel do carro ou para a TV.
  → COMO USAR
- • Abre a letra no ecrã de reprodução e acompanha a música: cada palavra é iluminada no momento certo.</string>
+ • No leitor, toca em "Karaoke". O telemóvel roda para paisagem e a letra aparece grande, com as palavras a acender ao ritmo.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -107,6 +107,9 @@
     <string name="drive_exit">Sair do modo condução</string>
     <string name="drive_now_playing">Capa da faixa atual</string>
     <string name="drive_prev">Faixa anterior</string>
+    <string name="karaoke_button">Karaoke</string>
+    <string name="karaoke_exit">Sair do karaoke</string>
+    <string name="karaoke_no_lyrics">Sem letra sincronizada para esta música</string>
     <string name="dj_no_permission">Permita o acesso à música para o DJ misturar a sua biblioteca.</string>
     <string name="dj_mic_denied">Permita o acesso ao microfone para dar ordens à Virgin.</string>
     <string name="hands_free_no_mic">Sem o acesso ao microfone não dá para ficar de mãos livres.</string>

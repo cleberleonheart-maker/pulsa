@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.46):
+    <string name="changelog">What is new (5.10.47):
  → NEW
- • Synced karaoke: lyrics now light up word by word with the music, instead of only highlighting the whole line.
+ • Travel karaoke: full-screen lyrics in landscape mode with the dancing avatar — perfect for the car dash or casting to a TV.
  → HOW TO USE
- • Open the lyrics on the now playing screen and sing along: each word lights up right on time.</string>
+ • In the player, tap "Karaoke". The phone turns landscape and the lyrics appear large, with words lighting up to the beat.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -544,6 +544,9 @@
     <string name="drive_exit">Exit driving mode</string>
     <string name="drive_now_playing">Current track cover</string>
     <string name="drive_prev">Previous track</string>
+    <string name="karaoke_button">Karaoke</string>
+    <string name="karaoke_exit">Exit karaoke</string>
+    <string name="karaoke_no_lyrics">No synced lyrics for this song</string>
     <string name="dj_deck_now">Now playing</string>
     <string name="dj_deck_next">Up next</string>
     <string name="dj_crossfade_hint">Drag the crossfader to switch track</string>

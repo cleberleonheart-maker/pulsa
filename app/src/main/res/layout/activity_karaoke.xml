@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_aurora">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp">
+
+        <!-- Coluna esquerda: avatar dançando + música + controles -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/karaoke_btn_close"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="start"
+                android:contentDescription="@string/karaoke_exit"
+                app:icon="@drawable/ic_arrow_back"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconTint="@color/text_secondary" />
+
+            <com.pulsa.player.ui.DancingVirginView
+                android:id="@+id/karaoke_avatar"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="4dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/karaoke_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="—"
+                android:textColor="@color/text_primary"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/karaoke_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="—"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/karaoke_btn_prev"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:contentDescription="@string/drive_prev"
+                    app:icon="@drawable/ic_skip_prev"
+                    app:iconGravity="textTop"
+                    app:iconPadding="0dp"
+                    app:iconTint="@color/text_primary" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/karaoke_btn_play"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="76dp"
+                    android:layout_height="76dp"
+                    android:layout_marginStart="18dp"
+                    android:layout_marginEnd="18dp"
+                    android:background="@drawable/bg_btn_glow"
+                    android:contentDescription="@string/play"
+                    app:icon="@drawable/ic_play"
+                    app:iconGravity="textTop"
+                    app:iconPadding="0dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/karaoke_btn_next"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:contentDescription="@string/dj_next"
+                    app:icon="@drawable/ic_skip_next"
+                    app:iconGravity="textTop"
+                    app:iconPadding="0dp"
+                    app:iconTint="@color/text_primary" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Coluna direita: letra gigante com karaokê palavra-a-palavra -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/karaoke_lyrics"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="16dp"
+            android:layout_weight="3"
+            android:clipToPadding="false"
+            android:paddingVertical="80dp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/karaoke_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:padding="32dp"
+        android:text="@string/karaoke_no_lyrics"
+        android:textColor="@color/text_secondary"
+        android:textSize="20sp"
+        android:visibility="gone" />
+</FrameLayout>

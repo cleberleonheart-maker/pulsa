@@ -121,6 +121,9 @@ class NowPlayingFragment : Fragment() {
         }
         view.findViewById<View>(R.id.np_eq).setOnClickListener { showEqDialog() }
         view.findViewById<View>(R.id.np_lyrics).setOnClickListener { manualLyricsSearch() }
+        view.findViewById<View>(R.id.np_karaoke).setOnClickListener {
+            startActivity(android.content.Intent(requireContext(), com.pulsa.player.KaraokeActivity::class.java))
+        }
         lyricsPanel = view.findViewById(R.id.np_lyrics_panel)
         lyricsList = view.findViewById(R.id.np_lyrics_list)
         lyricsList?.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())

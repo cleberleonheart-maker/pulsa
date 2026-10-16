@@ -22,7 +22,7 @@ import com.pulsa.player.sync.Lyrics
  * porque o destaque é atualizado a cada tick de progresso (500 ms) e um
  * `notifyDataSetChanged` a cada tick mataria a rolagem suave.
  */
-class LyricsAdapter : RecyclerView.Adapter<LyricsAdapter.VH>() {
+class LyricsAdapter(private val textScale: Float = 1f) : RecyclerView.Adapter<LyricsAdapter.VH>() {
 
     private val lines = mutableListOf<Lyrics.Line>()
     private var current = -1
@@ -62,17 +62,22 @@ class LyricsAdapter : RecyclerView.Adapter<LyricsAdapter.VH>() {
     override fun getItemCount(): Int = lines.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.bind(lines[position].text, position == current, if (position == current) cursor else 0f)
+        holder.bind(
+            lines[position].text,
+            position == current,
+            if (position == current) cursor else 0f,
+            textScale
+        )
     }
 
     class VH(private val tv: TextView) : RecyclerView.ViewHolder(tv) {
-        fun bind(text: String, isCurrent: Boolean, fraction: Float) {
+        fun bind(text: String, isCurrent: Boolean, fraction: Float, scale: Float) {
             val ctx = tv.context
             val shown = text.ifBlank { "\u266A" }
             val secondary = ContextCompat.getColor(ctx, R.color.text_secondary)
             val primary = ContextCompat.getColor(ctx, R.color.primary)
 
-            if (isCurrent && fraction > 0f) {
+            if (isCurrent) {
                 val end = Karaoke.highlightEnd(shown, fraction).coerceIn(0, shown.length)
                 val sp = SpannableString(shown)
                 if (end > 0) {
@@ -91,7 +96,7 @@ class LyricsAdapter : RecyclerView.Adapter<LyricsAdapter.VH>() {
             }
             tv.alpha = if (isCurrent) 1f else 0.6f
             tv.setTypeface(null, if (isCurrent) Typeface.BOLD else Typeface.NORMAL)
-            tv.textSize = if (isCurrent) 18f else 16f
+            tv.textSize = (if (isCurrent) 18f else 16f) * scale
         }
     }
 }

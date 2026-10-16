@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.46):
+    <string name="changelog">Novedades de esta versión (5.10.47):
  → NUEVO
- • Karaoke sincronizado: la letra ahora se ilumina palabra por palabra con la música, en vez de solo resaltar la línea completa.
+ • Karaoke de viaje: letra a pantalla completa en modo horizontal con el avatar bailando — ideal para el tablero del coche o para la tele.
  → CÓMO USAR
- • Abre la letra en la pantalla de reproducción y canta: cada palabra se enciende en el momento justo.</string>
+ • En el reproductor, toca "Karaoke". El teléfono gira a horizontal y la letra aparece grande, con las palabras encendiéndose al ritmo.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -544,6 +544,9 @@
     <string name="drive_exit">Salir del modo conducción</string>
     <string name="drive_now_playing">Carátula de la pista actual</string>
     <string name="drive_prev">Pista anterior</string>
+    <string name="karaoke_button">Karaoke</string>
+    <string name="karaoke_exit">Salir del karaoke</string>
+    <string name="karaoke_no_lyrics">Sin letra sincronizada para esta canción</string>
     <string name="dj_deck_now">Reproduciendo</string>
     <string name="dj_deck_next">A continuación</string>
     <string name="dj_crossfade_hint">Arrastra el crossfader para cambiar de pista</string>
