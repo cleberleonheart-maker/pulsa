@@ -27,6 +27,11 @@
          de celular — o TV ganha o launcher extra sem afastar quem não tem TV. -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <!-- F4: Android Automotive OS (head unit com Android embutido). `required="false"` de
+         propósito: o mesmo APK instala no celular e nos carros. O Google recomenda um APK
+         separado porque o requisito `true` filtraria os celulares — aqui o app é primeiro de
+         celular, então declara a capacidade sem se fechar. -->
+    <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
 
     <application
         android:name=".PulsaApp"
@@ -39,6 +44,12 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Pulsa">
+
+        <!-- F4: Android Auto — declara o app como player de mídia. O carro descobre o
+             `PlaybackService` (`MediaLibraryService`) a partir daqui. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
 
         <activity
             android:name=".LoginActivity"

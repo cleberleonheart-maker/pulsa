@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.48):
+    <string name="changelog">Novidades desta versão (5.10.49):
  → NOVIDADES
- • Notificação melhorada: a barra de progresso agora acompanha a música (no Android 13+ dá para arrastar na própria notificação) e, quando a faixa tem letra, a linha que está a tocar aparece na notificação.
+ • Automóvel: o Pulsa agora aparece no Android Auto (e em carros com Android integrado) — mesma fila e mesma sessão do telemóvel.
  → COMO USAR
- • Toca na notificação para abrir a app ou arrasta a barra para saltar. A letra vai rolando enquanto a música toca.</string>
+ • Liga o telemóvel à central e toca no ícone de multimédia; o Pulsa aparece junto dos outros leitores.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  F4 — descriptor do Android Auto (projeção do celular na central do carro).
+
+  Sem este arquivo (e o meta-data `com.google.android.gms.car.application` no manifest) o
+  Android Auto ignora o app, mesmo com o `MediaLibraryService` publicado: o carro só lista
+  quem se declara como app de mídia. O `PlaybackService` já entrega a árvore (`PulsaLibraryTree`)
+  e a mesma fila/sessão do celular, então aqui é só a declaração — não há serviço novo.
+-->
+<automotiveApp>
+    <uses name="media" />
+</automotiveApp>

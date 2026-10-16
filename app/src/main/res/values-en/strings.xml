@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.48):
+    <string name="changelog">What is new (5.10.49):
  → NEW
- • Upgraded notification: the progress bar now follows the music (on Android 13+ you can drag it right in the notification) and, when the track has lyrics, the line being sung shows up in the notification.
+ • Car: Pulsa now shows up on Android Auto (and cars with built-in Android) — same queue and same session as your phone.
  → HOW TO USE
- • Tap the notification to open the app or drag the bar to skip. Lyrics scroll along as the song plays.</string>
+ • Connect your phone to the head unit and tap the media icon; Pulsa appears alongside the other players.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

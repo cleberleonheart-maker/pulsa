@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.48):
+    <string name="changelog">Novedades de esta versión (5.10.49):
  → NUEVO
- • Notificación mejorada: la barra de progreso ahora sigue la música (en Android 13+ puedes arrastrarla en la propia notificación) y, si la pista tiene letra, la línea que suena aparece en la notificación.
+ • Coche: Pulsa ahora aparece en Android Auto (y en coches con Android integrado) — la misma cola y la misma sesión del móvil.
  → CÓMO USAR
- • Toca la notificación para abrir la app o arrastra la barra para saltar. La letra va avanzando mientras suena la canción.</string>
+ • Conecta el móvil al equipo y toca el icono de multimedia; Pulsa aparece junto a los otros reproductores.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
