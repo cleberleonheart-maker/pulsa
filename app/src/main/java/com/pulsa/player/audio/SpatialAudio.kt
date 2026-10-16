@@ -104,7 +104,10 @@ class SpatialRenderersFactory(context: Context) : DefaultRenderersFactory(contex
         .setAudioProcessors(
             arrayOf(
                 SilenceSkipper.audioProcessor(),
-                SpatialAudio.audioProcessor()
+                SpatialAudio.audioProcessor(),
+                // Item 130 (fase 2) — só espia a energia para o crossfade por batida; passa o
+                // áudio intacto. Fica por último porque não altera o sinal, só observa.
+                BpmTap.audioProcessor()
             )
         )
         .build()

@@ -58,6 +58,7 @@ import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.model.toSong
 import com.pulsa.player.audio.AudioFx
+import com.pulsa.player.audio.BpmTap
 import com.pulsa.player.audio.SilenceSkipper
 import com.pulsa.player.audio.SpatialAudio
 import com.pulsa.player.audio.SpatialRenderersFactory
@@ -168,6 +169,19 @@ class PlaybackService : MediaLibraryService() {
     private var crossfadeRunnable: Runnable? = null
     private val playerListeners = java.util.IdentityHashMap<Player, Player.Listener>()
     private val CROSSFADE_STEP_MS = 50
+
+    // Item 130 (fase 2) — alinhamento por batida. Quando o fim da faixa se aproxima, em vez de
+    // começar o fade no tick atual, espera a **próxima batida** (medida pelo [BpmTap]) para a
+    // faixa nova entrar no compasso. `crossfadeScheduled` evita reagendar a cada tick; o
+    // runnable fica guardado para o `cancelCrossfade` poder desmarcá-lo.
+    private var crossfadeScheduled = false
+    private var crossfadeStartRunnable: Runnable? = null
+
+    /** Abaixo disto não vale a pena esperar por uma batida: o fade começaria tarde demais. */
+    private val CROSSFADE_MIN_BEAT_DELAY_MS = 80L
+
+    /** Folga mínima de fade ao alinhar: não adianta começar a batida faltando som pra sobrepor. */
+    private val CROSSFADE_MIN_FADE_MS = 250L
     private lateinit var session: MediaLibraryService.MediaLibrarySession
     private lateinit var notificationManager: NotificationManager
     private var notificationChangedCallback: MediaNotification.Provider.Callback? = null
@@ -909,6 +923,8 @@ class PlaybackService : MediaLibraryService() {
         // O visualizador também é lido por voz ("virgi, desliga o visualizador"), e o `attach`
         // sozinho só valeria na música seguinte.
         MusicVisualizer.sync(applicationContext, player?.audioSessionId ?: 0)
+        // Item 130 (fase 2) — religa/desliga o detector de batida conforme o crossfade mudou.
+        BpmTap.enabled = crossfadeMs() > 0
         updateEightD()
     }
 
@@ -1572,6 +1588,9 @@ class PlaybackService : MediaLibraryService() {
 
     /** Religou os efeitos na sessão de áudio do ExoPlayer (estável por instância). */
     private fun attachEffects() {
+        // Item 130 (fase 2) — o "ouvido" do crossfade por batida só precisa estar de pé quando
+        // há crossfade ligado; sem ele, nem acumula envelope (economiza CPU no caso comum).
+        BpmTap.enabled = crossfadeMs() > 0
         val p = player ?: return
         val sessionId = p.audioSessionId
         if (sessionId <= 0) return
@@ -2118,6 +2137,11 @@ class PlaybackService : MediaLibraryService() {
 
     /** Aborta um crossfade em andamento (troca manual, pausa, fim de fila). Idempotente. */
     private fun cancelCrossfade() {
+        // Fase 2 — desmarca também a batida agendada: sem isto, um crossfade cancelado (troca
+        // manual no meio da espera) ainda dispararia na batida seguinte.
+        crossfadeStartRunnable?.let { fadeHandler.removeCallbacks(it) }
+        crossfadeStartRunnable = null
+        crossfadeScheduled = false
         crossfadeRunnable?.let { fadeHandler.removeCallbacks(it) }
         crossfadeRunnable = null
         if (crossfadeRunning) {
@@ -2137,6 +2161,8 @@ class PlaybackService : MediaLibraryService() {
     private fun beginCrossfade(rampMs: Long) {
         val out = player ?: return
         if (crossfadeRunning) return
+        crossfadeStartRunnable = null
+        crossfadeScheduled = false
         val to = nextIndexForCrossfade()
         if (to < 0) return
         val next = playerNext ?: buildPlayer().also { playerNext = it }
@@ -2219,6 +2245,11 @@ class PlaybackService : MediaLibraryService() {
         // outra instância). Sem esta guarda, a faixa que chega ao fim no meio da sobreposição
         // dispararia um segundo avanço e a fila puliria duas posições.
         if (crossfadeRunning) return
+        // Fase 2 — se havia uma batida agendada e a faixa acabou antes dela (palpite de tempo
+        // errado), desmarca para não disparar um crossfade fantasma sobre a faixa seguinte.
+        crossfadeStartRunnable?.let { fadeHandler.removeCallbacks(it) }
+        crossfadeStartRunnable = null
+        crossfadeScheduled = false
         scrobbleCurrentIfNeeded()
         clearResumeState()
         SleepTimer.onTrackCompleted()
@@ -2387,10 +2418,33 @@ class PlaybackService : MediaLibraryService() {
         }
         // Item 130 — perto do fim (~tick de 500 ms), dispara a sobreposição com a próxima
         // faixa. O ramp dura exatamente o que resta, então o fade termina junto com a faixa.
-        if (dur > 0L && pos > 0L && crossfadeEligible()) {
+        if (dur > 0L && pos > 0L && !crossfadeScheduled && crossfadeEligible()) {
             val rest = dur - pos
             val ms = crossfadeMs().toLong()
             if (rest in 1..ms) {
+                // Fase 2 — se dá pra saber a batida, começa o fade NA batida seguinte em vez de
+                // agora: a faixa nova entra no compasso. Sem BPM (ou batida longe demais para
+                // caber), cai no imediato da fase 1.
+                val beatDelay = BpmTap.msToNextBeat()
+                val alignable = beatDelay != null &&
+                    beatDelay >= CROSSFADE_MIN_BEAT_DELAY_MS &&
+                    rest - beatDelay.toLong() >= CROSSFADE_MIN_FADE_MS
+                if (alignable) {
+                    crossfadeScheduled = true
+                    val start = object : Runnable {
+                        override fun run() {
+                            crossfadeScheduled = false
+                            crossfadeStartRunnable = null
+                            if (!crossfadeEligible()) return
+                            val pl = player ?: return
+                            val left = pl.duration - pl.currentPosition
+                            beginCrossfade(if (left > 0L) left else 0L)
+                        }
+                    }
+                    crossfadeStartRunnable = start
+                    fadeHandler.postDelayed(start, beatDelay!!.toLong())
+                    return
+                }
                 beginCrossfade(rest)
                 return
             }

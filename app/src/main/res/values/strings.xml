@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.51):
+    <string name="changelog">Novidades desta versão (5.10.52):
  → MELHORIAS
- • Crossfade de verdade: as faixas agora se sobrepõem — a que acaba baixa o volume enquanto a próxima sobe, sem silêncio no meio. Vale só para música.
+ • Crossfade na batida: o app mede o BPM da música (por DSP) e começa a transição numa batida, então a faixa nova entra no compasso. Sem batida detectada, usa o crossfade normal.
  → COMO USAR
- • Em Configurações → Crossfade, escolha Curto, Médio ou Longo. Desligado mantém o comportamento de antes.</string>
+ • É automático quando o Crossfade está ligado (Curto/Médio/Longo). Vale só para música.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>

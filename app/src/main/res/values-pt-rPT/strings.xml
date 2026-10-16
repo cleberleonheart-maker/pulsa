@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.51):
+    <string name="changelog">Novidades desta versão (5.10.52):
  → MELHORIAS
- • Crossfade a sério: as faixas agora sobrepõem-se — a que termina baixa o volume enquanto a seguinte sobe, sem silêncio no meio. Vale só para música.
+ • Crossfade no tempo: a app mede o BPM da música (por DSP) e começa a transição num tempo, por isso a faixa seguinte entra no compasso. Sem tempo detectado, usa o crossfade normal.
  → COMO USAR
- • Em Definições → Crossfade, escolhe Curto, Médio ou Longo. Desligado mantém o comportamento anterior.</string>
+ • É automático quando o Crossfade está ligado (Curto/Médio/Longo). Só para música.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
