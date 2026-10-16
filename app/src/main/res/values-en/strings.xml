@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.45):
+    <string name="changelog">What is new (5.10.46):
  → NEW
- • Family/kids mode: caps the volume, blocks radio and streams, and hides tracks with inappropriate content. Turning it on or off asks for a password.
+ • Synced karaoke: lyrics now light up word by word with the music, instead of only highlighting the whole line.
  → HOW TO USE
- • In Settings, turn on "Family/kids mode" and create a password. To turn it off, just type the password again.</string>
+ • Open the lyrics on the now playing screen and sing along: each word lights up right on time.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

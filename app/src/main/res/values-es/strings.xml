@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.45):
+    <string name="changelog">Novedades de esta versión (5.10.46):
  → NUEVO
- • Modo familia/infantil: limita el volumen, quita radio y stream, y oculta pistas con contenido inapropiado. Activarlo o desactivarlo pide una contraseña.
+ • Karaoke sincronizado: la letra ahora se ilumina palabra por palabra con la música, en vez de solo resaltar la línea completa.
  → CÓMO USAR
- • En Ajustes, activa "Modo familia/infantil" y crea una contraseña. Para desactivarlo, solo escribe la contraseña de nuevo.</string>
+ • Abre la letra en la pantalla de reproducción y canta: cada palabra se enciende en el momento justo.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

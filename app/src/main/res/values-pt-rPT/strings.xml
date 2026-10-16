@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.45):
+    <string name="changelog">Novidades desta versão (5.10.46):
  → NOVIDADES
- • Modo família/crianças: trava o volume num teto, tira rádio e stream do ar e esconde faixas com conteúdo impróprio. Ligar e desligar pede palavra-passe.
+ • Karaoke sincronizado: a letra agora acende palavra a palavra ao ritmo da música, em vez de destacar só a linha inteira.
  → COMO USAR
- • Em Configurações, liga o "Modo família/crianças" e cria uma palavra-passe. Para desligar, basta introduzir a palavra-passe de novo.</string>
+ • Abre a letra no ecrã de reprodução e acompanha a música: cada palavra é iluminada no momento certo.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

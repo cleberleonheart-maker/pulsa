@@ -325,7 +325,7 @@ class NowPlayingFragment : Fragment() {
         seekBar?.progress = ((positionMs.coerceIn(0, dur)) * 1000 / dur).toInt()
         currentView?.text = Helper.formatDuration(positionMs)
         durationView?.text = Helper.formatDuration(dur)
-        updateLyricsKaraoke(positionMs)
+        updateLyricsKaraoke(positionMs, dur)
     }
 
     /** Carrega as letras da música atual (uma vez por troca) e mostra o painel. */
@@ -367,12 +367,20 @@ class NowPlayingFragment : Fragment() {
     }
 
     /** Destaque karaokê: a lista rola para manter a linha atual em evidência. */
-    private fun updateLyricsKaraoke(positionMs: Long) {
+    private fun updateLyricsKaraoke(positionMs: Long, durationMs: Long = 0L) {
         val lines = lyricsLines
         val adapter = lyricsAdapter ?: return
         if (lines.isEmpty()) return
         val idx = Lyrics.lineAt(lines, positionMs)
         adapter.setCurrent(idx)
+        if (idx in lines.indices) {
+            // Karaokê palavra-a-palavra (item 126): a fração cantada da linha vai do início
+            // até o início da próxima (o fim da última é o fim da faixa).
+            val start = lines[idx].timeMs
+            val end = lines.getOrNull(idx + 1)?.timeMs
+                ?: durationMs.takeIf { it > start } ?: (start + 4_000L)
+            adapter.setCursor(com.pulsa.player.sync.Karaoke.fractionFor(positionMs, start, end))
+        }
         if (idx in lines.indices && idx != lastLyricsIndex) {
             lastLyricsIndex = idx
             lyricsList?.smoothScrollToPosition(idx)

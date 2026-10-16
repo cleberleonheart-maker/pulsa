@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.45):
+    <string name="changelog">Novidades desta versão (5.10.46):
  → NOVIDADES
- • Modo família/kids: trava o volume num teto, tira rádio e stream do ar e esconde faixas com conteúdo impróprio. Ligar e desligar pede uma senha.
+ • Karaokê sincronizado: a letra agora acende palavra por palavra no ritmo da música, em vez de só destacar a linha inteira.
  → COMO USAR
- • Em Configurações, ligue "Modo família/kids" e crie uma senha. Para desligar, é só digitar a senha de novo.</string>
+ • Abra a letra na tela de reprodução e acompanhe a música: cada palavra é iluminada na hora certa.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
