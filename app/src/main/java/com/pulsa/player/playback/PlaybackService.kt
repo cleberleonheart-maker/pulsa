@@ -63,6 +63,7 @@ import com.pulsa.player.dj.DjFacts
 import com.pulsa.player.dj.DjSuggest
 import com.pulsa.player.dj.DjVoice
 import com.pulsa.player.sync.LastFm
+import com.pulsa.player.sync.Lyrics
 import com.pulsa.player.widget.PulsaWidget
 import com.pulsa.player.audio.MusicVisualizer
 import com.pulsa.player.audio.SleepTimer
@@ -158,6 +159,12 @@ class PlaybackService : MediaLibraryService() {
     private var notificationChangedCallback: MediaNotification.Provider.Callback? = null
     private var largeIcon: android.graphics.Bitmap? = null
     private var audioManager: AudioManager? = null
+
+    /** Item 128 — letra da faixa atual na notificação. */
+    private var lyricLines: List<Lyrics.Line> = emptyList()
+    private var lyricKey: String? = null
+    private var lastNotifLyric: String? = null
+    private var lastNotifPct = -1
 
     @Volatile
     private var ducked = false
@@ -1459,6 +1466,7 @@ class PlaybackService : MediaLibraryService() {
 
             Playback.notifySong(song, index)
             loadLargeIcon(song)
+            loadLyrics(song)
             announceInBackground(song)
         } catch (e: Exception) {
             onTrackError()
@@ -1675,6 +1683,7 @@ class PlaybackService : MediaLibraryService() {
 
 
         loadLargeIcon(song)
+        loadLyrics(song)
         announceInBackground(song)
         Playback.notifySong(song, at)
         saveQueueState()
@@ -2131,6 +2140,8 @@ class PlaybackService : MediaLibraryService() {
         val dur = p.duration.let { if (it > 0L) it else 0L }
         positionMs = pos
         Playback.notifyProgress(pos, dur)
+        // Item 128 — mantém a letra e a barra da notificação andando com a música.
+        refreshNotificationProgress(dur)
         if (abActive && isPlaying && dur > 0L && abB <= dur && pos >= abB) {
             seekTo(abA)
             return
@@ -2323,10 +2334,17 @@ class PlaybackService : MediaLibraryService() {
         )
         val playIcon = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
 
+        // Item 128 — se há letra sincronizada, o texto da notificação é a linha atual;
+        // senão volta a ser artista • álbum. A barra de progresso (arrastável pelo sistema
+        // no Android 13+; aqui é a linha determinada que o MediaStyle já sabe desenhar)
+        // acompanha a posição.
+        val lyric = currentLyricLine(positionMs)
+        val dur = player?.duration?.takeIf { it > 0L } ?: 0L
+
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_music_note)
             .setContentTitle(song.title)
-            .setContentText(song.artist + " • " + song.album)
+            .setContentText(lyric ?: (song.artist + " • " + song.album))
             .setContentIntent(contentIntent)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -2342,8 +2360,22 @@ class PlaybackService : MediaLibraryService() {
             .addAction(playIcon, getString(R.string.play), playPauseIntent)
             .addAction(R.drawable.ic_skip_next, getString(R.string.next_action), nextIntent)
 
+        if (dur > 0L && !song.isRadio && !song.isStream) {
+            val pct = (positionMs.coerceIn(0L, dur) * 1000 / dur).toInt()
+            builder.setProgress(1000, pct, false)
+        }
+
         largeIcon?.let { builder.setLargeIcon(it) }
         return builder.build()
+    }
+
+    /** A linha de letra que corresponde à posição, ou `null` quando não há letra/não é música. */
+    private fun currentLyricLine(posMs: Long): String? {
+        val lines = lyricLines
+        if (lines.isEmpty()) return null
+        val idx = Lyrics.lineAt(lines, posMs)
+        val text = lines.getOrNull(idx)?.text?.trim().orEmpty()
+        return text.ifEmpty { null }
     }
 
     /**
@@ -2444,6 +2476,56 @@ class PlaybackService : MediaLibraryService() {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Item 128 — carrega a letra sincronizada da faixa para mostrar a linha atual na
+     * notificação. Só para música da biblioteca: em vídeo/stream/rádio/podcast a "letra"
+     * não faz sentido na bandeja. O próprio [Lyrics] cacheia o resultado (arquivo local,
+     * depois LRCLIB), então tocar de novo não bate na rede.
+     */
+    private fun loadLyrics(song: Song) {
+        lastNotifLyric = null
+        lastNotifPct = -1
+        if (song.isVideo || song.isStream || song.isRadio || song.isPodcast) {
+            lyricLines = emptyList()
+            lyricKey = null
+            return
+        }
+        val key = QueueKey.encode(song) ?: return
+        if (key == lyricKey) return
+        lyricKey = key
+        lyricLines = emptyList()
+        ThreadPool.postNetwork {
+            val result = Lyrics.resolve(song, applicationContext)
+            ThreadPool.onUi {
+                if (QueueKey.sameType(QueueKey.encode(currentSong), key)) {
+                    lyricLines = result?.lines.orEmpty()
+                }
+            }
+        }
+    }
+
+    /**
+     * Item 128 — a cada tick, se a linha de letra que está tocando ou o avanço da barra
+     * mudaram, reenvia a notificação. Sem isto a letra só trocaria quando o resto do estado
+     * mudasse (pausa, troca de faixa), o que a deixaria desatualizada durante a música.
+     */
+    private fun refreshNotificationProgress(dur: Long) {
+        val song = currentSong ?: return
+        val cb = notificationChangedCallback ?: return
+        val lyric = currentLyricLine(positionMs)
+        val pct = if (dur > 0L && !song.isRadio && !song.isStream) {
+            (positionMs.coerceIn(0L, dur) * 100 / dur).toInt()
+        } else {
+            -1
+        }
+        if (lyric == lastNotifLyric && pct == lastNotifPct) return
+        lastNotifLyric = lyric
+        lastNotifPct = pct
+        runCatching {
+            cb.onNotificationChanged(MediaNotification(NOTIFICATION_ID, buildNotification(song)))
         }
     }
 }

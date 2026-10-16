@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.47):
+    <string name="changelog">What is new (5.10.48):
  → NEW
- • Travel karaoke: full-screen lyrics in landscape mode with the dancing avatar — perfect for the car dash or casting to a TV.
+ • Upgraded notification: the progress bar now follows the music (on Android 13+ you can drag it right in the notification) and, when the track has lyrics, the line being sung shows up in the notification.
  → HOW TO USE
- • In the player, tap "Karaoke". The phone turns landscape and the lyrics appear large, with words lighting up to the beat.</string>
+ • Tap the notification to open the app or drag the bar to skip. Lyrics scroll along as the song plays.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

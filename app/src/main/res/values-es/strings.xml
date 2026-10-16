@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.47):
+    <string name="changelog">Novedades de esta versión (5.10.48):
  → NUEVO
- • Karaoke de viaje: letra a pantalla completa en modo horizontal con el avatar bailando — ideal para el tablero del coche o para la tele.
+ • Notificación mejorada: la barra de progreso ahora sigue la música (en Android 13+ puedes arrastrarla en la propia notificación) y, si la pista tiene letra, la línea que suena aparece en la notificación.
  → CÓMO USAR
- • En el reproductor, toca "Karaoke". El teléfono gira a horizontal y la letra aparece grande, con las palabras encendiéndose al ritmo.</string>
+ • Toca la notificación para abrir la app o arrastra la barra para saltar. La letra va avanzando mientras suena la canción.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

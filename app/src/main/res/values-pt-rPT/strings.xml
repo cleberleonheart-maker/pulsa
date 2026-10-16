@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.47):
+    <string name="changelog">Novidades desta versão (5.10.48):
  → NOVIDADES
- • Karaoke de viagem: letra em ecrã inteiro no modo paisagem, com o avatar a dançar — perfeito para o painel do carro ou para a TV.
+ • Notificação melhorada: a barra de progresso agora acompanha a música (no Android 13+ dá para arrastar na própria notificação) e, quando a faixa tem letra, a linha que está a tocar aparece na notificação.
  → COMO USAR
- • No leitor, toca em "Karaoke". O telemóvel roda para paisagem e a letra aparece grande, com as palavras a acender ao ritmo.</string>
+ • Toca na notificação para abrir a app ou arrasta a barra para saltar. A letra vai rolando enquanto a música toca.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
