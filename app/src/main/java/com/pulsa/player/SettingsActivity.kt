@@ -36,6 +36,7 @@ import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.core.Changelog
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.KidsMode
+import com.pulsa.player.sync.Handoff
 import com.pulsa.player.sync.MirrorQr
 import com.pulsa.player.sync.MirrorSync
 import com.pulsa.player.sync.RemoteControl
@@ -155,6 +156,13 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.mirror_row).setOnClickListener { mirrorMenu() }
         refreshMirrorLabel()
         findViewById<View>(R.id.remote_row).setOnClickListener { remoteControlDialog() }
+
+        findViewById<MaterialSwitch>(R.id.handoff_switch).apply {
+            isChecked = Settings.handoffAutoAssume(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Settings.setHandoffAutoAssume(this@SettingsActivity, checked)
+            }
+        }
         refreshRemoteLabel()
         findViewById<View>(R.id.server_row).setOnClickListener { serverDialog() }
         refreshServerLabel()
@@ -623,10 +631,22 @@ class SettingsActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
                 Settings.setMirrorCode(this, code)
-                Settings.setMirrorHost(this, false)
-                MirrorSync.start(this)
-                refreshMirrorLabel()
-                Toast.makeText(this, getString(R.string.mirror_joined, code), Toast.LENGTH_SHORT).show()
+                // Item 289 · modo 1: com o toggle ligado, entrar na sessão é assumir, não
+                // espelhar. Este aparelho vira o dono local (mirrorHost=true, para o
+                // MirrorSync não nos puxar de volta) e o servidor troca o dono (Handoff.assume
+                // pausa o antigo). Com o toggle desligado, o "ouvir juntos" clássico do item
+                // 133 continua igual.
+                if (Settings.handoffAutoAssume(this)) {
+                    Settings.setMirrorHost(this, true)
+                    Handoff.assume(this, code)
+                    refreshMirrorLabel()
+                    Toast.makeText(this, getString(R.string.mirror_joined, code), Toast.LENGTH_SHORT).show()
+                } else {
+                    Settings.setMirrorHost(this, false)
+                    MirrorSync.start(this)
+                    refreshMirrorLabel()
+                    Toast.makeText(this, getString(R.string.mirror_joined, code), Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -687,6 +707,7 @@ class SettingsActivity : AppCompatActivity() {
         val seek = view.findViewById<SeekBar>(R.id.remote_seek)
         val position = view.findViewById<TextView>(R.id.remote_position)
         val vol = view.findViewById<SeekBar>(R.id.remote_vol)
+        val assumeBtn = view.findViewById<Button>(R.id.remote_assume)
 
         val startCode = Settings.remoteCode(this).ifBlank { Settings.mirrorCode(this) }
         codeInput.setText(startCode)
@@ -745,6 +766,25 @@ class SettingsActivity : AppCompatActivity() {
         playBtn.setOnClickListener { RemoteControl.send("toggle") }
         prevBtn.setOnClickListener { RemoteControl.send("prev") }
         nextBtn.setOnClickListener { RemoteControl.send("next") }
+        // Item 289 (handoff): assumir a sessão deste código. Vira o dono e o aparelho
+        // antigo pausa (handoff_release). O feedback vem pelo listener do próprio Handoff.
+        assumeBtn.setOnClickListener {
+            val code = codeInput.text.toString().trim().uppercase()
+            if (code.length < 3) {
+                Toast.makeText(this, R.string.remote_code_hint, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            assumeBtn.isEnabled = false
+            Handoff.assume(this, code, object : Handoff.Listener {
+                override fun onResult(ok: Boolean, message: String) {
+                    assumeBtn.isEnabled = true
+                    Toast.makeText(this@SettingsActivity, message, Toast.LENGTH_SHORT).show()
+                    // Reconecta o controle pra refletir o novo dono (estado volta do servidor).
+                    Settings.setRemoteCode(this@SettingsActivity, code)
+                    RemoteControl.start(this@SettingsActivity, code)
+                }
+            })
+        }
         seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar, value: Int, fromUser: Boolean) {}
             override fun onStartTrackingTouch(sb: SeekBar) { dragging = true }

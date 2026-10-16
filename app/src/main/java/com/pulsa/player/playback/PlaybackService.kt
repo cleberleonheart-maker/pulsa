@@ -9,7 +9,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
+import android.media.AudioDeviceCallback
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -62,6 +64,7 @@ import com.pulsa.player.audio.SpatialRenderersFactory
 import com.pulsa.player.dj.DjFacts
 import com.pulsa.player.dj.DjSuggest
 import com.pulsa.player.dj.DjVoice
+import com.pulsa.player.sync.Handoff
 import com.pulsa.player.sync.LastFm
 import com.pulsa.player.sync.Lyrics
 import com.pulsa.player.widget.PulsaWidget
@@ -255,6 +258,71 @@ class PlaybackService : MediaLibraryService() {
         if (!noisyReceiverRegistered) return
         noisyReceiverRegistered = false
         runCatching { unregisterReceiver(noisyReceiver) }
+    }
+
+    /**
+     * Item 289 (handoff · modo 3): conectar o Bluetooth do carro assume a sessão.
+     *
+     * O E7 acima trata a *desconexão* (fone arrancado = pausa). Isto aqui é o sentido
+     * inverso: quando um áudio Bluetooth entra (o carro, o fone novo), se este aparelho
+     * está num sessão "ouvir juntos" como convidado, ele assume o lugar de quem estava
+     * tocando — é o "começa no fone, aparece no carro".
+     *
+     * A guarda importa: sem sessão ativa ou já sendo o dono, não faz nada. E o
+     * [lastHandoffTrigger] evita disparar em rajada, porque o Android pode reportar o
+     * mesmo dispositivo Bluetooth mais de uma vez na conexão (perfil A2DP + SCO).
+     */
+    private var audioDeviceCallback: AudioDeviceCallback? = null
+    private var audioDeviceCallbackRegistered = false
+
+    @Volatile
+    private var lastHandoffTrigger = 0L
+
+    private fun registerAudioDeviceCallback() {
+        if (audioDeviceCallbackRegistered) return
+        val am = audioManager ?: return
+        val cb = object : AudioDeviceCallback() {
+            override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) {
+                if (!addedDevices.any { isBluetoothOutput(it) }) return
+                maybeHandoffToBluetooth()
+            }
+
+            override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {}
+        }
+        // Registrado na main (onCreate): o callback chega na mesma thread, então dá pra
+        // chamar o Handoff direto — ele mesmo manda o trabalho de rede pro pool.
+        runCatching { am.registerAudioDeviceCallback(cb, mainHandler) }
+        audioDeviceCallback = cb
+        audioDeviceCallbackRegistered = true
+    }
+
+    private fun unregisterAudioDeviceCallback() {
+        if (!audioDeviceCallbackRegistered) return
+        audioDeviceCallbackRegistered = false
+        audioManager?.let { am -> audioDeviceCallback?.let { runCatching { am.unregisterAudioDeviceCallback(it) } } }
+        audioDeviceCallback = null
+    }
+
+    private fun isBluetoothOutput(info: AudioDeviceInfo): Boolean {
+        if (!info.isSink) return false
+        return when (info.type) {
+            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+            AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+            AudioDeviceInfo.TYPE_BLE_HEADSET,
+            AudioDeviceInfo.TYPE_BLE_SPEAKER -> true
+            else -> false
+        }
+    }
+
+    private fun maybeHandoffToBluetooth() {
+        val now = System.currentTimeMillis()
+        if (now - lastHandoffTrigger < 5_000L) return
+        // Só com sessão ativa. O remoteCode é o "controle de sessão"; o mirrorCode é o
+        // "ouvir juntos" — os dois significam que este aparelho está numa sessão alheia.
+        val code = Settings.remoteCode(this).ifBlank { Settings.mirrorCode(this) }
+        if (code.isBlank()) return
+        lastHandoffTrigger = now
+        Handoff.assume(this, code)
     }
 
     /**
@@ -547,6 +615,7 @@ class PlaybackService : MediaLibraryService() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         registerNoisyReceiver()
+        registerAudioDeviceCallback()
         registerNetworkCallback()
         createChannel()
         SpatialAudio.sync(this)
@@ -826,6 +895,7 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onDestroy() {
         unregisterNoisyReceiver()
+        unregisterAudioDeviceCallback()
         unregisterNetworkCallback()
         // Última chance de gravar a fila. numa instalação de versão nova o Android pode
         // matar o processo sem chamar isto, e aí quem salva é o tick de 5s — por isso o

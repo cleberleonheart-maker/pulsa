@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.49):
+    <string name="changelog">What is new (5.10.50):
  → NEW
- • Car: Pulsa now shows up on Android Auto (and cars with built-in Android) — same queue and same session as your phone.
+ • Handoff between devices: start listening on your headphones and continue in the car (or back on your phone) without losing your spot — whoever takes over resumes where the other left off.
  → HOW TO USE
- • Connect your phone to the head unit and tap the media icon; Pulsa appears alongside the other players.</string>
+ • In a session, tap \"Take control\" in the remote, connect to your car\'s Bluetooth, or turn on \"Take over on join\" in Settings.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -915,6 +915,9 @@
     <string name="remote_offline">Session offline — server did not answer</string>
     <string name="remote_waiting">Connecting…</string>
     <string name="remote_nothing">Nothing playing in the session</string>
+    <string name="remote_assume">Take control</string>
+    <string name="handoff_auto_title">Take over on join</string>
+    <string name="handoff_auto_subtitle">On joining, play what the other device was playing instead of mirroring</string>
     <string name="backup_title">Back up</string>
     <string name="backup_subtitle">Saves learning, memories and equalizer to a file</string>
     <string name="restore_title">Restore backup</string>

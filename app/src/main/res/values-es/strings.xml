@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.49):
+    <string name="changelog">Novedades de esta versión (5.10.50):
  → NUEVO
- • Coche: Pulsa ahora aparece en Android Auto (y en coches con Android integrado) — la misma cola y la misma sesión del móvil.
+ • Traspaso entre dispositivos: empieza a escuchar en los auriculares y continúa en el coche (o vuelve al móvil) sin perder el punto de la canción — quien toma el control sigue donde lo dejó el otro.
  → CÓMO USAR
- • Conecta el móvil al equipo y toca el icono de multimedia; Pulsa aparece junto a los otros reproductores.</string>
+ • En una sesión, toca \"Tomar el control\" en el control remoto, conéctate al Bluetooth del coche, o activa \"Asumir al entrar en la sesión\" en Ajustes.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -915,6 +915,9 @@
     <string name="remote_offline">Sesión sin conexión — el servidor no respondió</string>
     <string name="remote_waiting">Conectando…</string>
     <string name="remote_nothing">Nada sonando en la sesión</string>
+    <string name="remote_assume">Tomar el control</string>
+    <string name="handoff_auto_title">Asumir al entrar en la sesión</string>
+    <string name="handoff_auto_subtitle">Al entrar, reproduce lo que el otro dispositivo estaba escuchando en lugar de reflejar</string>
     <string name="backup_title">Hacer copia de seguridad</string>
     <string name="backup_subtitle">Guarda el aprendizaje, recuerdos y el ecualizador en un archivo</string>
     <string name="restore_title">Restaurar copia</string>

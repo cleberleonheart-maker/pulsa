@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.49):
+    <string name="changelog">Novidades desta versão (5.10.50):
  → NOVIDADES
- • Automóvel: o Pulsa agora aparece no Android Auto (e em carros com Android integrado) — mesma fila e mesma sessão do telemóvel.
+ • Handoff entre aparelhos: começa a ouvir nos auscultadores e continua no automóvel (ou volta ao telemóvel) sem perder o ponto da música — quem assume continua de onde o outro parou.
  → COMO USAR
- • Liga o telemóvel à central e toca no ícone de multimédia; o Pulsa aparece junto dos outros leitores.</string>
+ • Numa sessão, toca em \"Assumir o controlo\" no controlo remoto, liga ao Bluetooth do automóvel, ou ativa \"Assumir ao entrar na sessão\" nas Configurações.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -176,6 +176,9 @@
     <string name="radio_welcome_format">Está a ouvir a Rádio %1$s F.M., a tocar %2$d músicas de todos os estilos!</string>
     <string name="dj_voice_ambient_mix">A ligar %1$s com a música.</string>
     <string name="remote_nothing">Nada a tocar na sessão</string>
+    <string name="remote_assume">Assumir o controlo</string>
+    <string name="handoff_auto_title">Assumir ao entrar na sessão</string>
+    <string name="handoff_auto_subtitle">Ao entrar, toca o que o outro aparelho estava a ouvir em vez de espelhar</string>
 
     <string name="update_downloading">A transferir nova versão… %1$d%%</string>
     <string name="update_from_site">Transferir atualização do site</string>

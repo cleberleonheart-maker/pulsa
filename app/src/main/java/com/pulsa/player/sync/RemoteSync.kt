@@ -1,5 +1,6 @@
 package com.pulsa.player.sync
 import com.pulsa.player.core.Blacklist
+import com.pulsa.player.core.Permissions
 import com.pulsa.player.dj.DjLearn
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
@@ -12,6 +13,8 @@ import android.os.Looper
 import android.util.Base64
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.data.Library
+import com.pulsa.player.data.PlaylistBackup
+import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import org.json.JSONArray
@@ -64,6 +67,20 @@ object RemoteSync {
     @Volatile
     private var lastDjPull = 0L
     private var busy = false
+
+    // Item 290 (Nuvem de midia): push/pull do blob de playlists/favoritas/progresso.
+    // Mesma cadencia do DjLearn -- dezenas de KB que nao precisam ir a cada tick de 3 s.
+    @Volatile
+    private var lastCloudPush = 0L
+
+    @Volatile
+    private var lastCloudPull = 0L
+
+    @Volatile
+    private var lastCloudHash = ""
+
+    private const val CLOUD_PUSH_MS = 10 * 60_000L
+    private const val CLOUD_PULL_MS = 5 * 60_000L
 
     private val handler = Handler(Looper.getMainLooper())
     private val tick = object : Runnable {
@@ -125,7 +142,8 @@ object RemoteSync {
         return synchronized(heavyLock) {
             val songs = maybePushSongs(context)
             val dj = maybeSyncDjLearn(context)
-            songs && dj
+            val cloud = maybeSyncCloud(context)
+            songs && dj && cloud
         }
     }
 
@@ -247,6 +265,122 @@ object RemoteSync {
         return false
     }
 
+    /**
+     * Item 290 (Nuvem de midia): empurra playlists/favoritas/progresso e puxa de volta.
+     *
+     * O blob e exatamente o que o [PlaylistBackup] ja exporta pra um arquivo -- caminhos, nunca
+     * ids, porque o id do MediaStore nao sobrevive a um celular novo. O progresso (resume) entra
+     * junto pra a nuvem lembrar onde a pessoa parou, nao so o que ela curtiu.
+     *
+     * O pull so aplica quando o blob da nuvem e mais novo e o local esta vazio (celular novo).
+     * Puxar por cima de playlists locais duplicaria trabalho manual -- o merge do backup casa por
+     * nome, mas restaurar sem precisar faria a pessoa perder a ordem que ela arrumou aqui.
+     */
+    private fun maybeSyncCloud(ctx: Context): Boolean {
+        var ok = true
+        val now = System.currentTimeMillis()
+        if (now - lastCloudPush > CLOUD_PUSH_MS || lastCloudHash.isEmpty()) {
+            if (!pushCloud(ctx)) ok = false
+        }
+        if (now - lastCloudPull > CLOUD_PULL_MS) {
+            lastCloudPull = now
+            if (!pullCloud(ctx)) ok = false
+        }
+        return ok
+    }
+
+    private fun pushCloud(ctx: Context): Boolean {
+        val db = PlaylistDb.get(ctx)
+        val export = runCatching { PlaylistBackup.export(ctx, db) }.getOrNull() ?: return false
+        // Progresso por faixa: o `resume_*` do Settings e um "onde parei" de uma unica faixa.
+        // Vai junto pra a nuvem saber o que retomar num aparelho novo.
+        export.put("resume", JSONObject().apply {
+            put("songId", Settings.resumeSongId(ctx))
+            put("positionMs", Settings.resumePosition(ctx))
+            put("title", Settings.resumeSongTitle(ctx))
+            put("artist", Settings.resumeSongArtist(ctx))
+        })
+        // Mapa caminho -> nome. O blob do backup so tem caminhos, mas o web player toca por
+        // nome ("artista - titulo" via play_song). Sem isto a web lia a nuvem e mostraria uma
+        // lista de caminhos que nao da pra tocar. Resolve uma unica vez, em lote.
+        val paths = mutableSetOf<String>()
+        export.optJSONArray("playlists")?.let { arr ->
+            for (i in 0 until arr.length()) {
+                arr.optJSONObject(i)?.optJSONArray("paths")?.let { p ->
+                    for (j in 0 until p.length()) p.optString(j)?.takeIf { it.isNotBlank() }?.let { paths += it }
+                }
+            }
+        }
+        export.optJSONArray("favorites")?.let { arr ->
+            for (i in 0 until arr.length()) arr.optJSONObject(i)?.optString("path")?.takeIf { it.isNotBlank() }?.let { paths += it }
+        }
+        if (paths.isNotEmpty()) {
+            val resolved = runCatching { Library.songsByPaths(ctx, paths.toList()) }.getOrNull().orEmpty()
+            val names = JSONObject()
+            for (s in resolved) {
+                if (s.path.isBlank()) continue
+                names.put(s.path, JSONObject().apply {
+                    put("title", s.title)
+                    put("artist", s.artist)
+                })
+            }
+            export.put("names", names)
+        }
+        val body = export.toString()
+        val hash = body.hashCode().toString()
+        if (hash == lastCloudHash) return true
+        if (!postJson(ctx, "/cloud", body)) return false
+        // So grava o hash depois do sucesso: uma falha de rede na hora errada nao pode fazer o
+        // app achar que a nuvem ja esta em dia com uma versao que o servidor nem viu.
+        lastCloudHash = hash
+        lastCloudPush = System.currentTimeMillis()
+        Telemetry.log(ctx, "CLOUD push playlists=${export.optJSONArray("playlists")?.length() ?: 0}")
+        return true
+    }
+
+    private fun pullCloud(ctx: Context): Boolean {
+        val device = Settings.deviceId(ctx)
+        for (base in hosts()) {
+            try {
+                val conn = URL("$base/cloud").openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 800
+                conn.readTimeout = 1500
+                conn.setRequestProperty("X-Pulsa-Device", device)
+                conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
+                val code = conn.responseCode
+                val text = if (code == 200) {
+                    conn.inputStream.bufferedReader().use { it.readText() }
+                } else ""
+                runCatching { conn.inputStream.close() }
+                if (code != 200) continue
+                if (text.isBlank()) return true
+                val cloud = JSONObject(text).optJSONObject("cloud")
+                if (cloud != null) applyCloudIfNewDevice(ctx, cloud)
+                return true
+            } catch (t: Throwable) {
+            }
+        }
+        return false
+    }
+
+    /**
+     * Aplica o blob da nuvem so quando este aparelho ainda nao tem nada. Restaurar por cima de
+     * playlists/favoritas locais duplicaria ou reordenaria trabalho manual; o caso que a nuvem
+     * resolve e o celular novo, vazio, que quer o que ja estava lá.
+     */
+    private fun applyCloudIfNewDevice(ctx: Context, cloud: JSONObject) {
+        if (!Permissions.hasAccess(ctx)) return
+        val db = PlaylistDb.get(ctx)
+        val localPlaylists = db.backupPlaylists().count { it.paths.isNotEmpty() }
+        val localFavorites = db.backupFavorites().size
+        if (localPlaylists > 0 || localFavorites > 0) return
+        val report = runCatching { PlaylistBackup.import(ctx, db, cloud) }.getOrNull() ?: return
+        if (report.changed) {
+            Telemetry.log(ctx, "CLOUD pull restaurado playlists=${report.playlists} favoritas=${report.favorites}")
+        }
+    }
+
     private fun pollCommands(ctx: Context) {
         val device = Settings.deviceId(ctx)
         for (base in hosts()) {
@@ -303,6 +437,14 @@ object RemoteSync {
                             else -> resolveSong(ctx, value?.toString() ?: "")?.let { list.add(it) }
                         }
                         if (list.isNotEmpty()) Playback.start(list, 0)
+                    }
+                    // Item 289 (handoff): outro aparelho assumiu a sessão. A gente era o dono
+                    // e agora é o liberado — pausa e para de espelhar, senão o MirrorSync
+                    // continuaria seguindo (e tocando) quem acabou de tomar o lugar.
+                    "handoff_release" -> {
+                        if (Playback.isPlaying) Playback.pause()
+                        MirrorSync.stop()
+                        Telemetry.log(ctx, "HANDOFF release code=${value ?: ""}")
                     }
                 }
                 Telemetry.log(ctx, "CMD exec=$cmd")

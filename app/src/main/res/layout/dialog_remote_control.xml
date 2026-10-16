@@ -102,4 +102,13 @@
             android:layout_marginStart="8dp"
             android:max="100" />
     </LinearLayout>
+
+    <!-- Item 289 (handoff): assumir a sessão do outro aparelho. Vira o dono e o antigo pausa. -->
+    <Button
+        android:id="@+id/remote_assume"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/remote_assume" />
 </LinearLayout>

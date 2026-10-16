@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.49):
+    <string name="changelog">Novidades desta versão (5.10.50):
  → NOVIDADES
- • Carro: o Pulsa agora aparece no Android Auto (e em carros com Android embutido) — mesma fila e mesma sessão do celular.
+ • Handoff entre aparelhos: comece a ouvir no fone e continue no carro (ou volte pro celular) sem perder o ponto da música — quem assume continua de onde o outro parou.
  → COMO USAR
- • Conecte o celular à central e toque no ícone de mídia; o Pulsa aparece junto com os outros players.</string>
+ • Numa sessão, toque em \"Assumir controle\" no controle remoto, ligue o Bluetooth do carro, ou ative \"Assumir ao entrar na sessão\" em Configurações.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -1128,6 +1128,9 @@
     <string name="remote_offline">Sessão offline — o servidor não respondeu</string>
     <string name="remote_waiting">Conectando…</string>
     <string name="remote_nothing">Nada tocando na sessão</string>
+    <string name="remote_assume">Assumir controle</string>
+    <string name="handoff_auto_title">Assumir ao entrar na sessão</string>
+    <string name="handoff_auto_subtitle">Ao entrar, toca o que o outro aparelho estava tocando em vez de espelhar</string>
     <string name="backup_title">Fazer backup</string>
     <string name="backup_subtitle">Guarda o aprendizado, memórias e equalizador em um arquivo</string>
     <string name="restore_title">Restaurar backup</string>

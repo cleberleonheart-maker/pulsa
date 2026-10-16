@@ -20,6 +20,7 @@ object Settings {
     private const val KEY_MIRROR_CODE = "mirror_code"
     private const val KEY_MIRROR_HOST = "mirror_host"
     private const val KEY_REMOTE_CODE = "remote_control_code"
+    private const val KEY_HANDOFF_AUTO = "handoff_auto_assume"
     private const val KEY_SERVER = "server_base"
     private const val KEY_TUNNEL_URL = "tunnel_url"
     private const val TUNNEL_INFO_HOST = "https://raw.githubusercontent.com/cleberleonheart-maker/pulsaweb/main/tunnel.txt"
@@ -136,6 +137,19 @@ object Settings {
 
     fun setRemoteCode(context: Context, code: String) {
         prefs(context).edit().putString(KEY_REMOTE_CODE, code.trim().uppercase()).apply()
+    }
+
+    /**
+     * Item 289 (handoff · modo 1): assumir a sessão automaticamente ao entrar, em vez de
+     * espelhar o anfitrião. Desligado por padrão porque o comportamento legado do "ouvir
+     * juntos" (item 133) é o convidado seguir o dono — quem liga aqui troca isso por
+     * handoff: ao entrar, este aparelho vira a fonte e o dono antigo pausa.
+     */
+    fun handoffAutoAssume(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_HANDOFF_AUTO, false)
+
+    fun setHandoffAutoAssume(context: Context, on: Boolean) {
+        prefs(context).edit().putBoolean(KEY_HANDOFF_AUTO, on).apply()
     }
 
     /** Endereço do servidor de telemetria (vazio = padrão da LAN/localhost). */
