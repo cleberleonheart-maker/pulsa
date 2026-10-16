@@ -32,9 +32,9 @@
     <string name="changelog_title">What is new</string>
     <string name="changelog">What is new (5.10.44):
  → NEW
- • Driving mode: a fullscreen screen with a giant cover and huge buttons, made to be used at the wheel without taking your eyes off the road — the screen won't turn off by itself.
+ • Driving mode: a fullscreen screen with a giant cover and huge buttons, made to be used at the wheel without taking your eyes off the road — the screen won\'t turn off by itself.
  → HOW TO USE
- • In the DJ booth, tap the top icon (Driving mode). There the controls are the cover, previous/play/next and the mic — all of Virgin's voice commands still work.</string>
+ • In the DJ booth, tap the top icon (Driving mode). There the controls are the cover, previous/play/next and the mic — all of Virgin\'s voice commands still work.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
