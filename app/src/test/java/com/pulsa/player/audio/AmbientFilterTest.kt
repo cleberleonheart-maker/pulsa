@@ -17,7 +17,7 @@ class AmbientFilterTest {
     private val fs = 44100f
 
     /** RMS em regime permanente de um seno de [freq] Hz passando pelo filtro [configure]. */
-    private fun rms(freq: Float, configure: (Biquad) -> Unit, samples: Int = 44100): Float {
+    private fun rms(freq: Float, samples: Int = 44100, configure: (Biquad) -> Unit): Float {
         val bq = Biquad()
         configure(bq)
         var acc = 0.0
