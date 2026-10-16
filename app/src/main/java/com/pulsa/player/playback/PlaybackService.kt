@@ -2437,7 +2437,10 @@ class PlaybackService : MediaLibraryService() {
                             crossfadeStartRunnable = null
                             if (!crossfadeEligible()) return
                             val pl = player ?: return
-                            val left = pl.duration - pl.currentPosition
+                            // `duration` pode vir `C.TIME_UNSET` (valor negativo enorme); sem a
+                            // guarda, `left` sairia negativo e o fade viraria um piscar de 100 ms.
+                            val d = pl.duration
+                            val left = if (d > 0L) d - pl.currentPosition else 0L
                             beginCrossfade(if (left > 0L) left else 0L)
                         }
                     }

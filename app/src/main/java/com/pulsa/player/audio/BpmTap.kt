@@ -49,7 +49,6 @@ object BpmTap {
     private val energy = FloatArray(CAPACITY)
     private var writeIdx = 0
     private var filled = 0
-    private var hopIndex = 0L
 
     private val processorImpl = TapProcessor()
 
@@ -72,7 +71,12 @@ object BpmTap {
         synchronized(lock) {
             if (filled < 64) return null
             snapshot = chronologicalLocked()
-            nowMs = hopIndex * HOP_MS
+            // A fase do [Bpm.analyze] é relativa ao **começo do snapshot** (o quadro mais
+            // antigo da janela), não ao começo da faixa. Como a janela desliza (as últimas
+            // 30 s), o "agora" também tem de ser medido a partir do snapshot — `filled`
+            // quadros depois do início dele. Usar o tempo desde o começo da faixa desalinharia
+            // a batida assim que a janela enchesse (faixas com mais de 30 s).
+            nowMs = filled * HOP_MS
         }
         val beats = Bpm.analyze(snapshot, HOP_MS) ?: return null
         // Confiança baixa = batida provável de ruído; melhor não alinhar.
@@ -84,7 +88,6 @@ object BpmTap {
         energy.fill(0f)
         writeIdx = 0
         filled = 0
-        hopIndex = 0L
     }
 
     /** Copia o ring buffer em ordem cronológica (mais antigo → mais novo). */
@@ -104,7 +107,6 @@ object BpmTap {
         energy[writeIdx] = value
         writeIdx = (writeIdx + 1) % CAPACITY
         if (filled < CAPACITY) filled++
-        hopIndex++
     }
 
     /** Abaixo disto o envelope é ruído demais para a autocorrelação valer. */

@@ -32,7 +32,7 @@
     <string name="changelog_title">What is new</string>
     <string name="changelog">What is new (5.10.52):
  → IMPROVEMENTS
- • Beat-matched crossfade: the app measures the song's BPM (via DSP) and starts the transition on a beat, so the next track enters on the beat. If no beat is detected, it uses the normal crossfade.
+ • Beat-matched crossfade: the app measures the song\'s BPM (via DSP) and starts the transition on a beat, so the next track enters on the beat. If no beat is detected, it uses the normal crossfade.
  → HOW TO USE
  • It is automatic whenever Crossfade is on (Short/Medium/Long). Music only.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
