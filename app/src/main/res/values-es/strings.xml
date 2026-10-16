@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.44):
+    <string name="changelog">Novedades de esta versión (5.10.45):
  → NUEVO
- • Modo conducción: una pantalla completa con carátula gigante y botones enormes, hecha para usar al volante sin apartar la vista de la carretera — la pantalla no se apaga sola.
+ • Modo familia/infantil: limita el volumen, quita radio y stream, y oculta pistas con contenido inapropiado. Activarlo o desactivarlo pide una contraseña.
  → CÓMO USAR
- • En la cabina del DJ, toca el icono de arriba (Modo conducción). Ahí los controles son la carátula, anterior/play/siguiente y el micrófono — todos los comandos de voz de Virgin siguen funcionando.</string>
+ • En Ajustes, activa "Modo familia/infantil" y crea una contraseña. Para desactivarlo, solo escribe la contraseña de nuevo.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -435,6 +435,20 @@
     <string name="downloads_wifi_only_hint">Las descargas grandes gastan tus datos sin avisar; al activarlo, la cola espera a una red Wi‑Fi/cable.</string>
     <string name="data_saver">Ahorro de datos en vídeo</string>
     <string name="data_saver_hint">En 4G/5G, el vídeo baja a ~480p para no gastar tus datos; en Wi‑Fi la calidad no cambia.</string>
+    <string name="kids_mode">Modo familia/infantil</string>
+    <string name="kids_mode_hint">Bloquea el volumen, quita radio y stream, y oculta pistas con contenido inapropiado. Activarlo o desactivarlo pide contraseña.</string>
+    <string name="kids_pin">Contraseña del modo infantil</string>
+    <string name="kids_pin_hint">Protege el modo familia/infantil y su salida.</string>
+    <string name="kids_pin_change">Cambiar contraseña</string>
+    <string name="kids_pin_create">Crear contraseña del modo infantil</string>
+    <string name="kids_pin_new">Nueva contraseña (números)</string>
+    <string name="kids_pin_confirm">Confirma la contraseña</string>
+    <string name="kids_pin_ask_off">Escribe la contraseña para desactivar</string>
+    <string name="kids_pin_ask_change">Escribe la contraseña actual</string>
+    <string name="kids_pin_saved">Contraseña actualizada</string>
+    <string name="kids_pin_wrong">Contraseña incorrecta</string>
+    <string name="kids_pin_empty">Escribe una contraseña</string>
+    <string name="kids_pin_mismatch">Las contraseñas no coinciden</string>
     <string name="podcast_prefetch">Adelantar el próximo episodio</string>
     <string name="podcast_prefetch_hint">Mientras suena un episodio, descarga el siguiente de la cola por Wi‑Fi para que el cambio no se detenga a cargar. Solo por Wi‑Fi; nunca usa tus datos móviles.</string>
     <string name="skip_silence">Saltar silencios en el podcast</string>

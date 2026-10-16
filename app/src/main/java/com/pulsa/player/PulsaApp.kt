@@ -45,6 +45,13 @@ class PulsaApp : Application() {
         } catch (t: Throwable) {
         }
         try {
+            // Item 293 — modo família/kids: vigia o volume do sistema (rebaixa quando passar do
+            // teto) e já aplica o teto agora, caso o modo tenha ficado ligado.
+            com.pulsa.player.core.KidsMode.watchVolume(this)
+            if (Settings.kidsMode(this)) com.pulsa.player.core.KidsMode.clampVolume(this)
+        } catch (t: Throwable) {
+        }
+        try {
             RemoteSync.start(this)
         } catch (t: Throwable) {
         }

@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.media3.common.Player
+import com.pulsa.player.core.KidsFilter
 import com.pulsa.player.core.Settings
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.PlaybackSpeeds
@@ -226,6 +227,21 @@ object Playback {
     }
 
     fun start(songs: List<Song>, startIndex: Int) {
+        val ctx = appContext
+        if (ctx != null && Settings.kidsMode(ctx)) {
+            val current = songs.getOrNull(startIndex)
+            val allowed = KidsFilter.filter(songs, kids = true)
+            if (allowed.isEmpty()) {
+                // Nada passou na triagem: não deixa a faixa anterior tocando "por engano".
+                link?.stop()
+                return
+            }
+            val idx = current?.let { cur ->
+                allowed.indexOfFirst { it.id == cur.id && it.path == cur.path }
+            }?.takeIf { it >= 0 } ?: 0
+            link?.start(allowed, idx)
+            return
+        }
         link?.start(songs, startIndex)
     }
 
@@ -240,7 +256,10 @@ object Playback {
      * Devolve `0` quando nada entrou (fila vazia do motor ainda, ou todos os itens já
      * estavam na fila) para o chamador poder avisar.
      */
-    fun enqueue(songs: List<Song>): Int = link?.enqueue(songs) ?: 0
+    fun enqueue(songs: List<Song>): Int = link?.enqueue(
+        appContext?.let { if (Settings.kidsMode(it)) KidsFilter.filter(songs, kids = true) else songs }
+            ?: songs
+    ) ?: 0
 
 
     /**

@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.44):
+    <string name="changelog">Novidades desta versão (5.10.45):
  → NOVIDADES
- • Modo condução: um ecrã fullscreen com capa gigante e botões enormes, feito para usar ao volante sem tirar os olhos da estrada — o ecrã não apaga sozinho.
+ • Modo família/crianças: trava o volume num teto, tira rádio e stream do ar e esconde faixas com conteúdo impróprio. Ligar e desligar pede palavra-passe.
  → COMO USAR
- • Na cabine do DJ, toca no ícone do topo (Modo condução). Aí os controlos são a capa, anterior/play/próxima e o microfone — todos os comandos de voz da Virgin continuam a funcionar.</string>
+ • Em Configurações, liga o "Modo família/crianças" e cria uma palavra-passe. Para desligar, basta introduzir a palavra-passe de novo.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -332,6 +332,20 @@
     <string name="downloads_wifi_only_hint">Uma transferência grande numa rede medida consome o seu plafond sem aviso; quando ligado, a fila espera pela rede Wi‑Fi/cabo.</string>
     <string name="data_saver">Poupança de dados no vídeo</string>
     <string name="data_saver_hint">No 4G/5G, o vídeo baixa para ~480p para não gastar os seus dados; no Wi‑Fi a qualidade não muda.</string>
+    <string name="kids_mode">Modo família/crianças</string>
+    <string name="kids_mode_hint">Trava o volume, tira rádio e stream do ar e esconde faixas com conteúdo impróprio. Ligar e desligar pede palavra-passe.</string>
+    <string name="kids_pin">Palavra-passe do modo crianças</string>
+    <string name="kids_pin_hint">Protege o modo família/crianças e a saída dele.</string>
+    <string name="kids_pin_change">Alterar palavra-passe</string>
+    <string name="kids_pin_create">Criar palavra-passe do modo crianças</string>
+    <string name="kids_pin_new">Nova palavra-passe (números)</string>
+    <string name="kids_pin_confirm">Confirme a palavra-passe</string>
+    <string name="kids_pin_ask_off">Introduza a palavra-passe para desligar</string>
+    <string name="kids_pin_ask_change">Introduza a palavra-passe atual</string>
+    <string name="kids_pin_saved">Palavra-passe atualizada</string>
+    <string name="kids_pin_wrong">Palavra-passe incorreta</string>
+    <string name="kids_pin_empty">Introduza uma palavra-passe</string>
+    <string name="kids_pin_mismatch">As palavras-passe não coincidem</string>
     <string name="podcast_prefetch">Adiantar o próximo episódio</string>
     <string name="podcast_prefetch_hint">Enquanto um episódio toca, transfere o seguinte da fila por Wi‑Fi para a mudança não parar a carregar. Só por Wi‑Fi; nunca usa os seus dados móveis.</string>
     <string name="skip_silence">Saltar silêncios no podcast</string>

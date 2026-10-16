@@ -35,6 +35,7 @@ import com.pulsa.player.core.Account
 import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.core.Changelog
 import com.pulsa.player.core.Helper
+import com.pulsa.player.core.KidsMode
 import com.pulsa.player.sync.MirrorQr
 import com.pulsa.player.sync.MirrorSync
 import com.pulsa.player.sync.RemoteControl
@@ -299,6 +300,8 @@ class SettingsActivity : AppCompatActivity() {
                 Playback.refreshDataSaver()
             }
         }
+
+        setupKidsMode()
 
         findViewById<MaterialSwitch>(R.id.podcast_prefetch_switch).apply {
             isChecked = Settings.podcastPrefetch(this@SettingsActivity)
@@ -1088,6 +1091,128 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             Helper.formatBytes(mb * 1024L * 1024L)
         }
+    }
+
+    /**
+     * Item 293 — modo família/kids. O interruptor é protegido por senha: ligar cria uma senha
+     * (se ainda não houver), desligar exige a senha. A triagem das faixas está em `KidsFilter`
+     * e o teto de volume em `KidsMode`.
+     */
+    private fun setupKidsMode() {
+        val kidsSwitch = findViewById<MaterialSwitch>(R.id.kids_mode_switch)
+        val pinRow = findViewById<View>(R.id.kids_pin_row)
+        val pinButton = findViewById<MaterialButton>(R.id.kids_pin_button)
+
+        fun refreshPinRow() {
+            pinRow.visibility =
+                if (Settings.kidsPin(this@SettingsActivity).isNotBlank()) View.VISIBLE else View.GONE
+        }
+
+        kidsSwitch.isChecked = Settings.kidsMode(this)
+        refreshPinRow()
+
+        kidsSwitch.setOnCheckedChangeListener { _, checked ->
+            if (checked) {
+                if (Settings.kidsPin(this@SettingsActivity).isBlank()) {
+                    promptNewPin { hash ->
+                        Settings.setKidsPin(this@SettingsActivity, hash)
+                        Settings.setKidsMode(this@SettingsActivity, true)
+                        KidsMode.clampVolume(this@SettingsActivity)
+                        refreshPinRow()
+                    }
+                } else {
+                    Settings.setKidsMode(this@SettingsActivity, true)
+                    KidsMode.clampVolume(this@SettingsActivity)
+                }
+            } else {
+                val stored = Settings.kidsPin(this@SettingsActivity)
+                if (stored.isBlank()) {
+                    Settings.setKidsMode(this@SettingsActivity, false)
+                } else {
+                    promptPin(R.string.kids_pin_ask_off) { pin ->
+                        if (pin != null && KidsMode.matches(pin, stored)) {
+                            Settings.setKidsMode(this@SettingsActivity, false)
+                        } else {
+                            if (pin != null) {
+                                Toast.makeText(
+                                    this@SettingsActivity, R.string.kids_pin_wrong, Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            // Cancelou ou errou: o modo continua ligado, então o interruptor volta.
+                            kidsSwitch.isChecked = true
+                        }
+                    }
+                }
+            }
+        }
+
+        pinButton.setOnClickListener {
+            val stored = Settings.kidsPin(this@SettingsActivity)
+            promptPin(R.string.kids_pin_ask_change) { pin ->
+                if (pin != null && KidsMode.matches(pin, stored)) {
+                    promptNewPin { hash ->
+                        Settings.setKidsPin(this@SettingsActivity, hash)
+                        Toast.makeText(
+                            this@SettingsActivity, R.string.kids_pin_saved, Toast.LENGTH_SHORT
+                        ).show()
+                        refreshPinRow()
+                    }
+                } else if (pin != null) {
+                    Toast.makeText(
+                        this@SettingsActivity, R.string.kids_pin_wrong, Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    /** Diálogo de senha: devolve o texto digitado, ou `null` se cancelar. */
+    private fun promptPin(titleRes: Int, onResult: (String?) -> Unit) {
+        val input = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(titleRes)
+            .setView(input)
+            .setPositiveButton(R.string.save) { _, _ -> onResult(input.text.toString()) }
+            .setNegativeButton(R.string.cancel) { _, _ -> onResult(null) }
+            .setOnCancelListener { onResult(null) }
+            .show()
+    }
+
+    /** Diálogo de nova senha, com confirmação. Só chama [onOk] quando as duas batem. */
+    private fun promptNewPin(onOk: (String) -> Unit) {
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val pad = (20 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad / 2, pad, 0)
+        }
+        fun field(hint: Int) = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            this.hint = getString(hint)
+        }
+        val first = field(R.string.kids_pin_new)
+        val second = field(R.string.kids_pin_confirm)
+        box.addView(first)
+        box.addView(second)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.kids_pin_create)
+            .setView(box)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val a = first.text.toString()
+                val b = second.text.toString()
+                when {
+                    a.isBlank() ->
+                        Toast.makeText(this, R.string.kids_pin_empty, Toast.LENGTH_SHORT).show()
+                    a != b ->
+                        Toast.makeText(this, R.string.kids_pin_mismatch, Toast.LENGTH_SHORT).show()
+                    else -> onOk(KidsMode.hash(a))
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun promptDownloadLimit(valueView: TextView?) {

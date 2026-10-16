@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.44):
+    <string name="changelog">Novidades desta versão (5.10.45):
  → NOVIDADES
- • Modo dirigir: uma tela fullscreen com capa gigante e botões enormes, feita para usar no volante sem tirar os olhos da estrada — a tela não apaga sozinha.
+ • Modo família/kids: trava o volume num teto, tira rádio e stream do ar e esconde faixas com conteúdo impróprio. Ligar e desligar pede uma senha.
  → COMO USAR
- • Na cabine do DJ, toque no ícone do topo (Modo dirigir). Ali os controles são a capa, anterior/play/próxima e o microfone — todo o comando de voz da Virgin continua valendo.</string>
+ • Em Configurações, ligue "Modo família/kids" e crie uma senha. Para desligar, é só digitar a senha de novo.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -367,6 +367,20 @@
     <string name="downloads_wifi_only_hint">Download grande em rede medida consome sua franquia sem aviso; quando ligado, a fila espera a rede Wi‑Fi/cabo chegar.</string>
     <string name="data_saver">Economia de dados no vídeo</string>
     <string name="data_saver_hint">No 4G/5G, o vídeo cai para ~480p para não estourar a franquia; no Wi‑Fi a qualidade não muda.</string>
+    <string name="kids_mode">Modo família/kids</string>
+    <string name="kids_mode_hint">Trava o volume, tira rádio e stream do ar e esconde faixas com conteúdo impróprio. Ligar e desligar pede senha.</string>
+    <string name="kids_pin">Senha do modo kids</string>
+    <string name="kids_pin_hint">Protege o modo família/kids e a saída dele.</string>
+    <string name="kids_pin_change">Trocar senha</string>
+    <string name="kids_pin_create">Criar senha do modo kids</string>
+    <string name="kids_pin_new">Nova senha (números)</string>
+    <string name="kids_pin_confirm">Confirme a senha</string>
+    <string name="kids_pin_ask_off">Digite a senha para desligar</string>
+    <string name="kids_pin_ask_change">Digite a senha atual</string>
+    <string name="kids_pin_saved">Senha atualizada</string>
+    <string name="kids_pin_wrong">Senha incorreta</string>
+    <string name="kids_pin_empty">Digite uma senha</string>
+    <string name="kids_pin_mismatch">As senhas não conferem</string>
     <string name="podcast_prefetch">Adiantar o próximo episódio</string>
     <string name="podcast_prefetch_hint">Enquanto um episódio toca, baixa o próximo da fila no Wi‑Fi para a troca não parar para carregar. Só no Wi‑Fi; nunca usa seus dados móveis.</string>
     <string name="skip_silence">Pular silêncios no podcast</string>

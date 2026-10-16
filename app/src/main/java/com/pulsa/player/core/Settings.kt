@@ -680,6 +680,25 @@ object Settings {
         prefs(context).getBoolean("data_saver", true)
 
     /**
+     * Modo família/kids (item 293): trava o volume, tira rádio/stream do ar e filtra faixas e
+     * podcasts por palavra (ver [KidsFilter]). Desligar exige a senha [kidsPin].
+     */
+    fun setKidsMode(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("kids_mode", value).apply()
+    }
+
+    fun kidsMode(context: Context): Boolean =
+        prefs(context).getBoolean("kids_mode", false)
+
+    /** Senha do modo kids, guardada como hash SHA-256 (ver [KidsMode.hash]). */
+    fun setKidsPin(context: Context, hash: String) {
+        prefs(context).edit().putString("kids_pin", hash).apply()
+    }
+
+    fun kidsPin(context: Context): String =
+        prefs(context).getString("kids_pin", "") ?: ""
+
+    /**
      * Prefetch da fila de podcast — baixar o episódio **seguinte** enquanto o atual toca.
      *
      * Padrão `true`: é o que faz "tocar um episódio" já adiantar o próximo e a virada abrir

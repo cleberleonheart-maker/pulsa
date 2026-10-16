@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.44):
+    <string name="changelog">What is new (5.10.45):
  → NEW
- • Driving mode: a fullscreen screen with a giant cover and huge buttons, made to be used at the wheel without taking your eyes off the road — the screen won\'t turn off by itself.
+ • Family/kids mode: caps the volume, blocks radio and streams, and hides tracks with inappropriate content. Turning it on or off asks for a password.
  → HOW TO USE
- • In the DJ booth, tap the top icon (Driving mode). There the controls are the cover, previous/play/next and the mic — all of Virgin\'s voice commands still work.</string>
+ • In Settings, turn on "Family/kids mode" and create a password. To turn it off, just type the password again.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -435,6 +435,20 @@
     <string name="downloads_wifi_only_hint">Big downloads use your mobile data without warning; when on, the queue waits for a Wi-Fi/wired network.</string>
     <string name="data_saver">Video data saver</string>
     <string name="data_saver_hint">On 4G/5G, video drops to ~480p so it doesn\'t burn your data; on Wi-Fi the quality is unchanged.</string>
+    <string name="kids_mode">Family/kids mode</string>
+    <string name="kids_mode_hint">Locks the volume, blocks radio and streams, and hides tracks with inappropriate content. Turning it on or off asks for a password.</string>
+    <string name="kids_pin">Kids mode password</string>
+    <string name="kids_pin_hint">Protects family/kids mode and leaving it.</string>
+    <string name="kids_pin_change">Change password</string>
+    <string name="kids_pin_create">Create kids mode password</string>
+    <string name="kids_pin_new">New password (digits)</string>
+    <string name="kids_pin_confirm">Confirm password</string>
+    <string name="kids_pin_ask_off">Enter the password to turn it off</string>
+    <string name="kids_pin_ask_change">Enter the current password</string>
+    <string name="kids_pin_saved">Password updated</string>
+    <string name="kids_pin_wrong">Wrong password</string>
+    <string name="kids_pin_empty">Enter a password</string>
+    <string name="kids_pin_mismatch">The passwords don\'t match</string>
     <string name="podcast_prefetch">Preload the next episode</string>
     <string name="podcast_prefetch_hint">While an episode plays, it downloads the next one in the queue over Wi-Fi so the switch doesn\'t stop to buffer. Wi-Fi only; never uses your mobile data.</string>
     <string name="skip_silence">Skip silences in podcasts</string>
