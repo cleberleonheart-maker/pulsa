@@ -265,6 +265,18 @@
                 android:layout_marginStart="18dp"
                 android:background="@drawable/bg_btn_glow"
                 android:text="@string/dj_mix" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/dj_btn_drive_quick"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="12dp"
+                android:contentDescription="@string/drive_mode"
+                app:icon="@drawable/ic_dj"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconTint="?attr/colorPrimary" />
         </LinearLayout>
 
         <!-- Config -->

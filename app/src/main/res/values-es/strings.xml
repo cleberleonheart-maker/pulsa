@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.43):
-→ NUEVO
-• Tono del ambiente: un filtro pasa-banda de verdad ahora apaga (lluvia más cerrada) o abre la presencia (océano con más presencia) del sonido de fondo.
-→ CÓMO USAR
-• En el selector de sonido ambiente, toca "Tono del ambiente" y arrastra. O di "lluvia más cerrada" / "océano con más presencia" / "tono normal".</string>
+    <string name="changelog">Novedades de esta versión (5.10.44):
+ → NUEVO
+ • Modo conducción: una pantalla completa con carátula gigante y botones enormes, hecha para usar al volante sin apartar la vista de la carretera — la pantalla no se apaga sola.
+ → CÓMO USAR
+ • En la cabina del DJ, toca el icono de arriba (Modo conducción). Ahí los controles son la carátula, anterior/play/siguiente y el micrófono — todos los comandos de voz de Virgin siguen funcionando.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -526,6 +526,10 @@
 
     <string name="dj_title">DJ Virtual</string>
     <string name="dj_running">Mezclando automáticamente</string>
+    <string name="drive_mode">Modo conducción</string>
+    <string name="drive_exit">Salir del modo conducción</string>
+    <string name="drive_now_playing">Carátula de la pista actual</string>
+    <string name="drive_prev">Pista anterior</string>
     <string name="dj_deck_now">Reproduciendo</string>
     <string name="dj_deck_next">A continuación</string>
     <string name="dj_crossfade_hint">Arrastra el crossfader para cambiar de pista</string>

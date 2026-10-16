@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.43):
-→ NOVIDADES
-• Tom do som ambiente: um filtro passa-banda de verdade agora afofa (chuva mais fechada) ou abre a presença (oceano com mais presença) do som de fundo.
-→ COMO USAR
-• No seletor de som ambiente, toque em "Tom do ambiente" e arraste. Ou diga "chuva mais fechada" / "oceano com mais presença" / "tom normal".</string>
+    <string name="changelog">Novidades desta versão (5.10.44):
+ → NOVIDADES
+ • Modo dirigir: uma tela fullscreen com capa gigante e botões enormes, feita para usar no volante sem tirar os olhos da estrada — a tela não apaga sozinha.
+ → COMO USAR
+ • Na cabine do DJ, toque no ícone do topo (Modo dirigir). Ali os controles são a capa, anterior/play/próxima e o microfone — todo o comando de voz da Virgin continua valendo.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -533,6 +533,10 @@
 
     <string name="dj_title">DJ Virtual</string>
     <string name="dj_running">Mixando automaticamente</string>
+    <string name="drive_mode">Modo dirigir</string>
+    <string name="drive_exit">Sair do modo dirigir</string>
+    <string name="drive_now_playing">Capa da faixa atual</string>
+    <string name="drive_prev">Faixa anterior</string>
     <string name="dj_deck_now">Tocando agora</string>
     <string name="dj_deck_next">A seguir</string>
     <string name="dj_crossfade_hint">Arraste o crossfader para trocar de faixa</string>

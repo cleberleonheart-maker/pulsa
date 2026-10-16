@@ -80,6 +80,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".DriveActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:exported="false" />
+
+        <activity
             android:name=".RadioActivity"
             android:exported="false" />
 

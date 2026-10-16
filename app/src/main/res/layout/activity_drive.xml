@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_aurora">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="28dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/drive_btn_close"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:contentDescription="@string/drive_exit"
+            app:icon="@drawable/ic_arrow_back"
+            app:iconGravity="textTop"
+            app:iconPadding="0dp"
+            app:iconTint="@color/text_secondary" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="8dp"
+            android:layout_weight="1">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                app:cardBackgroundColor="@color/surface_variant"
+                app:cardElevation="10dp"
+                app:shapeAppearance="@style/ShapeAppearance.Pulsa.PanelCut">
+
+                <ImageView
+                    android:id="@+id/drive_art"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/drive_now_playing"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_music_note" />
+            </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/drive_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="2"
+            android:text="—"
+            android:textColor="@color/text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/drive_artist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="—"
+            android:textColor="@color/text_secondary"
+            android:textSize="18sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/drive_btn_prev"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="76dp"
+                android:layout_height="76dp"
+                android:contentDescription="@string/drive_prev"
+                app:icon="@drawable/ic_skip_prev"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconTint="@color/text_primary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/drive_btn_play"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:background="@drawable/bg_btn_glow"
+                android:contentDescription="@string/play"
+                app:icon="@drawable/ic_play"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/drive_btn_next"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="76dp"
+                android:layout_height="76dp"
+                android:contentDescription="@string/dj_next"
+                app:icon="@drawable/ic_skip_next"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconTint="@color/text_primary" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/drive_btn_mic"
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:layout_marginTop="22dp"
+            android:text="@string/dj_mic_off"
+            android:textColor="@color/text_secondary"
+            android:textSize="18sp"
+            app:icon="@drawable/ic_mic"
+            app:iconGravity="textStart"
+            app:iconPadding="12dp"
+            app:iconTint="@color/text_secondary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/drive_btn_voice"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/dj_voice_on"
+            android:textColor="@color/text_secondary" />
+    </LinearLayout>
+</FrameLayout>

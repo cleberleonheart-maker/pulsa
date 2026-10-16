@@ -18,10 +18,10 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.pulsa.player.DjActivity
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
 
@@ -61,7 +61,7 @@ import com.pulsa.player.core.CrashLogger
  * e do aprendizado de hábitos enquanto a mix roda.
  */
 class DjSession(
-    private val activity: DjActivity,
+    private val activity: AppCompatActivity,
     launchers: Launchers,
     private val host: Host
 ) {

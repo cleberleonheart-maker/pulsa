@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.43):
-→ NEW
-• Ambience tone: a real band-pass filter can now muffle (rain more closed) or open the presence (ocean with more presence) of the background sound.
-→ HOW TO USE
-• In the ambient sound picker, tap "Ambience tone" and drag. Or say "rain more closed" / "ocean with more presence" / "normal tone".</string>
+    <string name="changelog">What is new (5.10.44):
+ → NEW
+ • Driving mode: a fullscreen screen with a giant cover and huge buttons, made to be used at the wheel without taking your eyes off the road — the screen won't turn off by itself.
+ → HOW TO USE
+ • In the DJ booth, tap the top icon (Driving mode). There the controls are the cover, previous/play/next and the mic — all of Virgin's voice commands still work.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -526,6 +526,10 @@
 
     <string name="dj_title">Virtual DJ</string>
     <string name="dj_running">Mixing automatically</string>
+    <string name="drive_mode">Driving mode</string>
+    <string name="drive_exit">Exit driving mode</string>
+    <string name="drive_now_playing">Current track cover</string>
+    <string name="drive_prev">Previous track</string>
     <string name="dj_deck_now">Now playing</string>
     <string name="dj_deck_next">Up next</string>
     <string name="dj_crossfade_hint">Drag the crossfader to switch track</string>

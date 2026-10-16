@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.43):
-→ NOVIDADES
-• Tom do som ambiente: um filtro passa-banda a sério agora abafa (chuva mais fechada) ou abre a presença (oceano com mais presença) do som de fundo.
-→ COMO USAR
-• No seletor de som ambiente, toca em "Tom do ambiente" e arrasta. Ou diz "chuva mais fechada" / "oceano com mais presença" / "tom normal".</string>
+    <string name="changelog">Novidades desta versão (5.10.44):
+ → NOVIDADES
+ • Modo condução: um ecrã fullscreen com capa gigante e botões enormes, feito para usar ao volante sem tirar os olhos da estrada — o ecrã não apaga sozinho.
+ → COMO USAR
+ • Na cabine do DJ, toca no ícone do topo (Modo condução). Aí os controlos são a capa, anterior/play/próxima e o microfone — todos os comandos de voz da Virgin continuam a funcionar.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -103,6 +103,10 @@
     <string name="video_stream_detected_progressive">Vídeo comum (ficheiro único)</string>
     <string name="peertube_no_stream">Esse vídeo já não tem stream tocável: o ficheiro foi removido do servidor ou o endereço que a instância guardou está morto. Tente outro resultado.</string>
 
+    <string name="drive_mode">Modo condução</string>
+    <string name="drive_exit">Sair do modo condução</string>
+    <string name="drive_now_playing">Capa da faixa atual</string>
+    <string name="drive_prev">Faixa anterior</string>
     <string name="dj_no_permission">Permita o acesso à música para o DJ misturar a sua biblioteca.</string>
     <string name="dj_mic_denied">Permita o acesso ao microfone para dar ordens à Virgin.</string>
     <string name="hands_free_no_mic">Sem o acesso ao microfone não dá para ficar de mãos livres.</string>

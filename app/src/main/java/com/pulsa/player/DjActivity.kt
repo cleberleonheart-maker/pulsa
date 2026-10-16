@@ -86,6 +86,15 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         val toolbar = findViewById<MaterialToolbar>(R.id.dj_toolbar)
         toolbar.title = getString(R.string.dj_title) + " — " + Settings.assistantName(this)
         toolbar.setNavigationOnClickListener { finish() }
+        toolbar.inflateMenu(R.menu.menu_dj)
+        toolbar.setOnMenuItemClickListener { item ->
+            if (item.itemId == R.id.action_drive) {
+                startActivity(Intent(this, DriveActivity::class.java))
+                true
+            } else {
+                false
+            }
+        }
 
         artA = findViewById(R.id.dj_art_a)
         titleA = findViewById(R.id.dj_title_a)
@@ -143,6 +152,9 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
             }
         }
         findViewById<MaterialButton>(R.id.dj_btn_mix).setOnClickListener { session.startMix() }
+        findViewById<MaterialButton>(R.id.dj_btn_drive_quick).setOnClickListener {
+            startActivity(Intent(this, DriveActivity::class.java))
+        }
         findViewById<MaterialButton>(R.id.dj_btn_source).setOnClickListener { session.chooseSource() }
         findViewById<MaterialButton>(R.id.dj_btn_intensity).setOnClickListener { session.chooseIntensity() }
         voiceBtn.setOnClickListener { session.toggleVoice() }
