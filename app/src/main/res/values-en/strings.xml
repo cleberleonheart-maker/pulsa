@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.50):
- → NEW
- • Handoff between devices: start listening on your headphones and continue in the car (or back on your phone) without losing your spot — whoever takes over resumes where the other left off.
+    <string name="changelog">What is new (5.10.51):
+ → IMPROVEMENTS
+ • True crossfade: tracks now overlap — the ending one fades down while the next fades up, with no silence in between. Music only.
  → HOW TO USE
- • In a session, tap \"Take control\" in the remote, connect to your car\'s Bluetooth, or turn on \"Take over on join\" in Settings.</string>
+ • In Settings → Crossfade, pick Short, Medium or Long. Off keeps the previous behaviour.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

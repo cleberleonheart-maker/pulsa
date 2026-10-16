@@ -67,6 +67,7 @@ import com.pulsa.player.dj.DjVoice
 import com.pulsa.player.sync.Handoff
 import com.pulsa.player.sync.LastFm
 import com.pulsa.player.sync.Lyrics
+import com.pulsa.player.sync.Telemetry
 import com.pulsa.player.widget.PulsaWidget
 import com.pulsa.player.audio.MusicVisualizer
 import com.pulsa.player.audio.SleepTimer
@@ -157,6 +158,16 @@ class PlaybackService : MediaLibraryService() {
     private var player: ExoPlayer? = null
     private var awaitingReady = false
     private var playerLink: ServicePlayerLink? = null
+
+    // Item 130 — crossfade duplo. `player` é sempre o ativo; `playerNext` é a instância
+    // reserva, criada sob demanda quando o crossfade começa e reaproveitada no swap. Os
+    // listeners são guardados por instância para poderem ser removidos no `onDestroy`.
+    private var playerNext: ExoPlayer? = null
+    private var crossfadeRunning = false
+    private var crossfadingTo = -1
+    private var crossfadeRunnable: Runnable? = null
+    private val playerListeners = java.util.IdentityHashMap<Player, Player.Listener>()
+    private val CROSSFADE_STEP_MS = 50
     private lateinit var session: MediaLibraryService.MediaLibrarySession
     private lateinit var notificationManager: NotificationManager
     private var notificationChangedCallback: MediaNotification.Provider.Callback? = null
@@ -473,7 +484,7 @@ class PlaybackService : MediaLibraryService() {
     private var panAngle = 0.0
     private val panRunnable = object : Runnable {
         override fun run() {
-            if (fadeInRunnable != null) {
+            if (fadeInRunnable != null || crossfadeRunning) {
                 mainHandler.postDelayed(this, PAN_STEP_MS)
                 return
             }
@@ -619,44 +630,7 @@ class PlaybackService : MediaLibraryService() {
         registerNetworkCallback()
         createChannel()
         SpatialAudio.sync(this)
-        player = ExoPlayer.Builder(this, SpatialRenderersFactory(this))
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.CONTENT_TYPE_MUSIC)
-                    .build(),
-                false
-            )
-            .setWakeMode(C.WAKE_MODE_NETWORK)
-            .setMediaSourceFactory(
-                // E4: o datasource HTTP cobre rádio (UA + redirect + timeouts). E5: o vídeo é
-                // `content://` e a música `file://` — passá-los POR UM DefaultDataSource embaixo
-                // para não os jogar no DefaultHttpDataSource (que só aceita http/https). Sem o
-                // wrapper, música e vídeo locais morriam com erro de fonte.
-                DefaultMediaSourceFactory(
-                    DefaultDataSource.Factory(
-                        this,
-                        DefaultHttpDataSource.Factory()
-                            .setUserAgent(USER_AGENT)
-                            .setConnectTimeoutMs(10000)
-                            .setReadTimeoutMs(10000)
-                            .setAllowCrossProtocolRedirects(true)
-                    )
-                )
-                    // F2: sem isto, uma legenda externa é tratada como **vídeo**. O Media3
-                    // tenta adivinhar o tipo de um arquivo de texto e erra para video/mp4, o
-                    // extractor procura moov/mdat num XML e o playback morre. O erro era mais
-                    // visível no `.vtt`, bem menos comum que `.srt`, e o sintoma era "a tela
-                    // de legenda não aparece e o vídeo trava".
-                    //
-                    // No 1.3.1 o conserto é o `DefaultSubtitleParserFactory` puro. O
-                    // `SubtitleParser.Merging` (que junta várias trilhas numa saída só) só
-                    // existe a partir da 1.4 — por isso **não** dá para usar aqui, e por isso
-                    // a escolha manual de legenda substitui as trilhas em vez de somar.
-                    .setSubtitleParserFactory(DefaultSubtitleParserFactory())
-            )
-            .build()
-            .also { it.addListener(playerListener) }
+        player = buildPlayer()
         // Item 291 — já nasce com o teto certo: se o app subiu no 4G, o primeiro vídeo não
         // chega a baixar em 1080p antes do callback de rede corrigir.
         refreshDataSaver()
@@ -902,15 +876,23 @@ class PlaybackService : MediaLibraryService() {
         // start já grava na hora e isto aqui é só a rede de segurança.
         runCatching { saveQueueState() }
         stopEightD()
+        cancelCrossfade()
+        removeSleepFade()
         fadeInRunnable?.let { fadeHandler.removeCallbacks(it) }
         playerLink?.let { Playback.detach(it) }
         if (::session.isInitialized) session.release()
+        // Item 130 — os dois players (principal + reserva do crossfade) são liberados e
+        // perdem o listener próprio. Guardar o par em `playerListeners` evita esquecer a
+        // instância que só existe enquanto um crossfade aconteceu.
+        playerListeners.entries.forEach { (p, l) -> runCatching { p.removeListener(l) } }
+        playerListeners.clear()
         player?.let {
-            it.removeListener(playerListener)
             AudioFx.release()
             MusicVisualizer.detach()
             it.release()
         }
+        playerNext?.let { runCatching { it.stop() }; runCatching { it.release() } }
+        playerNext = null
         player = null
         super.onDestroy()
     }
@@ -1401,6 +1383,8 @@ class PlaybackService : MediaLibraryService() {
      * Mantém o `resume` de música intacto — vídeo nunca chega a gravá-lo.
      */
     fun stop() {
+        cancelCrossfade()
+        removeSleepFade()
         val p = player ?: return
         runCatching { p.stop() }
         runCatching { p.clearMediaItems() }
@@ -1507,6 +1491,7 @@ class PlaybackService : MediaLibraryService() {
 
     private fun prepareCurrent() {
         val song = currentSong ?: return
+        cancelCrossfade()
         positionMs = 0L
         resetAbLoop()
         try {
@@ -1596,12 +1581,55 @@ class PlaybackService : MediaLibraryService() {
         MusicVisualizer.sync(applicationContext, sessionId)
     }
 
-    private val playerListener = object : Player.Listener {
+    /**
+     * Cria um ExoPlayer com a mesma configuração (datasource, atributos, factory de
+     * renderização com os processadores de áudio). Existe como função porque o crossfade
+     * duplo (item 130) precisa de uma **segunda** instância idêntica à principal.
+     */
+    private fun buildPlayer(): ExoPlayer {
+        val p = ExoPlayer.Builder(this, SpatialRenderersFactory(this))
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.CONTENT_TYPE_MUSIC)
+                    .build(),
+                false
+            )
+            .setWakeMode(C.WAKE_MODE_NETWORK)
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(
+                    DefaultDataSource.Factory(
+                        this,
+                        DefaultHttpDataSource.Factory()
+                            .setUserAgent(USER_AGENT)
+                            .setConnectTimeoutMs(10000)
+                            .setReadTimeoutMs(10000)
+                            .setAllowCrossProtocolRedirects(true)
+                    )
+                )
+                    .setSubtitleParserFactory(DefaultSubtitleParserFactory())
+            )
+            .build()
+        val l = listenerFor(p)
+        playerListeners[p] = l
+        p.addListener(l)
+        return p
+    }
+
+    /**
+     * Item 130 — crossfade duplo (dois players). Cada instância ganha um listener próprio, e
+     * o listener ignora os eventos quando o player que os emitiu **não** é o ativo. Isso é o
+     * que torna o swap seguro: o player que sai continua com o listener anexado, mas calado,
+     * e o que entra passa a comandar quando vira `player`.
+     */
+    private fun listenerFor(p: ExoPlayer): Player.Listener = object : Player.Listener {
         override fun onAudioSessionIdChanged(audioSessionId: Int) {
+            if (p !== player) return
             attachEffects()
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
+            if (p !== player) return
             when (playbackState) {
                 Player.STATE_READY -> onPlayerReady()
                 Player.STATE_ENDED -> onTrackEnded()
@@ -1609,6 +1637,7 @@ class PlaybackService : MediaLibraryService() {
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
+            if (p !== player) return
             // E3b: comandos vindos de fora (SystemUI, fone, MediaController) tocam o player
             // direto pela sessão — aqui o serviço sincroniza o que a reprodução precisa fazer
             // por conta própria. Os chamadores internos passam por play()/pause(), e o set é
@@ -1617,6 +1646,7 @@ class PlaybackService : MediaLibraryService() {
         }
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            if (p !== player) return
             // Repetição é tratada aqui dentro (`onTrackEnded` → `player.seekTo(0)`), e o
             // player nunca recebe `setRepeatMode`, então REPEAT não muda de faixa.
             if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) return
@@ -1624,6 +1654,7 @@ class PlaybackService : MediaLibraryService() {
         }
 
         override fun onPlayerError(error: PlaybackException) {
+            if (p !== player) return
             onTrackError()
         }
     }
@@ -2049,7 +2080,145 @@ class PlaybackService : MediaLibraryService() {
         fadeHandler.post(r)
     }
 
+    // ---------------------------------------------------------------------------------------
+    // Item 130 — crossfade duplo (fase 1: sobreposição real + gapless; o alinhamento por BPM
+    // fica para a fase 2). Enquanto a faixa atual se aproxima do fim, a próxima é preparada
+    // numa segunda instância e as duas sobem/descem o volume ao mesmo tempo. No fim do fade o
+    // "próximo" vira o ativo e o antigo é zerado. Só vale para música (o "modo festa contínuo");
+    // vídeo/rádio/stream/podcast seguem a virada normal, que já é gapless pelo timeline do
+    // Media3 (a fila inteira é entregue com `setMediaItems`, então o player troca sozinho sem
+    // reabrir o áudio).
+    // ---------------------------------------------------------------------------------------
+
+    /** Próximo índice elegível a crossfade, ou -1 se não houver (fim da fila sem repeat, etc.). */
+    private fun nextIndexForCrossfade(): Int {
+        if (queue.size < 2) return -1
+        if (shuffle || repeatOne || abActive || sleepMix) return -1
+        val nxt = when {
+            index < queue.lastIndex -> index + 1
+            repeatAll -> 0
+            else -> return -1
+        }
+        val s = queue.getOrNull(nxt) ?: return -1
+        // Não entra em vídeo/rádio/stream/podcast com crossfade (não faz sentido e o datasource
+        // pode nem estar pronto); nesses casos deixa a virada normal.
+        if (s.isVideo || s.isStream || s.isRadio || s.isPodcast) return -1
+        return nxt
+    }
+
+    private fun crossfadeEligible(): Boolean {
+        if (crossfadeRunning) return false
+        if (crossfadeMs() <= 0) return false
+        val p = player ?: return false
+        if (!p.isPlaying) return false
+        val song = currentSong ?: return false
+        if (song.isVideo || song.isStream || song.isRadio || song.isPodcast) return false
+        return nextIndexForCrossfade() >= 0
+    }
+
+    /** Aborta um crossfade em andamento (troca manual, pausa, fim de fila). Idempotente. */
+    private fun cancelCrossfade() {
+        crossfadeRunnable?.let { fadeHandler.removeCallbacks(it) }
+        crossfadeRunnable = null
+        if (crossfadeRunning) {
+            runCatching { playerNext?.setVolume(0f) }
+            runCatching { playerNext?.stop() }
+            runCatching { playerNext?.clearMediaItems() }
+            crossfadeRunning = false
+            crossfadingTo = -1
+            runCatching { player?.setVolume(1f) }
+        }
+    }
+
+    /**
+     * Começa a sobreposição: prepara a próxima faixa na instância reserva e rampa os volumes
+     * em [rampMs] (o tempo que resta da faixa atual). Tudo na main — o ExoPlayer nasce nela.
+     */
+    private fun beginCrossfade(rampMs: Long) {
+        val out = player ?: return
+        if (crossfadeRunning) return
+        val to = nextIndexForCrossfade()
+        if (to < 0) return
+        val next = playerNext ?: buildPlayer().also { playerNext = it }
+        crossfadeRunning = true
+        crossfadingTo = to
+        val total = (rampMs / CROSSFADE_STEP_MS).toInt().coerceAtLeast(2)
+        val started = runCatching {
+            next.setPlaybackParameters(PlaybackParameters(effectiveSpeed(), 1f))
+            next.setMediaItems(queue.map { mediaItemFor(it) }, to.coerceIn(0, queue.lastIndex), 0L)
+            next.volume = 0f
+            next.playWhenReady = true
+            next.prepare()
+            next.play()
+        }.isSuccess
+        if (!started) {
+            cancelCrossfade()
+            return
+        }
+        Telemetry.log(this, "CROSSFADE inicio $index->$to ${rampMs}ms")
+        var step = 1
+        val r = object : Runnable {
+            override fun run() {
+                val frac = (step.toFloat() / total).coerceIn(0f, 1f)
+                runCatching { out.volume = (1f - frac).coerceIn(0f, 1f) }
+                runCatching { next.volume = frac.coerceIn(0f, 1f) }
+                if (step >= total) {
+                    crossfadeRunnable = null
+                    finishCrossfade()
+                } else {
+                    step++
+                    fadeHandler.postDelayed(this, CROSSFADE_STEP_MS.toLong())
+                }
+            }
+        }
+        crossfadeRunnable = r
+        fadeHandler.post(r)
+    }
+
+    /**
+     * Encerra a sobreposição e promove o player reserva a ativo. A sessão de mídia é reapontada
+     * (`setPlayer`) e o antigo é zerado. [adoptPlayerIndex] faz o resto (índice, metadados,
+     * notificação) como se o player tivesse virado a faixa sozinho.
+     */
+    private fun finishCrossfade() {
+        val old = player
+        val fresh = playerNext
+        if (old == null || fresh == null) {
+            cancelCrossfade()
+            return
+        }
+        scrobbleCurrentIfNeeded()
+        clearResumeState()
+        player = fresh
+        playerNext = old
+        runCatching { old.setPlayWhenReady(false) }
+        runCatching { old.pause() }
+        runCatching { old.stop() }
+        runCatching { old.clearMediaItems() }
+        runCatching { old.volume = 1f }
+        // A sessão prendeu a instância no construtor; sem este `setPlayer` os controladores
+        // (notificação, fone, SystemUI, Android Auto) continuariam falando com o player que
+        // acabou de sair.
+        runCatching { session.setPlayer(fresh) }
+        attachEffects()
+        applyDanceParams()
+        crossfadeRunning = false
+        crossfadingTo = -1
+        adoptPlayerIndex()
+        runCatching { fresh.playWhenReady = true }
+        runCatching { fresh.volume = 1f }
+        runCatching { fresh.play() }
+        Telemetry.log(this, "CROSSFADE fim agora index=$index")
+        publishState()
+        scheduleTick()
+        startEightD()
+    }
+
     private fun onTrackEnded() {
+        // Item 130 — a virada já está sendo feita pelo crossfade (a faixa nova já entrou na
+        // outra instância). Sem esta guarda, a faixa que chega ao fim no meio da sobreposição
+        // dispararia um segundo avanço e a fila puliria duas posições.
+        if (crossfadeRunning) return
         scrobbleCurrentIfNeeded()
         clearResumeState()
         SleepTimer.onTrackCompleted()
@@ -2215,6 +2384,16 @@ class PlaybackService : MediaLibraryService() {
         if (abActive && isPlaying && dur > 0L && abB <= dur && pos >= abB) {
             seekTo(abA)
             return
+        }
+        // Item 130 — perto do fim (~tick de 500 ms), dispara a sobreposição com a próxima
+        // faixa. O ramp dura exatamente o que resta, então o fade termina junto com a faixa.
+        if (dur > 0L && pos > 0L && crossfadeEligible()) {
+            val rest = dur - pos
+            val ms = crossfadeMs().toLong()
+            if (rest in 1..ms) {
+                beginCrossfade(rest)
+                return
+            }
         }
         if (Settings.resumeOn(this) && pos - lastResumeSaveMs >= 5000L) {
             saveResumeState()

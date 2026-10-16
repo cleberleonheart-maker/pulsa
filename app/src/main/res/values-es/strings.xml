@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.50):
- → NUEVO
- • Traspaso entre dispositivos: empieza a escuchar en los auriculares y continúa en el coche (o vuelve al móvil) sin perder el punto de la canción — quien toma el control sigue donde lo dejó el otro.
+    <string name="changelog">Novedades de esta versión (5.10.51):
+ → MEJORAS
+ • Crossfade de verdad: las canciones ahora se solapan — la que termina baja el volumen mientras la siguiente sube, sin silencio entre ellas. Solo para música.
  → CÓMO USAR
- • En una sesión, toca \"Tomar el control\" en el control remoto, conéctate al Bluetooth del coche, o activa \"Asumir al entrar en la sesión\" en Ajustes.</string>
+ • En Ajustes → Crossfade, elige Corto, Medio o Largo. Desactivado mantiene el comportamiento anterior.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

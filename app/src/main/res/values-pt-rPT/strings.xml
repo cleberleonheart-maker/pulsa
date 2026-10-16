@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.50):
- → NOVIDADES
- • Handoff entre aparelhos: começa a ouvir nos auscultadores e continua no automóvel (ou volta ao telemóvel) sem perder o ponto da música — quem assume continua de onde o outro parou.
+    <string name="changelog">Novidades desta versão (5.10.51):
+ → MELHORIAS
+ • Crossfade a sério: as faixas agora sobrepõem-se — a que termina baixa o volume enquanto a seguinte sobe, sem silêncio no meio. Vale só para música.
  → COMO USAR
- • Numa sessão, toca em \"Assumir o controlo\" no controlo remoto, liga ao Bluetooth do automóvel, ou ativa \"Assumir ao entrar na sessão\" nas Configurações.</string>
+ • Em Definições → Crossfade, escolhe Curto, Médio ou Longo. Desligado mantém o comportamento anterior.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
