@@ -171,3 +171,39 @@ data class AutoRow(
     @androidx.room.ColumnInfo(name = "name") val name: String?,
     @androidx.room.ColumnInfo(name = "auto_add") val autoAdd: Int?
 )
+
+/**
+ * Regras de playlist automática.
+ *
+ * Sem `JOIN` com `playlists` no `allRules`: quem aplica a regra (`PlaylistDb.syncCustomRules`)
+ * só precisa do id da playlist e do campo/valor — juntar com o nome só encareceria a query e
+ * traria o nome que já é lido por outro caminho.
+ */
+@Dao
+interface AutoRuleDao {
+
+    @Insert
+    fun insert(entity: AutoRuleEntity): Long
+
+    @Query("DELETE FROM playlist_auto_rules WHERE _id = :id")
+    fun delete(id: Long)
+
+    @Query("SELECT * FROM playlist_auto_rules WHERE playlist_id = :playlistId ORDER BY _id ASC")
+    fun rulesOf(playlistId: Long): List<AutoRuleEntity>
+
+    @Query("SELECT COUNT(*) FROM playlist_auto_rules WHERE playlist_id = :playlistId")
+    fun countOf(playlistId: Long): Int
+
+    @Query(
+        "SELECT _id AS id, playlist_id AS playlistId, field AS field, value AS value " +
+            "FROM playlist_auto_rules ORDER BY _id ASC"
+    )
+    fun allRules(): List<AutoRuleRow>
+}
+
+data class AutoRuleRow(
+    @androidx.room.ColumnInfo(name = "id") val id: Long,
+    @androidx.room.ColumnInfo(name = "playlistId") val playlistId: Long,
+    @androidx.room.ColumnInfo(name = "field") val field: String,
+    @androidx.room.ColumnInfo(name = "value") val value: String
+)

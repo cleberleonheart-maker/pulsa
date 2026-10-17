@@ -50,6 +50,22 @@ data class FavoriteEntity(
     @ColumnInfo(name = "liked_at", defaultValue = "0") val likedAt: Long = 0L
 )
 
+/**
+ * Regra de playlist automática: "esta faixa entra se <field> contiver <value>".
+ *
+ * É a peça que faltava para as playlists do usuário (ex.: "animes") preencherem sozinhas. As
+ * de sistema (Gospel/Variadas/Novidades/Clássicos) continuam com o critério fixo por nome,
+ * porque os quatro já existem em todo aparelho e não mudam.
+ */
+@Entity(tableName = "playlist_auto_rules")
+data class AutoRuleEntity(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "_id") val id: Long = 0L,
+    @ColumnInfo(name = "playlist_id") val playlistId: Long,
+    @ColumnInfo(name = "field") val field: String,
+    @ColumnInfo(name = "value") val value: String
+)
+
 @Entity(tableName = "song_meta")
 data class SongMetaEntity(
     @PrimaryKey

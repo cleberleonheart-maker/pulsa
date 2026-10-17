@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.56):
- → MEJORAS
- • Descarga por URL: si se corta, el siguiente intento continúa donde se quedó (en vez de empezar de cero), y el archivo solo entra en la biblioteca cuando está completo.
+    <string name="changelog">Novedades de esta versión (5.10.57):
+ → NOVEDADES
+ • Lista "Rellenar automáticamente": crea reglas (título, álbum, género o artista contiene…) y las canciones que coincidan entran solas en la lista, cada vez que se abre la app.
  → CÓMO USAR
- • Es automático: usa "Descargar por URL" con normalidad. Si falla, la app lo intenta de nuevo sola y reanuda.</string>
+ • En el menú de la lista, toca "Rellenar automáticamente" y añade una regla (ej.: título contiene "opening").</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -369,6 +369,18 @@
 
     <string name="add_auto">Añadir automáticamente</string>
     <string name="remove_auto">Desactivar automática</string>
+    <string name="auto_rules_title">Rellenar automáticamente</string>
+    <string name="auto_rules_hint">Las canciones que coincidan con cualquiera de estas reglas entran solas en la lista.</string>
+    <string name="auto_rules_none">Aún no hay reglas: añade una abajo.</string>
+    <string name="auto_rule_field_title">Título de la canción</string>
+    <string name="auto_rule_field_album">Álbum</string>
+    <string name="auto_rule_field_genre">Género</string>
+    <string name="auto_rule_field_artist">Artista</string>
+    <string name="auto_rule_keyword_hint">Palabra clave (ej.: anime, opening)</string>
+    <string name="auto_rule_add">Añadir regla</string>
+    <string name="auto_rule_remove_confirm">¿Quitar esta regla?</string>
+    <string name="auto_rule_added">Regla añadida</string>
+    <string name="auto_rule_removed">Regla quitada</string>
     <string name="auto_count">Automática • %1$s</string>
     <string name="gospel_playlist">Gospel</string>
     <string name="variadas_playlist">Canciones variadas</string>

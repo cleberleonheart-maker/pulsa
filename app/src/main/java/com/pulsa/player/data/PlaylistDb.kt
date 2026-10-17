@@ -1,6 +1,7 @@
 package com.pulsa.player.data
 
 import android.content.Context
+import com.pulsa.player.data.db.AutoRuleEntity
 import com.pulsa.player.data.db.FavoriteEntity
 import com.pulsa.player.data.db.PlaylistEntity
 import com.pulsa.player.data.db.PlaylistSongEntity
@@ -59,6 +60,7 @@ class PlaylistDb private constructor(context: Context) {
     private val songDao get() = db.playlistSongDao()
     private val favoriteDao get() = db.favoriteDao()
     private val metaDao get() = db.songMetaDao()
+    private val ruleDao get() = db.autoRuleDao()
 
     fun isSystem(playlistId: Long): Boolean = playlistDao.systemFlag(playlistId) == 1
 
@@ -93,36 +95,88 @@ class PlaylistDb private constructor(context: Context) {
 
     fun syncAutoSongs(context: Context, songs: List<Song>) {
         val targets = playlistDao.autoAddRows()
-        if (targets.isEmpty()) return
-        val gospelName = context.getString(com.pulsa.player.R.string.gospel_playlist)
-        val variadasName = context.getString(com.pulsa.player.R.string.variadas_playlist)
-        val smartNewName = context.getString(com.pulsa.player.R.string.smart_new_playlist)
-        val smartClassicsName = context.getString(com.pulsa.player.R.string.smart_classics_playlist)
-        val isGospel = Library.isGospel(context, songs)
-        targets.forEach { row ->
-            val filtered = when (row.name) {
-                gospelName -> songs.filterIndexed { i, _ -> isGospel[i] }
-                variadasName -> songs.filterIndexed { i, _ -> !isGospel[i] }
-                smartNewName -> songs.filter { it.year >= 2020 }
-                smartClassicsName -> songs.filter { it.year > 0 && it.year < 2000 }
-                else -> songs
+        if (targets.isNotEmpty()) {
+            val gospelName = context.getString(com.pulsa.player.R.string.gospel_playlist)
+            val variadasName = context.getString(com.pulsa.player.R.string.variadas_playlist)
+            val smartNewName = context.getString(com.pulsa.player.R.string.smart_new_playlist)
+            val smartClassicsName = context.getString(com.pulsa.player.R.string.smart_classics_playlist)
+            val isGospel = Library.isGospel(context, songs)
+            targets.forEach { row ->
+                val filtered = when (row.name) {
+                    gospelName -> songs.filterIndexed { i, _ -> isGospel[i] }
+                    variadasName -> songs.filterIndexed { i, _ -> !isGospel[i] }
+                    smartNewName -> songs.filter { it.year >= 2020 }
+                    smartClassicsName -> songs.filter { it.year > 0 && it.year < 2000 }
+                    else -> songs
+                }
+                addAllMissingSongs(row.id, filtered)
             }
-            addAllMissingSongs(row.id, filtered)
+        }
+        // As regras do usuário (ex.: "animes") são independentes do `auto_add` e das quatro de
+        // sistema: quem criou a regra pediu para a playlist se preencher sozinha, e esse sync
+        // roda a cada abertura do app (MainActivity.seedAutoPlaylists) — é aí que uma faixa
+        // nova baixada hoje entra na playlist sem ninguém mexer.
+        syncCustomRules(context, songs)
+    }
+
+    /** Aplica as regras de preenchimento automático que o usuário criou (tabela `playlist_auto_rules`). */
+    private fun syncCustomRules(context: Context, songs: List<Song>) {
+        val grouped = runCatching { ruleDao.allRules() }.getOrDefault(emptyList())
+            .groupBy { it.playlistId }
+        if (grouped.isEmpty()) return
+        grouped.forEach { (playlistId, rows) ->
+            val rules = rows.map { AutoRule(it.id, it.playlistId, it.field, it.value) }
+            val matched = AutoRules.filter(rules, songs) { songId ->
+                Library.genreOf(context, songId)
+            }
+            addAllMissingSongs(playlistId, matched)
         }
     }
 
     fun syncAutoPlaylist(context: Context, playlistId: Long, songs: List<Song>) {
-        val row = playlistDao.rowById(playlistId) ?: return
-        if (row.autoAdd != 1) return
-        val gospelName = context.getString(com.pulsa.player.R.string.gospel_playlist)
-        val variadasName = context.getString(com.pulsa.player.R.string.variadas_playlist)
-        val isGospel = Library.isGospel(context, songs)
-        val filtered = when (row.name) {
-            gospelName -> songs.filterIndexed { i, _ -> isGospel[i] }
-            variadasName -> songs.filterIndexed { i, _ -> !isGospel[i] }
-            else -> songs
+        val row = playlistDao.rowById(playlistId)
+        if (row != null && row.autoAdd == 1) {
+            val gospelName = context.getString(com.pulsa.player.R.string.gospel_playlist)
+            val variadasName = context.getString(com.pulsa.player.R.string.variadas_playlist)
+            val isGospel = Library.isGospel(context, songs)
+            val filtered = when (row.name) {
+                gospelName -> songs.filterIndexed { i, _ -> isGospel[i] }
+                variadasName -> songs.filterIndexed { i, _ -> !isGospel[i] }
+                else -> songs
+            }
+            addAllMissingSongs(playlistId, filtered)
         }
-        addAllMissingSongs(playlistId, filtered)
+        // Igual ao `syncAutoSongs`: a regra do usuário não depende do `auto_add`. Um `return`
+        // no bloco acima não pode sumir com isto — abrir a playlist é o momento em que a
+        // pessoa vê se as músicas novas já entraram.
+        val rules = runCatching { autoRules(playlistId) }.getOrDefault(emptyList())
+        if (rules.isNotEmpty()) {
+            val matched = AutoRules.filter(rules, songs) { songId ->
+                Library.genreOf(context, songId)
+            }
+            addAllMissingSongs(playlistId, matched)
+        }
+    }
+
+    /** Regras de preenchimento automático de uma playlist, na ordem em que foram criadas. */
+    fun autoRules(playlistId: Long): List<AutoRule> =
+        runCatching { ruleDao.rulesOf(playlistId) }.getOrDefault(emptyList())
+            .map { AutoRule(it.id, it.playlistId, it.field, it.value) }
+
+    fun hasRules(playlistId: Long): Boolean =
+        runCatching { ruleDao.countOf(playlistId) > 0 }.getOrDefault(false)
+
+    /** Cria uma regra; devolve `false` quando não há o que casar (valor em branco). */
+    fun addAutoRule(playlistId: Long, field: String, value: String): Boolean {
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) return false
+        return runCatching {
+            ruleDao.insert(AutoRuleEntity(playlistId = playlistId, field = field, value = trimmed)) > 0
+        }.getOrDefault(false)
+    }
+
+    fun removeAutoRule(id: Long) {
+        runCatching { ruleDao.delete(id) }
     }
 
     fun playlists(): List<Playlist> = playlistDao.playlistsWithCount().map {

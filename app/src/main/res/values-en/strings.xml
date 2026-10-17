@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.56):
- → IMPROVEMENTS
- • Download by URL: if it is interrupted, the next attempt continues from where it stopped (instead of starting over), and the file only enters the library when it is complete.
+    <string name="changelog">What is new (5.10.57):
+ → NEW
+ • Playlist "Fill automatically": create rules (title, album, genre or artist contains…) and matching songs join the playlist on their own, every time the app opens.
  → HOW TO USE
- • It is automatic: use "Download by URL" as usual. If it fails, the app retries on its own and resumes.</string>
+ • In the playlist menu, tap "Fill automatically" and add a rule (e.g. title contains "opening").</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -369,6 +369,18 @@
 
     <string name="add_auto">Add automatically</string>
     <string name="remove_auto">Turn off automatic</string>
+    <string name="auto_rules_title">Fill automatically</string>
+    <string name="auto_rules_hint">Songs matching any of these rules are added to the playlist on their own.</string>
+    <string name="auto_rules_none">No rules yet — add one below.</string>
+    <string name="auto_rule_field_title">Song title</string>
+    <string name="auto_rule_field_album">Album</string>
+    <string name="auto_rule_field_genre">Genre</string>
+    <string name="auto_rule_field_artist">Artist</string>
+    <string name="auto_rule_keyword_hint">Keyword (e.g. anime, opening)</string>
+    <string name="auto_rule_add">Add rule</string>
+    <string name="auto_rule_remove_confirm">Remove this rule?</string>
+    <string name="auto_rule_added">Rule added</string>
+    <string name="auto_rule_removed">Rule removed</string>
     <string name="auto_count">Automatic • %1$s</string>
     <string name="gospel_playlist">Gospel</string>
     <string name="variadas_playlist">Various songs</string>

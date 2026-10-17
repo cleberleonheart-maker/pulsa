@@ -137,7 +137,7 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
             // qualquer playlist — era o "trava e fecha" que dava. Além disso a resposta já era
             // conhecida: perguntar duas vezes não muda nada.
             val autoAdd = try {
-                if (db.isAutoAdd(playlistId)) {
+                if (db.isAutoAdd(playlistId) || db.hasRules(playlistId)) {
                     db.syncAutoPlaylist(ctx, playlistId, Library.allSongs(ctx))
                     true
                 } else {
@@ -238,6 +238,7 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
     private fun showPlaylistMenu() {
         val options = arrayOf(
             getString(R.string.add_songs_title),
+            getString(R.string.auto_rules_title),
             getString(R.string.m3u_share),
             getString(R.string.m3u_save)
         )
@@ -246,8 +247,11 @@ class PlaylistDetailFragment : Fragment(), HighlightSync {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> showAddSongs()
-                    1 -> shareM3u()
-                    2 -> saveM3u.launch(safeFileName(playlistName) + ".m3u")
+                    1 -> AutoRulesDialog.show(
+                        requireContext(), playlistId, playlistName
+                    ) { load() }
+                    2 -> shareM3u()
+                    3 -> saveM3u.launch(safeFileName(playlistName) + ".m3u")
                 }
             }
             .show()

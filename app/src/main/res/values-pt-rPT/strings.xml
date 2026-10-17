@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.56):
- → MELHORIAS
- • Descarregamento por URL: se cair a meio, a tentativa seguinte continua de onde parou (em vez de recomeçar), e o ficheiro só entra na biblioteca quando está completo.
+    <string name="changelog">Novidades desta versão (5.10.57):
+ → NOVIDADES
+ • Lista "Preencher automaticamente": crie regras (título, álbum, género ou artista contém…) e as músicas que coincidirem entram sozinhas na lista, de cada vez que a app abre.
  → COMO USAR
- • É automático: use "Descarregar por URL" normalmente. Se falhar, a app tenta de novo sozinha e retoma.</string>
+ • No menu da lista, toque em "Preencher automaticamente" e acrescente uma regra (ex.: título contém "opening").</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

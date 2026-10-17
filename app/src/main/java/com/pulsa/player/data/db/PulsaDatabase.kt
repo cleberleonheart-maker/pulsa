@@ -14,9 +14,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FavoriteEntity::class,
         SongMetaEntity::class,
         PodcastFeedEntity::class,
-        PodcastEpisodeEntity::class
+        PodcastEpisodeEntity::class,
+        AutoRuleEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class PulsaDatabase : RoomDatabase() {
@@ -26,6 +27,7 @@ abstract class PulsaDatabase : RoomDatabase() {
     abstract fun favoriteDao(): FavoriteDao
     abstract fun songMetaDao(): SongMetaDao
     abstract fun podcastDao(): PodcastDao
+    abstract fun autoRuleDao(): AutoRuleDao
 
     companion object {
         const val NAME = "pulsa.db"
@@ -173,6 +175,27 @@ abstract class PulsaDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * 8 → 9 é a chegada das regras de playlist automática, e é a migração mais simples de
+         * todas: uma tabela nova, nenhuma coluna existente tocada e nenhuma linha migrada.
+         *
+         * Os `NOT NULL` das quatro colunas espelham a entidade porque o Room compara coluna a
+         * coluna na validação de esquema (`onValidateSchema`) quando o banco abre em migração:
+         * um `field` como `TEXT` aqui contra `TEXT NOT NULL` na entidade faria o app não abrir
+         * depois de instalar, e só apareceria no aparelho.
+         */
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `playlist_auto_rules` (" +
+                        "`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`playlist_id` INTEGER NOT NULL, " +
+                        "`field` TEXT NOT NULL, " +
+                        "`value` TEXT NOT NULL)"
+                )
+            }
+        }
+
         @Volatile
         private var instance: PulsaDatabase? = null
 
@@ -182,7 +205,7 @@ abstract class PulsaDatabase : RoomDatabase() {
                 PulsaDatabase::class.java,
                 NAME
             )
-                .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
+                .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                 .build()
                 .also { instance = it }
         }

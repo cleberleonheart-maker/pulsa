@@ -1,15 +1,18 @@
 """
-Verificação das migrações 6 -> 7 e 7 -> 8 sem aparelho.
+Verificação das migrações 6 -> 7, 7 -> 8 e 8 -> 9 sem aparelho.
 
 Por que um script e não um teste de instrumentation: o que precisa ser provado é que o SQL
-embutido em `MIGRATION_6_7` e `MIGRATION_7_8`, aplicado sobre um banco criado pelo
-`SQLiteOpenHelper` antigo, termina com **exatamente** o esquema que o Room valida na abertura.
-Isso é SQLite puro, roda aqui, e não vale o custo de subir Robolectric no build.
+embutido em `MIGRATION_6_7`, `MIGRATION_7_8` e `MIGRATION_8_9`, aplicado sobre um banco
+criado pelo `SQLiteOpenHelper` antigo, termina com **exatamente** o esquema que o Room
+valida na abertura. Isso é SQLite puro, roda aqui, e não vale o custo de subir Robolectric
+no build.
 
-A 7 -> 8 é a que mais importa agora: ela cria as duas tabelas de podcast **com os índices**, e
+A 7 -> 8 é a que mais importa: ela cria as duas tabelas de podcast **com os índices**, e
 o Room valida índice também. Uma tabela com as colunas certas e o índice faltando abre o app,
 joga `IllegalStateException` e o usuário fica sem podcast e sem app — o erro aparece na
 primeira abertura depois da atualização, que é o pior lugar para descobrir um erro de esquema.
+A 8 -> 9 (tabela `playlist_auto_rules`) segue a mesma prova: tabela nova, colunas `NOT NULL`
+espelhando a entidade, idempotente e sem tocar nas tabelas que já existem.
 
 O schema esperado é lido do código gerado pelo KSP (`PulsaDatabase_Impl.java`), e não escrito
 à mão aqui — se alguém mudar uma entidade, o esperado muda junto e o script continua comparando
@@ -35,6 +38,10 @@ TABLES = ["playlists", "playlist_songs", "favorites", "song_meta"]
 # banco v7, e incluí-las na lista da 6->7 faria a comparação com o esquema legado rodarem
 # contra tabelas que ninguém criou ainda.
 PODCAST_TABLES = ["podcast_feeds", "podcast_episodes"]
+
+# 8->9: a tabela que a migração cria, também fora de `TABLES` pelo mesmo motivo — não há
+# playlist_auto_rules no banco legado nem no v7.
+RULES_TABLE = "playlist_auto_rules"
 
 
 def join_concat_after(source: str, marker: str) -> str:
@@ -110,11 +117,35 @@ def migration_statements(kotlin: str) -> list[str]:
 def migration_78_statements(kotlin: str) -> list[str]:
     """Os `execSQL` de `MIGRATION_7_8`, na ordem em que o Kotlin executaria.
 
-    O recorte é do bloco da migração até o `@Volatile` seguinte: varrer o arquivo inteiro
-    pegaria também o SQL do `onCreate` do Room, e o banco de teste receberia as tabelas já
-    criadas pelo próprio Room — a validação passaria sem a migração ter feito nada.
+    O recorte é do bloco da migração até o marcador seguinte (`MIGRATION_8_9`, se existir,
+    ou o `@Volatile`): varrer além pegaria também o SQL da migração seguinte (e o do `onCreate`
+    do Room), e o banco de teste receberia tabelas que a 7->8 não cria — a validação passaria
+    sem a migração ter feito o que diz fazer, ou falharia por tabela "que já existia".
     """
     at = kotlin.index("MIGRATION_7_8")
+    end = kotlin.index("@Volatile", at)
+    next_m = kotlin.find("MIGRATION_8_9", at)
+    if next_m >= 0:
+        end = min(end, next_m)
+    region = kotlin[at:end]
+
+    out = []
+    i = 0
+    while True:
+        at_exec = region.find("execSQL(", i)
+        if at_exec < 0:
+            break
+        quote = region.find('"', at_exec)
+        if quote < 0:
+            break
+        out.append(join_concat_at(region, quote))
+        i = at_exec + len("execSQL(")
+    return out
+
+
+def migration_89_statements(kotlin: str) -> list[str]:
+    """Os `execSQL` de `MIGRATION_8_9` — o mesmo recorte da 7->8, do marcador ao `@Volatile`."""
+    at = kotlin.index("MIGRATION_8_9")
     end = kotlin.index("@Volatile", at)
     region = kotlin[at:end]
 
@@ -154,6 +185,19 @@ def room_expected_podcast_ddl(java: str) -> list[str]:
             "Rode ./gradlew kspDebugKotlin antes."
         )
     return out
+
+
+def room_expected_table_ddl(table: str) -> str:
+    """O `CREATE TABLE` de `table` como o Room geraria num banco limpo (KSP)."""
+    if not os.path.exists(GENERATED):
+        sys.exit(f"DDL gerado não encontrado: {GENERATED}\nRode ./gradlew kspDebugKotlin antes.")
+    java = open(GENERATED, encoding="utf-8").read()
+    # Greedy até o `")` que fecha o `execSQL` — o `)` final do DDL faz parte do SQL, e
+    # um match lazy comeria ele e entregaria um CREATE truncado.
+    m = re.search(r'execSQL\("(CREATE TABLE IF NOT EXISTS `%s` .+)"\);' % table, java)
+    if not m:
+        sys.exit(f"DDL de {table} não encontrado no código gerado.")
+    return m.group(1).replace("\\`", "`")
 
 
 def index_set(db: sqlite3.Connection, table: str) -> set[tuple]:
@@ -374,6 +418,102 @@ def validate_78(kotlin: str, v7: sqlite3.Connection) -> bool:
     return not failed
 
 
+def validate_89(kotlin: str, v8: sqlite3.Connection) -> bool:
+    """Aplica a 8->9 sobre uma cópia de v8 e confere esquema e dados.
+
+    `v8` é o banco **já depois da 7->8** (o `migrated` do `main`): num app real a 8->9 roda
+    por último, e é sobre o resultado das anteriores que ela tem de ser provada. A migração
+    é de criação pura — uma tabela nova, nenhuma coluna existente tocada — então as checagens
+    são: a tabela não existia, o CREATE bate coluna a coluna com o do Room, reaplicar não
+    estoura, e nada das tabelas antigas se moveu.
+    """
+    print("\n== Migracao 8->9 (regras de playlist automatica) ==")
+    failed = False
+
+    stmts = migration_89_statements(kotlin)
+    print(f"  {len(stmts)} statement(s) extraido(s) de MIGRATION_8_9")
+    if len(stmts) != 1:
+        failed = True
+        print("  FALHA esperava exatamente 1 statement (um CREATE TABLE)")
+
+    if table_exists(v8, RULES_TABLE):
+        failed = True
+        print(f"  FALHA {RULES_TABLE} ja existia em v8; a 8->9 deveria apenas criar")
+    else:
+        print(f"  ok   {RULES_TABLE} nao existia em v8 (migracao so cria)")
+
+    # Cópia de v8 com os dados: as tabelas antigas precisam estar presentes durante e depois
+    # para a prova de "não tocou em nada" valer.
+    db = sqlite3.connect(":memory:")
+    v8.backup(db)
+    for sql in stmts:
+        db.execute(sql)
+    db.commit()
+
+    # Idempotência: um CREATE TABLE sem IF NOT EXISTS estoura aqui em vez de no aparelho.
+    try:
+        for sql in stmts:
+            db.execute(sql)
+        print("  ok   reaplicar os statements nao estoura (idempotente)")
+    except sqlite3.Error as e:
+        failed = True
+        print(f"  FALHA reaplicar os statements estoura: {e}")
+
+    # Coluna a coluna contra o DDL que o Room geraria da entidade — é o `onValidateSchema`
+    # que roda na abertura com migração, e um `TEXT` aqui contra `TEXT NOT NULL` lá derruba
+    # o app depois de instalar, só no aparelho.
+    got_cols = column_info(db, RULES_TABLE)
+    fresh = sqlite3.connect(":memory:")
+    fresh.execute(room_expected_table_ddl(RULES_TABLE))
+    want_cols = column_info(fresh, RULES_TABLE)
+    if got_cols == want_cols:
+        print(f"  ok   {RULES_TABLE}: {len(got_cols)} colunas iguais ao esquema do Room")
+    else:
+        failed = True
+        print(f"  FALHA {RULES_TABLE}: colunas divergem")
+        for a, b in zip(got_cols, want_cols or []):
+            if a != b:
+                print(f"      obtido={a}")
+                print(f"      esperado={b}")
+        if len(got_cols) != len(want_cols or []):
+            print(f"      contagem difere: {len(got_cols)} vs {len(want_cols or [])}")
+
+    # Um insert real: a tabela não é só esquema, tem de aceitar a linha que o app grava.
+    try:
+        db.execute(
+            f"INSERT INTO {RULES_TABLE} (playlist_id, field, value) VALUES (7, 'title', 'opening')"
+        )
+        db.commit()
+        print("  ok   insert de regra aceito")
+    except sqlite3.Error as e:
+        failed = True
+        print(f"  FALHA insert de regra recusado: {e}")
+
+    # NOT NULL de `value` (a entidade exige): a regra sem o que casar nunca pode ser gravada.
+    try:
+        db.execute(f"INSERT INTO {RULES_TABLE} (playlist_id, field, value) VALUES (7, 'title', NULL)")
+        failed = True
+        print(f"  FALHA {RULES_TABLE} aceitou value NULL")
+    except sqlite3.IntegrityError:
+        print(f"  ok   banco recusou {RULES_TABLE}.value NULL (IntegrityError)")
+
+    # Nada das tabelas das migrações anteriores pode ter sido tocado.
+    for table in TABLES + PODCAST_TABLES:
+        want = v8.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
+        got = db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
+        if got is None or want is None:
+            failed = True
+            print(f"  FALHA {table} sumiu durante a 8->9")
+            continue
+        if got[0] != want[0]:
+            failed = True
+            print(f"  FALHA {table}: {got[0]} linha(s), antes eram {want[0]}")
+        else:
+            print(f"  ok   {table} intacta ({got[0]} linha(s))")
+
+    return not failed
+
+
 def table_exists(db: sqlite3.Connection, table: str) -> bool:
     row = db.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
@@ -493,10 +633,22 @@ def main() -> int:
     if not validate_78(kotlin, migrated):
         failed = True
 
+    # validate_78 trabalha numa cópia (é lá que as tabelas de podcast nascem), então o banco
+    # principal ainda é v7. A 8->9 só existe depois da 7->8 num aparelho real, e é sobre o
+    # v8 de verdade que ela é provada — daí reaplicar as statements aqui.
+    for sql in migration_78_statements(kotlin):
+        migrated.execute(sql)
+    migrated.commit()
+
+    if not validate_89(kotlin, migrated):
+        failed = True
+
     if failed:
         print("\nMIGRACAO NAO CONFERE")
         return 1
-    print("\nMigracoes 6->7 e 7->8 conferem com o esquema do Room e preservam os dados.")
+    print(
+        "\nMigracoes 6->7, 7->8 e 8->9 conferem com o esquema do Room e preservam os dados."
+    )
     return 0
 
 
