@@ -7,9 +7,9 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.55):
+    <string name="changelog">Novidades desta versão (5.10.56):
  → MELHORIAS
- • Descarregamento retomável: se o descarregamento por URL cair a meio, a tentativa seguinte continua de onde parou em vez de recomeçar do zero.
+ • Descarregamento por URL: se cair a meio, a tentativa seguinte continua de onde parou (em vez de recomeçar), e o ficheiro só entra na biblioteca quando está completo.
  → COMO USAR
  • É automático: use "Descarregar por URL" normalmente. Se falhar, a app tenta de novo sozinha e retoma.</string>
 

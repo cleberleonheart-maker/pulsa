@@ -122,6 +122,16 @@ object MusicDownloader {
             conn.inputStream.use { input ->
                 FileOutputStream(part, append).use { out -> copyWithProgress(input, out, total) }
             }
+            // A conexão pode morrer e o `read` devolver -1 sem lançar: o `copy` "termina"
+            // normal e o parcial está curto. Sem esta checagem o arquivo truncado iria pra
+            // biblioteca como se estivesse pronto — pior do que recomeçar do zero. O parcial
+            // fica no lugar de propósito: é ele que deixa a próxima tentativa retomar.
+            if (!isComplete(part.length(), total)) {
+                runCatching {
+                    CrashLogger.writeLog(context, "download: incompleto (${part.length()} de $total) — $urlText")
+                }
+                return null
+            }
             // Só entra no MediaStore depois de completo: um parcial anunciado como música
             // apareceria na biblioteca e tocaria pela metade.
             val uri = part.inputStream().use { saveStream(context, it, fileName, mime, part.length(), isVideo) }
@@ -232,6 +242,16 @@ object MusicDownloader {
      */
     fun shouldAppend(code: Int, existingBytes: Long): Boolean =
         code == 206 && existingBytes > 0L
+
+    /**
+     * O parcial bate com o total anunciado pelo servidor.
+     *
+     * `total <= 0` (servidor não disse o tamanho, ou é `chunked`) passa de propósito: sem
+     * referência não dá pra julgar, e recusar todo download sem `Content-Length` quebraria
+     * feeds que não publicam tamanho.
+     */
+    fun isComplete(downloadedBytes: Long, total: Long): Boolean =
+        total <= 0L || downloadedBytes == total
 
     /** Total real do arquivo em uma resposta `206`, lido de `Content-Range: bytes a-b/total`. */
     fun parseContentRangeTotal(header: String?): Long? =

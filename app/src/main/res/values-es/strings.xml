@@ -30,9 +30,9 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.55):
+    <string name="changelog">Novedades de esta versión (5.10.56):
  → MEJORAS
- • Descargas reanudables: si una descarga por URL se corta, el siguiente intento continúa donde se quedó en vez de empezar de cero.
+ • Descarga por URL: si se corta, el siguiente intento continúa donde se quedó (en vez de empezar de cero), y el archivo solo entra en la biblioteca cuando está completo.
  → CÓMO USAR
  • Es automático: usa "Descargar por URL" con normalidad. Si falla, la app lo intenta de nuevo sola y reanuda.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>

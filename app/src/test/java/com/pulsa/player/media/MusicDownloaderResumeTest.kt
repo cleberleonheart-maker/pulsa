@@ -66,4 +66,25 @@ class MusicDownloaderResumeTest {
         val b = MusicDownloader.partFileName("https://x/b.mp3", "Faixa")
         assertFalse("retomar com o parcial de outra URL colaria bytes de outro arquivo", a == b)
     }
+
+    @Test
+    fun parcialCurtoNaoPodeIrPraBiblioteca() {
+        assertFalse("a conexão caiu no meio: salvar assim seria arquivo corrompido", MusicDownloader.isComplete(500L, 1000L))
+    }
+
+    @Test
+    fun parcialMaiorQueOTotalTambemERejeitado() {
+        assertFalse("bytes a mais colados: o arquivo não é o anunciado", MusicDownloader.isComplete(1500L, 1000L))
+    }
+
+    @Test
+    fun parcialCompletoPassa() {
+        assertTrue(MusicDownloader.isComplete(1000L, 1000L))
+    }
+
+    @Test
+    fun semTotalConhecidoNaoTravaODownload() {
+        assertTrue("servidor sem Content-Length (chunked) não pode ser julgado", MusicDownloader.isComplete(500L, -1L))
+        assertTrue(MusicDownloader.isComplete(500L, 0L))
+    }
 }
