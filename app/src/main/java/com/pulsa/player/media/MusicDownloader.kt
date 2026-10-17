@@ -1,4 +1,5 @@
 package com.pulsa.player.media
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.ThreadPool
 
@@ -111,6 +112,12 @@ object MusicDownloader {
             // Com `206` o `Content-Length` é só o resto; o total real vem do `Content-Range`.
             val total = if (append) parseContentRangeTotal(conn.getHeaderField("Content-Range")) ?: -1L
             else conn.contentLengthLong
+            // A retomada é rara e invisível de fora (o parcial fica em `Android/data`, ilegível
+            // no Android 11+), então ela é anotada no log legível — senão não há como saber se
+            // a próxima tentativa continuou ou recomeçou.
+            if (append) runCatching {
+                CrashLogger.writeLog(context, "download: retomando de $existing bytes (total $total) — $urlText")
+            }
             part.parentFile?.mkdirs()
             conn.inputStream.use { input ->
                 FileOutputStream(part, append).use { out -> copyWithProgress(input, out, total) }
@@ -118,7 +125,11 @@ object MusicDownloader {
             // Só entra no MediaStore depois de completo: um parcial anunciado como música
             // apareceria na biblioteca e tocaria pela metade.
             val uri = part.inputStream().use { saveStream(context, it, fileName, mime, part.length(), isVideo) }
+            val bytes = part.length()
             if (uri != null) part.delete()
+            if (append && uri != null) runCatching {
+                CrashLogger.writeLog(context, "download: retomado OK — $fileName ($bytes bytes)")
+            }
             uri
         } finally {
             conn.disconnect()

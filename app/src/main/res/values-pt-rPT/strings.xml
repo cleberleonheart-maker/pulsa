@@ -7,7 +7,7 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.54):
+    <string name="changelog">Novidades desta versão (5.10.55):
  → MELHORIAS
  • Descarregamento retomável: se o descarregamento por URL cair a meio, a tentativa seguinte continua de onde parou em vez de recomeçar do zero.
  → COMO USAR
