@@ -11,6 +11,7 @@ import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import com.pulsa.player.R
 import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.HttpURLConnection
@@ -69,19 +70,37 @@ object MusicDownloader {
         runCatching { downloadToStore(context, urlText, name)?.toString() }.getOrNull()
 
     private fun downloadToStore(context: Context, urlText: String, name: String): Uri? {
+        // O parcial fica em `cacheDir` (privado do app, some sozinho), e não no
+        // `DownloadStore` do Download Center: lá os arquivos aparecem na Biblioteca como
+        // vídeos, e um `.part` de música não é vídeo nem baixado.
+        val part = partFile(context, urlText, name)
+        val existing = if (part.exists()) part.length() else 0L
         val conn = (URL(urlText).openConnection() as HttpURLConnection).apply {
             instanceFollowRedirects = true
             connectTimeout = 20000
             readTimeout = 30000
             setRequestProperty("Accept", "audio/*,video/*")
+            // Retomar por `Range` só é seguro sem compressão: com gzip os offsets mudam e os
+            // bytes anexados sairiam fora de lugar.
+            setRequestProperty("Accept-Encoding", "identity")
+            resumeRangeHeader(existing)?.let { setRequestProperty("Range", it) }
         }
         return try {
             conn.connect()
             val code = conn.responseCode
+            // `416` = o parcial pediu um trecho que não existe mais (arquivo mudou de
+            // tamanho no servidor). O parcial é lixo: joga fora e baixa do zero na próxima.
+            if (code == 416) {
+                part.delete()
+                return null
+            }
             if (code !in 200..299) return null
             val contentType = conn.contentType ?: ""
             if (contentType.contains("text/html", ignoreCase = true)) throw HtmlResponseException()
-            val length = conn.contentLengthLong
+            // `206` diz que o servidor aceitou o `Range`; `200` quer dizer que ele ignorou (ou
+            // o arquivo mudou) e a resposta é o arquivo inteiro — anexar nesse caso produziria
+            // um arquivo com dois começos.
+            val append = shouldAppend(code, existing)
             val ext = extFromUrl(urlText, contentType)
             val mime = contentType.substringBefore(';').trim().ifEmpty {
                 MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
@@ -89,8 +108,18 @@ object MusicDownloader {
             }
             val fileName = Helper.sanitizeFileName(name) + ".$ext"
             val isVideo = mime.startsWith("video/") || isVideoExt(ext)
-            val input = conn.inputStream
-            input.use { it -> saveStream(context, it, fileName, mime, length, isVideo) }
+            // Com `206` o `Content-Length` é só o resto; o total real vem do `Content-Range`.
+            val total = if (append) parseContentRangeTotal(conn.getHeaderField("Content-Range")) ?: -1L
+            else conn.contentLengthLong
+            part.parentFile?.mkdirs()
+            conn.inputStream.use { input ->
+                FileOutputStream(part, append).use { out -> copyWithProgress(input, out, total) }
+            }
+            // Só entra no MediaStore depois de completo: um parcial anunciado como música
+            // apareceria na biblioteca e tocaria pela metade.
+            val uri = part.inputStream().use { saveStream(context, it, fileName, mime, part.length(), isVideo) }
+            if (uri != null) part.delete()
+            uri
         } finally {
             conn.disconnect()
         }
@@ -177,6 +206,38 @@ object MusicDownloader {
             }
         }
     }
+
+    /**
+     * Cabeçalho `Range` para retomar a partir do que já está no parcial; `null` quando não há
+     * nada baixado (download do zero, sem `Range`).
+     */
+    fun resumeRangeHeader(existingBytes: Long): String? =
+        if (existingBytes > 0L) "bytes=$existingBytes-" else null
+
+    /**
+     * Só anexa quando o servidor confirma o `Range` (`206`) **e** já existe parcial. Um `200`
+     * é o arquivo inteiro (o servidor ignorou o `Range`, ou o arquivo mudou) e tem de
+     * sobrescrever; um `206` sem parcial seria o primeiro byte de um download novo.
+     */
+    fun shouldAppend(code: Int, existingBytes: Long): Boolean =
+        code == 206 && existingBytes > 0L
+
+    /** Total real do arquivo em uma resposta `206`, lido de `Content-Range: bytes a-b/total`. */
+    fun parseContentRangeTotal(header: String?): Long? =
+        header?.substringAfterLast('/')?.trim()?.toLongOrNull()?.takeIf { it > 0L }
+
+    /**
+     * Nome do parcial, estável e sem separador de caminho (o `sanitizeFileName` já tira o que
+     * o MediaStore recusa). O hash da URL distingue dois downloads de mesmo nome — retomar com
+     * o parcial de outra URL colaria bytes de um arquivo na frente do outro.
+     */
+    fun partFileName(urlText: String, name: String): String {
+        val hash = urlText.hashCode().toLong() and 0xffffffffL
+        return Helper.sanitizeFileName(name) + "-" + java.lang.Long.toHexString(hash) + ".part"
+    }
+
+    private fun partFile(context: Context, urlText: String, name: String): File =
+        File(File(context.cacheDir, "urlparts").apply { if (!exists()) mkdirs() }, partFileName(urlText, name))
 
     private fun isVideoExt(ext: String): Boolean {
         return ext in setOf("mp4", "webm", "mkv", "3gp", "3gpp", "mov", "avi", "flv", "m2ts", "ts")

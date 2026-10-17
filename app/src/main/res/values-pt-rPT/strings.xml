@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.53):
- → NOVIDADES
- • ID da conta: ao criar a conta pode escolher um ID (nome de utilizador). Aparece no painel do administrador e serve para identificar e banir a conta.
+    <string name="changelog">Novidades desta versão (5.10.54):
+ → MELHORIAS
+ • Descarregamento retomável: se o descarregamento por URL cair a meio, a tentativa seguinte continua de onde parou em vez de recomeçar do zero.
  → COMO USAR
- • No separador "Criar conta", o ID é obrigatório. Aceita letras, números, ponto, hífen e underscore (de 3 a 24 caracteres).</string>
+ • É automático: use "Descarregar por URL" normalmente. Se falhar, a app tenta de novo sozinha e retoma.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

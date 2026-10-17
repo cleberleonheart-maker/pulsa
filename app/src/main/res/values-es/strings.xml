@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.53):
- → NOVEDADES
- • ID de la cuenta: al crear la cuenta puedes elegir un ID (nombre de usuario). Aparece en el panel del administrador y sirve para identificar y banear la cuenta.
+    <string name="changelog">Novedades de esta versión (5.10.54):
+ → MEJORAS
+ • Descargas reanudables: si una descarga por URL se corta, el siguiente intento continúa donde se quedó en vez de empezar de cero.
  → CÓMO USAR
- • En la pestaña "Crear cuenta", el ID es obligatorio. Acepta letras, números, punto, guion y guion bajo (de 3 a 24 caracteres).</string>
+ • Es automático: usa "Descargar por URL" con normalidad. Si falla, la app lo intenta de nuevo sola y reanuda.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
