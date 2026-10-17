@@ -26,6 +26,7 @@ object Telemetry {
                     conn.doOutput = true
                     if (token.isNotBlank()) conn.setRequestProperty("X-Pulsa-Token", token)
                     if (device.isNotBlank()) conn.setRequestProperty("X-Pulsa-Device", device)
+                    Net.user(context, conn)
                     conn.setFixedLengthStreamingMode(payload.toByteArray().size)
                     conn.outputStream.use { it.write(payload.toByteArray()) }
                     conn.inputStream.close()

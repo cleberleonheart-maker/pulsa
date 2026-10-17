@@ -30,6 +30,7 @@ import com.pulsa.player.core.Account
 import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.sync.ConfirmMail
 import com.pulsa.player.core.Settings
+import com.pulsa.player.sync.AccountRegister
 import com.pulsa.player.sync.Telemetry
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -47,6 +48,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var identifierInput: EditText
     private lateinit var passwordInput: EditText
     private lateinit var confirmInput: EditText
+    private lateinit var userInput: EditText
     private lateinit var error: TextView
     private lateinit var confirmWrap: View
     private lateinit var primaryButton: MaterialButton
@@ -74,6 +76,7 @@ class LoginActivity : AppCompatActivity() {
         identifierInput = findViewById(R.id.login_identifier)
         passwordInput = findViewById(R.id.login_password)
         confirmInput = findViewById(R.id.login_confirm)
+        userInput = findViewById(R.id.login_user)
         confirmWrap = findViewById(R.id.login_confirm_wrap)
         error = findViewById(R.id.login_error)
         primaryButton = findViewById(R.id.btn_login_primary)
@@ -373,13 +376,31 @@ class LoginActivity : AppCompatActivity() {
         if (existing == null || !existing.equals(email, ignoreCase = true)) {
             val randomPw = ByteArray(16).also { SecureRandom().nextBytes(it) }
                 .joinToString("") { "%02x".format(it) }
-            Account.create(this, email, randomPw)
+            // Google nao tem tela de ID: usa a parte local do e-mail como rotulo e registra
+            // a conta no servidor junto, do mesmo jeito do cadastro manual.
+            val userId = Account.userId(this) ?: Account.defaultUserId(email)
+            val accountId = Account.create(this, email, randomPw, userId)
+            registerAccount(accountId, userId, email)
         }
         Account.setProvider(this, "google")
         Account.enterAccount(this)
         Telemetry.log(this, "LOGIN google sucesso $email")
         Toast.makeText(this, R.string.login_google_success, Toast.LENGTH_SHORT).show()
         enterMain()
+    }
+
+    /**
+     * Registro da conta no servidor, best-effort: a conta local ja foi gravada, entao
+     * falha de rede nao desfaz o cadastro. Se o ID escolhido ja pertencer a outra
+     * conta la fora, a pessoa e avisada para escolher outro.
+     */
+    private fun registerAccount(accountId: String, userId: String, identifier: String) {
+        AccountRegister.send(this, accountId, userId, identifier) { result ->
+            if (isFinishing || isDestroyed) return@send
+            if (result == AccountRegister.Result.USER_TAKEN) {
+                Toast.makeText(this, R.string.login_user_taken, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     override fun onStop() {
@@ -454,9 +475,19 @@ class LoginActivity : AppCompatActivity() {
                 showError(getString(R.string.login_password_mismatch))
                 return
             }
-            Account.create(this, identifier, password)
+            val userId = Account.sanitizeUserId(userInput.text.toString())
+            if (userId.isEmpty()) {
+                showError(getString(R.string.login_user_required))
+                return
+            }
+            if (!Account.isUserIdValid(userId)) {
+                showError(getString(R.string.login_user_invalid))
+                return
+            }
+            val accountId = Account.create(this, identifier, password, userId)
             Account.enterAccount(this)
             Toast.makeText(this, R.string.login_created_toast, Toast.LENGTH_SHORT).show()
+            registerAccount(accountId, userId, identifier)
             sendWelcome(identifier)
             enterMain()
         } else {
@@ -527,6 +558,7 @@ class LoginActivity : AppCompatActivity() {
                 identifierInput.text.clear()
                 passwordInput.text.clear()
                 confirmInput.text.clear()
+                userInput.text.clear()
                 findViewById<TabLayout>(R.id.login_tabs).getTabAt(1)?.select()
             }
             .setNegativeButton(R.string.cancel, null)

@@ -12,6 +12,7 @@ data class AdminDevice(
     val first: String,
     val last: String,
     val version: String,
+    val user: String = "",
     val banned: Boolean
 )
 
@@ -64,6 +65,7 @@ object AdminApi {
                                 first = o.optString("first"),
                                 last = o.optString("last"),
                                 version = o.optString("version"),
+                                user = o.optString("user"),
                                 banned = o.optBoolean("banned")
                             )
                         )

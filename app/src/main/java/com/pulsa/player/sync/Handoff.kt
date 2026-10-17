@@ -96,6 +96,7 @@ object Handoff {
                 conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 conn.setRequestProperty("X-Pulsa-Device", device)
                 conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
+                Net.user(ctx, conn)
                 conn.setFixedLengthStreamingMode(body.size)
                 conn.outputStream.use { it.write(body) }
                 val http = conn.responseCode

@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.52):
- → IMPROVEMENTS
- • Beat-matched crossfade: the app measures the song\'s BPM (via DSP) and starts the transition on a beat, so the next track enters on the beat. If no beat is detected, it uses the normal crossfade.
+    <string name="changelog">What is new (5.10.53):
+ → NEW
+ • Account ID: when creating your account you can pick an ID (username). It shows in the admin panel and is used to identify and ban the account.
  → HOW TO USE
- • It is automatic whenever Crossfade is on (Short/Medium/Long). Music only.</string>
+ • On the "Create account" tab, the ID is required. Accepts letters, numbers, dot, hyphen and underscore (3 to 24 characters).</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -301,6 +301,10 @@
     <string name="login_identifier_hint">Email or phone number</string>
     <string name="login_password_hint">Password</string>
     <string name="login_confirm_hint">Confirm password</string>
+    <string name="login_user_hint">User ID</string>
+    <string name="login_user_required">Choose a user ID to create your account</string>
+    <string name="login_user_invalid">The ID must be 3 to 24 characters: letters, numbers, dot, hyphen or underscore</string>
+    <string name="login_user_taken">That ID is already in use. Choose another</string>
     <string name="login_button">Sign in</string>
     <string name="login_button_create">Create account</string>
     <string name="login_invalid_identifier">Enter a valid email or phone number</string>
@@ -502,6 +506,7 @@
     <string name="full_settings_subtitle">Equalizer, animated background, language and more</string>
     <string name="changelog_subtitle">What\'s new in this version</string>
     <string name="sect_account">Account</string>
+    <string name="account_id_label">Account ID</string>
     <string name="logout_confirm">Do you want to sign out? Pulsa will return to the login screen.</string>
 
     <string name="radio">Radio</string>

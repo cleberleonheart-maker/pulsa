@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.10.52):
- → MELHORIAS
- • Crossfade na batida: o app mede o BPM da música (por DSP) e começa a transição numa batida, então a faixa nova entra no compasso. Sem batida detectada, usa o crossfade normal.
+    <string name="changelog">Novidades desta versão (5.10.53):
+ → NOVIDADES
+ • ID da conta: ao criar a conta você pode escolher um ID (nome de usuário). Ele aparece no painel do administrador e serve para identificar e banir a conta.
  → COMO USAR
- • É automático quando o Crossfade está ligado (Curto/Médio/Longo). Vale só para música.</string>
+ • Na aba "Criar conta", o ID é obrigatório. Aceita letras, números, ponto, hífen e underline (de 3 a 24 caracteres).</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -229,6 +229,10 @@
     <string name="login_identifier_hint">E-mail ou número de telefone</string>
     <string name="login_password_hint">Senha</string>
     <string name="login_confirm_hint">Confirmar senha</string>
+    <string name="login_user_hint">ID de usuário</string>
+    <string name="login_user_required">Escolha um ID de usuário para criar a conta</string>
+    <string name="login_user_invalid">O ID deve ter de 3 a 24 caracteres: letras, números, ponto, hífen ou underline</string>
+    <string name="login_user_taken">Esse ID já está em uso. Escolha outro</string>
     <string name="login_button">Entrar</string>
     <string name="login_button_create">Criar conta</string>
     <string name="login_invalid_identifier">Digite um e-mail válido ou um número de telefone</string>
@@ -509,6 +513,7 @@
     <string name="full_settings_subtitle">Equalizador, fundo animado, idioma e muito mais</string>
     <string name="changelog_subtitle">Novidades desta versão</string>
     <string name="sect_account">Conta</string>
+    <string name="account_id_label">ID da conta</string>
     <string name="logout_confirm">Deseja sair da conta? A Pulsa voltará para a tela de login.</string>
 
     <string name="radio">Rádio</string>

@@ -114,6 +114,7 @@ object MirrorSync {
                 conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 conn.setRequestProperty("X-Pulsa-Device", target)
                 conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
+                Net.user(ctx, conn)
                 conn.setFixedLengthStreamingMode(payload.size)
                 conn.outputStream.use { it.write(payload) }
                 conn.responseCode
@@ -258,6 +259,7 @@ object MirrorSync {
                 conn.readTimeout = 1500
                 conn.setRequestProperty("X-Pulsa-Device", device)
                 conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(ctx))
+                Net.user(ctx, conn)
                 val codeHttp = conn.responseCode
                 val text = if (codeHttp == 200) {
                     conn.inputStream.bufferedReader().use { it.readText() }

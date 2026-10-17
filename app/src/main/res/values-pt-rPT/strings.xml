@@ -7,11 +7,11 @@
 -->
 <resources>
 
-    <string name="changelog">Novidades desta versão (5.10.52):
- → MELHORIAS
- • Crossfade no tempo: a app mede o BPM da música (por DSP) e começa a transição num tempo, por isso a faixa seguinte entra no compasso. Sem tempo detectado, usa o crossfade normal.
+    <string name="changelog">Novidades desta versão (5.10.53):
+ → NOVIDADES
+ • ID da conta: ao criar a conta pode escolher um ID (nome de utilizador). Aparece no painel do administrador e serve para identificar e banir a conta.
  → COMO USAR
- • É automático quando o Crossfade está ligado (Curto/Médio/Longo). Só para música.</string>
+ • No separador "Criar conta", o ID é obrigatório. Aceita letras, números, ponto, hífen e underscore (de 3 a 24 caracteres).</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -235,6 +235,7 @@
     <string name="video_subtitle_downloading">A transferir as legendas…</string>
     <string name="video_subtitle_none">Esse vídeo não tem legendas carregadas</string>
     <string name="logout_confirm">Deseja sair da conta? A Pulsa voltará ao ecrã de início de sessão.</string>
+    <string name="account_id_label">ID da conta</string>
     <string name="radio_status_connecting">A ligar…</string>
     <string name="radio_add_subtitle">Procurar ou guardar uma estação de rádio</string>
     <string name="radio_add_save">Guardar estação</string>
@@ -315,6 +316,10 @@
     <string name="search">Pesquisar</string>
     <string name="login_password_hint">Palavra-passe</string>
     <string name="login_confirm_hint">Confirmar palavra-passe</string>
+    <string name="login_user_hint">ID de utilizador</string>
+    <string name="login_user_required">Escolha um ID de utilizador para criar a conta</string>
+    <string name="login_user_invalid">O ID deve ter entre 3 e 24 caracteres: letras, números, ponto, hífen ou underscore</string>
+    <string name="login_user_taken">Esse ID já está em uso. Escolha outro</string>
     <string name="login_password_short">A palavra-passe deve ter pelo menos 4 caracteres</string>
     <string name="login_password_mismatch">As palavras-passe não coincidem</string>
     <string name="login_wrong">Sessão ou palavra-passe incorretos</string>

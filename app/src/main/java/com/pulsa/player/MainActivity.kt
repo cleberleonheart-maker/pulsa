@@ -61,6 +61,7 @@ import com.pulsa.player.core.MotionControls
 import com.pulsa.player.core.Permissions
 import com.pulsa.player.core.Blacklist
 import com.pulsa.player.core.Settings
+import com.pulsa.player.sync.AccountRegister
 import com.pulsa.player.sync.Telemetry
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.util.TvFocus
@@ -210,6 +211,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             virgin.onVirginAlarm(intent)
         }
         handleShortcut(intent)
+        // Se o cadastro foi feito com o servidor fora, o registro da conta nunca
+        // confirmou; reenvia em background na abertura (best-effort, nao trava a tela).
+        AccountRegister.retryPending(this)
     }
 
     override fun onNewIntent(intent: Intent?) {

@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.52):
- → MEJORAS
- • Crossfade a tiempo: la app mide el BPM de la canción (por DSP) y empieza la transición en un tiempo, así la siguiente canción entra en compás. Si no detecta el tiempo, usa el crossfade normal.
+    <string name="changelog">Novedades de esta versión (5.10.53):
+ → NOVEDADES
+ • ID de la cuenta: al crear la cuenta puedes elegir un ID (nombre de usuario). Aparece en el panel del administrador y sirve para identificar y banear la cuenta.
  → CÓMO USAR
- • Es automático cuando el Crossfade está activado (Corto/Medio/Largo). Solo para música.</string>
+ • En la pestaña "Crear cuenta", el ID es obligatorio. Acepta letras, números, punto, guion y guion bajo (de 3 a 24 caracteres).</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -301,6 +301,10 @@
     <string name="login_identifier_hint">Correo o número de teléfono</string>
     <string name="login_password_hint">Contraseña</string>
     <string name="login_confirm_hint">Confirmar contraseña</string>
+    <string name="login_user_hint">ID de usuario</string>
+    <string name="login_user_required">Elige un ID de usuario para crear tu cuenta</string>
+    <string name="login_user_invalid">El ID debe tener de 3 a 24 caracteres: letras, números, punto, guion o guion bajo</string>
+    <string name="login_user_taken">Ese ID ya está en uso. Elige otro</string>
     <string name="login_button">Iniciar sesión</string>
     <string name="login_button_create">Crear cuenta</string>
     <string name="login_invalid_identifier">Introduce un correo válido o un número de teléfono</string>
@@ -502,6 +506,7 @@
     <string name="full_settings_subtitle">Ecualizador, fondo animado, idioma y mucho más</string>
     <string name="changelog_subtitle">Novedades de esta versión</string>
     <string name="sect_account">Cuenta</string>
+    <string name="account_id_label">ID de la cuenta</string>
     <string name="logout_confirm">¿Quieres cerrar sesión? Pulsa volverá a la pantalla de inicio de sesión.</string>
 
     <string name="radio">Radio</string>

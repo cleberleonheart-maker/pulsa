@@ -39,6 +39,7 @@ import com.pulsa.player.core.KidsMode
 import com.pulsa.player.sync.Handoff
 import com.pulsa.player.sync.MirrorQr
 import com.pulsa.player.sync.MirrorSync
+import com.pulsa.player.sync.Net
 import com.pulsa.player.sync.RemoteControl
 import com.pulsa.player.sync.RemoteProtocol
 import com.pulsa.player.work.PulsaWork
@@ -349,6 +350,8 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.cache_row).setOnClickListener { clearCache(cacheValue) }
 
         findViewById<View>(R.id.logout_row).setOnClickListener { confirmLogout() }
+
+        viewOrNull<TextView>(R.id.account_id_value)?.text = Account.userId(this) ?: "—"
 
         viewOrNull<TextView>(R.id.settings_version)?.apply {
             text =
@@ -917,6 +920,7 @@ class SettingsActivity : AppCompatActivity() {
                 conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 conn.setRequestProperty("X-Pulsa-Device", device)
                 conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(this))
+                Net.user(this, conn)
                 conn.doOutput = true
                 conn.setFixedLengthStreamingMode(body.toByteArray().size)
                 conn.outputStream.use { it.write(body.toByteArray()) }
@@ -940,6 +944,7 @@ class SettingsActivity : AppCompatActivity() {
                 conn.readTimeout = 2500
                 conn.setRequestProperty("X-Pulsa-Device", device)
                 conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(this))
+                Net.user(this, conn)
                 val text = conn.inputStream.bufferedReader().use { it.readText() }
                 conn.inputStream.close()
                 return text

@@ -158,13 +158,16 @@ class BanActivity : AppCompatActivity() {
         info.setPadding(0, 0, dp(8), 0)
 
         val id = TextView(this)
-        id.text = d.id
+        id.text = if (d.user.isNotBlank()) d.user else d.id
         id.setTextColor(ContextCompat.getColor(this, R.color.text_primary))
         id.textSize = 13f
         id.setTypeface(null, Typeface.BOLD)
         info.addView(id)
 
         val meta = mutableListOf<String>()
+        // Quando ha ID, o device id vira o primeiro item da linha secundaria: continua dando pra
+        // achar o aparelho, mas o nome escolhido no cadastro fica em destaque como identidade.
+        if (d.user.isNotBlank()) meta.add(d.id)
         if (d.events > 0) meta.add(getString(R.string.ban_events, d.events))
         if (d.version.isNotBlank()) meta.add(getString(R.string.ban_version, d.version))
         if (d.last.isNotBlank()) meta.add(getString(R.string.ban_last, d.last))
