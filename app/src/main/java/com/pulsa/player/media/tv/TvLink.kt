@@ -45,6 +45,10 @@ object TvLink {
     /** Rastro do último launch (códigos HTTP/active-app) — a UI mostra quando falha. */
     @Volatile
     var ultimoLaunch: List<String> = emptyList()
+
+    /** Último launch automático foi abortado porque a TV estava em uso (família assistindo). */
+    @Volatile
+    var tvEmUso: Boolean = false
         private set
 
     private var server: DlnaServer? = null
@@ -98,6 +102,7 @@ object TvLink {
                     RokuEcp.launchRmp(device.host, Settings.tvRmpId(app))
                 }.getOrDefault(RokuEcp.LaunchInfo(false, listOf("launch: erro inesperado")))
                 ultimoLaunch = info.log
+                tvEmUso = info.emUso
                 // Id confirmado do RMP vira atalho permanente: em TV cujo /query/apps não
                 // responde, este id "aprendido" é o único caminho automático.
                 info.idRmp?.let { Settings.setTvRmpId(app, it) }
@@ -168,9 +173,13 @@ object TvLink {
         val ctx = contexto
         ThreadPool.postNetwork {
             val idSalvo = ctx?.let { Settings.tvRmpId(it) }
-            val info = runCatching { RokuEcp.launchRmp(device.host, idSalvo) }
-                .getOrDefault(RokuEcp.LaunchInfo(false, listOf("launch: erro inesperado")))
+            // Abrir é explícito (botão do painel): pode trocar o que está na TV mesmo
+            // com a família assistindo — o clique já foi o "sim".
+            val info = runCatching {
+                RokuEcp.launchRmp(device.host, idSalvo, podeInterromper = true)
+            }.getOrDefault(RokuEcp.LaunchInfo(false, listOf("launch: erro inesperado")))
             ultimoLaunch = info.log
+            tvEmUso = info.emUso
             info.idRmp?.let { id -> if (ctx != null) Settings.setTvRmpId(ctx, id) }
             if (info.aberto) {
                 val cur = state as? State.Connected

@@ -1206,6 +1206,7 @@
     <string name="tv_player_opened">Roku Media Player abriu na TV.</string>
     <string name="tv_player_failed">Não abriu o player na TV</string>
     <string name="tv_diag">Diagnóstico</string>
+    <string name="tv_busy">TV em uso — nada foi trocado na tela. Aperte “Abrir Roku Media Player” quando puder trocar.</string>
     <string name="tv_copy">Copiar</string>
     <string name="tv_copied">Diagnóstico copiado</string>
 </resources>

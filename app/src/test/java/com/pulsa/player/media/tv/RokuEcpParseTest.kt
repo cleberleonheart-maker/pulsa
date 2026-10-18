@@ -177,4 +177,31 @@ class RokuEcpParseTest {
         assertFalse(RokuEcp.ehMediaPlayer(RokuEcp.App("12", "Netflix")))
         assertFalse(RokuEcp.ehMediaPlayer(RokuEcp.App("13", "Prime Video")))
     }
+
+    @Test
+    fun estadoOcupaTelaSoParaReproducaoEmCurso() {
+        // Conexão automática não pode interromper o que a família está vendo:
+        // play/pause/buffer = conteúdo na tela; idle/vazio = tela inicial (pode abrir).
+        assertTrue(RokuEcp.estadoOcupaTela("play"))
+        assertTrue(RokuEcp.estadoOcupaTela("pause"))
+        assertTrue(RokuEcp.estadoOcupaTela("buffer"))
+        assertTrue(RokuEcp.estadoOcupaTela("  PLAY "))
+        assertFalse(RokuEcp.estadoOcupaTela("idle"))
+        assertFalse(RokuEcp.estadoOcupaTela(""))
+    }
+
+    @Test
+    fun tvEmUsoProtegeAppAbertoMesmoSemEstadoDoPlayer() {
+        val youtube = RokuEcp.App("837", "YouTube")
+        val menu = RokuEcp.App("562859", "Roku Dynamic Menu")
+        // media-player oculto/403 (como o /query/apps nesta TV): o nome do app basta
+        // para a conexão não derrubar o YouTube da família.
+        assertTrue(RokuEcp.tvEmUso(youtube, null))
+        assertTrue(RokuEcp.tvEmUso(youtube, "idle"))
+        assertTrue(RokuEcp.tvEmUso(null, "play"))
+        // Tela inicial (ou RMP já aberto) = único caso em que abrir sozinho é seguro.
+        assertFalse(RokuEcp.tvEmUso(menu, "idle"))
+        assertFalse(RokuEcp.tvEmUso(null, null))
+        assertFalse(RokuEcp.tvEmUso(RokuEcp.App("11", "Roku Media Player"), "play"))
+    }
 }

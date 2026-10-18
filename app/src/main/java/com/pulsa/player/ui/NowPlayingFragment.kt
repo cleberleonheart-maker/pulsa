@@ -232,7 +232,9 @@ class NowPlayingFragment : Fragment() {
             }
             is com.pulsa.player.media.tv.TvLink.State.Connected -> {
                 if (!s.playerAberto) {
-                    Toast.makeText(requireContext(), R.string.tv_player_manual, Toast.LENGTH_LONG).show()
+                    // TV em uso: o app não trocou nada — explicar em vez do aviso genérico.
+                    val msg = if (link.tvEmUso) R.string.tv_busy else R.string.tv_player_manual
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
                 }
                 showTvControls(s.device)
             }

@@ -137,7 +137,13 @@ object RokuEcp {
      * pela UI para o próximo launch — tem TV em que `/query/apps` não responde e este id
      * "aprendido" do active-app é o único caminho automático.
      */
-    data class LaunchInfo(val aberto: Boolean, val log: List<String>, val idRmp: String? = null)
+    data class LaunchInfo(
+        val aberto: Boolean,
+        val log: List<String>,
+        val idRmp: String? = null,
+        /** TV em reprodução e o launch automático NÃO interrompeu (o que a família estava vendo continua na tela). */
+        val emUso: Boolean = false,
+    )
 
     /**
      * Lança o Roku Media Player e **confere** que abriu. Caminhos, nesta ordem:
@@ -155,7 +161,38 @@ object RokuEcp {
      * Sem a checagem por `/query/active-app` o app marcava "conectado" com a TV no menu
      * e o usuário via o botão da TV "não fazer nada".
      */
-    fun launchRmp(host: String, idSalvo: String? = null): LaunchInfo {
+    /**
+     * O que a TV mostra é reprodução em curso (não a tela inicial)? [state] vem de
+     * `/query/media-player` — `play`/`pause`/`buffer` significam conteúdo na tela.
+     * Endpoint ausente/403 NÃO conta como "em uso": TV que esconde esse endpoint não
+     * poderia conectar nunca; o log registra o estado para o diagnóstico decidir.
+     */
+    internal fun estadoOcupaTela(state: String): Boolean =
+        state.trim().lowercase() in setOf("play", "pause", "buffer")
+
+    /** Único lugar em que a conexão pode abrir o player sozinha: menu do Roku / "home". */
+    private val TELA_INICIAL = setOf("roku dynamic menu", "home", "roku")
+
+    /**
+     * Há algo na TV que a conexão automática não pode interromper: reprodução em curso
+     * (play/pause/buffer) **ou** qualquer app aberto que não seja o próprio Media Player
+     * nem a tela inicial (ex.: YouTube da família). O estado do media-player sozinho não
+     * basta — nesta TV ele pode 403 igual ao /query/apps, e aí só o nome do app ativo
+     * evita derrubar o que está na tela.
+     */
+    internal fun tvEmUso(ativo: App?, estado: String?): Boolean {
+        // O próprio Media Player nunca conta como "em uso" — ele é o alvo do launch.
+        if (ativo != null && ehMediaPlayer(ativo)) return false
+        if (estado != null && estadoOcupaTela(estado)) return true
+        if (ativo == null) return false
+        return ativo.name.trim().lowercase() !in TELA_INICIAL
+    }
+
+    fun launchRmp(
+        host: String,
+        idSalvo: String? = null,
+        podeInterromper: Boolean = false,
+    ): LaunchInfo {
         val log = ArrayList<String>()
         val (ativo, status) = activeAppDetalhe(host)
         log += if (ativo != null) "active-app: ${ativo.name} (id ${ativo.id})"
@@ -168,6 +205,18 @@ object RokuEcp {
         // de 16s de /query/apps — e o log já diz o porquê.
         if (ativo == null && status != null && !status.startsWith("200")) {
             return LaunchInfo(false, log)
+        }
+        // Nunca trocar de canal sozinho: família assistindo (YouTube aberto) ou algo
+        // tocando → conexão silenciosa; quem decide a troca é o botão explícito do painel.
+        val estado = runCatching { mediaPlayer(host) }.getOrNull()
+        log += "estado: ${estado?.state?.takeIf { it.isNotBlank() } ?: "sem resposta"}"
+        if (tvEmUso(ativo, estado?.state)) {
+            val motivo = estado?.state?.takeIf { estadoOcupaTela(it) } ?: ativo?.name
+            if (!podeInterromper) {
+                log += "TV em uso ($motivo) — não interrompi"
+                return LaunchInfo(false, log, null, emUso = true)
+            }
+            log += "TV em uso ($motivo) — trocando a pedido"
         }
         idSalvo?.let { salvo ->
             log += "id salvo: $salvo"
