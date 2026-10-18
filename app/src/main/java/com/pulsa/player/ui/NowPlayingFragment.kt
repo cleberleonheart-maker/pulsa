@@ -334,17 +334,30 @@ class NowPlayingFragment : Fragment() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.tv_player_failed)
             .setMessage(msg)
+            .setNeutralButton(R.string.tv_copy) { _, _ -> copiarDiagnostico(msg) }
             .setPositiveButton(android.R.string.ok, null)
             .show()
     }
 
     /** O que o servidor DLNA viu chegar da TV + último launch — separa "rede" de "resposta". */
     private fun showDiagnostico() {
+        val texto = com.pulsa.player.media.tv.TvLink.diagnostico()
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.tv_diag)
-            .setMessage(com.pulsa.player.media.tv.TvLink.diagnostico())
+            .setMessage(texto)
+            .setNeutralButton(R.string.tv_copy) { _, _ -> copiarDiagnostico(texto) }
             .setPositiveButton(android.R.string.ok, null)
             .show()
+    }
+
+    /**
+     * Copiar o texto em vez de print: no celular o print de diálogo longo vira uma foto
+     * ilegível — texto colado no zap/Telegram o lê e o manda direto pra gente.
+     */
+    private fun copiarDiagnostico(texto: String) {
+        requireContext().getSystemService(android.content.ClipboardManager::class.java)
+            ?.setPrimaryClip(android.content.ClipData.newPlainText("Pulsa", texto))
+        Toast.makeText(requireContext(), R.string.tv_copied, Toast.LENGTH_SHORT).show()
     }
 
     fun render() {

@@ -136,6 +136,16 @@ object TvLink {
         val device = (state as? State.Connected)?.device ?: return
         ThreadPool.postNetwork {
             runCatching { RokuEcp.keypress(device.host, key) }
+            // Captura do id do RMP sem exigir clique extra: se o player está aberto e
+            // ainda não guardamos o id (TV com /query/apps 403), a primeira tecla que o
+            // usuário dá pelo app já fecha o aprendizado.
+            val ctx = contexto
+            if (ctx != null && Settings.tvRmpId(ctx) == null) {
+                val ativo = runCatching { RokuEcp.activeApp(device.host) }.getOrNull()
+                if (ativo != null && RokuEcp.ehMediaPlayer(ativo)) {
+                    Settings.setTvRmpId(ctx, ativo.id)
+                }
+            }
         }
     }
 

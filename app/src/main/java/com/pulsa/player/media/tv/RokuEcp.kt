@@ -45,7 +45,12 @@ object RokuEcp {
     /** Porta fixa do ECP, documentada pela Roku em todo firmware. */
     const val PORT = 8060
 
-    private val NOME_RMP = listOf("roku media player", "media player", "player de mídia")
+    private val NOME_RMP = listOf(
+        "roku media player",
+        "media player",
+        "player de mídia",
+        "reprodutor de mídia",
+    )
 
     data class Device(val host: String, val friendlyName: String, val model: String)
 

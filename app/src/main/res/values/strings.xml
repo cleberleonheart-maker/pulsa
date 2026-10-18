@@ -1202,8 +1202,10 @@
     <string name="tv_vol_down">Volume −</string>
     <string name="tv_search_again">Procurar outras TVs</string>
     <string name="tv_reconnect">Conectar à %1$s</string>
-    <string name="tv_player_manual">O Roku não abriu automaticamente. Toque em “Abrir Roku Media Player” ou abra o app na TV e selecione “Pulsa”.</string>
+    <string name="tv_player_manual">O Roku não abriu automaticamente. Toque em “Abrir Roku Media Player” ou abra o app na TV e selecione “Pulsa”. Depois de abrir uma vez, o app aprende o id e abre sozinho.</string>
     <string name="tv_player_opened">Roku Media Player abriu na TV.</string>
     <string name="tv_player_failed">Não abriu o player na TV</string>
     <string name="tv_diag">Diagnóstico</string>
+    <string name="tv_copy">Copiar</string>
+    <string name="tv_copied">Diagnóstico copiado</string>
 </resources>
