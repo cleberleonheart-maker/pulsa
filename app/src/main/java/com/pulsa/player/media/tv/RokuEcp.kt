@@ -45,8 +45,6 @@ object RokuEcp {
     /** Porta fixa do ECP, documentada pela Roku em todo firmware. */
     const val PORT = 8060
 
-    /** ID do canal "Roku Media Player" — o único que entende as pastas DLNA que servimos. */
-    private val IDS_RMP = setOf("11", "12")
     private val NOME_RMP = listOf("roku media player", "media player", "player de mídia")
 
     data class Device(val host: String, val friendlyName: String, val model: String)
@@ -71,7 +69,7 @@ object RokuEcp {
 
     /** `/query/apps` — lista de canais instalados, para achar o Roku Media Player pelo nome. */
     fun apps(host: String): List<App> {
-        val xml = get("http://$host:$PORT/query/apps") ?: return emptyList()
+        val xml = get("http://$host:$PORT/query/apps", 3000, 3000) ?: return emptyList()
         return parseApps(xml)
     }
 
@@ -84,8 +82,29 @@ object RokuEcp {
      * mesmo descobre os servidores DLNA da rede (inclusive o nosso) e o usuário escolhe
      * "Pulsa" no controle. O app só empurra o canal; a navegação é da TV.
      */
-    fun launch(host: String, appId: String) {
-        request("http://$host:$PORT/launch/$appId", "POST")
+    fun launch(host: String, appId: String): Boolean {
+        return request("http://$host:$PORT/launch/$appId", "POST", 3000, 3000) != null
+    }
+
+    /**
+     * Tenta lançar o Roku Media Player (por nome → "12" → "11"), validando cada tentativa.
+     * Retorna true se algum POST retornar 200.
+     *
+     * **Por que os dois IDs.** O ID do canal muda entre firmware ("12" é o atual, "11" o
+     * antigo) e `apps()` pode dar timeout em rede lenta — por isso o nome vem primeiro e
+     * os IDs históricos são o plano B, cada um conferido pelo código HTTP antes de rendição.
+     */
+    fun launchRmp(host: String): Boolean {
+        val found = apps(host).firstOrNull { app ->
+            val n = app.name.lowercase()
+            NOME_RMP.any { n.contains(it) }
+        }
+        if (found?.id != null) {
+            if (launch(host, found.id)) return true
+        }
+        if (launch(host, "12")) return true
+        if (launch(host, "11")) return true
+        return false
     }
 
     /** `/keypress/<tecla>` — Play, Pause, Forward, Rewind, Home, VolumeUp/Down... */
@@ -97,19 +116,6 @@ object RokuEcp {
     fun mediaPlayer(host: String): PlayerState? {
         val xml = get("http://$host:$PORT/query/media-player") ?: return null
         return parseMediaPlayer(xml)
-    }
-
-    /**
-     * ID do Roku Media Player neste aparelho, buscando pelo nome (o número do ID muda
-     * entre firmware, o nome não). Fallback nos IDs históricos 11/12.
-     */
-    fun rmpAppId(host: String): String? {
-        val nomeAlvo = NOME_RMP
-        val found = apps(host).firstOrNull { app ->
-            val n = app.name.lowercase()
-            nomeAlvo.any { n.contains(it) }
-        }
-        return found?.id ?: IDS_RMP.firstOrNull()
     }
 
     // ── descoberta ──────────────────────────────────────────────────────────
@@ -200,11 +206,12 @@ object RokuEcp {
     // ── HTTP ────────────────────────────────────────────────────────────────
 
     private fun get(url: String): String? = request(url, "GET")
+    private fun get(url: String, connectTimeout: Int, readTimeout: Int): String? = request(url, "GET", connectTimeout, readTimeout)
 
-    private fun request(url: String, method: String): String? = runCatching {
+    private fun request(url: String, method: String, connectTimeout: Int = 1500, readTimeout: Int = 1500): String? = runCatching {
         val conn = URL(url).openConnection() as HttpURLConnection
-        conn.connectTimeout = 1500
-        conn.readTimeout = 1500
+        conn.connectTimeout = connectTimeout
+        conn.readTimeout = readTimeout
         conn.requestMethod = method
         conn.doInput = true
         if (conn.responseCode != 200) return null

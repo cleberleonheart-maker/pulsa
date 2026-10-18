@@ -35,7 +35,7 @@ object TvLink {
         data class Busy(val label: String) : State()
 
         /** Sessão ativa: servidor no ar, TV pareada. */
-        data class Connected(val device: RokuEcp.Device) : State()
+        data class Connected(val device: RokuEcp.Device, val playerAberto: Boolean = true) : State()
     }
 
     @Volatile
@@ -80,13 +80,12 @@ object TvLink {
                 if (!srv.start()) return@runCatching false
                 server = srv
                 // Acha o ID real do Roku Media Player (muda entre firmware) e lança.
-                val appId = RokuEcp.rmpAppId(device.host) ?: "12"
-                RokuEcp.launch(device.host, appId)
+                val launched = RokuEcp.launchRmp(device.host)
                 Settings.setTvDevice(app, device.host, device.friendlyName)
-                true
+                launched
             }.getOrDefault(false)
-            if (ok) {
-                setState(State.Connected(device))
+            if (ok || server != null) {
+                setState(State.Connected(device, ok))
             } else {
                 server?.stop()
                 server = null
@@ -133,8 +132,11 @@ object TvLink {
     fun relaunch() {
         val device = (state as? State.Connected)?.device ?: return
         ThreadPool.postNetwork {
-            val appId = RokuEcp.rmpAppId(device.host) ?: "12"
-            runCatching { RokuEcp.launch(device.host, appId) }
+            val launched = runCatching { RokuEcp.launchRmp(device.host) }.getOrDefault(false)
+            if (launched) {
+                val cur = state as? State.Connected
+                if (cur != null) setState(State.Connected(cur.device, true))
+            }
         }
     }
 

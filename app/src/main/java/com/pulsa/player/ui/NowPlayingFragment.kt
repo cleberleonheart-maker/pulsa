@@ -231,6 +231,9 @@ class NowPlayingFragment : Fragment() {
                 Toast.makeText(requireContext(), s.label, Toast.LENGTH_SHORT).show()
             }
             is com.pulsa.player.media.tv.TvLink.State.Connected -> {
+                if (!s.playerAberto) {
+                    Toast.makeText(requireContext(), R.string.tv_player_manual, Toast.LENGTH_LONG).show()
+                }
                 showTvControls(s.device)
             }
             is com.pulsa.player.media.tv.TvLink.State.Idle -> {
