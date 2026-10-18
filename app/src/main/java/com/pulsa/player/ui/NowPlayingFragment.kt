@@ -291,6 +291,7 @@ class NowPlayingFragment : Fragment() {
             getString(R.string.tv_vol_up),
             getString(R.string.tv_vol_down),
             getString(R.string.tv_open_player),
+            getString(R.string.tv_diag),
             getString(R.string.tv_disconnect),
         )
         MaterialAlertDialogBuilder(requireContext())
@@ -303,14 +304,46 @@ class NowPlayingFragment : Fragment() {
                     2 -> link.keypress("Rewind")
                     3 -> link.keypress("VolumeUp")
                     4 -> link.keypress("VolumeDown")
-                    5 -> link.relaunch()
-                    6 -> {
+                    5 -> link.relaunch { abriu ->
+                        if (!isAdded) return@relaunch
+                        if (abriu) {
+                            Toast.makeText(requireContext(), R.string.tv_player_opened, Toast.LENGTH_SHORT).show()
+                        } else {
+                            showLaunchFailed()
+                        }
+                    }
+                    6 -> showDiagnostico()
+                    7 -> {
                         link.disconnect()
                         Toast.makeText(requireContext(), R.string.tv_disconnect, Toast.LENGTH_SHORT).show()
                     }
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /**
+     * Falha do launch com o rastro (códigos HTTP/active-app). Sem este diálogo o botão
+     * "Abrir Roku Media Player" falhava em silêncio e o diagnóstico tinha que virar
+     * palpite — com ele o usuário manda a foto e o caminho já aparece escrito.
+     */
+    private fun showLaunchFailed() {
+        val log = com.pulsa.player.media.tv.TvLink.ultimoLaunch
+        val msg = log.joinToString("\n") + "\n\n" + getString(R.string.tv_player_manual)
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.tv_player_failed)
+            .setMessage(msg)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    /** O que o servidor DLNA viu chegar da TV + último launch — separa "rede" de "resposta". */
+    private fun showDiagnostico() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.tv_diag)
+            .setMessage(com.pulsa.player.media.tv.TvLink.diagnostico())
+            .setPositiveButton(android.R.string.ok, null)
             .show()
     }
 

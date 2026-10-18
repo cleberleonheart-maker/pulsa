@@ -42,6 +42,11 @@ object TvLink {
     var state: State = State.Idle
         private set
 
+    /** Rastro do último launch (códigos HTTP/active-app) — a UI mostra quando falha. */
+    @Volatile
+    var ultimoLaunch: List<String> = emptyList()
+        private set
+
     private var server: DlnaServer? = null
 
     /** Listeners de mudança de estado (UI registra em onResume, limpa em onPause). */
@@ -79,10 +84,13 @@ object TvLink {
                 val srv = DlnaServer(app, uuid, nodes, { id -> pathById[id] })
                 if (!srv.start()) return@runCatching false
                 server = srv
-                // Acha o ID real do Roku Media Player (muda entre firmware) e lança.
-                val launched = RokuEcp.launchRmp(device.host)
+                // Lança o Roku Media Player e confere que abriu (o rastro fica em
+                // ultimoLaunch para o painel de diagnóstico quando não abriu).
+                val info = runCatching { RokuEcp.launchRmp(device.host) }
+                    .getOrDefault(RokuEcp.LaunchInfo(false, listOf("launch: erro inesperado")))
+                ultimoLaunch = info.log
                 Settings.setTvDevice(app, device.host, device.friendlyName)
-                launched
+                info.aberto
             }.getOrDefault(false)
             if (ok || server != null) {
                 setState(State.Connected(device, ok))
@@ -128,16 +136,43 @@ object TvLink {
         }
     }
 
-    /** Abre de novo o Roku Media Player na TV (útil quando o usuário saiu para o menu). */
-    fun relaunch() {
+    /**
+     * Abre de novo o Roku Media Player na TV (útil quando o usuário saiu para o menu).
+     * [onResultado] chega na UI com se abriu de verdade (confirmado por active-app) —
+     * sem isto o botão do painel falhava em silêncio e o usuário só via "não entrou".
+     */
+    fun relaunch(onResultado: ((Boolean) -> Unit)? = null) {
         val device = (state as? State.Connected)?.device ?: return
         ThreadPool.postNetwork {
-            val launched = runCatching { RokuEcp.launchRmp(device.host) }.getOrDefault(false)
-            if (launched) {
+            val info = runCatching { RokuEcp.launchRmp(device.host) }
+                .getOrDefault(RokuEcp.LaunchInfo(false, listOf("launch: erro inesperado")))
+            ultimoLaunch = info.log
+            if (info.aberto) {
                 val cur = state as? State.Connected
                 if (cur != null) setState(State.Connected(cur.device, true))
             }
+            ThreadPool.onUi { onResultado?.invoke(info.aberto) }
         }
+    }
+
+    /**
+     * Texto do diálogo de diagnóstico: o que o servidor viu chegar da TV (se a TV nem
+     * pediu desc/Browse, o problema é rede/isolamento de roteador — não há resposta a
+     * consertar) e o rastro do último launch. Sem isto cada teste virava palpite.
+     */
+    fun diagnostico(): String = buildString {
+        val srv = server
+        if (srv == null) {
+            appendLine("servidor: parado")
+        } else {
+            appendLine("servidor: ${srv.baseUrl}")
+            val h = srv.historico
+            if (h.isEmpty()) appendLine("TV ainda não pediu nada (rede/isolamento?)")
+            else h.forEach { appendLine(it) }
+        }
+        appendLine("launch:")
+        if (ultimoLaunch.isEmpty()) appendLine("  (nunca tentado)")
+        else ultimoLaunch.forEach { appendLine("  $it") }
     }
 
     /**

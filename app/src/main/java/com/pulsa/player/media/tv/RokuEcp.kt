@@ -81,30 +81,74 @@ object RokuEcp {
      * (Netflix/YouTube). Para mídia de servidor, o caminho real é: lança o Media Player, ele
      * mesmo descobre os servidores DLNA da rede (inclusive o nosso) e o usuário escolhe
      * "Pulsa" no controle. O app só empurra o canal; a navegação é da TV.
+     *
+     * Devolve o código HTTP (ou -1 sem resposta): POST é o oficial, mas firmware antigo
+     * responde só ao GET do mesmo endpoint — por isso o plano B, e por isso a função não
+     * devolve Boolean: "404" (canal errado) e "rede morta" são diagnósticos diferentes.
      */
-    fun launch(host: String, appId: String): Boolean {
-        return request("http://$host:$PORT/launch/$appId", "POST", 3000, 3000) != null
+    fun launch(host: String, appId: String): Int {
+        val url = "http://$host:$PORT/launch/$appId"
+        val code = codigo("POST", url, 3000, 3000)
+        return if (code in 200..299) code else codigo("GET", url, 3000, 3000)
     }
 
+    /** Resultado de [launchRmp] com o rastro de cada tentativa — a UI mostra isto na falha. */
+    data class LaunchInfo(val aberto: Boolean, val log: List<String>)
+
     /**
-     * Tenta lançar o Roku Media Player (por nome → "12" → "11"), validando cada tentativa.
-     * Retorna true se algum POST retornar 200.
+     * Tenta lançar o Roku Media Player (por nome → "12" → "11") e **confere** que abriu.
+     *
+     * **Por que conferir.** O POST /launch devolvendo 200 só diz que o Roku aceitou o
+     * pedido — em alguns firmwares o canal não existe/não abre e o 200 vem mesmo assim.
+     * Sem a checagem por `/query/active-app` o app marcava "conectado" com a TV no menu
+     * e o usuário via o botão da TV "não fazer nada".
      *
      * **Por que os dois IDs.** O ID do canal muda entre firmware ("12" é o atual, "11" o
-     * antigo) e `apps()` pode dar timeout em rede lenta — por isso o nome vem primeiro e
-     * os IDs históricos são o plano B, cada um conferido pelo código HTTP antes de rendição.
+     * antigo) e `apps()` pode dar timeout em rede lenta — o nome vem primeiro e os IDs
+     * históricos são o plano B.
      */
-    fun launchRmp(host: String): Boolean {
-        val found = apps(host).firstOrNull { app ->
-            val n = app.name.lowercase()
-            NOME_RMP.any { n.contains(it) }
+    fun launchRmp(host: String): LaunchInfo {
+        val log = ArrayList<String>()
+        val lista = apps(host)
+        log += if (lista.isEmpty()) "apps: sem resposta" else "apps: ${lista.size} canais"
+        val candidatos = mutableListOf<String>()
+        lista.firstOrNull { a -> NOME_RMP.any { a.name.lowercase().contains(it) } }?.let {
+            candidatos += it.id
+            log += "por nome: ${it.name} (id ${it.id})"
         }
-        if (found?.id != null) {
-            if (launch(host, found.id)) return true
+        for (id in listOf("12", "11")) if (id !in candidatos) candidatos += id
+        for (id in candidatos) {
+            val code = launch(host, id)
+            log += "launch/$id → $code"
+            if (code !in 200..299) continue
+            // 200 não prova que abriu: pergunta qual app está em primeiro plano.
+            val ativo = confirmarAtivo(host, id, log)
+            return LaunchInfo(ativo, log)
         }
-        if (launch(host, "12")) return true
-        if (launch(host, "11")) return true
+        return LaunchInfo(false, log)
+    }
+
+    /** Espera até ~1,2s o app trocar de foreground (o launch é assíncrono no Roku). */
+    private fun confirmarAtivo(host: String, id: String, log: MutableList<String>): Boolean {
+        repeat(3) { i ->
+            val atual = activeApp(host)
+            when {
+                atual == null && i == 2 -> log += "active-app: sem resposta"
+                atual != null && atual.id == id -> {
+                    log += "active-app: ${atual.name}"
+                    return true
+                }
+                atual != null && i == 2 -> log += "active-app: ${atual.name} (id ${atual.id})"
+            }
+            Thread.sleep(400)
+        }
         return false
+    }
+
+    /** `/query/active-app` — app em primeiro plano (o que prova que o launch pegou). */
+    fun activeApp(host: String): App? {
+        val xml = get("http://$host:$PORT/query/active-app", 2000, 2000) ?: return null
+        return parseActiveApp(xml)
     }
 
     /** `/keypress/<tecla>` — Play, Pause, Forward, Rewind, Home, VolumeUp/Down... */
@@ -208,6 +252,21 @@ object RokuEcp {
     private fun get(url: String): String? = request(url, "GET")
     private fun get(url: String, connectTimeout: Int, readTimeout: Int): String? = request(url, "GET", connectTimeout, readTimeout)
 
+    /**
+     * Só o código HTTP (ou -1 sem resposta). Para launch a resposta é o próprio
+     * diagnóstico: -1 = rede/TV muda, 404 = canal errado, 200 = aceito.
+     */
+    private fun codigo(method: String, url: String, connectTimeout: Int, readTimeout: Int): Int = runCatching {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        conn.connectTimeout = connectTimeout
+        conn.readTimeout = readTimeout
+        conn.requestMethod = method
+        conn.doInput = true
+        val code = conn.responseCode
+        runCatching { (if (code in 200..299) conn.inputStream else conn.errorStream)?.close() }
+        code
+    }.getOrDefault(-1)
+
     private fun request(url: String, method: String, connectTimeout: Int = 1500, readTimeout: Int = 1500): String? = runCatching {
         val conn = URL(url).openConnection() as HttpURLConnection
         conn.connectTimeout = connectTimeout
@@ -285,6 +344,24 @@ object RokuEcp {
             positionMs = (text(root, "position")?.toLongOrNull() ?: 0L) * 1000,
             durationMs = (text(root, "duration")?.toLongOrNull() ?: 0L) * 1000,
         )
+    }.getOrNull()
+
+    /**
+     * `/query/active-app` → app em primeiro plano. O formato do ECP é `<app id="12">`
+     * com o nome no filho `<name>` (alguns firmwares devolvem `<active-app><app…>` —
+     * por isso a procura por elemento "app" quando a raiz não é ele).
+     */
+    internal fun parseActiveApp(xml: String): App? = runCatching {
+        val doc = parseXml(xml)
+        val root = doc.documentElement ?: return null
+        val el = if (local(root) == "app") {
+            root
+        } else {
+            val nodes = doc.getElementsByTagName("app")
+            if (nodes.length == 0) null else nodes.item(0) as? Element
+        } ?: return null
+        val id = el.getAttribute("id").ifBlank { null } ?: text(el, "id") ?: return null
+        App(id, text(el, "name") ?: id)
     }.getOrNull()
 
     // ── XML util (mesmo motivo do FeedParser: javax.xml funciona em teste e aparelho) ──

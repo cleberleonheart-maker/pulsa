@@ -122,4 +122,34 @@ class RokuEcpParseTest {
         )
         assertNull(RokuEcp.parseSsdpLocation("CACHE-CONTROL: max-age=1800"))
     }
+
+    @Test
+    fun activeAppLeIdENome() {
+        val xml = """
+            <?xml version="1.0" encoding="UTF-8" ?>
+            <app id="12">
+              <name>Roku Media Player</name>
+            </app>
+        """.trimIndent()
+        val app = RokuEcp.parseActiveApp(xml)
+        assertNotNull(app)
+        assertEquals("12", app!!.id)
+        assertEquals("Roku Media Player", app.name)
+    }
+
+    @Test
+    fun activeAppRaizWrapperCaiNoFilhoApp() {
+        // Alguns firmwares envolvem em <active-app>; o id/nome continuam no <app>.
+        val xml = "<active-app><app id=\"home\"><name>Roku Home</name></app></active-app>"
+        val app = RokuEcp.parseActiveApp(xml)
+        assertEquals("home", app!!.id)
+        assertEquals("Roku Home", app.name)
+    }
+
+    @Test
+    fun activeAppSemIdOuXmlInvalidoDevolveNull() {
+        assertNull(RokuEcp.parseActiveApp("<app></app>"))
+        assertNull(RokuEcp.parseActiveApp("<app"))
+        assertNull(RokuEcp.parseActiveApp("lixo"))
+    }
 }

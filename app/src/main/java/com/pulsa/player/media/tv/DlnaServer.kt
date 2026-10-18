@@ -3,12 +3,12 @@ package com.pulsa.player.media.tv
 import android.content.Context
 import android.net.wifi.WifiManager
 import android.net.Uri
-import java.io.BufferedReader
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
-import java.io.InputStreamReader
+import java.io.InputStream
 import java.io.OutputStream
 import java.net.DatagramPacket
 import java.net.InetAddress
@@ -37,9 +37,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * respondendo certo. É o defeito número um de servidor DLNA em Android, e a permissão
  * `CHANGE_WIFI_MULTICAST_STATE` está no manifest justamente para isto.
  *
- * **Threads.** Um pool de 4 para HTTP (a TV abre poucas conexões; mídia longa segura uma
- * thread só durante o transfer) e uma thread própria para o SSDP (loop bloqueante de
- * receive, não pode competir com o pool).
+ * **Threads.** Um pool de 8 para HTTP (a TV abre desc, SCPD, SUBSCRIBE e Browse quase
+ * ao mesmo tempo ao entrar no servidor; com 4 a primeira varredura já estourava a folga)
+ * e uma thread própria para o SSDP (loop bloqueante de receive, não compete com o pool).
  */
 class DlnaServer(
     context: Context,
@@ -61,10 +61,23 @@ class DlnaServer(
     private val running = AtomicBoolean(false)
     private var serverSocket: ServerSocket? = null
     private var ssdpSocket: MulticastSocket? = null
-    private val httpPool = Executors.newFixedThreadPool(4) { r ->
+    private val httpPool = Executors.newFixedThreadPool(8) { r ->
         Thread(r, "pulsa-dlna-http").apply { priority = Thread.NORM_PRIORITY - 1 }
     }
     private var ssdpThread: Thread? = null
+
+    /**
+     * Últimas requisições que chegaram (mais recente primeiro) — o diálogo de diagnóstico
+     * do app mostra isto ao usuário. Se a TV não aparece aqui, o Browse nunca saiu da TV
+     * (rede/isolamento de roteador); se aparece, o problema é na nossa resposta.
+     */
+    @Volatile
+    var historico: List<String> = emptyList()
+        private set
+
+    private fun registrar(entrada: String) {
+        historico = (listOf(entrada) + historico).take(15)
+    }
 
     /** Porta HTTP efetiva (atribuída em [start] — efêmera, anunciada no SSDP). */
     @Volatile
@@ -128,11 +141,11 @@ class DlnaServer(
         socket.use { s ->
             s.soTimeout = 8000
             runCatching {
-                val input = BufferedReader(InputStreamReader(s.getInputStream(), "UTF-8"))
-                val requestLine = input.readLine() ?: return
+                val input = s.getInputStream()
+                val requestLine = lerLinha(input) ?: return
                 val headers = mutableMapOf<String, String>()
                 while (true) {
-                    val line = input.readLine() ?: break
+                    val line = lerLinha(input) ?: break
                     if (line.isBlank()) break
                     val colon = line.indexOf(':')
                     if (colon > 0) {
@@ -145,22 +158,43 @@ class DlnaServer(
                 val method = parts[0].uppercase()
                 val path = parts[1].substringBefore('?')
                 val out = s.getOutputStream()
+                // "Expect: 100-continue": o cliente espera o "pode enviar" antes do corpo
+                // do SOAP. Sem esta resposta intermédia os dois ficam esperando o outro
+                // para sempre — o sintoma na TV é a bolinha girando sem sair do lugar.
+                if (headers["expect"].equals("100-continue", ignoreCase = true)) {
+                    out.write("HTTP/1.1 100 Continue\r\n\r\n".toByteArray())
+                    out.flush()
+                }
                 when {
-                    method == "GET" && path == "/desc.xml" ->
+                    method == "GET" && path == "/desc.xml" -> {
+                        registrar("GET /desc.xml")
                         xml200(out, DlnaXml.deviceDescription(uuid, baseUrl))
-                    method == "GET" && path == "/cds.xml" ->
+                    }
+                    method == "GET" && path == "/cds.xml" -> {
+                        registrar("GET /cds.xml")
                         xml200(out, DlnaXml.scpdContentDirectory())
-                    method == "GET" && path == "/cms.xml" ->
+                    }
+                    method == "GET" && path == "/cms.xml" -> {
+                        registrar("GET /cms.xml")
                         xml200(out, DlnaXml.scpdConnectionManager())
+                    }
                     // SUBSCRIBE de eventing: a TV manda, respondemos 200 com SID falso —
                     // não emitimos NOTIFY, e a Roku Media Player segue funcionando sem os
                     // eventos (muitos servidores fazem igual).
-                    method == "SUBSCRIBE" -> subscribe200(out)
+                    method == "SUBSCRIBE" -> {
+                        registrar("SUBSCRIBE $path")
+                        subscribe200(out)
+                    }
                     method == "POST" && path == "/ctl" ->
                         handleSoap(input, headers, out)
-                    method == "GET" && path.startsWith("/f/") ->
+                    method == "GET" && path.startsWith("/f/") -> {
+                        registrar("GET /f/…")
                         serveMedia(path.removePrefix("/f/"), headers, out)
-                    else -> notFound(out)
+                    }
+                    else -> {
+                        registrar("404 $method $path")
+                        notFound(out)
+                    }
                 }
             }.onFailure {
                 runCatching { socket.close() }
@@ -168,22 +202,66 @@ class DlnaServer(
         }
     }
 
+    /**
+     * Cabeçalho HTTP linha a linha, **byte a byte** (cabeçalho é ASCII por RFC). Por que
+     * não um BufferedReader: ele bufaria junto bytes do corpo do SOAP, e o corpo é lido
+     * por Content-Length, que mede **bytes** — lido via leitor de chars, um título com
+     * acento no XML já derruba a contagem e a leitura trava até o timeout da TV vazar.
+     */
+    private fun lerLinha(input: InputStream): String? {
+        val sb = StringBuilder()
+        while (true) {
+            val b = input.read()
+            when {
+                b == -1 -> return if (sb.isEmpty()) null else sb.toString()
+                b == '\n'.code -> return sb.toString()
+                b != '\r'.code -> sb.append(b.toChar())
+            }
+        }
+    }
+
+    /** Corpo do POST: Content-Length (em bytes) ou `Transfer-Encoding: chunked`. */
+    private fun lerCorpo(input: InputStream, headers: Map<String, String>): ByteArray {
+        if (headers["transfer-encoding"]?.contains("chunked", ignoreCase = true) == true) {
+            return lerChunked(input)
+        }
+        val length = headers["content-length"]?.toIntOrNull() ?: 0
+        if (length <= 0) return ByteArray(0)
+        val buf = ByteArray(length)
+        var read = 0
+        while (read < length) {
+            val n = input.read(buf, read, length - read)
+            if (n < 0) break
+            read += n
+        }
+        return if (read == length) buf else buf.copyOf(read)
+    }
+
+    private fun lerChunked(input: InputStream): ByteArray {
+        val out = ByteArrayOutputStream()
+        val buf = ByteArray(4096)
+        while (true) {
+            val header = lerLinha(input) ?: break
+            val size = header.substringBefore(';').trim().toIntOrNull() ?: break
+            if (size <= 0) break
+            var restante = size
+            while (restante > 0) {
+                val n = input.read(buf, 0, minOf(buf.size, restante))
+                if (n < 0) return out.toByteArray()
+                out.write(buf, 0, n)
+                restante -= n
+            }
+            lerLinha(input) // CRLF que fecha o chunk (não faz parte dos dados)
+        }
+        return out.toByteArray()
+    }
+
     private fun handleSoap(
-        input: BufferedReader,
+        input: InputStream,
         headers: Map<String, String>,
         out: OutputStream,
     ) {
-        val length = headers["content-length"]?.toIntOrNull() ?: 0
-        val body = if (length > 0) {
-            val chars = CharArray(length)
-            var read = 0
-            while (read < length) {
-                val n = input.read(chars, read, length - read)
-                if (n < 0) break
-                read += n
-            }
-            String(chars, 0, read)
-        } else ""
+        val body = String(lerCorpo(input, headers), Charsets.UTF_8)
         val action = headers["soapaction"]?.trim('"')
             ?: DlnaXml.soapAction(body)?.second
         val (service, name) = when {
@@ -192,10 +270,12 @@ class DlnaServer(
             action != null && action.contains("ConnectionManager") ->
                 DlnaXml.SERVICE_CM to action.substringAfter('#')
             else -> DlnaXml.soapAction(body) ?: run {
+                registrar("POST /ctl sem ação")
                 xml500(out, DlnaXml.faultInvalidAction())
                 return
             }
         }
+        registrar("POST /ctl $name")
         val response = when {
             service == DlnaXml.SERVICE_CD && name == "Browse" -> {
                 val req = DlnaXml.parseBrowseRequest(body)
@@ -377,12 +457,16 @@ class DlnaServer(
     }
 
     private fun subscribe200(out: OutputStream) {
+        // Connection: close é obrigatório aqui: sem ele a TV infere keep-alive (HTTP/1.1),
+        // reaproveita o socket… e a gente fecha em seguida — o próximo Browse vai parar
+        // num socket morto e a tela fica girando.
         out.write(
             (
                 "HTTP/1.1 200 OK\r\n" +
                     "SID: uuid:pulsa-evt\r\n" +
                     "TIMEOUT: Second-1800\r\n" +
-                    "Content-Length: 0\r\n\r\n"
+                    "Content-Length: 0\r\n" +
+                    "Connection: close\r\n\r\n"
                 ).toByteArray(),
         )
         out.flush()
@@ -472,14 +556,23 @@ class DlnaServer(
         }
     }
 
-    /** Primeiro IPv4 não-loopback (wlan0/eth0) — o que a TV alcança. */
+    /**
+     * IPv4 não-loopback que a TV alcança. O celular pode ter várias interfaces (Wi-Fi,
+     * dados, VPN) e a primeira da enumeração nem sempre é o Wi-Fi — IP errado aqui é o
+     * desc.xml apontando para uma rede que a TV não enxerga, e aí a lista mostra o
+     * servidor mas todo clique fica girando. Prioriza wlan/ap/eth (interface de LAN).
+     */
     private fun localIp(): String? {
-        val addrs = runCatching {
+        val ips = runCatching {
             java.net.NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
                 .filter { it.isUp && !it.isLoopback }
-                .flatMap { it.inetAddresses.toList() }
-                .filterIsInstance<java.net.Inet4Address>()
+                .flatMap { iface ->
+                    iface.inetAddresses.toList().filterIsInstance<java.net.Inet4Address>()
+                        .map { iface.name to it.hostAddress!! }
+                }
         }.getOrDefault(emptyList())
-        return addrs.firstOrNull()?.hostAddress
+        return ips.firstOrNull { (nome, _) ->
+            nome.startsWith("wlan") || nome.startsWith("ap") || nome.startsWith("eth")
+        }?.second ?: ips.firstOrNull()?.second
     }
 }
