@@ -168,4 +168,13 @@ class RokuEcpParseTest {
         assertNull(RokuEcp.parseActiveApp("<app"))
         assertNull(RokuEcp.parseActiveApp("lixo"))
     }
+
+    @Test
+    fun ehMediaPlayerSoParaNomeDeMediaPlayer() {
+        // O id sozinho não serve: "12" é o Netflix — só o nome decide se é o RMP.
+        assertTrue(RokuEcp.ehMediaPlayer(RokuEcp.App("11", "Roku Media Player")))
+        assertTrue(RokuEcp.ehMediaPlayer(RokuEcp.App("7", "Media Player")))
+        assertFalse(RokuEcp.ehMediaPlayer(RokuEcp.App("12", "Netflix")))
+        assertFalse(RokuEcp.ehMediaPlayer(RokuEcp.App("13", "Prime Video")))
+    }
 }

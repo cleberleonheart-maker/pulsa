@@ -67,19 +67,40 @@ object RokuEcp {
         return parseDeviceInfo(host, xml)
     }
 
-    /** `/query/apps` — lista de canais instalados, para achar o Roku Media Player pelo nome. */
-    fun apps(host: String): List<App> {
-        // 8s e duas tentativas: /query/apps monta o XML de TODOS os canais e em Roku
-        // barato passa de 3s — e sem esta lista o launch não tem id seguro para chamar.
+    /**
+     * `/query/apps` — lista de canais instalados, para achar o Roku Media Player pelo nome.
+     */
+    fun apps(host: String): List<App> = appsDetalhe(host).lista
+
+    private data class AppsDetalhe(val lista: List<App>, val detalhe: String)
+
+    /**
+     * `/query/apps` com o porquê do resultado para o Diagnóstico. Nesta TV o endpoint não
+     * responde nem em 8s — e "sem resposta" podia ser 403, timeout ou XML ruim, três
+     * diagnósticos que pedem remédios diferentes. HTTP 4xx não repete (não vira 200);
+     * timeout/XML ilegível repete uma vez (ryma de rede é comum).
+     */
+    private fun appsDetalhe(host: String): AppsDetalhe {
+        var ultimo = "sem tentativa"
         repeat(2) {
-            val xml = get("http://$host:$PORT/query/apps", 8000, 8000)
-            if (xml != null) {
-                val lista = parseApps(xml)
-                if (lista.isNotEmpty()) return lista
+            val h = http("GET", "http://$host:$PORT/query/apps", 8000, 8000)
+            when {
+                h.erro != null -> ultimo = "sem resposta (${h.erro})"
+                h.code != 200 -> return AppsDetalhe(emptyList(), "HTTP ${h.code}")
+                else -> {
+                    val lista = h.corpo?.let { parseApps(it) }.orEmpty()
+                    if (lista.isNotEmpty()) {
+                        return AppsDetalhe(lista, "HTTP 200, ${lista.size} canais")
+                    }
+                    ultimo = "HTTP 200 mas XML ilegível"
+                }
             }
         }
-        return emptyList()
+        return AppsDetalhe(emptyList(), ultimo)
     }
+
+    /** O app é o Roku Media Player? (nome vindo do ECP — id sozinho já enganou a gente). */
+    fun ehMediaPlayer(app: App): Boolean = NOME_RMP.any { app.name.lowercase().contains(it) }
 
     /**
      * Lança um canal pelo id ([appId]) via POST /launch, com fallback GET (firmware
@@ -98,42 +119,64 @@ object RokuEcp {
 
     private fun tentarLaunch(host: String, appId: String): Pair<Int, String?> {
         val url = "http://$host:$PORT/launch/$appId"
-        val post = codigo("POST", url, 3000, 3000)
-        if (post.first in 200..299) return post
+        val post = http("POST", url, 3000, 3000)
+        if (post.code != -1) return post.code to post.erro
         // Só tenta o GET quando o POST nem respondeu; resposta HTTP (mesmo 404) do POST
         // já é o veredito — dois códigos concorrentes no log só confundem o diagnóstico.
-        if (post.first != -1) return post
-        return codigo("GET", url, 3000, 3000)
+        val get = http("GET", url, 3000, 3000)
+        return get.code to get.erro
     }
 
-    /** Resultado de [launchRmp] com o rastro de cada tentativa — a UI mostra isto na falha. */
-    data class LaunchInfo(val aberto: Boolean, val log: List<String>)
+    /**
+     * Resultado de [launchRmp]. [idRmp] é o id confirmado do Roku Media Player, guardado
+     * pela UI para o próximo launch — tem TV em que `/query/apps` não responde e este id
+     * "aprendido" do active-app é o único caminho automático.
+     */
+    data class LaunchInfo(val aberto: Boolean, val log: List<String>, val idRmp: String? = null)
 
     /**
-     * Lança o Roku Media Player e **confere** que abriu — usando só o id que veio de
-     * `/query/apps` por nome.
+     * Lança o Roku Media Player e **confere** que abriu. Caminhos, nesta ordem:
+     * 1. já está aberto? (é também assim que o id é "aprendido" do active-app);
+     * 2. id salvo de uma vez em que o RMP apareceu no active-app (dispensa /query/apps);
+     * 3. id vindo de `/query/apps` por nome.
      *
      * **Por que sem chute de id.** A doc oficial da Roku usa o id 12 como exemplo … do
      * Netflix: o chute "12" abriu Netflix na TV do usuário e o `active-app` com id 12
-     * "confirmava" o erro. Sem lista na mesa, o caminho honesto é o manual ("abra o
-     * player na mão"), que o diálogo do painel já ensina.
+     * "confirmava" o erro. Sem lista e sem id salvo, o caminho honesto é o manual ("abra
+     * o player na mão"), que o diálogo do painel já ensina.
      *
      * **Por que conferir.** O POST /launch devolvendo 200 só diz que o Roku aceitou o
      * pedido — em alguns firmwares o canal não existe/não abre e o 200 vem mesmo assim.
      * Sem a checagem por `/query/active-app` o app marcava "conectado" com a TV no menu
      * e o usuário via o botão da TV "não fazer nada".
      */
-    fun launchRmp(host: String): LaunchInfo {
+    fun launchRmp(host: String, idSalvo: String? = null): LaunchInfo {
         val log = ArrayList<String>()
-        val lista = apps(host)
-        if (lista.isEmpty()) {
-            log += "apps: sem resposta — sem lista não chuto id (12 é o Netflix)"
+        val (ativo, status) = activeAppDetalhe(host)
+        log += if (ativo != null) "active-app: ${ativo.name} (id ${ativo.id})"
+        else "active-app: $status"
+        if (ativo != null && ehMediaPlayer(ativo)) {
+            log += "já estava aberto"
+            return LaunchInfo(true, log, ativo.id)
+        }
+        // ECP mudo (sem resposta/4xx) não adianta tentar lista: só repetiria o -1 depois
+        // de 16s de /query/apps — e o log já diz o porquê.
+        if (ativo == null && status != null && !status.startsWith("200")) {
             return LaunchInfo(false, log)
         }
-        log += "apps: ${lista.size} canais"
-        val alvos = lista.filter { a -> NOME_RMP.any { a.name.lowercase().contains(it) } }
+        idSalvo?.let { salvo ->
+            log += "id salvo: $salvo"
+            val (code, erro) = tentarLaunch(host, salvo)
+            log += "launch/$salvo → $code" + (erro?.let { " ($it)" } ?: "")
+            if (code in 200..299 && confirmarAtivo(host, App(salvo, ""), log)) {
+                return LaunchInfo(true, log, salvo)
+            }
+        }
+        val res = appsDetalhe(host)
+        log += "apps: ${res.detalhe}"
+        val alvos = res.lista.filter { ehMediaPlayer(it) }
         if (alvos.isEmpty()) {
-            log += "Roku Media Player fora da lista — abra na TV na mão"
+            if (res.lista.isNotEmpty()) log += "Roku Media Player fora da lista — abra na TV na mão"
             return LaunchInfo(false, log)
         }
         for (alvo in alvos) {
@@ -141,7 +184,8 @@ object RokuEcp {
             val (code, erro) = tentarLaunch(host, alvo.id)
             log += "launch/${alvo.id} → $code" + (erro?.let { " ($it)" } ?: "")
             if (code !in 200..299) continue
-            return LaunchInfo(confirmarAtivo(host, alvo, log), log)
+            val ok = confirmarAtivo(host, alvo, log)
+            return LaunchInfo(ok, log, if (ok) alvo.id else null)
         }
         return LaunchInfo(false, log)
     }
@@ -153,10 +197,7 @@ object RokuEcp {
     private fun confirmarAtivo(host: String, esperado: App, log: MutableList<String>): Boolean {
         repeat(3) { i ->
             val atual = activeApp(host)
-            val ehRmp = atual != null && (
-                atual.id == esperado.id ||
-                    NOME_RMP.any { atual.name.lowercase().contains(it) }
-                )
+            val ehRmp = atual != null && (atual.id == esperado.id || ehMediaPlayer(atual))
             when {
                 atual == null && i == 2 -> log += "active-app: sem resposta"
                 ehRmp -> {
@@ -171,9 +212,19 @@ object RokuEcp {
     }
 
     /** `/query/active-app` — app em primeiro plano (o que prova que o launch pegou). */
-    fun activeApp(host: String): App? {
-        val xml = get("http://$host:$PORT/query/active-app", 3000, 3000) ?: return null
-        return parseActiveApp(xml)
+    fun activeApp(host: String): App? = activeAppDetalhe(host).first
+
+    /** Como [activeApp] + o porquê quando vier null: `"HTTP 403"`, `"sem resposta (…)"`. */
+    private fun activeAppDetalhe(host: String): Pair<App?, String?> {
+        val h = http("GET", "http://$host:$PORT/query/active-app", 3000, 3000)
+        return when {
+            h.erro != null -> null to "sem resposta (${h.erro})"
+            h.code != 200 -> null to "HTTP ${h.code}"
+            else -> {
+                val app = h.corpo?.let { parseActiveApp(it) }
+                app to (if (app == null) "200, sem id (tela inicial)" else null)
+            }
+        }
     }
 
     /**
@@ -293,22 +344,31 @@ object RokuEcp {
     private fun get(url: String): String? = request(url, "GET")
     private fun get(url: String, connectTimeout: Int, readTimeout: Int): String? = request(url, "GET", connectTimeout, readTimeout)
 
+    /** Resposta HTTP crua: código, corpo (só em 2xx) e motivo quando não houve resposta. */
+    private data class Http(val code: Int, val corpo: String?, val erro: String?)
+
     /**
-     * Código HTTP + motivo do erro quando -1 (timeout, recusa, URL malformada…).
-     * Para launch a resposta é o próprio diagnóstico: -1 com o motivo = rede/TV muda,
-     * 404 = canal errado, 200 = aceito — sem o motivo, "sem resposta" era palpite.
+     * GET/POST com código + corpo + motivo de falha em uma chamada — o Diagnóstico precisa
+     * separar "HTTP 403" de "timeout" de "corpo veio" (três remédios diferentes), e o
+     * [appsDetalhe]/[activeAppDetalhe] comem os três campos.
      */
-    private fun codigo(method: String, url: String, connectTimeout: Int, readTimeout: Int): Pair<Int, String?> = runCatching {
+    private fun http(method: String, url: String, connectTimeout: Int, readTimeout: Int): Http = runCatching {
         val conn = URL(url).openConnection() as HttpURLConnection
         conn.connectTimeout = connectTimeout
         conn.readTimeout = readTimeout
         conn.requestMethod = method
         conn.doInput = true
         val code = conn.responseCode
-        runCatching { (if (code in 200..299) conn.inputStream else conn.errorStream)?.close() }
-        code to null
+        if (code in 200..299) {
+            // Corpo lido aqui mesmo: Content-Length é bytes e a leitura pode estourar o
+            // readTimeout — a exceção cai no runCatching de fora e vira "sem resposta".
+            Http(code, readAll(conn.inputStream), null)
+        } else {
+            runCatching { conn.errorStream?.close() }
+            Http(code, null, null)
+        }
     }.getOrElse { e ->
-        -1 to (e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName)
+        Http(-1, null, e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName)
     }
 
     private fun request(url: String, method: String, connectTimeout: Int = 1500, readTimeout: Int = 1500): String? = runCatching {

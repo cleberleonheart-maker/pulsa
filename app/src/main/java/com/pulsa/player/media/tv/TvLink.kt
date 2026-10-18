@@ -49,6 +49,13 @@ object TvLink {
 
     private var server: DlnaServer? = null
 
+    /**
+     * Contexto de aplicação guardado no [connect] — o [relaunch] não recebe contexto e
+     * precisa ler/gravar o id salvo do Roku Media Player nas prefs.
+     */
+    @Volatile
+    private var contexto: Context? = null
+
     /** Listeners de mudança de estado (UI registra em onResume, limpa em onPause). */
     private val listeners = ArrayList<(State) -> Unit>()
 
@@ -75,6 +82,7 @@ object TvLink {
     fun connect(context: Context, device: RokuEcp.Device) {
         if (state is State.Connected || state is State.Busy) return
         val app = context.applicationContext
+        contexto = app
         setState(State.Busy(device.friendlyName))
         ThreadPool.postNetwork {
             val ok = runCatching {
@@ -86,9 +94,13 @@ object TvLink {
                 server = srv
                 // Lança o Roku Media Player e confere que abriu (o rastro fica em
                 // ultimoLaunch para o painel de diagnóstico quando não abriu).
-                val info = runCatching { RokuEcp.launchRmp(device.host) }
-                    .getOrDefault(RokuEcp.LaunchInfo(false, listOf("launch: erro inesperado")))
+                val info = runCatching {
+                    RokuEcp.launchRmp(device.host, Settings.tvRmpId(app))
+                }.getOrDefault(RokuEcp.LaunchInfo(false, listOf("launch: erro inesperado")))
                 ultimoLaunch = info.log
+                // Id confirmado do RMP vira atalho permanente: em TV cujo /query/apps não
+                // responde, este id "aprendido" é o único caminho automático.
+                info.idRmp?.let { Settings.setTvRmpId(app, it) }
                 Settings.setTvDevice(app, device.host, device.friendlyName)
                 info.aberto
             }.getOrDefault(false)
@@ -143,10 +155,13 @@ object TvLink {
      */
     fun relaunch(onResultado: ((Boolean) -> Unit)? = null) {
         val device = (state as? State.Connected)?.device ?: return
+        val ctx = contexto
         ThreadPool.postNetwork {
-            val info = runCatching { RokuEcp.launchRmp(device.host) }
+            val idSalvo = ctx?.let { Settings.tvRmpId(it) }
+            val info = runCatching { RokuEcp.launchRmp(device.host, idSalvo) }
                 .getOrDefault(RokuEcp.LaunchInfo(false, listOf("launch: erro inesperado")))
             ultimoLaunch = info.log
+            info.idRmp?.let { id -> if (ctx != null) Settings.setTvRmpId(ctx, id) }
             if (info.aberto) {
                 val cur = state as? State.Connected
                 if (cur != null) setState(State.Connected(cur.device, true))

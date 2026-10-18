@@ -820,8 +820,22 @@ object Settings {
         prefs(context).edit()
             .remove("tv_host")
             .remove("tv_name")
+            .remove("tv_rmp_id")
             .apply()
     }
+
+    /**
+     * Id do Roku Media Player capturado do `/query/active-app` numa vez em que o player
+     * estava aberto (a primeira vez o usuário abre na mão). Em TV cujo `/query/apps` não
+     * responde este id é o único caminho automático — sem ele, launch vira chute de canal
+     * (e o id 12 "chutado" era o Netflix).
+     */
+    fun setTvRmpId(context: Context, id: String) {
+        prefs(context).edit().putString("tv_rmp_id", id).apply()
+    }
+
+    fun tvRmpId(context: Context): String? =
+        prefs(context).getString("tv_rmp_id", "")?.ifBlank { null }
 
 
 
