@@ -286,6 +286,26 @@ object DlnaXml {
             )
     }
 
+    /**
+     * NOTIFY alive (anuncia o servidor logo após o start). Responder ao M-SEARCH da TV é
+     * o caminho principal, mas há TV que só "enxerga" o servidor quando ele se anuncia —
+     * sem este alive o sintoma é a lista vazia do lado da TV com o servidor no ar.
+     */
+    fun ssdpAlive(location: String, uuid: String): String {
+        val nt = DEVICE_TYPE
+        return (
+            "NOTIFY * HTTP/1.1\r\n" +
+                "HOST: 239.255.255.250:1900\r\n" +
+                "CACHE-CONTROL: max-age=1800\r\n" +
+                "LOCATION: $location\r\n" +
+                "SERVER: Linux/UPnP/1.0 Pulsa/1\r\n" +
+                "NT: $nt\r\n" +
+                "NTS: ssdp:alive\r\n" +
+                "USN: uuid:$uuid::$nt\r\n" +
+                "\r\n"
+            )
+    }
+
     /** O ST de um M-SEARCH é alvo nosso? MediaServer:1 e ssdp:all (o generalista). */
     fun stAtende(st: String): Boolean {
         val s = st.trim()

@@ -69,73 +69,98 @@ object RokuEcp {
 
     /** `/query/apps` — lista de canais instalados, para achar o Roku Media Player pelo nome. */
     fun apps(host: String): List<App> {
-        val xml = get("http://$host:$PORT/query/apps", 3000, 3000) ?: return emptyList()
-        return parseApps(xml)
+        // 8s e duas tentativas: /query/apps monta o XML de TODOS os canais e em Roku
+        // barato passa de 3s — e sem esta lista o launch não tem id seguro para chamar.
+        repeat(2) {
+            val xml = get("http://$host:$PORT/query/apps", 8000, 8000)
+            if (xml != null) {
+                val lista = parseApps(xml)
+                if (lista.isNotEmpty()) return lista
+            }
+        }
+        return emptyList()
     }
 
     /**
-     * Lança o Roku Media Player ([appId] = "11" no firmware antigo, "12" no novo).
+     * Lança um canal pelo id ([appId]) via POST /launch, com fallback GET (firmware
+     * antigo responde só ao GET do mesmo endpoint).
      *
      * **Por que só o Media Player e não item específico.** O Roku não tem deep-link para
-     * item DLNA — o único `launch` que aceita argumento é o de app com query string própria
+     * item DLNA — o único `launch` que aceita argumento é de app com query string própria
      * (Netflix/YouTube). Para mídia de servidor, o caminho real é: lança o Media Player, ele
      * mesmo descobre os servidores DLNA da rede (inclusive o nosso) e o usuário escolhe
      * "Pulsa" no controle. O app só empurra o canal; a navegação é da TV.
      *
-     * Devolve o código HTTP (ou -1 sem resposta): POST é o oficial, mas firmware antigo
-     * responde só ao GET do mesmo endpoint — por isso o plano B, e por isso a função não
-     * devolve Boolean: "404" (canal errado) e "rede morta" são diagnósticos diferentes.
+     * Devolve código HTTP + motivo do erro (quando -1): "404" (canal errado), "timeout"
+     * (rede) e "200" são diagnósticos diferentes — Boolean empastelaria tudo.
      */
-    fun launch(host: String, appId: String): Int {
+    fun launch(host: String, appId: String): Int = tentarLaunch(host, appId).first
+
+    private fun tentarLaunch(host: String, appId: String): Pair<Int, String?> {
         val url = "http://$host:$PORT/launch/$appId"
-        val code = codigo("POST", url, 3000, 3000)
-        return if (code in 200..299) code else codigo("GET", url, 3000, 3000)
+        val post = codigo("POST", url, 3000, 3000)
+        if (post.first in 200..299) return post
+        // Só tenta o GET quando o POST nem respondeu; resposta HTTP (mesmo 404) do POST
+        // já é o veredito — dois códigos concorrentes no log só confundem o diagnóstico.
+        if (post.first != -1) return post
+        return codigo("GET", url, 3000, 3000)
     }
 
     /** Resultado de [launchRmp] com o rastro de cada tentativa — a UI mostra isto na falha. */
     data class LaunchInfo(val aberto: Boolean, val log: List<String>)
 
     /**
-     * Tenta lançar o Roku Media Player (por nome → "12" → "11") e **confere** que abriu.
+     * Lança o Roku Media Player e **confere** que abriu — usando só o id que veio de
+     * `/query/apps` por nome.
+     *
+     * **Por que sem chute de id.** A doc oficial da Roku usa o id 12 como exemplo … do
+     * Netflix: o chute "12" abriu Netflix na TV do usuário e o `active-app` com id 12
+     * "confirmava" o erro. Sem lista na mesa, o caminho honesto é o manual ("abra o
+     * player na mão"), que o diálogo do painel já ensina.
      *
      * **Por que conferir.** O POST /launch devolvendo 200 só diz que o Roku aceitou o
      * pedido — em alguns firmwares o canal não existe/não abre e o 200 vem mesmo assim.
      * Sem a checagem por `/query/active-app` o app marcava "conectado" com a TV no menu
      * e o usuário via o botão da TV "não fazer nada".
-     *
-     * **Por que os dois IDs.** O ID do canal muda entre firmware ("12" é o atual, "11" o
-     * antigo) e `apps()` pode dar timeout em rede lenta — o nome vem primeiro e os IDs
-     * históricos são o plano B.
      */
     fun launchRmp(host: String): LaunchInfo {
         val log = ArrayList<String>()
         val lista = apps(host)
-        log += if (lista.isEmpty()) "apps: sem resposta" else "apps: ${lista.size} canais"
-        val candidatos = mutableListOf<String>()
-        lista.firstOrNull { a -> NOME_RMP.any { a.name.lowercase().contains(it) } }?.let {
-            candidatos += it.id
-            log += "por nome: ${it.name} (id ${it.id})"
+        if (lista.isEmpty()) {
+            log += "apps: sem resposta — sem lista não chuto id (12 é o Netflix)"
+            return LaunchInfo(false, log)
         }
-        for (id in listOf("12", "11")) if (id !in candidatos) candidatos += id
-        for (id in candidatos) {
-            val code = launch(host, id)
-            log += "launch/$id → $code"
+        log += "apps: ${lista.size} canais"
+        val alvos = lista.filter { a -> NOME_RMP.any { a.name.lowercase().contains(it) } }
+        if (alvos.isEmpty()) {
+            log += "Roku Media Player fora da lista — abra na TV na mão"
+            return LaunchInfo(false, log)
+        }
+        for (alvo in alvos) {
+            log += "por nome: ${alvo.name} (id ${alvo.id})"
+            val (code, erro) = tentarLaunch(host, alvo.id)
+            log += "launch/${alvo.id} → $code" + (erro?.let { " ($it)" } ?: "")
             if (code !in 200..299) continue
-            // 200 não prova que abriu: pergunta qual app está em primeiro plano.
-            val ativo = confirmarAtivo(host, id, log)
-            return LaunchInfo(ativo, log)
+            return LaunchInfo(confirmarAtivo(host, alvo, log), log)
         }
         return LaunchInfo(false, log)
     }
 
-    /** Espera até ~1,2s o app trocar de foreground (o launch é assíncrono no Roku). */
-    private fun confirmarAtivo(host: String, id: String, log: MutableList<String>): Boolean {
+    /**
+     * Espera até ~1,2s o app trocar de foreground (o launch é assíncrono no Roku).
+     * Confirma por id do canal alvo **ou** por nome de Media Player no active-app.
+     */
+    private fun confirmarAtivo(host: String, esperado: App, log: MutableList<String>): Boolean {
         repeat(3) { i ->
             val atual = activeApp(host)
+            val ehRmp = atual != null && (
+                atual.id == esperado.id ||
+                    NOME_RMP.any { atual.name.lowercase().contains(it) }
+                )
             when {
                 atual == null && i == 2 -> log += "active-app: sem resposta"
-                atual != null && atual.id == id -> {
-                    log += "active-app: ${atual.name}"
+                ehRmp -> {
+                    log += "active-app: ${atual!!.name} (id ${atual.id})"
                     return true
                 }
                 atual != null && i == 2 -> log += "active-app: ${atual.name} (id ${atual.id})"
@@ -147,9 +172,22 @@ object RokuEcp {
 
     /** `/query/active-app` — app em primeiro plano (o que prova que o launch pegou). */
     fun activeApp(host: String): App? {
-        val xml = get("http://$host:$PORT/query/active-app", 2000, 2000) ?: return null
+        val xml = get("http://$host:$PORT/query/active-app", 3000, 3000) ?: return null
         return parseActiveApp(xml)
     }
+
+    /**
+     * Interfaces IPv4 ativas (`wlan0=192.168.1.5`, `rmnet0=…`) — o Diagnóstico mostra
+     * isto para separar "Wi-Fi desligado/celular" de "rede isolada" num piscar de olhos.
+     */
+    fun redes(): List<String> = runCatching {
+        java.net.NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
+            .filter { it.isUp && !it.isLoopback }
+            .flatMap { iface ->
+                iface.inetAddresses.toList().filterIsInstance<java.net.Inet4Address>()
+                    .map { "${iface.name}=${it.hostAddress}" }
+            }
+    }.getOrDefault(emptyList())
 
     /** `/keypress/<tecla>` — Play, Pause, Forward, Rewind, Home, VolumeUp/Down... */
     fun keypress(host: String, key: String) {
@@ -171,10 +209,13 @@ object RokuEcp {
     fun discover(): List<Device> {
         val hosts = LinkedHashSet<String>()
         hosts += discoverSsdp()
-        if (hosts.isEmpty()) hosts += discoverScan()
         // Confirma cada host com o device-info (tira da lista quem não é Roku de verdade
-        // e traz o nome amigável para o diálogo de pareamento).
-        return hosts.mapNotNull { host -> deviceInfo(host) }
+        // e traz o nome amigável para o diálogo de pareamento). Se o SSDP deu hosts que o
+        // device-info não quis, a varredura da sub-rede é o plano B — antes o teste
+        // "hosts.isEmpty()" era feito ANTES da confirmação e o pareamento ficava vazio.
+        var achados = hosts.mapNotNull { host -> deviceInfo(host) }
+        if (achados.isEmpty()) achados = discoverScan().mapNotNull { host -> deviceInfo(host) }
+        return achados
     }
 
     /**
@@ -253,10 +294,11 @@ object RokuEcp {
     private fun get(url: String, connectTimeout: Int, readTimeout: Int): String? = request(url, "GET", connectTimeout, readTimeout)
 
     /**
-     * Só o código HTTP (ou -1 sem resposta). Para launch a resposta é o próprio
-     * diagnóstico: -1 = rede/TV muda, 404 = canal errado, 200 = aceito.
+     * Código HTTP + motivo do erro quando -1 (timeout, recusa, URL malformada…).
+     * Para launch a resposta é o próprio diagnóstico: -1 com o motivo = rede/TV muda,
+     * 404 = canal errado, 200 = aceito — sem o motivo, "sem resposta" era palpite.
      */
-    private fun codigo(method: String, url: String, connectTimeout: Int, readTimeout: Int): Int = runCatching {
+    private fun codigo(method: String, url: String, connectTimeout: Int, readTimeout: Int): Pair<Int, String?> = runCatching {
         val conn = URL(url).openConnection() as HttpURLConnection
         conn.connectTimeout = connectTimeout
         conn.readTimeout = readTimeout
@@ -264,8 +306,10 @@ object RokuEcp {
         conn.doInput = true
         val code = conn.responseCode
         runCatching { (if (code in 200..299) conn.inputStream else conn.errorStream)?.close() }
-        code
-    }.getOrDefault(-1)
+        code to null
+    }.getOrElse { e ->
+        -1 to (e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName)
+    }
 
     private fun request(url: String, method: String, connectTimeout: Int = 1500, readTimeout: Int = 1500): String? = runCatching {
         val conn = URL(url).openConnection() as HttpURLConnection
@@ -291,15 +335,20 @@ object RokuEcp {
     // ── parse (funções puras — cobertas por teste JVM, como o FeedParser) ────
 
     /**
-     * `LOCATION` do cabeçalho SSDP → host (IP:porta) do ECP. O header vem como
-     * `LOCATION: http://192.168.0.15:8060/query/device-info`; interessa só a autoridade.
+     * `LOCATION` do cabeçalho SSDP → host **sem porta** do ECP. O header vem como
+     * `LOCATION: http://192.168.0.15:8060/query/device-info`; a porta sai daqui porque
+     * todo URL do ECP é montado como `http://host:8060/…` — manter ":8060" na autoridade
+     * virava `http://ip:8060:8060/…` e o `device-info` (e tudo mais) morria em
+     * MalformedURLException, derrubando o pareamento por SSDP inteiro.
      */
     internal fun parseSsdpLocation(header: String): String? {
         val line = header.lineSequence().firstOrNull { it.startsWith("LOCATION:", ignoreCase = true) }
             ?: return null
         val url = line.substringAfter(':').trim()
         return url.removePrefix("http://").removePrefix("https://")
-            .substringBefore('/').substringBefore('?').ifBlank { null }
+            .substringBefore('/').substringBefore('?')
+            .removeSuffix(":$PORT")
+            .ifBlank { null }
     }
 
     /**
@@ -347,9 +396,12 @@ object RokuEcp {
     }.getOrNull()
 
     /**
-     * `/query/active-app` → app em primeiro plano. O formato do ECP é `<app id="12">`
-     * com o nome no filho `<name>` (alguns firmwares devolvem `<active-app><app…>` —
-     * por isso a procura por elemento "app" quando a raiz não é ele).
+     * `/query/active-app` → app em primeiro plano. O formato do ECP trocou entre
+     * firmwares: o oficial da doc é `<app id="12">Netflix</app>` (nome como **texto
+     * direto**), mas há quem envie `<name>` como filho — lê os dois; sem nome (nunca
+     * confirmar só pelo id: id 12 + nome ausente "confirmou" o Netflix).
+     * Algumas TVs ainda embrulham em `<active-app><app…>` — por isso a procura por
+     * elemento "app" quando a raiz não é ele.
      */
     internal fun parseActiveApp(xml: String): App? = runCatching {
         val doc = parseXml(xml)
@@ -361,7 +413,7 @@ object RokuEcp {
             if (nodes.length == 0) null else nodes.item(0) as? Element
         } ?: return null
         val id = el.getAttribute("id").ifBlank { null } ?: text(el, "id") ?: return null
-        App(id, text(el, "name") ?: id)
+        App(id, text(el, "name") ?: textoDireto(el) ?: id)
     }.getOrNull()
 
     // ── XML util (mesmo motivo do FeedParser: javax.xml funciona em teste e aparelho) ──
@@ -381,6 +433,19 @@ object RokuEcp {
             if (n is Element && local(n) == name) return n.textContent?.trim()?.ifBlank { null }
         }
         return null
+    }
+
+    /** Texto imediato do elemento (`<app id="12">Netflix</app>` → "Netflix"). */
+    private fun textoDireto(el: Element): String? {
+        val sb = StringBuilder()
+        val kids = el.childNodes
+        for (i in 0 until kids.length) {
+            val n = kids.item(i)
+            if (n.nodeType == Node.TEXT_NODE || n.nodeType == Node.CDATA_SECTION_NODE) {
+                sb.append(n.nodeValue)
+            }
+        }
+        return sb.toString().trim().ifBlank { null }
     }
 
     private fun local(node: Node): String = node.localName ?: node.nodeName.substringAfter(':')

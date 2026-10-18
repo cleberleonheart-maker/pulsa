@@ -75,6 +75,7 @@ class DlnaServer(
     var historico: List<String> = emptyList()
         private set
 
+    @Synchronized
     private fun registrar(entrada: String) {
         historico = (listOf(entrada) + historico).take(15)
     }
@@ -100,6 +101,12 @@ class DlnaServer(
             baseUrl = "http://$ip:$port"
             startHttp(ss)
             startSsdp()
+            sendSsdpAlive()
+            // segundo alive 1,5s depois: multicast em Wi-Fi barato engole o primeiro
+            Thread({
+                runCatching { Thread.sleep(1500) }
+                if (running.get()) sendSsdpAlive()
+            }, "pulsa-dlna-alive").apply { isDaemon = true; start() }
             true
         }.getOrElse {
             running.set(false)
@@ -539,6 +546,9 @@ class DlnaServer(
                     val bytes = response.toByteArray()
                     val reply = DatagramPacket(bytes, bytes.size, packet.address, packet.port)
                     socket.send(reply)
+                    // No histórico também: separa "TV nunca falou com a gente (nem SSDP)"
+                    // de "SSDP ok mas o HTTP dela não chegou" no Diagnóstico.
+                    registrar("SSDP $st respondido")
                 }
             }
         }, "pulsa-dlna-ssdp")
@@ -551,6 +561,15 @@ class DlnaServer(
         val socket = ssdpSocket ?: return
         runCatching {
             val msg = DlnaXml.ssdpByebye(uuid).toByteArray()
+            val group = InetAddress.getByName("239.255.255.250")
+            socket.send(DatagramPacket(msg, msg.size, group, 1900))
+        }
+    }
+
+    private fun sendSsdpAlive() {
+        val socket = ssdpSocket ?: return
+        runCatching {
+            val msg = DlnaXml.ssdpAlive("$baseUrl/desc.xml", uuid).toByteArray()
             val group = InetAddress.getByName("239.255.255.250")
             socket.send(DatagramPacket(msg, msg.size, group, 1900))
         }

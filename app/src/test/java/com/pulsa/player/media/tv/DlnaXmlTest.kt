@@ -171,4 +171,14 @@ class DlnaXmlTest {
         assertTrue(r.contains("NTS: ssdp:byebye"))
         assertTrue(r.contains("uuid:uuid-1"))
     }
+
+    @Test
+    fun aliveAnunciaServidorComLocation() {
+        val r = DlnaXml.ssdpAlive("http://192.168.0.5:8200/desc.xml", "uuid-1")
+        assertTrue(r.startsWith("NOTIFY * HTTP/1.1\r\n"))
+        assertTrue(r.contains("NTS: ssdp:alive"))
+        assertTrue(r.contains("LOCATION: http://192.168.0.5:8200/desc.xml"))
+        assertTrue(r.contains("USN: uuid:uuid-1::${DlnaXml.DEVICE_TYPE}"))
+        assertTrue(r.endsWith("\r\n\r\n"))
+    }
 }

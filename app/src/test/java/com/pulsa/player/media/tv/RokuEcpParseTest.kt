@@ -111,16 +111,32 @@ class RokuEcpParseTest {
     }
 
     @Test
-    fun ssdpLocationExtraiHostPorta() {
+    fun ssdpLocationExtraiHostSemPorta() {
+        // A porta 8060 sai aqui de propósito: os URLs do ECP já montam ":8060" — com a
+        // autoridade vinda "ip:8060" o device-info virava http://ip:8060:8060/… e morria.
         assertEquals(
-            "192.168.0.15:8060",
+            "192.168.0.15",
             RokuEcp.parseSsdpLocation("LOCATION: http://192.168.0.15:8060/query/device-info"),
         )
         assertEquals(
-            "10.0.0.7:8060",
+            "10.0.0.7",
             RokuEcp.parseSsdpLocation("location: http://10.0.0.7:8060/"),
         )
         assertNull(RokuEcp.parseSsdpLocation("CACHE-CONTROL: max-age=1800"))
+    }
+
+    @Test
+    fun activeAppNomeComoTextoDireto() {
+        // Formato da doc oficial da Roku: o nome é o texto do próprio <app>, sem filho.
+        val app = RokuEcp.parseActiveApp("<app id=\"12\">Netflix</app>")
+        assertEquals("12", app!!.id)
+        assertEquals("Netflix", app.name)
+
+        val wrapper = RokuEcp.parseActiveApp(
+            "<active-app><app id=\"11\">Roku Media Player</app></active-app>",
+        )
+        assertEquals("11", wrapper!!.id)
+        assertEquals("Roku Media Player", wrapper.name)
     }
 
     @Test

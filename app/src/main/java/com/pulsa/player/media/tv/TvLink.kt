@@ -161,6 +161,12 @@ object TvLink {
      * consertar) e o rastro do último launch. Sem isto cada teste virava palpite.
      */
     fun diagnostico(): String = buildString {
+        val dev = (state as? State.Connected)?.device
+        if (dev != null) appendLine("TV: ${dev.friendlyName} @ ${dev.host}")
+        else appendLine("TV: (não conectada)")
+        // Interfaces do celular: sem isto "Wi-Fi desligado" (IP de dados aparecendo no
+        // lugar) e "rede isolada" parecem o mesmo sintoma — vira "wlan0=…" na tela.
+        appendLine("rede: " + (RokuEcp.redes().joinToString(", ").ifBlank { "sem IPv4 ativo" }))
         val srv = server
         if (srv == null) {
             appendLine("servidor: parado")
