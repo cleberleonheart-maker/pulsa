@@ -17,7 +17,12 @@ import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.toSong
+import com.pulsa.player.podcast.Episode
+import com.pulsa.player.podcast.PodcastCache
+import com.pulsa.player.podcast.PodcastDb
 import java.io.File
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 
 /**
  * E6 — a árvore que o Auto/Wear/Assistant enxergam.
@@ -35,6 +40,7 @@ import java.io.File
 internal class PulsaLibraryTree(private val context: Context) {
 
     private val db by lazy { PlaylistDb.get(context) }
+    private val podcastDb by lazy { PodcastDb.get(context) }
 
     /** Item que o sistema entende como pasta: os filhos vêm em [onGetChildren]. */
     private fun folder(mediaId: String, title: String, type: Int): MediaItem =
@@ -107,6 +113,32 @@ internal class PulsaLibraryTree(private val context: Context) {
             .build()
 
     /**
+     * Episódio de podcast como item tocável do Auto/Wear.
+     *
+     * A URI vem do [PodcastCache] e não do [Episode.audioUrl] direto: o cache já prefere o
+     * arquivo baixado quando existe (é o que faz o episódio offline tocar no carro sem sinal),
+     * e devolve `null` honesto para episódio cujo feed sumiu — o `?: return null` descarta o
+     * item em vez de enfiar uma string quebrada na fila do browser.
+     */
+    private fun playableEpisode(podcastTitle: String, ep: Episode): MediaItem? {
+        val url = PodcastCache.audioUrl(ep.id) ?: return null
+        return MediaItem.Builder()
+            .setMediaId("e:${ep.id}")
+            .setUri(Uri.parse(url))
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(ep.title)
+                    .setArtist(podcastTitle)
+                    .setAlbumTitle(podcastTitle)
+                    .setIsBrowsable(false)
+                    .setIsPlayable(true)
+                    .setMediaType(MediaMetadata.MEDIA_TYPE_PODCAST_EPISODE)
+                    .build()
+            )
+            .build()
+    }
+
+    /**
      * `null` quando o `path` é de vídeo ou rádio mas não traz um id utilizável (ex.:
      * `video:abc`). Sem esta guarda o id viraria a string `"video:null"`, que não resolve de
      * volta para nenhuma faixa — o item entraria na fila e o `songFor` devolveria `null`,
@@ -115,6 +147,7 @@ internal class PulsaLibraryTree(private val context: Context) {
     fun mediaIdFor(song: Song): String? = when {
         song.isVideo -> song.videoId?.let { "video:$it" }
         song.isRadio -> song.radioUrl?.let { "radio:$it" }
+        song.isPodcast -> song.podcastId?.let { "e:$it" }
         else -> "musica:${song.id}"
     }
 
@@ -136,12 +169,18 @@ internal class PulsaLibraryTree(private val context: Context) {
         "pulsa" -> ImmutableList.of(
             folder("musicas", str(R.string.tab_songs), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
             folder("favoritas", str(R.string.tab_favorites), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
+            folder("podcasts", str(R.string.podcasts), MediaMetadata.MEDIA_TYPE_FOLDER_PODCASTS),
             folder("radio", str(R.string.radio), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
             folder("videos", str(R.string.tab_videos), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
             folder("playlists", str(R.string.tab_playlists), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
             folder("recentes", str(R.string.home_recent_title), MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
         )
         "musicas", "favoritas", "recentes", "videos" -> ImmutableList.copyOf(itemsOf(parentId))
+        "podcasts" -> ImmutableList.copyOf(
+            podcastDb.feeds().map {
+                folder("podcast:${it.id}", it.title.orEmpty(), MediaMetadata.MEDIA_TYPE_PODCAST)
+            }
+        )
         "radio" -> ImmutableList.copyOf(
             RadioStations.list(context).map { playable(it) }
         )
@@ -150,12 +189,24 @@ internal class PulsaLibraryTree(private val context: Context) {
                 folder("playlist:${it.id}", it.name, MediaMetadata.MEDIA_TYPE_PLAYLIST)
             }
         )
-        else -> if (parentId.startsWith("playlist:")) {
-            val id = parentId.removePrefix("playlist:").toLongOrNull()
-            if (id == null) ImmutableList.of()
-            else ImmutableList.copyOf(db.songs(id).mapNotNull { playable(it) })
-        } else {
-            ImmutableList.of()
+        else -> when {
+            parentId.startsWith("playlist:") -> {
+                val id = parentId.removePrefix("playlist:").toLongOrNull()
+                if (id == null) ImmutableList.of()
+                else ImmutableList.copyOf(db.songs(id).mapNotNull { playable(it) })
+            }
+            parentId.startsWith("podcast:") -> {
+                val id = parentId.removePrefix("podcast:").toLongOrNull()
+                if (id == null) ImmutableList.of()
+                else {
+                    // `episodes()` popula o PodcastCache no mesmo acesso, então os itens
+                    // montados aqui já têm a URL certa para o browser tocar.
+                    val eps = podcastDb.episodes(id)
+                    val title = podcastDb.feeds().firstOrNull { it.id == id }?.title.orEmpty()
+                    ImmutableList.copyOf(eps.mapNotNull { playableEpisode(title, it) })
+                }
+            }
+            else -> ImmutableList.of()
         }
     }
 
@@ -219,6 +270,15 @@ internal class PulsaLibraryTree(private val context: Context) {
             add(VideoLibrary.all(context).filter { it.title.lowercase().contains(needle) }
                 .mapNotNull { playable(it) })
         }
+        if (out.size < limit) {
+            val feeds = podcastDb.feeds().associateBy({ it.id }, { it.title.orEmpty() })
+            add(podcastDb.allEpisodes().filter {
+                it.title.lowercase().contains(needle) ||
+                    (feeds[it.podcastId].orEmpty()).lowercase().contains(needle)
+            }.take(limit).mapNotNull { ep ->
+                playableEpisode(feeds[ep.podcastId].orEmpty(), ep)
+            })
+        }
         return ImmutableList.copyOf(out.values)
     }
 
@@ -240,6 +300,17 @@ internal class PulsaLibraryTree(private val context: Context) {
         if (mediaId.startsWith("radio:")) {
             val url = mediaId.removePrefix("radio:")
             return RadioStations.list(context).firstOrNull { it.url == url }?.let { playable(it) }
+        }
+        if (mediaId.startsWith("podcast:")) {
+            val id = mediaId.removePrefix("podcast:").toLongOrNull() ?: return null
+            val row = podcastDb.feeds().firstOrNull { it.id == id } ?: return null
+            return folder("podcast:$id", row.title.orEmpty(), MediaMetadata.MEDIA_TYPE_PODCAST)
+        }
+        if (mediaId.startsWith("e:")) {
+            val id = mediaId.removePrefix("e:").toLongOrNull() ?: return null
+            val ep = podcastDb.episode(id) ?: return null
+            val title = podcastDb.feeds().firstOrNull { it.id == ep.podcastId }?.title.orEmpty()
+            return playableEpisode(title, ep)
         }
         return null
     }
@@ -286,40 +357,53 @@ internal class PulsaLibraryTree(private val context: Context) {
                     year = 0
                 )
             }
+            mediaId.startsWith("e:") -> {
+                val id = mediaId.removePrefix("e:").toLongOrNull() ?: return null
+                val ep = podcastDb.episode(id) ?: return null
+                val title = podcastDb.feeds().firstOrNull { it.id == ep.podcastId }?.title.orEmpty()
+                podcastDb.toSong(title, ep)
+            }
             else -> null
         }
     }
 
-    // --- Future helpers: a API do MediaLibraryService é toda ListenableFuture e os callbacks
-    // rodam na main thread, então resolver de forma síncrona é intencional. A leitura do
-    // MediaStore é o gargalo; o Media3 dá para devolver o future já concluído e o browser
-    // recebe na mesma volta do looper. Paginação grande ficaria melhor com um executor
-    // dedicado -- não faço agora porque `onGetChildren` pagina em 50 e o MediaStore local
-    // responde em ms.
+    // --- Future helpers: a API do MediaLibraryService é toda ListenableFuture. As operações
+    // que tocam Room (playlists, favoritas, podcasts) ou MediaStore rodam num executor de 2
+    // threads daemon: os callbacks do Media3 chegam na main thread, e uma query síncrona ali
+    // é `IllegalStateException` do Room no exato instante de o browser pedir uma pasta — o
+    // crash é latente porque só aparece quando o Auto/Wear navega. rootFuture e voidFuture
+    // ficam imediatos: não há I/O nos dois.
+
+    private val executor = Executors.newFixedThreadPool(2) { r ->
+        Thread(r, "pulsa-library-tree").apply { isDaemon = true }
+    }
 
     fun rootFuture(params: LibraryParams?):
         ListenableFuture<LibraryResult<MediaItem>> =
         Futures.immediateFuture(LibraryResult.ofItem(root()[0], params))
 
     fun itemFuture(mediaId: String, params: LibraryParams?):
-        ListenableFuture<LibraryResult<MediaItem>> {
-        val item = itemById(mediaId)
-            ?: return Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE, params))
-        return Futures.immediateFuture(LibraryResult.ofItem(item, params))
-    }
+        ListenableFuture<LibraryResult<MediaItem>> =
+        Futures.submit(Callable {
+            val item = itemById(mediaId)
+                ?: return@Callable LibraryResult.ofError<MediaItem>(
+                    LibraryResult.RESULT_ERROR_BAD_VALUE, params
+                )
+            LibraryResult.ofItem(item, params)
+        }, executor)
 
     fun childrenFuture(
         parentId: String,
         page: Int,
         pageSize: Int,
         params: LibraryParams?
-    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-        val all = childrenOf(parentId)
-        val from = (page * pageSize).coerceIn(0, all.size)
-        val to = (from + pageSize).coerceIn(from, all.size)
-        val slice = all.subList(from, to)
-        return Futures.immediateFuture(LibraryResult.ofItemList(slice, params))
-    }
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
+        Futures.submit(Callable {
+            val all = childrenOf(parentId)
+            val from = (page * pageSize).coerceIn(0, all.size)
+            val to = (from + pageSize).coerceIn(from, all.size)
+            LibraryResult.ofItemList(all.subList(from, to), params)
+        }, executor)
 
     /**
      * A busca recomeça do zero a cada página, então o limite é o fim da página pedida e não o
@@ -331,13 +415,14 @@ internal class PulsaLibraryTree(private val context: Context) {
         page: Int,
         pageSize: Int,
         params: LibraryParams?
-    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-        val end = pageSize * (page + 1)
-        val all = search(query, end)
-        val from = (page * pageSize).coerceIn(0, all.size)
-        val to = (from + pageSize).coerceIn(from, all.size)
-        return Futures.immediateFuture(LibraryResult.ofItemList(all.subList(from, to), params))
-    }
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
+        Futures.submit(Callable {
+            val end = pageSize * (page + 1)
+            val all = search(query, end)
+            val from = (page * pageSize).coerceIn(0, all.size)
+            val to = (from + pageSize).coerceIn(from, all.size)
+            LibraryResult.ofItemList(all.subList(from, to), params)
+        }, executor)
 
     fun voidFuture(params: LibraryParams?):
         ListenableFuture<LibraryResult<Void>> =

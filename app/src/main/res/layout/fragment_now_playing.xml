@@ -327,6 +327,22 @@
                 android:contentDescription="@null"
                 android:padding="10dp"
                 android:src="@drawable/ic_repeat" />
+
+            <Space
+                android:layout_width="20dp"
+                android:layout_height="1dp" />
+
+            <!-- Tocar na TV (item 290): envia a biblioteca para um Roku via servidor DLNA
+                 embutido e controla o Roku Media Player por ECP. -->
+            <ImageView
+                android:id="@+id/np_tv"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/tv_cast"
+                android:padding="10dp"
+                android:src="@drawable/ic_tv"
+                android:tint="@color/text_secondary" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton

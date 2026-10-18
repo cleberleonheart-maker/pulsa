@@ -1181,4 +1181,25 @@
     <string name="server_token_hint">Cole aqui o token do servidor</string>
     <string name="server_token_saved">Token salvo!</string>
     <string name="server_token_missing">Padrão do app (sem token próprio)</string>
+    <!-- Tocar na TV (item 290 — Roku ECP + DLNA). O "porquê" de cada texto está no
+         TvLink.kt: o Roku não tem deep-link, então o fluxo é servidor + lançar o
+         Roku Media Player e o usuário escolhe "Pulsa" no controle da TV. -->
+    <string name="tv_cast">Tocar na TV</string>
+    <string name="tv_cast_hint">Toque para enviar esta mídia para a TV Roku da rede</string>
+    <string name="tv_searching">Procurando TVs Roku na rede…</string>
+    <string name="tv_none">Nenhuma TV Roku encontrada. Confira se a TV e o celular estão no mesmo Wi-Fi.</string>
+    <string name="tv_connecting">Conectando à %1$s…</string>
+    <string name="tv_connected">Conectado à %1$s — abra o Roku Media Player na TV e escolha "Pulsa"</string>
+    <string name="tv_error">Não consegui conectar na TV. Tente de novo.</string>
+    <string name="tv_controls">Controle da TV %1$s</string>
+    <string name="tv_disconnect">Desconectar</string>
+    <string name="tv_open_player">Abrir Roku Media Player</string>
+    <string name="tv_pause">Pausar</string>
+    <string name="tv_play">Tocar</string>
+    <string name="tv_forward">Avançar</string>
+    <string name="tv_rewind">Voltar</string>
+    <string name="tv_vol_up">Volume +</string>
+    <string name="tv_vol_down">Volume −</string>
+    <string name="tv_search_again">Procurar outras TVs</string>
+    <string name="tv_reconnect">Conectar à %1$s</string>
 </resources>

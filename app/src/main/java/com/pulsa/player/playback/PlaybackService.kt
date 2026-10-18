@@ -46,6 +46,7 @@ import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import com.google.common.collect.ImmutableList
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
@@ -1913,15 +1914,25 @@ class PlaybackService : MediaLibraryService() {
         // primeiro parâmetro é `MediaSession` (não `MediaLibrarySession`, como nos callbacks de
         // biblioteca). O Kotlin exige correspondência exata no override, então este `MediaSession`
         // é obrigatório — foi o que compilation failed.
+        //
+        // Os dois chegam na main thread e [libraryTree] toca Room (favoritas, podcasts): uma
+        // query síncrona ali é `IllegalStateException` no exato instante de o Assistant ou o
+        // botão do carro mandar tocar. Por isso a resolução roda em background e o future é
+        // um [SettableFuture] — o Media3 espera a resposta sem segurar a main.
         override fun onAddMediaItems(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>
         ): ListenableFuture<MutableList<MediaItem>> {
-            val out = mediaItems.map { item ->
-                libraryTree.itemById(item.mediaId) ?: item
+            // Cópia dos ids e dos itens originais ANTES de ir para background: a lista
+            // recebida é do Media3 e não pode ser lida de outra thread sem garantia.
+            val pares = mediaItems.map { it.mediaId to it }
+            val future = SettableFuture.create<MutableList<MediaItem>>()
+            ThreadPool.post {
+                val out = pares.map { (id, orig) -> libraryTree.itemById(id) ?: orig }
+                future.set(out.toMutableList())
             }
-            return Futures.immediateFuture(out.toMutableList())
+            return future
         }
 
         /**
@@ -1931,6 +1942,9 @@ class PlaybackService : MediaLibraryService() {
          * notificação, o widget e o next/prev do app passariam a descrever a faixa errada.
          * Então traduzimos para `Song` e seguimos pelo nosso próprio `start()`, que é quem
          * monta a fila, prepara e publica o estado.
+         *
+         * A tradução (Room/MediaStore) roda em background; o `start()` volta para a main via
+         * [ThreadPool.onUi] porque o ExoPlayer só é chamado de lá.
          */
         override fun onSetMediaItems(
             mediaSession: MediaSession,
@@ -1939,17 +1953,26 @@ class PlaybackService : MediaLibraryService() {
             startIndex: Int,
             startPositionMs: Long
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
-            val songs = mediaItems.mapNotNull { libraryTree.songFor(it.mediaId) }
-            if (songs.isEmpty()) {
-                return Futures.immediateFuture(
-                    MediaSession.MediaItemsWithStartPosition(ImmutableList.of(), 0, 0L)
-                )
+            val ids = mediaItems.map { it.mediaId }
+            val copia = ImmutableList.copyOf(mediaItems)
+            val future = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
+            ThreadPool.post {
+                val songs = ids.mapNotNull { libraryTree.songFor(it) }
+                if (songs.isEmpty()) {
+                    future.set(
+                        MediaSession.MediaItemsWithStartPosition(ImmutableList.of(), 0, 0L)
+                    )
+                    return@post
+                }
+                val at = startIndex.coerceIn(0, songs.size - 1)
+                ThreadPool.onUi {
+                    start(songs, at)
+                    future.set(
+                        MediaSession.MediaItemsWithStartPosition(copia, at, startPositionMs)
+                    )
+                }
             }
-            val at = startIndex.coerceIn(0, songs.size - 1)
-            start(songs, at)
-            return Futures.immediateFuture(
-                MediaSession.MediaItemsWithStartPosition(ImmutableList.copyOf(mediaItems), at, startPositionMs)
-            )
+            return future
         }
     }
 

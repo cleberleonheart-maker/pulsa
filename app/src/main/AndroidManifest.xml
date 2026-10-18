@@ -19,6 +19,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Tocar na TV (item 290): o SSDP do servidor DLNA é multicast, e o Wi-Fi do
+         Android filtra multicast por padrão — sem CHANGE_WIFI_MULTICAST_STATE o
+         M-SEARCH da Roku Media Player nunca chega e o servidor "Pulsa" não aparece. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!-- Ouvir juntos: ler o QR do código da sessão no convidado. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />

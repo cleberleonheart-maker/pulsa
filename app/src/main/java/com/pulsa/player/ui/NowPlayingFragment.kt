@@ -64,6 +64,7 @@ class NowPlayingFragment : Fragment() {
     private var shaderView: MusicShaderView? = null
     private var speedRow: View? = null
     private var speedView: TextView? = null
+    private var tvButton: ImageView? = null
     private var userSeeking = false
     private var lyricsPanel: View? = null
     private var lyricsList: androidx.recyclerview.widget.RecyclerView? = null
@@ -205,6 +206,109 @@ class NowPlayingFragment : Fragment() {
         view.findViewById<View>(R.id.np_add_playlist).setOnClickListener {
             Playback.currentSong?.let { song -> PlaylistDialog.showAdd(requireContext(), song) }
         }
+
+        // Tocar na TV (item 290): idle → conecta/descobre; conectado → abre o painel de
+        // controle da TV (o Roku não aceita deep-link, então a navegação na TV é do
+        // próprio Roku Media Player — daqui só vai keypress ECP).
+        tvButton = view.findViewById(R.id.np_tv)
+        tvButton?.setOnClickListener { onTvClicked() }
+        updateTvIcon(com.pulsa.player.media.tv.TvLink.state)
+    }
+
+    private val tvListener: (com.pulsa.player.media.tv.TvLink.State) -> Unit = { state ->
+        if (isAdded) updateTvIcon(state)
+    }
+
+    private fun updateTvIcon(state: com.pulsa.player.media.tv.TvLink.State) {
+        val on = state is com.pulsa.player.media.tv.TvLink.State.Connected
+        tvButton?.tint(if (on) R.color.primary else R.color.text_secondary)
+    }
+
+    private fun onTvClicked() {
+        val link = com.pulsa.player.media.tv.TvLink
+        when (val s = link.state) {
+            is com.pulsa.player.media.tv.TvLink.State.Busy -> {
+                Toast.makeText(requireContext(), s.label, Toast.LENGTH_SHORT).show()
+            }
+            is com.pulsa.player.media.tv.TvLink.State.Connected -> {
+                showTvControls(s.device)
+            }
+            is com.pulsa.player.media.tv.TvLink.State.Idle -> {
+                // TV já pareada antes: um toque reconecta (sem esperar descoberta).
+                if (link.reconnect(requireContext())) {
+                    Toast.makeText(requireContext(), R.string.tv_searching, Toast.LENGTH_SHORT).show()
+                } else {
+                    discoverTv()
+                }
+            }
+        }
+    }
+
+    /** Descobre Rokus na rede (SSDP + varredura) e abre a lista para o usuário escolher. */
+    private fun discoverTv() {
+        val app = requireContext().applicationContext
+        Toast.makeText(requireContext(), R.string.tv_searching, Toast.LENGTH_SHORT).show()
+        ThreadPool.postNetwork {
+            val devices = runCatching { com.pulsa.player.media.tv.RokuEcp.discover() }
+                .getOrDefault(emptyList())
+            ThreadPool.onUi {
+                if (!isAdded) return@onUi
+                if (devices.isEmpty()) {
+                    Toast.makeText(requireContext(), R.string.tv_none, Toast.LENGTH_LONG).show()
+                    return@onUi
+                }
+                val names = devices.map { it.friendlyName }.toTypedArray()
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.tv_cast)
+                    .setSingleChoiceItems(names, -1) { d, which ->
+                        d.dismiss()
+                        com.pulsa.player.media.tv.TvLink.connect(requireContext(), devices[which])
+                        Toast.makeText(
+                            requireContext(),
+                            getString(R.string.tv_connecting, devices[which].friendlyName),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            }
+        }
+    }
+
+    /**
+     * Painel de controle da TV pareada. Play/pause/±30s/volume são keypress ECP — o app
+     * não tem a fila da TV (o Roku Media Player a gerencia), então o que o app manda é
+     * exatamente o que o controle remoto mandaria.
+     */
+    private fun showTvControls(device: com.pulsa.player.media.tv.RokuEcp.Device) {
+        val options = arrayOf(
+            getString(R.string.tv_pause),
+            getString(R.string.tv_forward),
+            getString(R.string.tv_rewind),
+            getString(R.string.tv_vol_up),
+            getString(R.string.tv_vol_down),
+            getString(R.string.tv_open_player),
+            getString(R.string.tv_disconnect),
+        )
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.tv_controls, device.friendlyName))
+            .setItems(options) { _, which ->
+                val link = com.pulsa.player.media.tv.TvLink
+                when (which) {
+                    0 -> link.keypress("Play")
+                    1 -> link.keypress("Forward")
+                    2 -> link.keypress("Rewind")
+                    3 -> link.keypress("VolumeUp")
+                    4 -> link.keypress("VolumeDown")
+                    5 -> link.relaunch()
+                    6 -> {
+                        link.disconnect()
+                        Toast.makeText(requireContext(), R.string.tv_disconnect, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     fun render() {
@@ -461,6 +565,7 @@ class NowPlayingFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         SleepTimer.setListener(sleepListener)
+        com.pulsa.player.media.tv.TvLink.addListener(tvListener)
         render()
         refreshVisuals()
     }
@@ -468,6 +573,7 @@ class NowPlayingFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         SleepTimer.setListener(null)
+        com.pulsa.player.media.tv.TvLink.removeListener(tvListener)
         // O tween do visualizador fica invalidando a cada 60ms; parado fora da tela ele só
         // gasta bateria desenhando barras que ninguém vê. O `onResume` religa.
         visualizerView?.stopTween()

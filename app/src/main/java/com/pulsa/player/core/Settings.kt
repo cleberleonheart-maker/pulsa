@@ -795,6 +795,34 @@ object Settings {
             .apply()
     }
 
+    /**
+     * Última TV Roku pareada ("tocar na TV", item 290): host ECP + nome amigável.
+     *
+     * Guardado para o segundo toque ser direto — sem isso a pessoa reconecta a mesma TV
+     * toda vez esperando 3s de descoberta, e em roteador que filtra multicast a descoberta
+     * pode falhar e o botão "não achar" uma TV que está ali ligada.
+     */
+    fun setTvDevice(context: Context, host: String, name: String) {
+        prefs(context).edit()
+            .putString("tv_host", host)
+            .putString("tv_name", name)
+            .apply()
+    }
+
+    fun tvDevice(context: Context): Pair<String, String>? {
+        val host = prefs(context).getString("tv_host", "") ?: ""
+        if (host.isBlank()) return null
+        val name = prefs(context).getString("tv_name", "") ?: ""
+        return host to name
+    }
+
+    fun clearTvDevice(context: Context) {
+        prefs(context).edit()
+            .remove("tv_host")
+            .remove("tv_name")
+            .apply()
+    }
+
 
 
     fun setGesturesOn(context: Context, value: Boolean) {
