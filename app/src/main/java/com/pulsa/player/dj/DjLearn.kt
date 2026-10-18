@@ -90,9 +90,24 @@ object DjLearn {
             db.execSQL("CREATE INDEX IF NOT EXISTS idx_play_log_kind ON play_log(kind, ts)")
         }
 
+        /**
+         * BPM por faixa (item "BPM nas cenas"). `bpm = 0` é o carimbo de "analisado, sem
+         * batida confiável" — guardado para o lote não decodificar a mesma faixa ruim em
+         * todo pedido; quem filtra por janela simplesmente ignora o 0.
+         */
+        private fun createSongBpm(db: SQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS song_bpm (" +
+                    "song_id INTEGER PRIMARY KEY, " +
+                    "bpm REAL NOT NULL, " +
+                    "ts INTEGER NOT NULL)"
+            )
+        }
+
         override fun onCreate(db: SQLiteDatabase) {
             createStats(db)
             createPlayLog(db)
+            createSongBpm(db)
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -119,6 +134,39 @@ object DjLearn {
                 runCatching {
                     db.execSQL("CREATE INDEX IF NOT EXISTS idx_play_log_kind ON play_log(kind, ts)")
                 }
+            }
+            if (oldVersion < 5) {
+                createSongBpm(db)
+            }
+        }
+
+        /**
+         * BPM conhecido das faixas pedidas (inclusive o 0 do inconclusivo — ele conta como
+         * "já analisado" para o lote pular a faixa). O lote de 400 é o mesmo orçamento de
+         * variáveis do `IN` do SQLite.
+         */
+        fun bpms(ids: Collection<Long>): Map<Long, Float> {
+            val out = HashMap<Long, Float>()
+            if (ids.isEmpty()) return out
+            val db = readableDatabase
+            for (parte in ids.chunked(400)) {
+                val marcas = parte.joinToString(",") { "?" }
+                db.rawQuery(
+                    "SELECT song_id, bpm FROM song_bpm WHERE song_id IN ($marcas)",
+                    parte.map { it.toString() }.toTypedArray()
+                ).use { c ->
+                    while (c.moveToNext()) out[c.getLong(0)] = c.getFloat(1)
+                }
+            }
+            return out
+        }
+
+        fun putBpm(songId: Long, bpm: Float) {
+            runCatching {
+                writableDatabase.execSQL(
+                    "INSERT OR REPLACE INTO song_bpm (song_id, bpm, ts) VALUES (?, ?, ?)",
+                    arrayOf(songId, bpm, System.currentTimeMillis() / 1000L)
+                )
             }
         }
 
@@ -575,6 +623,10 @@ object DjLearn {
     }
 
     fun learn(context: Context): DjEngine.Learn = learner(context).learn()
+
+    fun bpms(context: Context, ids: Collection<Long>): Map<Long, Float> = learner(context).bpms(ids)
+
+    fun putBpm(context: Context, songId: Long, bpm: Float) = learner(context).putBpm(songId, bpm)
 
     /**
      * True quando o ouvinte costuma pular a faixa: pelo menos 3 pulos e sem mais toques do

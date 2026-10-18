@@ -1877,7 +1877,7 @@ class MainVirgin(
             else -> R.string.dj_scene_dirigir
         }
         // "toca pra estudar com chuva" liga o ambiente de fundo junto da fila da cena.
-        virgCurated(genres, intensity, labelRes, DjCommander.ambientModeOf(norm), "cena $scene")
+        virgCurated(genres, intensity, labelRes, DjCommander.ambientModeOf(norm), "cena $scene", SceneBpm.janela(scene))
     }
 
     /**
@@ -1902,7 +1902,8 @@ class MainVirgin(
         intensity: DjEngine.Intensity,
         labelRes: Int,
         ambientMode: String?,
-        logTag: String
+        logTag: String,
+        bpmWindow: ClosedFloatingPointRange<Float>? = null
     ) {
         if (!Permissions.hasAccess(activity)) {
             Toast.makeText(activity, R.string.dj_no_permission, Toast.LENGTH_LONG).show()
@@ -1924,17 +1925,31 @@ class MainVirgin(
                 }
             }
             val pool = if (pref.size >= 6) pref else songs
+            // BPM nas cenas: com janela, as faixas já analisadas que batem com o andamento
+            // viram o pool; menos de MIN_FILTRADAS = pool de sempre (a primeira cena funciona
+            // igual — sem dado, sem corte — e o lote em background prepara a próxima).
+            val bpms = if (bpmWindow != null) DjLearn.bpms(ctx, pool.map { it.id }) else emptyMap()
+            val fonte = if (bpmWindow != null) SceneBpm.aplicar(pool, bpms, bpmWindow) else pool
             val set = DjEngine.build(
-                pool, favIds, DjEngine.Source.ALL, intensity, learn,
+                fonte, favIds, DjEngine.Source.ALL, intensity, learn,
                 maxSize = 20, exclude = DjSessionMemory.recentIds()
             )
+            // Análise em outro task de propósito: a fila já começa a tocar no onUi abaixo e
+            // decodificar 20 faixas não pode atrasar a virada nem a fala da Virgin.
+            if (bpmWindow != null) {
+                val lote = SceneBpm.paraAnalise(pool, bpms, SceneBpm.LOTE)
+                if (lote.isNotEmpty()) {
+                    ThreadPool.post { SceneBpm.analisarLote(ctx, lote) }
+                }
+            }
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
                 if (set.isEmpty()) {
                     virginSpeak(say(R.string.dj_empty))
                     return@onUi
                 }
-                Telemetry.log(ctx, "Virgin $logTag n=${set.size} amb=${ambientMode ?: '-'}")
+                val bpmInfo = if (bpmWindow != null) " bpm=${fonte.size}/${pool.size}" else ""
+                Telemetry.log(ctx, "Virgin $logTag n=${set.size} amb=${ambientMode ?: '-'}$bpmInfo")
                 if (ambientMode != null) Ambient.start(ambientMode, 0.7f)
                 Playback.setShuffle(true)
                 Playback.setRepeatAll(true)
