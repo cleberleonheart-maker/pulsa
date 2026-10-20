@@ -90,6 +90,12 @@ class VirginHomeFragment : Fragment() {
         val greet = view.findViewById<TextView>(R.id.btn_greet)
         TvFocus.apply(greet)
         greet.setOnClickListener { greet() }
+        // Tocar na TV direto da home: mesmo fluxo do botão da tela de reprodução.
+        val btnTv = view.findViewById<View>(R.id.btn_tv)
+        TvFocus.apply(btnTv)
+        btnTv.setOnClickListener {
+            com.pulsa.player.media.tv.TvUi.onClicked(this)
+        }
         bindResumeCard(view)
         buildShortcuts(view.findViewById(R.id.shortcuts_row))
         buildAssistantRows(view.findViewById(R.id.assistant_list))
