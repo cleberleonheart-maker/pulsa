@@ -681,7 +681,11 @@ class PlaybackService : MediaLibraryService() {
             // versão nova, caso em que o onDestroy nem chega a rodar) e a fila salva volta
             // PAUSADA na posição em que parou — o prepareCurrent já deixa playWhenReady
             // desligado, então basta montar a fila e posição sem chamar play().
-            runCatching { restoreQueueState() }
+            //
+            // Assíncrono: a montagem varre MediaStore/Room, que não pode rodar na main. A
+            // guarda de "fila vazia" é refeita no callback, porque até lá o usuário pode ter
+            // tocado algo — nesse caso o que ele pediu ganha (mesma regra de antes).
+            restoreQueueState()
         }
     }
 
@@ -691,59 +695,101 @@ class PlaybackService : MediaLibraryService() {
      * Só roda com a fila vazia — se o usuário já está tocando algo, o que está na tela
      * ganha. Devolve `true` se restaurou.
      */
-    private fun restoreQueueState(): Boolean {
-        if (!Settings.resumeOn(this)) return false
-        val (keys, savedIndex, savedPos) = Settings.queueState(this) ?: return false
-        if (keys.isEmpty()) return false
-        // F2b: áudio e vídeo vêm de coleções separadas do MediaStore, cada uma numerada por
-        // conta própria. Um `songsByIds` único não resolveria a fila misturada: o id do
-        // vídeo 42 buscaria a música 42. Então cada chave vai para a biblioteca que é
-        // dela, e a ordem salva é reconstruída por cima.
-        // Fila universal: rádio/stream não têm linha no MediaStore — a chave `r:`/`s:` já
-        // carrega a URL, e o título/artista que a URL não sabe vêm do `queue_extras`.
-        val songIds = keys.filter { it.startsWith(QueueKey.VIDEO_PREFIX) == false }
-            .filterNot { QueueKey.isRadio(it) || QueueKey.isStream(it) }
+    private fun restoreQueueState() {
+        if (!Settings.resumeOn(this)) return
+        val (keys, savedIndex, savedPos) = Settings.queueState(this) ?: return
+        if (keys.isEmpty()) return
+        // A montagem varre MediaStore (Library/VideoLibrary) e, para a fila de podcast, o
+        // Room (PodcastDb) — nenhum dos dois pode rodar na main (Room lança; MediaStore
+        // trava). Por isso a reconstrução vai para a thread de rede e só o `start()` volta
+        // para a main, que é onde o player vive.
+        val extras = parseQueueExtras()
+        ThreadPool.postNetwork {
+            val songs = runCatching { resolveSavedQueue(keys, extras) }.getOrDefault(emptyList())
+            if (songs.isEmpty()) {
+                // Toda a fila sumiu do MediaStore (fotos apagadas, sdcard removido) ou da
+                // base de podcast. Não tenta de novo em todo boot e não deixa lixo salvo.
+                ThreadPool.onUi { Settings.clearQueueState(this@PlaybackService) }
+                return@postNetwork
+            }
+            val index = QueueKey.reanchor(keys, savedIndex, QueueKey.encodeAll(songs))
+            ThreadPool.onUi {
+                if (index < 0) {
+                    Settings.clearQueueState(this@PlaybackService)
+                    return@onUi
+                }
+                // A fila pode ter sido preenchida pelo usuário enquanto o restore rodava em
+                // background (abrir o app e tocar algo durante o boot): nesse caso o que o
+                // usuário pediu ganha e o restore é descartado, como no caminho antigo.
+                if (queue.isNotEmpty()) return@onUi
+                suppressQueueSave = true
+                startPaused = true
+                try {
+                    start(songs, index)
+                    val pos = savedPos.coerceAtLeast(0L)
+                    if (pos > 0L) {
+                        runCatching { seekTo(pos) }
+                    }
+                } finally {
+                    suppressQueueSave = false
+                }
+                pauseWasDeliberate = true
+            }
+        }
+    }
+
+    /**
+     * Reconstrói a fila salva a partir das chaves, cada tipo na sua biblioteca.
+     *
+     * Roda em background. Sem chave tipada, um `songsByIds` único traria a **música** de id
+     * 42 no lugar do **vídeo** 42 (o MediaStore numera cada coleção por conta própria), e o
+     * episódio de podcast (`e:`) — que mora no Room, não no MediaStore — simplesmente sumia
+     * (ou, pior, um vídeo de mesmo número entrava no lugar). Por isso cada prefixo vai para
+     * o resolvedor certo: `a:`/legado → MediaStore de música, `v:` → vídeo, `e:` → PodcastDb,
+     * `r:`/`s:` → montado da URL (com o texto do `queue_extras`).
+     */
+    private fun resolveSavedQueue(
+        keys: List<String>,
+        extras: Map<String, Pair<String, String>>?,
+    ): List<Song> {
+        val songIds = keys.filter { it.startsWith("${QueueKey.AUDIO_PREFIX}:") }
             .mapNotNull { it.substringAfter(':').toLongOrNull() }
-        val videoIds = keys.filter { it.startsWith(QueueKey.VIDEO_PREFIX) }
+        val videoIds = keys.filter { it.startsWith("${QueueKey.VIDEO_PREFIX}:") }
             .mapNotNull { it.substringAfter(':').toLongOrNull() }
+        val episodeIds = keys.filter { QueueKey.isEpisode(it) }
+            .mapNotNull { it.substringAfter(':').toLongOrNull() }
+
         val songsById = HashMap<String, Song>(keys.size)
-        Library.songsByIds(this, songIds).forEach { songsById[QueueKey.encode(it)!!] = it }
+        if (songIds.isNotEmpty()) {
+            Library.songsByIds(this, songIds).forEach { songsById[QueueKey.encode(it)!!] = it }
+        }
         val videosById = HashMap<Long, Video>(videoIds.size)
         if (videoIds.isNotEmpty()) {
             VideoLibrary.all(this).forEach { v -> if (videoIds.contains(v.id)) videosById[v.id] = v }
         }
-        val extras = parseQueueExtras()
-        val songs = keys.mapNotNull { key ->
+        val episodesById = HashMap<Long, Song>(episodeIds.size)
+        if (episodeIds.isNotEmpty()) {
+            val db = runCatching { PodcastDb.get(this) }.getOrNull()
+            val feedTitles = HashMap<Long, String>()
+            episodeIds.forEach { epId ->
+                val ep = db?.let { runCatching { it.episode(epId) }.getOrNull() } ?: return@forEach
+                val title = feedTitles.getOrPut(ep.podcastId) {
+                    runCatching { db.feed(ep.podcastId)?.title }.getOrNull().orEmpty()
+                }
+                episodesById[epId] = runCatching { db.toSong(title, ep) }.getOrNull() ?: return@forEach
+            }
+        }
+
+        return keys.mapNotNull { key ->
             when {
                 QueueKey.isRadio(key) || QueueKey.isStream(key) -> songForRemoteKey(key, extras)
-                else -> songsById[key] ?: videosById[key.substringAfter(':').toLongOrNull()]?.let { videoSong(it) }
+                QueueKey.isEpisode(key) ->
+                    key.substringAfter(':').toLongOrNull()?.let { episodesById[it] }
+                key.startsWith("${QueueKey.VIDEO_PREFIX}:") ->
+                    key.substringAfter(':').toLongOrNull()?.let { videosById[it] }?.let { videoSong(it) }
+                else -> songsById[key]
             }
         }
-        if (songs.isEmpty()) {
-            // Toda a fila sumiu do MediaStore (fotos apagadas, sdcard removido). Não tenta
-            // de novo em todo boot e não deixa lixo salvo para sempre.
-            Settings.clearQueueState(this)
-            return false
-        }
-        // Ajusta o índice: com faixa apagada, a posição original apontaria para a faixa errada.
-        val index = QueueKey.reanchor(keys, savedIndex, QueueKey.encodeAll(songs))
-        if (index < 0) {
-            Settings.clearQueueState(this)
-            return false
-        }
-        suppressQueueSave = true
-        startPaused = true
-        try {
-            start(songs, index)
-            val pos = savedPos.coerceAtLeast(0L)
-            if (pos > 0L) {
-                runCatching { seekTo(pos) }
-            }
-        } finally {
-            suppressQueueSave = false
-        }
-        pauseWasDeliberate = true
-        return true
     }
 
     /**

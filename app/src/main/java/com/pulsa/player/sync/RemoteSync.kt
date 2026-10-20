@@ -48,6 +48,8 @@ object RemoteSync {
 
     @Volatile
     private var running = false
+    /** Escrito na main e lido nas threads de rede — `@Volatile` pela visibilidade entre elas. */
+    @Volatile
     private var appContext: Context? = null
 
     // O sync pesado roda fora daqui, em background. O lock mantem os contadores coerentes
@@ -66,6 +68,12 @@ object RemoteSync {
 
     @Volatile
     private var lastDjPull = 0L
+    /**
+     * Trava o tick: escrito na main ao despachar e resetado na thread de rede no fim. Sem
+     * `@Volatile` a main podia nunca ver o `false` e o sync remoto parava de vez até o
+     * processo morrer — sintoma "o controle pelo navegador parou e não volta".
+     */
+    @Volatile
     private var busy = false
 
     // Item 290 (Nuvem de midia): push/pull do blob de playlists/favoritas/progresso.
@@ -411,10 +419,26 @@ object RemoteSync {
     private fun execute(ctx: Context, o: JSONObject) {
         val cmd = o.optString("cmd", "").lowercase()
         val value = o.opt("value")
-        // O tick roda na thread de rede, mas o ExoPlayer foi criado no `onCreate` do service
-        // (thread principal): mexer nele daqui estoura "wrong thread" e o comando se perde em
-        // silêncio. Por isso o comando é despachado de volta pra main — igual já fazemos pra
-        // LER o estado (capturePlayerState).
+        // Os comandos que mexem no ExoPlayer têm de rodar na main (o player nasceu no
+        // `onCreate` do service), então são despachados de volta pra lá. Mas a RESOLUÇÃO da
+        // faixa (`resolveSong` → `Library.allSongs`, varredura do MediaStore) é caro e pode
+        // vir de um `play_rewind` com fila inteira: resolve AQUI, na thread de rede, e para
+        // a main vai só o resultado. Antes isso tudo rodava dentro do `handler.post` e um
+        // play_rewind de fila cheia travava a main (ANR).
+        val songs: List<Song> = when (cmd) {
+            "play_song" -> resolveSong(ctx, value?.toString() ?: "")?.let { listOf(it) } ?: emptyList()
+            "play_rewind" -> {
+                val list = mutableListOf<Song>()
+                when (value) {
+                    is JSONArray -> for (i in 0 until value.length()) {
+                        resolveSong(ctx, value.optString(i))?.let { list.add(it) }
+                    }
+                    else -> resolveSong(ctx, value?.toString() ?: "")?.let { list.add(it) }
+                }
+                list
+            }
+            else -> emptyList()
+        }
         handler.post {
             try {
                 when (cmd) {
@@ -427,20 +451,7 @@ object RemoteSync {
                     "shuffle" -> Playback.setShuffle(toBool(value))
                     "repeat" -> Playback.cycleRepeat()
                     "volume" -> setStreamVolume(ctx, toFloat01(value))
-                    "play_song" -> {
-                        val song = resolveSong(ctx, value?.toString() ?: "")
-                        if (song != null) Playback.start(listOf(song), 0)
-                    }
-                    "play_rewind" -> {
-                        val list = mutableListOf<Song>()
-                        when (value) {
-                            is JSONArray -> for (i in 0 until value.length()) {
-                                resolveSong(ctx, value.optString(i))?.let { list.add(it) }
-                            }
-                            else -> resolveSong(ctx, value?.toString() ?: "")?.let { list.add(it) }
-                        }
-                        if (list.isNotEmpty()) Playback.start(list, 0)
-                    }
+                    "play_song", "play_rewind" -> if (songs.isNotEmpty()) Playback.start(songs, 0)
                     // Item 289 (handoff): outro aparelho assumiu a sessão. A gente era o dono
                     // e agora é o liberado — pausa e para de espelhar, senão o MirrorSync
                     // continuaria seguindo (e tocando) quem acabou de tomar o lugar.

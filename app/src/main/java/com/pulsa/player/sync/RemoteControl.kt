@@ -28,6 +28,8 @@ object RemoteControl {
 
     @Volatile
     private var running = false
+    /** Escrito na main e lido nas threads de rede — `@Volatile` pela visibilidade entre elas. */
+    @Volatile
     private var appContext: Context? = null
     private var code = ""
     private var host = ""

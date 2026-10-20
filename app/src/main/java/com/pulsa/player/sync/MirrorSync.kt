@@ -42,6 +42,8 @@ object MirrorSync {
 
     @Volatile
     private var running = false
+    /** Escrito na main e lido nas threads de rede — `@Volatile` pela visibilidade entre elas. */
+    @Volatile
     private var appContext: Context? = null
     private var lastSeekPos = -1L
     private var lastMissing = ""
@@ -142,15 +144,36 @@ object MirrorSync {
         }
         val host = info.optString("host")
         if (host.isNotBlank()) hostDevice = host
-        // A busca roda na thread de rede, mas o ExoPlayer foi criado no `onCreate` do service
-        // (thread principal): aplicar o estado (play/pause/seek/start) de qualquer outra thread
-        // estoura "wrong thread" e a música fica parada. Então a decisão é tomada na main.
+        // A busca de faixa (`findSong` → `Library.allSongs`, varredura do MediaStore) roda
+        // AQUI, na thread de rede, com uma varredura só para a faixa-alvo e a fila juntas.
+        // Antes isso ia inteiro para a main dentro do `applyInfo`, e com fila grande o app
+        // travava (ANR). O que sobra para a main é só o que toca o ExoPlayer: play/pause/seek/
+        // start — que estoura "wrong thread" se vier de outra thread.
+        val resolved = resolveMirror(ctx, info)
         handler.post {
-            if (running) applyInfo(ctx, info)
+            if (running) applyInfo(ctx, info, resolved)
         }
     }
 
-    private fun applyInfo(ctx: Context, info: JSONObject) {
+    /** O que a main precisa aplicar: a faixa-alvo e a fila já resolvidas em `Song`. */
+    private class Resolved(val target: Song?, val queue: List<Song>, val missingTitle: String)
+
+    /**
+     * Resolve faixa-alvo e fila do host, com **uma** varredura do MediaStore. Antes o
+     * `findSong` varria a biblioteca por item; na fila de N itens isso era N varreduras.
+     */
+    private fun resolveMirror(ctx: Context, info: JSONObject): Resolved {
+        val state = info.optJSONObject("state")
+        val current = state?.optJSONObject("current")
+        if (current == null || current.isNull("id")) return Resolved(null, emptyList(), "")
+        val songs = Library.allSongs(ctx)
+        val target = findSong(songs, current)
+        val queue = mirrorQueue(songs, state.optJSONArray("queue"))
+        val missing = if (target == null) current.optString("title") else ""
+        return Resolved(target, queue, missing)
+    }
+
+    private fun applyInfo(ctx: Context, info: JSONObject, resolved: Resolved) {
         val state = info.optJSONObject("state") ?: return
         val hostPlaying = state.optBoolean("playing", false)
         val current = state.optJSONObject("current")
@@ -164,7 +187,7 @@ object MirrorSync {
         val mine = Playback.currentSong
         val sameTrack = mine != null && (hostId <= 0L || mine.id == hostId)
         if (!sameTrack) {
-            playHostSong(ctx, current, state.optJSONArray("queue"))
+            playHostSong(ctx, resolved)
             return
         }
         // Mesma faixa: alinha posição e play/pause. A posição do host vem com carimbo de
@@ -198,10 +221,10 @@ object MirrorSync {
         return if (age in 0..MAX_AGE_MS) hostPos + age else hostPos
     }
 
-    private fun playHostSong(ctx: Context, current: JSONObject, queueJson: JSONArray?) {
-        val target = findSong(ctx, current)
+    private fun playHostSong(ctx: Context, resolved: Resolved) {
+        val target = resolved.target
         if (target == null) {
-            val title = current.optString("title")
+            val title = resolved.missingTitle
             if (title.isNotEmpty() && title != lastMissing) {
                 lastMissing = title
                 Toast.makeText(ctx, ctx.getString(R.string.mirror_not_found, title), Toast.LENGTH_LONG).show()
@@ -210,24 +233,28 @@ object MirrorSync {
             return
         }
         lastMissing = ""
-        val queue = mirrorQueue(ctx, queueJson)
+        val queue = if (resolved.queue.isEmpty()) listOf(target) else resolved.queue
         val startIdx = queue.indexOfFirst { it.id == target.id }.coerceAtLeast(0)
-        Playback.start(if (queue.isEmpty()) listOf(target) else queue, startIdx)
+        Playback.start(queue, startIdx)
         lastSeekPos = -1L
         Telemetry.log(ctx, "MIRROR troca para ${target.title}")
     }
 
-    private fun mirrorQueue(ctx: Context, queueJson: JSONArray?): List<Song> {
+    private fun mirrorQueue(songs: List<Song>, queueJson: JSONArray?): List<Song> {
         if (queueJson == null) return emptyList()
         val out = ArrayList<Song>(queueJson.length())
         for (i in 0 until queueJson.length()) {
-            queueJson.optJSONObject(i)?.let { findSong(ctx, it) }?.let { out.add(it) }
+            queueJson.optJSONObject(i)?.let { findSong(songs, it) }?.let { out.add(it) }
         }
         return out
     }
 
-    private fun findSong(ctx: Context, o: JSONObject): Song? {
-        val songs = Library.allSongs(ctx)
+    /**
+     * Acha a faixa do host dentro da biblioteca **já carregada** por quem chamou. O scan do
+     * MediaStore é caro; passar a lista pronta evita varrer a biblioteca uma vez por item da
+     * fila (era o que ocorria com a assinatura antiga, que recebia só o `Context`).
+     */
+    private fun findSong(songs: List<Song>, o: JSONObject): Song? {
         val id = o.optLong("id", -1L)
         if (id > 0L) songs.firstOrNull { it.id == id }?.let { return it }
         val title = norm(o.optString("title"))

@@ -111,13 +111,19 @@ object DownloadStore {
     private val observers = ArrayList<() -> Unit>()
     private var loaded = false
 
-    /** Só leitura, já ordenado: em andamento primeiro, depois o resto por data. */
-    @Synchronized
-    fun list(): List<Item> =
+    /**
+     * Só leitura, já ordenado: em andamento primeiro, depois o resto por data.
+     *
+     * O lock é o **de `items`**, o mesmo de [ensureLoaded]/[put]/[remove] — não o monitor do
+     * objeto. Com dois locks diferentes a proteção não existia de verdade: `ensureLoaded`
+     * roda na main e um download pode estar em `put` na thread de rede; `items.clear()` no
+     * meio de um `sortedWith` dava `ConcurrentModificationException` (crash).
+     */
+    fun list(): List<Item> = synchronized(items) {
         items.sortedWith(compareBy({ if (it.isActive()) 0 else 1 }, { -it.addedAt }))
+    }
 
-    @Synchronized
-    fun byId(id: String): Item? = items.firstOrNull { it.id == id }
+    fun byId(id: String): Item? = synchronized(items) { items.firstOrNull { it.id == id } }
 
     fun addObserver(observer: () -> Unit) = synchronized(observers) {
         // A tela pode se registrar várias vezes (cada `onViewCreated`); sem isso a lista
@@ -157,28 +163,30 @@ object DownloadStore {
      * decide — o progresso só vai para a tela, e o estado que importa (baixado, falhou,
      * cancelado) sempre grava.
      */
-    @Synchronized
     fun put(context: Context, item: Item, persist: Boolean = true) {
-        val i = items.indexOfFirst { it.id == item.id }
-        if (i >= 0) items[i] = item else items.add(item)
+        synchronized(items) {
+            val i = items.indexOfFirst { it.id == item.id }
+            if (i >= 0) items[i] = item else items.add(item)
+        }
         if (persist) save(context)
         notifyChanged()
     }
 
-    @Synchronized
     fun remove(context: Context, id: String) {
-        val item = items.firstOrNull { it.id == id } ?: return
+        val item = synchronized(items) { items.firstOrNull { it.id == id } } ?: return
         // O parcial tem de ir junto: sobrar `arquivo.mp4.part` órfão ocupa espaço sem
         // aparecer na lista, e ninguém ia apagar.
         runCatching { partFor(context, item).delete() }
         runCatching { fileFor(context, item).delete() }
-        items.removeAll { it.id == id }
+        synchronized(items) { items.removeAll { it.id == id } }
         save(context)
         notifyChanged()
     }
 
     private fun save(context: Context) {
-        val snapshot = ArrayList(items)
+        // Snapshot sob o mesmo lock dos writers — sem isso o `writer` podia copiar a lista
+        // enquanto outra thread mutava, gravando estado inconsistente.
+        val snapshot = synchronized(items) { ArrayList(items) }
         writer.execute {
             runCatching {
                 val array = JSONArray()

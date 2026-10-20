@@ -71,8 +71,13 @@ object Handoff {
             // Para de espelhar: agora nós somos a origem, não o seguidor. Sem isto o MirrorSync
             // tentaria nos puxar de volta pro dono antigo no próximo tick.
             MirrorSync.stop()
+            // A busca das faixas (MediaStore) é caríssima e vem de fora da main — resolve aqui
+            // na thread de rede e manda só o resultado já pronto pra main, que é quem pode
+            // mexer no ExoPlayer. Antes o scan rodava dentro do `handler.post` e a main
+            // travava durante o handoff (ANR).
+            val resolved = resolveState(ctx, state)
             handler.post {
-                val started = playState(ctx, state)
+                val started = playState(resolved)
                 Telemetry.log(ctx, "HANDOFF assume code=$c started=$started")
                 notify(listener, started, if (started) "assumei a sessão" else "sessão assumida (nada tocando)")
             }
@@ -110,35 +115,49 @@ object Handoff {
         return null
     }
 
-    /** Toca o estado vindo do dono antigo (faixa + fila + posição). Devolve false se nada casou. */
-    private fun playState(ctx: Context, state: JSONObject?): Boolean {
-        if (state == null) return false
-        val current = state.optJSONObject("current") ?: return false
-        if (current.isNull("id") && current.optString("title").isBlank()) return false
-        val target = findSong(ctx, current) ?: return false
-        val queue = findQueue(ctx, state.optJSONArray("queue"))
+    /** O estado já resolvido na thread de rede: a faixa-alvo, a fila e a posição a retomar. */
+    private class Resolved(val target: Song?, val queue: List<Song>, val pos: Long)
+
+    /** Resolve faixa + fila do estado na thread de rede (uma varredura do MediaStore). */
+    private fun resolveState(ctx: Context, state: JSONObject?): Resolved {
+        if (state == null) return Resolved(null, emptyList(), 0L)
+        val current = state.optJSONObject("current") ?: return Resolved(null, emptyList(), 0L)
+        if (current.isNull("id") && current.optString("title").isBlank()) {
+            return Resolved(null, emptyList(), 0L)
+        }
+        val songs = Library.allSongs(ctx)
+        val target = findSong(songs, current)
+        val queue = findQueue(songs, state.optJSONArray("queue"))
+        return Resolved(target, queue, state.optLong("positionMs", 0L))
+    }
+
+    /** Toca o estado já resolvido (faixa + fila + posição). Devolve false se nada casou. */
+    private fun playState(r: Resolved): Boolean {
+        val target = r.target ?: return false
+        val queue = r.queue
         val startIdx = queue.indexOfFirst { it.id == target.id }.coerceAtLeast(0)
         Playback.start(if (queue.isEmpty()) listOf(target) else queue, startIdx)
         // Reposiciona pro ponto em que o dono antigo estava. Sem isso a faixa recomeçaria do
         // zero — e é exatamente o "continuar de onde parou" que o handoff promete.
-        val pos = state.optLong("positionMs", 0L)
-        if (pos > 0L) Playback.seekTo(pos)
+        if (r.pos > 0L) Playback.seekTo(r.pos)
         if (!Playback.isPlaying) Playback.toggle()
         return true
     }
 
-    private fun findQueue(ctx: Context, queueJson: org.json.JSONArray?): List<Song> {
+    private fun findQueue(songs: List<Song>, queueJson: org.json.JSONArray?): List<Song> {
         if (queueJson == null) return emptyList()
         val out = ArrayList<Song>(queueJson.length())
         for (i in 0 until queueJson.length()) {
-            queueJson.optJSONObject(i)?.let { findSong(ctx, it) }?.let { out.add(it) }
+            queueJson.optJSONObject(i)?.let { findSong(songs, it) }?.let { out.add(it) }
         }
         return out
     }
 
-    /** Casa a faixa do estado na biblioteca local: por id, depois por título+artista. */
-    private fun findSong(ctx: Context, o: JSONObject): Song? {
-        val songs = Library.allSongs(ctx)
+    /**
+     * Casa a faixa do estado na biblioteca **já carregada** por quem chamou: o scan do
+     * MediaStore é caro e reusar a lista evita varrer a biblioteca uma vez por item da fila.
+     */
+    private fun findSong(songs: List<Song>, o: JSONObject): Song? {
         if (songs.isEmpty()) return null
         val id = o.optLong("id", -1L)
         if (id > 0L) songs.firstOrNull { it.id == id }?.let { return it }
