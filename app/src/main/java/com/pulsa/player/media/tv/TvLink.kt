@@ -4,7 +4,9 @@ import android.content.Context
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.Library
+import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.VideoLibrary
+import com.pulsa.player.podcast.PodcastDb
 import java.io.File
 import java.util.UUID
 
@@ -90,11 +92,7 @@ object TvLink {
         setState(State.Busy(device.friendlyName))
         ThreadPool.postNetwork {
             val ok = runCatching {
-                val (entries, pathById) = buildEntries(app)
-                val nodes = ContentTree.build(entries)
-                val uuid = serverUuid ?: Settings.deviceId(app).also { serverUuid = it }
-                val srv = DlnaServer(app, uuid, nodes, { id -> pathById[id] })
-                if (!srv.start()) return@runCatching false
+                val srv = subirServidor(app) ?: return@runCatching false
                 server = srv
                 // Lança o Roku Media Player e confere que abriu (o rastro fica em
                 // ultimoLaunch para o painel de diagnóstico quando não abriu).
@@ -124,6 +122,46 @@ object TvLink {
         val (host, name) = Settings.tvDevice(context) ?: return false
         connect(context, RokuEcp.Device(host, name, "Roku"))
         return true
+    }
+
+    /**
+     * Sobe o servidor DLNA **sem lançar** o Roku Media Player, se já houver TV pareada.
+     *
+     * Chamado ao abrir a tela de reprodução: assim que a pessoa está ouvindo música, o
+     * servidor "Pulsa" já está no ar e a TV o acha sozinha (SSDP) na próxima vez que ela
+     * entrar no Roku Media Player — sem o app precisar interromper o que está passando na
+     * TV. Só age quando ninguém está conectado; se a TV estiver em uso, o [connect]
+     * explícito (botão) é quem decide, com o aviso de `tvEmUso`.
+     */
+    fun prepareIfPaired(context: Context) {
+        if (state !is State.Idle) return
+        val (host, name) = Settings.tvDevice(context) ?: return
+        val app = context.applicationContext
+        contexto = app
+        setState(State.Busy(name))
+        ThreadPool.postNetwork {
+            val srv = runCatching { subirServidor(app) }.getOrNull()
+            if (srv != null) {
+                server = srv
+                setState(State.Connected(RokuEcp.Device(host, name, "Roku"), playerAberto = false))
+            } else {
+                setState(State.Idle)
+            }
+        }
+    }
+
+    /**
+     * Monta e liga o [DlnaServer] com a biblioteca inteira. A árvore é construída **agora**,
+     * na thread de rede: MediaStore em 3 mil faixas leva centenas de milissegundos, e
+     * congelar isso na UI transformaria o toque no botão em ANR. `null` = porta/IP falhou.
+     */
+    private fun subirServidor(app: Context): DlnaServer? {
+        val lib = buildLibrary(app)
+        val nodes = ContentTree.buildTree(lib.entries, lib.playlists, lib.podcasts)
+        val uuid = serverUuid ?: Settings.deviceId(app).also { serverUuid = it }
+        val srv = DlnaServer(app, uuid, nodes, { id -> lib.paths[id] }, lib.mimes)
+        if (!srv.start()) return null
+        return srv
     }
 
     fun disconnect() {
@@ -215,35 +253,59 @@ object TvLink {
         else ultimoLaunch.forEach { appendLine("  $it") }
     }
 
+    /** Tudo que a TV precisa, montado numa ida só às bibliotecas. */
+    private class Build(
+        val entries: List<ContentTree.Entry>,
+        val paths: Map<String, String>,
+        val mimes: Map<String, String>,
+        val playlists: List<ContentTree.Group>,
+        val podcasts: List<ContentTree.Group>,
+    )
+
     /**
-     * A biblioteca vira entradas DLNA, **e** o mapa fileId→origem do bytes (montado na
-     * mesma ida ao MediaStore — buscar o path depois, faixa a faixa, seria uma consulta
-     * por música para algo que a query já devolveu).
+     * A biblioteca vira entradas DLNA, **e** os mapas fileId→origem do bytes e
+     * fileId→mime (montados na mesma ida ao MediaStore/Room — buscar o path depois, faixa a
+     * faixa, seria uma consulta por música para algo que a query já devolveu).
      *
      * Só mídia **local** com extensão que a TV toca ([ContentTree.mimeFor]); rádio/stream
      * (URL) fica de fora — o Roku toca http direto pelo próprio Media Player, e servir
-     * fluxo de rede via DLNA seria o app no meio do caminho à toa.
+     * fluxo de rede via DLNA seria o app no meio do caminho à toa. Podcast entra **só
+     * baixado** ([Episode.downloaded]), pelo mesmo motivo: o não baixado é URL pura, e a
+     * TV o toca melhor buscando direto do que passando pelo celular.
+     *
+     * Playlists e podcasts viram pastas ([ContentTree.buildTree]); falhar em qualquer um
+     * deles não derruba o envio — música ainda vai, porque [runCatching] isola cada fonte.
      */
-    private fun buildEntries(context: Context): Pair<List<ContentTree.Entry>, Map<String, String>> {
-        val out = ArrayList<ContentTree.Entry>()
+    private fun buildLibrary(context: Context): Build {
+        val entries = ArrayList<ContentTree.Entry>()
         val paths = HashMap<String, String>()
+        val mimes = HashMap<String, String>()
+
+        fun add(fileId: String, path: String, mime: String, entry: ContentTree.Entry) {
+            paths[fileId] = path
+            mimes[fileId] = mime
+            entries += entry
+        }
+
         runCatching {
             Library.allSongs(context).forEach { song ->
-                if (song.isRadio || song.isStream || song.isVideo) return@forEach
+                if (song.isRadio || song.isStream || song.isVideo || song.isPodcast) return@forEach
                 val name = File(song.path).name
                 val mime = ContentTree.mimeFor(name) ?: return@forEach
                 val size = runCatching { File(song.path).length() }.getOrDefault(0L)
                 val fileId = "m${song.id}"
-                paths[fileId] = song.path
-                out += ContentTree.Entry(
-                    fileId = fileId,
-                    title = song.title.ifBlank { name },
-                    artist = song.artist.takeIf { it.isNotBlank() && it != "<unknown>" },
-                    album = song.album.takeIf { it.isNotBlank() && it != "<unknown>" },
-                    mime = mime,
-                    size = size,
-                    durationMs = song.durationMs,
-                    isVideo = false,
+                add(
+                    fileId, song.path, mime,
+                    ContentTree.Entry(
+                        fileId = fileId,
+                        title = song.title.ifBlank { name },
+                        artist = song.artist.takeIf { it.isNotBlank() && it != "<unknown>" },
+                        album = song.album.takeIf { it.isNotBlank() && it != "<unknown>" },
+                        mime = mime,
+                        size = size,
+                        durationMs = song.durationMs,
+                        isVideo = false,
+                    ),
                 )
             }
         }
@@ -254,20 +316,83 @@ object TvLink {
                 val fileId = "v${video.id}"
                 // Vídeo: content:// do MediaStore (scoped storage nega o caminho solto;
                 // o FileDescriptor continua legível e seekable — é o que o DlnaServer serve).
-                paths[fileId] = VideoLibrary.contentUri(video.id).toString()
-                out += ContentTree.Entry(
-                    fileId = fileId,
-                    title = video.title.ifBlank { name },
-                    artist = null,
-                    album = null,
-                    mime = mime,
-                    size = video.sizeBytes,
-                    durationMs = video.durationMs,
-                    isVideo = true,
+                add(
+                    fileId, VideoLibrary.contentUri(video.id).toString(), mime,
+                    ContentTree.Entry(
+                        fileId = fileId,
+                        title = video.title.ifBlank { name },
+                        artist = null,
+                        album = null,
+                        mime = mime,
+                        size = video.sizeBytes,
+                        durationMs = video.durationMs,
+                        isVideo = true,
+                    ),
                 )
             }
         }
-        return out to paths
+
+        // Podcasts baixados: episódio com arquivo local. Sem arquivo = URL, que a TV busca direto.
+        val podcastGroups = ArrayList<ContentTree.Group>()
+        runCatching {
+            val db = PodcastDb.get(context)
+            val episodes = db.allEpisodes().filter { it.downloaded }
+            // Título do feed: uma consulta por feed assinado, não por episódio.
+            val feedTitles = HashMap<Long, String>()
+            val byFeed = LinkedHashMap<Long, ArrayList<String>>()
+            episodes.forEach { ep ->
+                val path = ep.filePath
+                val name = File(path).name
+                val mime = ContentTree.mimeFor(name) ?: return@forEach
+                val isVideo = ep.isVideo || mime.startsWith("video/")
+                val fileId = "e${ep.id}"
+                if (paths.containsKey(fileId)) return@forEach
+                add(
+                    fileId, path, mime,
+                    ContentTree.Entry(
+                        fileId = fileId,
+                        title = ep.title.ifBlank { name },
+                        artist = feedTitles.getOrPut(ep.podcastId) {
+                            runCatching { db.feed(ep.podcastId)?.title }.getOrNull().orEmpty()
+                        }.ifBlank { null },
+                        album = null,
+                        mime = mime,
+                        size = runCatching { File(path).length() }.getOrDefault(0L),
+                        durationMs = ep.durationSec * 1000,
+                        isVideo = isVideo,
+                    ),
+                )
+                byFeed.getOrPut(ep.podcastId) { ArrayList() } += fileId
+            }
+            byFeed.forEach { (feedId, ids) ->
+                val title = feedTitles.getOrPut(feedId) {
+                    runCatching { db.feed(feedId)?.title }.getOrNull().orEmpty()
+                }.ifBlank { "Podcast $feedId" }
+                podcastGroups += ContentTree.Group(feedId.toString(), title, ids)
+            }
+        }
+
+        // Playlists: cada faixa referenciada pelo fileId `m<id>`. A playlist guarda os ids
+        // das faixas; uso a ordem do banco como a ordem que o usuário montou.
+        val playlistGroups = ArrayList<ContentTree.Group>()
+        runCatching {
+            val db = PlaylistDb.get(context)
+            db.playlists().forEach { pl ->
+                val songIds = runCatching { db.songs(pl.id).map { it.id } }.getOrDefault(emptyList())
+                val fileIds = songIds.map { "m$it" }.filter { paths.containsKey(it) }
+                if (fileIds.isNotEmpty()) {
+                    playlistGroups += ContentTree.Group(pl.id.toString(), pl.name, fileIds)
+                }
+            }
+        }
+
+        return Build(
+            entries = entries,
+            paths = paths,
+            mimes = mimes,
+            playlists = playlistGroups,
+            podcasts = podcastGroups,
+        )
     }
 
     /** UUID do servidor, para teste/debug. */

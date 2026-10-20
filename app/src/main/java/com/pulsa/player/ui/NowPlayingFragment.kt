@@ -617,6 +617,9 @@ class NowPlayingFragment : Fragment() {
         super.onResume()
         SleepTimer.setListener(sleepListener)
         com.pulsa.player.media.tv.TvLink.addListener(tvListener)
+        // TV já pareada: sobe o servidor DLNA em segundo plano para a TV achar "Pulsa" no
+        // Roku Media Player sem o app precisar tomar a tela da TV. Silencioso de propósito.
+        com.pulsa.player.media.tv.TvLink.prepareIfPaired(requireContext().applicationContext)
         render()
         refreshVisuals()
     }

@@ -129,4 +129,94 @@ class ContentTreeTest {
         assertTrue(didl.contains("Só uma"))
         assertFalse(didl.contains("Outra"))
     }
+
+    // ── Árvore hierárquica (A2b) ────────────────────────────────────────────
+
+    @Test
+    fun topoTemArtistasAlbunsEPlaylistsQuandoHaConteudo() {
+        val nodes = ContentTree.buildTree(
+            entries = listOf(entry("m1", "A", artist = "The Beatles", album = "Abbey Road")),
+            playlists = listOf(ContentTree.Group("1", "Minhas", listOf("m1"))),
+            podcasts = emptyList(),
+        )
+        val root = nodes[ContentTree.ROOT] as ContentTree.Node.Container
+        // Músicas + Artistas + Álbuns + Playlists = 4 (sem vídeo/podcast).
+        assertEquals(4, root.childCount)
+        assertTrue(nodes.containsKey(ContentTree.ARTISTS))
+        assertTrue(nodes.containsKey(ContentTree.ALBUMS))
+        assertTrue(nodes.containsKey(ContentTree.PLAYLISTS))
+        assertFalse(nodes.containsKey(ContentTree.PODCASTS))
+        assertFalse(nodes.containsKey(ContentTree.VIDEOS))
+    }
+
+    @Test
+    fun artistasLevamAAlbunsEAlbumLevaAFaixas() {
+        val nodes = ContentTree.buildTree(
+            listOf(
+                entry("m1", "Come Together", artist = "The Beatles", album = "Abbey Road"),
+                entry("m2", "Something", artist = "The Beatles", album = "Abbey Road"),
+                entry("m3", "Imagine", artist = "John Lennon", album = "Imagine"),
+            ),
+        )
+        val artistas = ContentTree.children(nodes, ContentTree.ARTISTS, 0, 10).first
+        assertEquals(2, artistas.size)
+        val beatles = artistas.first { it.title == "The Beatles" }
+        val albuns = ContentTree.children(nodes, beatles.id, 0, 10).first
+        assertEquals(listOf("Abbey Road"), albuns.map { it.title })
+        val faixas = ContentTree.children(nodes, albuns.first().id, 0, 10).first
+        assertEquals(listOf("Come Together", "Something"), faixas.map { it.title })
+    }
+
+    @Test
+    fun mesmaFaixaEmVariosCaminhosTemIdsDistintosEPaiUnico() {
+        val nodes = ContentTree.buildTree(
+            entries = listOf(entry("m1", "Única", artist = "A", album = "B")),
+            playlists = listOf(ContentTree.Group("1", "P", listOf("m1"))),
+        )
+        // A faixa aparece em Músicas, no álbum (por artista), no álbum (flat) e na playlist.
+        val musicChildren = ContentTree.children(nodes, ContentTree.MUSIC, 0, 10).first
+        assertEquals(listOf("m1"), musicChildren.map { it.id })
+        // Cada aparição tem um id próprio; nenhuma colide.
+        val itemIds = nodes.values.filterIsInstance<ContentTree.Node.Item>().map { it.id }
+        assertEquals(itemIds.size, itemIds.toSet().size)
+        // Todas apontam para o MESMO arquivo na URL do res — é isso que faz o servidor achar os bytes.
+        val didl = ContentTree.didl(nodes, ContentTree.MUSIC, 0, 1, "http://x")
+        assertTrue(didl.contains("http://x/f/m1"))
+    }
+
+    @Test
+    fun playlistViraPastaComAsFaixasNaOrdem() {
+        val nodes = ContentTree.buildTree(
+            entries = listOf(entry("m1", "Primeira"), entry("m2", "Segunda")),
+            playlists = listOf(ContentTree.Group("1", "Favoritas", listOf("m2", "m1"))),
+        )
+        val pls = ContentTree.children(nodes, ContentTree.PLAYLISTS, 0, 10).first
+        assertEquals(listOf("Favoritas"), pls.map { it.title })
+        val faixas = ContentTree.children(nodes, pls.first().id, 0, 10).first
+        // Ordem da playlist (m2, m1), não ordem alfabética.
+        assertEquals(listOf("Segunda", "Primeira"), faixas.map { it.title })
+    }
+
+    @Test
+    fun podcastViraPastaPorFeed() {
+        val nodes = ContentTree.buildTree(
+            entries = listOf(
+                entry("e1", "Ep 1", artist = "Meu Podcast", album = null, isVideo = false),
+                entry("e2", "Ep 2", artist = "Meu Podcast", album = null, isVideo = false),
+            ),
+            podcasts = listOf(ContentTree.Group("7", "Meu Podcast", listOf("e1", "e2"))),
+        )
+        val feeds = ContentTree.children(nodes, ContentTree.PODCASTS, 0, 10).first
+        assertEquals(listOf("Meu Podcast"), feeds.map { it.title })
+        val eps = ContentTree.children(nodes, feeds.first().id, 0, 10).first
+        assertEquals(listOf("Ep 1", "Ep 2"), eps.map { it.title })
+    }
+
+    @Test
+    fun idDePastaNaoColideComIdDeFaixa() {
+        // Artista chamado literalmente de "m1" não pode virar a mesma chave de uma faixa "m1".
+        val nodes = ContentTree.buildTree(listOf(entry("m1", "X", artist = "m1", album = "A")))
+        val artistas = ContentTree.children(nodes, ContentTree.ARTISTS, 0, 10).first
+        assertTrue(artistas.first().id != "m1")
+    }
 }

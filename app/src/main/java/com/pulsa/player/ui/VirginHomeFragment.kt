@@ -71,15 +71,24 @@ class VirginHomeFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_virgin_home, container, false)
-        view.findViewById<View>(R.id.btn_party).setOnClickListener { party() }
-        view.findViewById<View>(R.id.btn_relax).setOnClickListener { relax() }
+        val btnParty = view.findViewById<View>(R.id.btn_party)
+        val btnRelax = view.findViewById<View>(R.id.btn_relax)
+        // TV: os controles principais da home precisam ser alcancaveis pelo D-pad. Sem
+        // isso, so os itens de lista (que passam por TvFocus no adapter) recebem foco, e
+        // Bombar/Relaxar/saudacao/avatar ficam impossiveis de acionar com o controle.
+        TvFocus.apply(btnParty)
+        TvFocus.apply(btnRelax)
+        btnParty.setOnClickListener { party() }
+        btnRelax.setOnClickListener { relax() }
         val hero = view.findViewById<View>(R.id.hero_avatar)
+        TvFocus.apply(hero)
         hero.setOnClickListener { speak(getString(R.string.dj_voice_greeting)) }
         hero.setOnLongClickListener {
             startActivity(Intent(requireContext(), BanActivity::class.java))
             true
         }
         val greet = view.findViewById<TextView>(R.id.btn_greet)
+        TvFocus.apply(greet)
         greet.setOnClickListener { greet() }
         bindResumeCard(view)
         buildShortcuts(view.findViewById(R.id.shortcuts_row))
@@ -100,6 +109,9 @@ class VirginHomeFragment : Fragment() {
         loadRecents(view)
         loadStats()
         view?.findViewById<ViewGroup>(R.id.skin_row)?.let { buildSkinRow(it) }
+        // Android TV: sem toque, a home precisa entregar um alvo de foco ao aparecer. O
+        // resume e melhor que o onCreateView porque o fragment so vira visivel aqui.
+        com.pulsa.player.util.TvFocus.focusFirst(view)
     }
 
     override fun onDestroyView() {

@@ -26,6 +26,13 @@ object ContentTree {
     const val ROOT = "0"
     const val MUSIC = "music"
     const val VIDEOS = "videos"
+    const val ARTISTS = "artists"
+    const val ALBUMS = "albums"
+    const val PLAYLISTS = "playlists"
+    const val PODCASTS = "podcasts"
+
+    /** Música acessível tanto por lista plana quanto por artista/álbum — mesma faixa, dois caminhos. */
+    const val MUSIC_ALL = "music_all"
 
     /**
      * Faixa de entrada: o que a árvore precisa saber, e nada mais. O `fileId` é o que o
@@ -80,6 +87,158 @@ object ContentTree {
         videos.forEach { nodes[it.fileId] = Node.Item(it.fileId, VIDEOS, it.title, it) }
         return nodes
     }
+
+    /** Playlist para a TV: um nome e os itens que ela contém (mesmos `fileId` das [Entry]). */
+    data class Group(val id: String, val title: String, val fileIds: List<String>)
+
+    /**
+     * A2b — árvore hierárquica para navegar na TV com o controle remoto.
+     *
+     * **Por que hierarquia.** A lista plana de músicas funciona no papel, mas navegar por
+     * 3 mil faixas com o D-pad do controle da Roku é inviável: o usuário rola minutos até
+     * achar o que quer. As pastas dão o mesmo atalho que ele já usa no celular —
+     * **Artistas → Álbuns → faixas**, mais Playlists e Podcasts por feed.
+     *
+     * **Forma.** Raiz → (Músicas | Artistas | Álbuns | Playlists | Podcasts | Vídeos).
+     * "Músicas" continua existindo como lista plana (quem prefere rolar tudo), mas as
+     * pastas são o caminho curto.
+     *
+     * **Chaves de pasta não colidem com ids de faixa.** Artistas/álbuns recebem prefixo
+     * (`a:`/`b:`/`p:`/`c:`) e o nome entra codificado, então `a:The Beatles` nunca casa com
+     * um `fileId` `m123`. O id da pasta precisa ser **estável** entre reconstruções — a TV
+     * refaz Browse por página durante a reprodução e um id que muda perde o lugar.
+     */
+    fun buildTree(
+        entries: List<Entry>,
+        playlists: List<Group> = emptyList(),
+        podcasts: List<Group> = emptyList(),
+    ): Map<String, Node> {
+        val music = entries.filter { !it.isVideo }.sortedWith(titleOrder)
+        val videos = entries.filter { it.isVideo }.sortedWith(titleOrder)
+        val nodes = linkedMapOf<String, Node>()
+
+        // A mesma faixa aparece em vários caminhos (Músicas, Artistas, Álbuns, Playlists).
+        // Um nó tem **um** pai só, então cada aparição recebe um id distinto (o primeiro
+        // fica sendo o `fileId` puro; os demais ganham sufixo `#n`). O `res` sempre aponta
+        // para `/f/<fileId>` — o id do *arquivo*, que não muda — para o servidor achar os
+        // bytes e o mime, sem depender do id do nó.
+        val used = HashMap<String, Int>()
+
+        fun addItem(entry: Entry, parentId: String) {
+            val n = used.getOrDefault(entry.fileId, 0)
+            used[entry.fileId] = n + 1
+            val nodeId = if (n == 0) entry.fileId else "${entry.fileId}#$n"
+            nodes[nodeId] = Node.Item(nodeId, parentId, entry.title, entry)
+        }
+
+        // Pastas de topo só aparecem quando têm conteúdo — pasta vazia na TV confunde.
+        val top = ArrayList<String>()
+        if (music.isNotEmpty()) {
+            top += MUSIC
+            top += ARTISTS
+            top += ALBUMS
+        }
+        if (playlists.isNotEmpty()) top += PLAYLISTS
+        if (podcasts.isNotEmpty()) top += PODCASTS
+        if (videos.isNotEmpty()) top += VIDEOS
+
+        nodes[ROOT] = Node.Container(ROOT, "-1", "Pulsa", top.size)
+
+        // Lista plana de músicas.
+        if (music.isNotEmpty()) {
+            nodes[MUSIC] = Node.Container(MUSIC, ROOT, "Músicas", music.size)
+            music.forEach { addItem(it, MUSIC) }
+        }
+
+        // Artistas → Álbuns → faixas.
+        if (music.isNotEmpty()) {
+            val byArtist = music.groupBy { it.artist?.ifBlank { null } ?: DESCONHECIDO }
+                .toSortedMap(compareBy(String.CASE_INSENSITIVE_ORDER) { it })
+            nodes[ARTISTS] = Node.Container(ARTISTS, ROOT, "Artistas", byArtist.size)
+            byArtist.forEach { (artist, songs) ->
+                val artistId = folderId("a", artist)
+                val albums = songs.groupBy { it.album?.ifBlank { null } ?: DESCONHECIDO }
+                    .toSortedMap(compareBy(String.CASE_INSENSITIVE_ORDER) { it })
+                nodes[artistId] = Node.Container(artistId, ARTISTS, artist, albums.size)
+                albums.forEach { (album, tracks) ->
+                    val albumId = folderId("b", "$artist\u0000$album")
+                    val ordered = tracks.sortedWith(titleOrder)
+                    nodes[albumId] = Node.Container(albumId, artistId, album, ordered.size)
+                    ordered.forEach { addItem(it, albumId) }
+                }
+            }
+        }
+
+        // Álbuns (lista plana, sem passar pelo artista).
+        if (music.isNotEmpty()) {
+            val byAlbum = music.groupBy { it.album?.ifBlank { null } ?: DESCONHECIDO }
+                .toSortedMap(compareBy(String.CASE_INSENSITIVE_ORDER) { it })
+            nodes[ALBUMS] = Node.Container(ALBUMS, ROOT, "Álbuns", byAlbum.size)
+            byAlbum.forEach { (album, tracks) ->
+                // Pasta própria da lista plana (id com sufixo "flat"): o mesmo álbum já tem
+                // pasta na árvore de Artistas, e um nó pertence a um pai só.
+                val flatId = folderId("f", album)
+                val ordered = tracks.sortedWith(titleOrder)
+                nodes[flatId] = Node.Container(flatId, ALBUMS, album, ordered.size)
+                ordered.forEach { addItem(it, flatId) }
+            }
+        }
+
+        // Playlists: pasta "Playlists" → pasta por playlist → faixas.
+        if (playlists.isNotEmpty()) {
+            nodes[PLAYLISTS] = Node.Container(PLAYLISTS, ROOT, "Playlists", playlists.size)
+            val byId = music.associateBy { it.fileId }
+            playlists.forEachIndexed { i, pl ->
+                val items = pl.fileIds.mapNotNull { byId[it] }
+                if (items.isEmpty()) return@forEachIndexed
+                val plId = folderId("p", "${pl.title}\u0000$i")
+                nodes[plId] = Node.Container(plId, PLAYLISTS, pl.title, items.size)
+                items.forEach { addItem(it, plId) }
+            }
+        }
+
+        // Podcasts: pasta "Podcasts" → pasta por feed → episódios.
+        if (podcasts.isNotEmpty()) {
+            nodes[PODCASTS] = Node.Container(PODCASTS, ROOT, "Podcasts", podcasts.size)
+            val byId = entries.associateBy { it.fileId }
+            podcasts.forEachIndexed { i, feed ->
+                val items = feed.fileIds.mapNotNull { byId[it] }
+                if (items.isEmpty()) return@forEachIndexed
+                val feedId = folderId("c", "${feed.title}\u0000$i")
+                nodes[feedId] = Node.Container(feedId, PODCASTS, feed.title, items.size)
+                items.forEach { addItem(it, feedId) }
+            }
+        }
+
+        // Vídeos (lista plana — a Roku Media Player agrupa bem vídeo por si).
+        if (videos.isNotEmpty()) {
+            nodes[VIDEOS] = Node.Container(VIDEOS, ROOT, "Vídeos", videos.size)
+            videos.forEach { addItem(it, VIDEOS) }
+        }
+
+        return nodes
+    }
+
+    /** Nome para faixa/álbum sem artista/álbum preenchido — evita pasta com nome vazio. */
+    private const val DESCONHECIDO = "Desconhecido"
+
+    /**
+     * Id de pasta estável e sem colisão. Prefixo por tipo + nome codificado em hex para
+     * não carregar `&`/aspas/espaços para dentro de um id de nó (o id vira atributo XML e
+     * chave de mapa, não pode ter caractere que confunda nem o parser nem o mapa).
+     */
+    private fun folderId(prefix: String, name: String): String {
+        val bytes = name.lowercase(Locale.ROOT).toByteArray(Charsets.UTF_8)
+        val hex = buildString(bytes.size * 2) {
+            for (b in bytes) {
+                append(HEX[(b.toInt() shr 4) and 0xF])
+                append(HEX[b.toInt() and 0xF])
+            }
+        }
+        return "$prefix:$hex"
+    }
+
+    private const val HEX = "0123456789abcdef"
 
     private val titleOrder = compareBy<Entry> { it.title.lowercase(Locale.ROOT) }
 
@@ -168,7 +327,7 @@ object ContentTree {
                     if (e.durationMs > 0) {
                         sb.append(" duration=\"").append(hms(e.durationMs)).append("\"")
                     }
-                    sb.append(">").append(esc("$baseUrl/f/${node.id}")).append("</res></item>")
+                    sb.append(">").append(esc("$baseUrl/f/${e.fileId}")).append("</res></item>")
                 }
             }
     }

@@ -52,6 +52,13 @@ class DlnaServer(
      * para a TV buscar direto do originador).
      */
     private val resolve: (String) -> String?,
+    /**
+     * MIME por fileId, independente da árvore. A árvore é hierárquica e o **mesmo arquivo
+     * aparece em várias pastas** (Artistas, Álbuns, Playlists); cada aparição é um nó com
+     * id próprio, então não dá para achar o mime por `nodes[fileId]` — o `/f/<fileId>`
+     * carrega o id do *arquivo*, não o id do nó. Este mapa fecha essa fresta.
+     */
+    private val mimes: Map<String, String> = emptyMap(),
 ) {
 
     private val app = context.applicationContext
@@ -341,8 +348,9 @@ class DlnaServer(
             notFound(out)
             return
         }
-        // O mime vem da árvore (o fileId é "m42", não tem extensão para adivinhar).
-        val mime = (nodes[fileId] as? ContentTree.Node.Item)?.entry?.mime
+        // O mime vem do mapa de arquivos (o fileId é "m42", não tem extensão para adivinhar).
+        val mime = mimes[fileId]
+            ?: (nodes[fileId] as? ContentTree.Node.Item)?.entry?.mime
             ?: "application/octet-stream"
         if (target.startsWith("http://") || target.startsWith("https://")) {
             // Redirect: Roku Media Player segue sem problema; stream grande não trafega

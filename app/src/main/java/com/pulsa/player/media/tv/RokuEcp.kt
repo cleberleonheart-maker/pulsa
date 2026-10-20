@@ -67,8 +67,9 @@ object RokuEcp {
     // ── comandos ────────────────────────────────────────────────────────────
 
     /** `/query/device-info`. Confirma que um host respondeu e traz o nome amigável real. */
-    fun deviceInfo(host: String): Device? {
-        val xml = get("http://$host:$PORT/query/device-info") ?: return null
+    fun deviceInfo(host: String, connectTimeout: Int = 1500, readTimeout: Int = 1500): Device? {
+        val xml = get("http://$host:$PORT/query/device-info", connectTimeout, readTimeout)
+            ?: return null
         return parseDeviceInfo(host, xml)
     }
 
@@ -357,18 +358,23 @@ object RokuEcp {
 
     /**
      * Plano B: varre a sub-rede /24 do próprio IP na porta 8060. Acha o Roku no roteador
-     * que filtra multicast, porque unicast passa. 32 threads, 400ms de timeout por host:
-     * /24 inteiro em ~3s pior caso, e quem não respondeu cai rápido.
+     * que filtra multicast, porque unicast passa. 64 threads e 600ms de timeout por host:
+     * /24 inteiro em ~2,5s pior caso (4 lotes de 64), e quem não respondeu cai rápido.
+     *
+     * **Por que 600ms e não os 1500ms do resto do ECP.** Na varredura, um host que não é
+     * Roku simplesmente não abre conexão (RST imediato) ou engole o SYN; esperar 1,5s por
+     * host morto somava ~12s de tela de "procurando TV". 600ms é folga para um Wi-Fi
+     * doméstico e o Roku verdadeiro responde em dezenas de ms.
      */
     private fun discoverScan(): List<String> {
         val prefix = subnetPrefix() ?: return emptyList()
         val hosts = LinkedHashSet<String>()
-        val pool = Executors.newFixedThreadPool(32)
+        val pool = Executors.newFixedThreadPool(64)
         try {
             val futures = (1..254).map { i ->
                 pool.submit(Callable {
                     val host = "$prefix.$i"
-                    if (deviceInfo(host) != null) host else null
+                    if (deviceInfo(host, 600, 600) != null) host else null
                 })
             }
             futures.forEach { f ->
