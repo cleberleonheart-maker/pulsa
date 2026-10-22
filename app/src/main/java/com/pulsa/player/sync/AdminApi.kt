@@ -37,7 +37,10 @@ object AdminApi {
                 }
                 if (conn.responseCode == 200) {
                     val text = conn.inputStream.bufferedReader().use { it.readText() }
+                    Net.close(conn)
                     if (JSONObject(text).optBoolean("ok")) return true
+                } else {
+                    Net.close(conn)
                 }
             } catch (ignored: Throwable) {
             }
@@ -70,8 +73,12 @@ object AdminApi {
                             )
                         )
                     }
+                    // Sem isto o socket fica fora do pool: o `return` saía antes do
+                    // fechamento, e o painel admin abre uma conexão por aparelho listado.
+                    Net.close(conn)
                     return out
                 }
+                Net.close(conn)
             } catch (ignored: Throwable) {
             }
         }
@@ -92,7 +99,11 @@ object AdminApi {
                 conn.outputStream.use {
                     it.write(JSONObject().put("dev", dev).toString().toByteArray(Charsets.UTF_8))
                 }
-                if (conn.responseCode == 200) return true
+                if (conn.responseCode == 200) {
+                    Net.close(conn)
+                    return true
+                }
+                Net.close(conn)
             } catch (ignored: Throwable) {
             }
         }

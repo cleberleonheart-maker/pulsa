@@ -120,7 +120,7 @@ object MirrorSync {
                 conn.setFixedLengthStreamingMode(payload.size)
                 conn.outputStream.use { it.write(payload) }
                 conn.responseCode
-                runCatching { conn.inputStream.close() }
+                Net.close(conn)
                 return true
             } catch (t: Throwable) {
             }
@@ -291,7 +291,7 @@ object MirrorSync {
                 val text = if (codeHttp == 200) {
                     conn.inputStream.bufferedReader().use { it.readText() }
                 } else ""
-                runCatching { conn.inputStream.close() }
+                Net.close(conn)
                 if (codeHttp != 200 || text.isBlank()) continue
                 return JSONObject(text)
             } catch (t: Throwable) {

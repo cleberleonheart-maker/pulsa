@@ -925,7 +925,7 @@ class SettingsActivity : AppCompatActivity() {
                 conn.setFixedLengthStreamingMode(body.toByteArray().size)
                 conn.outputStream.use { it.write(body.toByteArray()) }
                 val text = conn.inputStream.bufferedReader().use { it.readText() }
-                conn.inputStream.close()
+                Net.close(conn)
                 return text
             } catch (t: Throwable) {
             }
@@ -946,7 +946,7 @@ class SettingsActivity : AppCompatActivity() {
                 conn.setRequestProperty("X-Pulsa-Token", Settings.telemetryToken(this))
                 Net.user(this, conn)
                 val text = conn.inputStream.bufferedReader().use { it.readText() }
-                conn.inputStream.close()
+                Net.close(conn)
                 return text
             } catch (t: Throwable) {
             }

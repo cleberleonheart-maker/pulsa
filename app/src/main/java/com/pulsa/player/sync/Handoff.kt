@@ -106,7 +106,7 @@ object Handoff {
                 conn.outputStream.use { it.write(body) }
                 val http = conn.responseCode
                 val text = if (http == 200) conn.inputStream.bufferedReader().use { it.readText() } else ""
-                runCatching { conn.inputStream.close() }
+                Net.close(conn)
                 if (http != 200 || text.isBlank()) continue
                 return JSONObject(text)
             } catch (t: Throwable) {

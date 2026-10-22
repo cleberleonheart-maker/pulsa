@@ -260,7 +260,7 @@ object RemoteSync {
                 val text = if (code == 200) {
                     conn.inputStream.bufferedReader().use { it.readText() }
                 } else ""
-                runCatching { conn.inputStream.close() }
+                Net.close(conn)
                 if (code != 200) continue
                 if (text.isBlank()) return true
                 val json = JSONObject(text)
@@ -362,7 +362,7 @@ object RemoteSync {
                 val text = if (code == 200) {
                     conn.inputStream.bufferedReader().use { it.readText() }
                 } else ""
-                runCatching { conn.inputStream.close() }
+                Net.close(conn)
                 if (code != 200) continue
                 if (text.isBlank()) return true
                 val cloud = JSONObject(text).optJSONObject("cloud")
@@ -404,7 +404,7 @@ object RemoteSync {
                 Net.user(ctx, conn)
                 val code = conn.responseCode
                 val text = if (code == 200) conn.inputStream.bufferedReader().use { it.readText() } else ""
-                conn.inputStream.close()
+                Net.close(conn)
                 if (code != 200) continue
                 val arr = JSONArray(text)
                 for (i in 0 until arr.length()) {
@@ -514,7 +514,8 @@ object RemoteSync {
                 Net.user(ctx, conn)
                 conn.setFixedLengthStreamingMode(payload.size)
                 conn.outputStream.use { it.write(payload) }
-                conn.inputStream.close()
+                conn.responseCode
+                Net.close(conn)
                 return true
             } catch (t: Throwable) {
             }

@@ -128,9 +128,12 @@ object LastFm {
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
             conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
-            if (conn.responseCode != 200) null else {
-                conn.inputStream.bufferedReader().readText()
-            }
+            val code = conn.responseCode
+            val text = if (code == 200) {
+                conn.inputStream.bufferedReader().use { it.readText() }
+            } else ""
+            Net.close(conn)
+            text.ifBlank { null }
         } catch (t: Throwable) {
             null
         }

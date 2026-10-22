@@ -29,7 +29,8 @@ object Telemetry {
                     Net.user(context, conn)
                     conn.setFixedLengthStreamingMode(payload.toByteArray().size)
                     conn.outputStream.use { it.write(payload.toByteArray()) }
-                    conn.inputStream.close()
+                    conn.responseCode
+                    Net.close(conn)
                     return@postNetwork
                 } catch (t: Throwable) {
                 }

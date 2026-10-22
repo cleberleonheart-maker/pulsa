@@ -91,7 +91,7 @@ object RemoteControl {
                 Net.user(ctx, conn)
                 val http = conn.responseCode
                 val text = if (http == 200) conn.inputStream.bufferedReader().use { it.readText() } else ""
-                runCatching { conn.inputStream.close() }
+                Net.close(conn)
                 if (http != 200 || text.isBlank()) continue
                 return RemoteProtocol.parseSession(text)
             } catch (t: Throwable) {
@@ -121,7 +121,7 @@ object RemoteControl {
                     conn.setFixedLengthStreamingMode(body.toByteArray().size)
                     conn.outputStream.use { it.write(body.toByteArray()) }
                     conn.responseCode
-                    runCatching { conn.inputStream.close() }
+                    Net.close(conn)
                     return@postNetwork
                 } catch (t: Throwable) {
                 }

@@ -46,7 +46,7 @@ object ConfirmMail {
                 val text = runCatching {
                     conn.inputStream.bufferedReader().use { it.readText() }
                 }.getOrDefault("")
-                conn.inputStream.close()
+                Net.close(conn)
                 return parse(code, text)
             } catch (t: Throwable) {
                 last = SendResult(false, false, t.message)
@@ -88,7 +88,7 @@ fun smtpStatus(context: Context, onStatus: (String) -> Unit) {
                     } else if (code == 404) {
                         status = "?"
                     }
-                    conn.inputStream.close()
+                    Net.close(conn)
                     break
                 } catch (t: Throwable) {
                 }

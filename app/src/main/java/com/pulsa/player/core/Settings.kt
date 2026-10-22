@@ -184,7 +184,7 @@ object Settings {
             conn.connectTimeout = 5000
             conn.readTimeout = 5000
             val text = conn.inputStream.bufferedReader().use { it.readText() }.trim()
-            conn.inputStream.close()
+            runCatching { conn.disconnect() }
             if (text.startsWith("https://")) url = text
         } catch (t: Throwable) {
         }
