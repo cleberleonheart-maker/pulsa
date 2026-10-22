@@ -2035,7 +2035,6 @@ class PlaybackService : MediaLibraryService() {
             startPositionMs: Long
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
             val ids = mediaItems.map { it.mediaId }
-            val copia = ImmutableList.copyOf(mediaItems)
             val future = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
             ThreadPool.post {
                 val songs = ids.mapNotNull { libraryTree.songFor(it) }
@@ -2045,11 +2044,19 @@ class PlaybackService : MediaLibraryService() {
                     )
                     return@post
                 }
+                // A lista devolvida ao Media3 tem de ser a MESMA que o `start()` monta. Antes
+                // devolvíamos a `copia` (os itens originais do pedido), que o Media3 reaplica
+                // por cima da fila do serviço: um item que `songFor` não resolveu ficava de um
+                // lado só, e o índice `at` — calculado sobre `songs` — apontava para outra
+                // faixa na `copia`. Resultado: "tocar isto" pelo Auto/Wear começava na música
+                // errada. Agora derivamos os itens dos `songs` resolvidos, com os mesmos
+                // índices, e o `at` vale para os dois.
                 val at = startIndex.coerceIn(0, songs.size - 1)
+                val items = songs.map { mediaItemFor(it) }
                 ThreadPool.onUi {
                     start(songs, at)
                     future.set(
-                        MediaSession.MediaItemsWithStartPosition(copia, at, startPositionMs)
+                        MediaSession.MediaItemsWithStartPosition(items, at, startPositionMs)
                     )
                 }
             }
