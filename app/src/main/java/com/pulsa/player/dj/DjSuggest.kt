@@ -21,21 +21,28 @@ object DjSuggest {
 
     /** Depois de um 429, nem toca na rede por esse tempo (a cota é da chave/projeto). */
     private const val COOLDOWN_MS = 60_000L
-
-    @Volatile
-    private var cooldownUntil = 0L
+    private const val MAX_COOLDOWN_MS = 120_000L
+    private const val DAILY_COOLDOWN_MS = 5 * 60_000L
 
     @Volatile
     private var cooldownMessage: String? = null
 
+    private val quotaCooldownUntil = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
     /** Zera o bloqueio local (ex.: o usuário trocou a chave). */
-    fun resetQuotaCooldown() {
-        cooldownUntil = 0L
+    fun resetQuotaCooldown(tag: String? = null) {
+        if (tag == null) {
+            quotaCooldownUntil.clear()
+        } else {
+            quotaCooldownUntil.remove(tag)
+        }
         cooldownMessage = null
     }
 
-    fun isQuotaBlocked(): Boolean =
-        android.os.SystemClock.elapsedRealtime() < cooldownUntil
+    fun isQuotaBlocked(tag: String = "texto"): Boolean {
+        val until = quotaCooldownUntil[tag] ?: 0L
+        return android.os.SystemClock.elapsedRealtime() < until
+    }
 
     data class Suggestion(val title: String, val artist: String, val reason: String)
 
@@ -263,7 +270,7 @@ object DjSuggest {
             if (code != 200) {
                 val err = conn.errorStream?.bufferedReader()?.readText() ?: ""
                 android.util.Log.w("DjSuggest", "Gemini HTTP $code: ${err.take(300)}")
-                if (code == 429) startCooldown(err)
+                if (code == 429) startCooldown(err, tag)
                 null
             } else {
                 answerOf(conn.inputStream.bufferedReader().readText())
@@ -386,10 +393,19 @@ object DjSuggest {
             ?.trim()?.ifBlank { null }
     }
 
-    private fun startCooldown(detail: String) {
-        cooldownUntil = android.os.SystemClock.elapsedRealtime() + COOLDOWN_MS
+    private fun startCooldown(detail: String, tag: String = "texto") {
+        val now = android.os.SystemClock.elapsedRealtime()
+        val daily = detail.contains("PerDay", true) || detail.contains("per day", true) ||
+            detail.contains("daily", true)
+        val waitSec = retryDelaySeconds(detail)
+        val waitMs = when {
+            daily -> DAILY_COOLDOWN_MS
+            waitSec != null -> (waitSec * 1000L).coerceIn(5_000L, MAX_COOLDOWN_MS)
+            else -> COOLDOWN_MS
+        }
+        quotaCooldownUntil[tag] = now + waitMs
         cooldownMessage = limitMessage(detail)
-        android.util.Log.w("DjSuggest", "Gemini 429: $cooldownMessage")
+        android.util.Log.w("DjSuggest", "Gemini 429: $cooldownMessage (cooldown ${waitMs / 1000}s) tag=$tag")
     }
 
     /** 429: distingue limite por minuto (espera indicada) de limite diário. */
