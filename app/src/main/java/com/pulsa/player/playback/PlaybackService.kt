@@ -56,6 +56,7 @@ import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.media.StreamKind
 import com.pulsa.player.model.Song
+import com.pulsa.player.model.SongMeta
 import com.pulsa.player.model.Video
 import com.pulsa.player.model.toSong
 import com.pulsa.player.audio.AudioFx
@@ -567,7 +568,23 @@ class PlaybackService : MediaLibraryService() {
     private fun currentSongGenre(): String? {
         val song = currentSong ?: return null
         if (song.isVideo || song.isStream || song.isRadio || song.isPodcast) return null
-        return runCatching { Library.genreOf(applicationContext, song.id) }.getOrNull()
+        // Não bloqueia a main: `Library.genreOf` monta o mapa de gêneros com uma query por
+        // gênero (varredura do MediaStore). Se o cache estiver frio, devolvemos o que houver e
+        // rearmamos em background, reaplicando o efeito na main quando o mapa ficar pronto.
+        if (Library.genresFresh()) return Library.genreOfCached(song.id)
+        warmGenresAsync()
+        return Library.genreOfCached(song.id)
+    }
+
+    /**
+     * Carrega o mapa de gêneros em background e, ao terminar, reaplica os efeitos na main para
+     * o preset do EQ entrar com o gênero correto — sem a varredura do MediaStore na main.
+     */
+    private fun warmGenresAsync() {
+        ThreadPool.post {
+            val changed = runCatching { Library.prewarmGenres(applicationContext) }.getOrDefault(false)
+            if (changed) mainHandler.post { attachEffects() }
+        }
     }
 
     /**
@@ -1247,13 +1264,9 @@ class PlaybackService : MediaLibraryService() {
      * Devolve o `Song` movido (para a Virgin nomear a resposta) ou `null` quando não há nada
      * para mover (fila com menos de 2 itens, item já no fim, ou nenhum do tipo citado).
      *
-     * Dois caminhos, porque mexer no item **atual** e no **aguardando** são coisas
-     * diferentes:
-     * - item atual: a fila é remontada por [prepareCurrent] — o item desliza para o fim e a
-     *   posição seguinte assume, como um "próxima" que empurra o vídeo para depois;
-     * - item à frente: o player recebe `moveMediaItem` e o que está tocando continua no
-     *   lugar, sem recomeçar a faixa atual do zero. O índice só é ajustado quando o item
-     *   movido estava **antes** do atual (ele desce uma casa).
+     * O player recebe `moveMediaItem` nos dois casos — inclusive quando o item movido é o
+     * **atual**, que continua tocando (sem recomeçar do zero). O índice atual é corrigido
+     * quando o item movido estava **antes** do atual (ele desce uma casa).
      *
      * O player nunca recebe `setShuffleModeEnabled` (shuffle é gerido por aqui, ver
      * [setShuffle]), então a timeline do
@@ -1281,26 +1294,24 @@ class PlaybackService : MediaLibraryService() {
         val original = queue
         val moved = queue[from]
         queue = original.toMutableList().apply { add(removeAt(from)) }
-        if (from == curIdx) {
-            // `index` não muda: o item que deslizou para cá é o que continua tocando, e a
-            // remontagem do [prepareCurrent] toca ele no lugar do que foi empurrado.
-            index = from
-            runCatching { prepareCurrent() }.onFailure {
-                queue = original
-                return null
-            }
-        } else {
-            val ok = runCatching {
-                p.moveMediaItem(from, to)
-                true
-            }.getOrDefault(false)
-            if (!ok) {
-                queue = original
-                return null
-            }
-            if (from < curIdx) index = curIdx - 1
-            Playback.notifySong(currentSong, index)
+        // Mesma decisão do [moveQueueItem]: mover o item **atual** também passa pelo
+        // `moveMediaItem`, que preserva a reprodução — o `prepareCurrent` reiniciava a
+        // faixa do zero e, pior, deixava tocando o item seguinte (o índice apontava para
+        // a casa do item que tinha deslizado).
+        val ok = runCatching {
+            p.moveMediaItem(from, to)
+            true
+        }.getOrDefault(false)
+        if (!ok) {
+            queue = original
+            return null
         }
+        index = when {
+            from == curIdx -> to
+            from < curIdx -> curIdx - 1
+            else -> curIdx
+        }
+        Playback.notifySong(currentSong, index)
         saveQueueState()
         return moved
     }
@@ -1309,10 +1320,9 @@ class PlaybackService : MediaLibraryService() {
      * Fila universal — reordena um item para uma posição (arrastar para reordenar na tela
      * de reprodução). É o `moveToEnd` genérico: em vez do fim fixo, aceita qualquer destino.
      *
-     * Mesmos dois caminhos do [moveToEnd] pelo mesmo motivo: mexer no item **atual** exige
-     * remontar a fila por [prepareCurrent] (a posição do que está tocando tem de acompanhar o
-     * novo índice), enquanto mover um item **aguardando** basta para o player, sem recomeçar a
-     * faixa atual. O índice atual é corrigido quando o movimento cruza por ele.
+     * Usa `moveMediaItem` do player para os dois casos — inclusive o item **atual**, que o
+     * Media3 mantém tocando sem reiniciar. O índice atual é corrigido quando o movimento
+     * cruza por ele.
      *
      * Devolve `true` quando a fila mudou.
      */
@@ -1329,29 +1339,25 @@ class PlaybackService : MediaLibraryService() {
         val moved = mutable.removeAt(f)
         mutable.add(t, moved)
         queue = mutable
-        if (f == curIdx) {
-            // O item que estava tocando deslizou: ele continua tocando, só na casa nova.
-            index = t
-            runCatching { prepareCurrent() }.onFailure {
-                queue = original
-                return false
-            }
-        } else {
-            val ok = runCatching {
-                p.moveMediaItem(f, t)
-                true
-            }.getOrDefault(false)
-            if (!ok) {
-                queue = original
-                return false
-            }
-            index = when {
-                f < curIdx && t >= curIdx -> curIdx - 1
-                f > curIdx && t <= curIdx -> curIdx + 1
-                else -> curIdx
-            }
-            Playback.notifySong(currentSong, index)
+        // Mover o item **atual** também passa pelo `moveMediaItem`: o Media3 preserva a faixa
+        // que está tocando (não reinicia nem interrompe) e só o índice muda. Antes esse caso
+        // chamava `prepareCurrent()`, que zera a posição e remonta a fila — arrastar a música
+        // no ar a reiniciava do começo, perdendo o ponto de reprodução.
+        val ok = runCatching {
+            p.moveMediaItem(f, t)
+            true
+        }.getOrDefault(false)
+        if (!ok) {
+            queue = original
+            return false
         }
+        index = when {
+            f == curIdx -> t
+            f < curIdx && t >= curIdx -> curIdx - 1
+            f > curIdx && t <= curIdx -> curIdx + 1
+            else -> curIdx
+        }
+        Playback.notifySong(currentSong, index)
         saveQueueState()
         return true
     }
@@ -1388,9 +1394,21 @@ class PlaybackService : MediaLibraryService() {
     fun refreshCurrentMeta() {
         val song = currentSong ?: return
         if (song.isVideo || song.isStream || song.isRadio) return
-        val meta = runCatching {
-            PlaylistDb.get(this).songMeta(song.id)
-        }.getOrNull() ?: return
+        val id = song.id
+        // O caller (MusicEditor) roda numa thread de rede; aqui lemos o override no Room em
+        // background e só aplicamos na main — mutar `queue` e mexer no player/notificação de
+        // fora da main causava "wrong thread" no ExoPlayer e corrida com `enqueue`/`next`
+        // (que escrevem `queue` na main) revertendo a fila.
+        ThreadPool.post {
+            val meta = runCatching { PlaylistDb.get(this).songMeta(id) }.getOrNull() ?: return@post
+            mainHandler.post { applyCurrentMeta(id, meta) }
+        }
+    }
+
+    /** Aplica o override de metadados na faixa atual. Roda na main. */
+    private fun applyCurrentMeta(songId: Long, meta: SongMeta) {
+        val song = currentSong ?: return
+        if (song.id != songId) return
         if (meta.title.isBlank()) return
         val i = index.coerceAtLeast(0)
         if (i >= queue.size) return
@@ -2133,7 +2151,6 @@ class PlaybackService : MediaLibraryService() {
     private fun restorePodcastPosition(song: Song, p: ExoPlayer) {
         val episodeId = song.podcastId ?: return
         val expectedKey = QueueKey.encode(song)
-        val dur = p.duration
         ThreadPool.post {
             val saved = runCatching {
                 PodcastDb.get(applicationContext).episode(episodeId)
@@ -2141,7 +2158,20 @@ class PlaybackService : MediaLibraryService() {
             val position = saved?.positionMs ?: 0L
             ThreadPool.onUi {
                 if (!QueueKey.sameType(Playback.currentKey, expectedKey)) return@onUi
-                if (dur <= 0L || position <= 5000L || position >= dur - 10000L) return@onUi
+                // A duração é lida AGORA, na main, e não no READY: numa fonte sem duração
+                // declarada (episódio via HLS/proxy, `C.TIME_UNSET`), `duration` ainda era
+                // <= 0 no primeiro READY e o seek era abortado de vez — o episódio voltava do
+                // zero. Sem duração conhecida, confiamos só no saneamento da posição salva e
+                // deixamos o player limitar (seek além do fim é inócuo).
+                //
+                // `runCatching` porque esta leitura acontece **depois** do banco responder: o
+                // player pode ter sido liberado nesse intervalo (serviço destruído, crossfade
+                // trocando a instância) e `duration` num player liberado lança
+                // IllegalStateException — dentro de um `Handler.post` isso derruba o app.
+                // Sem duração, o saneamento abaixo ainda segura a posição.
+                val dur = runCatching { p.duration }.getOrDefault(0L)
+                if (position <= 5000L) return@onUi
+                if (dur > 0L && position >= dur - 10000L) return@onUi
                 runCatching { p.seekTo(position) }
             }
         }

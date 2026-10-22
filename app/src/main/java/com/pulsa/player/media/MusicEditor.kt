@@ -112,9 +112,9 @@ object MusicEditor {
                     )
                 }
             }
-            // `refreshCurrentMeta` relê o override no `PlaylistDb`, então é query de Room e não pode
-            // ser chamado de dentro do `onUi`. Estava ali: editar uma música e trocar o título
-            // derrubava o app. Esta linha já está dentro do `post` do topo da função.
+            // `refreshCurrentMeta` lê o override no Room e aplica na main por conta própria;
+            // pode ser chamado de qualquer thread (antes, mutava `queue`/player daqui, o que
+            // dava "wrong thread" no ExoPlayer e corrida com a fila).
             if (updated || dbSaved) Playback.refreshCurrentMeta()
             ThreadPool.onUi { onDone(updated || dbSaved) }
         }

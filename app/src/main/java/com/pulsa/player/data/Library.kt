@@ -6,6 +6,7 @@ import android.provider.MediaStore
 import com.pulsa.player.model.Album
 import com.pulsa.player.model.Artist
 import com.pulsa.player.model.Song
+import java.util.concurrent.atomic.AtomicBoolean
 
 object Library {
     private const val UNKNOWN = "<unknown>"
@@ -163,6 +164,9 @@ object Library {
     @Volatile
     private var genreCacheAt = 0L
 
+    /** Trava do pré-aquecimento: uma varredura do MediaStore por vez. */
+    private val warming = AtomicBoolean(false)
+
     private const val GENRE_CACHE_TTL_MS = 60_000L
 
     /** Gênero de uma faixa (com cache curto, pois consulta várias vezes o MediaStore). */
@@ -175,6 +179,41 @@ object Library {
             genreCacheAt = now
         }
         return map[songId]
+    }
+
+    /**
+     * Versão **não bloqueante** de [genreOf] para quem roda na main (ex.: o EQ a cada troca
+     * de faixa). Devolve o que estiver no cache — `null` se ainda não houver — sem disparar a
+     * varredura cara do MediaStore. Quem chama deve usar [prewarmGenres] em background e
+     * reaplicar o efeito quando o cache ficar pronto.
+     */
+    fun genreOfCached(songId: Long): String? = genreCache?.get(songId)
+
+    /** O cache de gêneros está fresco o bastante para [genreOfCached] valer? */
+    fun genresFresh(): Boolean {
+        val map = genreCache ?: return false
+        return System.currentTimeMillis() - genreCacheAt <= GENRE_CACHE_TTL_MS && map.isNotEmpty()
+    }
+
+    /**
+     * Reconstrói o cache de gêneros. **Bloqueante** (N+1 queries no MediaStore): chamar só de
+     * background. Devolve `true` se o cache foi (re)carregado.
+     *
+     * Só uma varredura por vez: o EQ pede o pré-aquecimento a cada troca de faixa e, sem
+     * esta trava, várias chamadas se sobrepunham — cada uma abrindo uma query por gênero
+     * no MediaStore, em paralelo, no pool local.
+     */
+    fun prewarmGenres(context: Context): Boolean {
+        if (!warming.compareAndSet(false, true)) return false
+        try {
+            val now = System.currentTimeMillis()
+            if (genreCache != null && now - genreCacheAt <= GENRE_CACHE_TTL_MS) return false
+            genreCache = genreMap(context)
+            genreCacheAt = now
+            return true
+        } finally {
+            warming.set(false)
+        }
     }
 
     fun songsByAlbum(context: Context, albumId: Long): List<Song> {
