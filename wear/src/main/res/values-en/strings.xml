@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_app_name">Pulsa</string>
+    <string name="wear_prev">Previous</string>
+    <string name="wear_play">Play</string>
+    <string name="wear_pause">Pause</string>
+    <string name="wear_next">Next</string>
+    <string name="wear_favorite">Favorite</string>
+    <string name="wear_favorited">Favorited</string>
+    <string name="wear_speak">Speak</string>
+    <string name="wear_connected">Connected to phone</string>
+    <string name="wear_connecting">Looking for the phone…</string>
+    <string name="wear_no_phone">No phone nearby</string>
+    <string name="wear_idle">Nothing playing</string>
+    <string name="wear_idle_hint">Tap Play to resume</string>
+    <string name="wear_not_found">Couldn\'t find \"%1$s\"</string>
+    <string name="wear_no_permission">Allow media access on the phone</string>
+    <string name="wear_no_queue">Nothing in the phone queue</string>
+    <string name="wear_error">Couldn\'t reach the phone</string>
+    <string name="wear_speak_prompt">What should I play?</string>
+    <string name="wear_searching">Looking for \"%1$s\"…</string>
+    <string name="wear_invalid">Invalid response from the phone</string>
+    <string name="wear_speech_unavailable">No voice input on this watch</string>
+</resources>

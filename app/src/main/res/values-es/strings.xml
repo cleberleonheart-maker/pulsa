@@ -30,15 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.5):
- → CONFIGURACIÓN EN PESTAÑAS
- • Apariencia, Audio, Sincronización, DJ/IA, Descarga, Mantenimiento y Cuenta ahora están en pestañas arriba: toca para ir directo o desliza hacia el lado.
- • Sincronización es una sección propia: Escuchar juntos, control remoto, servidor, copia de seguridad y restauración.
- → TV Y CONEXIÓN
- • Reproducir en la TV (Roku/DLNA): carpetas por artista/álbum, listas y podcasts; una TV en uso no cambia de canal sola.
- • Sincronización y descargas más estables: conexiones HTTP siempre cerradas y cola de podcasts corregida.
- → MÚSICA
- • Las colas por escena usan BPM real (entrenar, conducir, viajar, estudiar) y mejoran con cada uso.</string>
+    <string name="changelog">Novedades de esta versión (5.12.6):
+ → DJ E IA
+ • Cuando Gemini limita las solicitudes de la clave, la app deja de insistir durante 60 segundos y vuelve a las sugerencias sin conexión.
+ • Si cambias la clave en Ajustes › DJ/IA, el acceso se desbloquea al instante.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

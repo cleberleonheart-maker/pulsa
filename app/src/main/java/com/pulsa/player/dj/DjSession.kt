@@ -1539,6 +1539,9 @@ class DjSession(
             .setTitle(R.string.dj_suggest_title)
             .setView(layout)
             .setPositiveButton(R.string.save) { _, _ ->
+                if (input.text.toString() != Settings.geminiKey(activity)) {
+                    DjSuggest.resetQuotaCooldown()
+                }
                 Settings.setGeminiKey(activity, input.text.toString())
                 Settings.setGeminiOn(activity, box.isChecked)
                 Telemetry.log(activity, "DJ Virgin AI config atualizada")

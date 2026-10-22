@@ -9,15 +9,10 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.5):
- → CONFIGURAÇÕES EM SEPARADORES
- • Aparência, Áudio, Sincronização, DJ/IA, Download, Manutenção e Conta estão agora em separadores no topo: toque para ir direto ou deslize para o lado.
- • Sincronização passou a ser uma secção própria: Ouvir juntos, controlo remoto, servidor, cópia de segurança e restauro.
- → TV E LIGAÇÃO
- • Reproduzir na TV (Roku/DLNA): pastas por artista/álbum, listas e podcasts; uma TV em uso não muda de canal sozinha.
- • Sincronização e downloads mais estáveis: ligações HTTP sempre fechadas e fila de podcasts corrigida.
- → MÚSICA
- • As filas por cena usam BPM real (treinar, conduzir, viajar, estudar) e melhoram a cada utilização.</string>
+    <string name="changelog">Novidades desta versão (5.12.6):
+ → DJ E IA
+ • Quando o Gemini limita os pedidos da chave, a app deixa de insistir durante 60 segundos e volta às sugestões offline.
+ • Se trocar a chave em Configurações › DJ/IA, o acesso fica logo disponível.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

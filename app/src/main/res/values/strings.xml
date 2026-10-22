@@ -33,15 +33,10 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.5):
- → CONFIGURAÇÕES EM ABAS
- • Aparência, Áudio, Sincronização, DJ/IA, Download, Manutenção e Conta agora ficam em abas no topo: toque para ir direto ou deslize para o lado.
- • Sincronização virou seção própria: Ouvir juntos, controle remoto, servidor, backup e restauração.
- → TV E CONEXÃO
- • Tocar na TV (Roku/DLNA): pastas por artista/álbum, playlists e podcasts; uma TV em uso não troca de canal sozinha.
- • Sincronização e downloads mais estáveis: conexões HTTP sempre fechadas e fila de podcast corrigida.
- → MÚSICA
- • Fila por cena usa BPM de verdade (malhar, dirigir, viajar, estudar) e melhora a cada uso.</string>
+    <string name="changelog">Novidades desta versão (5.12.6):
+ → DJ E IA
+ • Quando o Gemini limita os pedidos da chave, o app para de insistir por 60 segundos e volta às sugestões offline.
+ • Se você trocar a chave em Configurações › DJ/IA, o acesso é liberado na hora.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>

@@ -19,6 +19,24 @@ object DjSuggest {
 
     const val MODEL = "gemini-3.6-flash"
 
+    /** Depois de um 429, nem toca na rede por esse tempo (a cota é da chave/projeto). */
+    private const val COOLDOWN_MS = 60_000L
+
+    @Volatile
+    private var cooldownUntil = 0L
+
+    @Volatile
+    private var cooldownMessage: String? = null
+
+    /** Zera o bloqueio local (ex.: o usuário trocou a chave). */
+    fun resetQuotaCooldown() {
+        cooldownUntil = 0L
+        cooldownMessage = null
+    }
+
+    fun isQuotaBlocked(): Boolean =
+        android.os.SystemClock.elapsedRealtime() < cooldownUntil
+
     data class Suggestion(val title: String, val artist: String, val reason: String)
 
     fun isReady(context: Context): Boolean =
@@ -54,7 +72,7 @@ object DjSuggest {
             append("Lista:\n").append(listText)
         }
 
-        val reply = generate(context, prompt, maxTokens = 700) ?: return null
+        val reply = generate(context, prompt, maxTokens = 700, tag = "sugestão") ?: return null
         return parse(reply)
     }
 
@@ -206,9 +224,20 @@ object DjSuggest {
         }
     }
 
-    fun generate(context: Context, prompt: String, maxTokens: Int = 250, timeoutMs: Int = 20000): String? {
+    fun generate(
+        context: Context,
+        prompt: String,
+        maxTokens: Int = 250,
+        timeoutMs: Int = 20000,
+        tag: String = "texto"
+    ): String? {
         val key = Settings.geminiKey(context)
         if (key.isBlank()) return null
+        if (isQuotaBlocked()) {
+            android.util.Log.i("DjSuggest", "Gemini não chamado ($tag): cota em espera")
+            return null
+        }
+        android.util.Log.i("DjSuggest", "Gemini pedido ($tag)")
 
         val body = JSONObject()
             .put("contents", JSONArray()
@@ -234,6 +263,7 @@ object DjSuggest {
             if (code != 200) {
                 val err = conn.errorStream?.bufferedReader()?.readText() ?: ""
                 android.util.Log.w("DjSuggest", "Gemini HTTP $code: ${err.take(300)}")
+                if (code == 429) startCooldown(err)
                 null
             } else {
                 answerOf(conn.inputStream.bufferedReader().readText())
@@ -285,7 +315,7 @@ object DjSuggest {
             appendLine("Faça um resumo semanal pessoal de 2 a 3 frases comentando a coleção e dê uma dica musical.")
             appendLine(songs.take(40).joinToString("\n") { "${it.title} - ${it.artist}" })
         }
-        return generate(context, prompt, maxTokens = 220)
+        return generate(context, prompt, maxTokens = 220, tag = "resumo semanal")
     }
 
     /**
@@ -352,7 +382,34 @@ object DjSuggest {
     fun episodeSummary(context: Context, title: String, description: String): String? {
         if (!isReady(context)) return null
         val prompt = summaryPrompt(title, description)
-        return generate(context, prompt, maxTokens = 400, timeoutMs = 8000)?.trim()?.ifBlank { null }
+        return generate(context, prompt, maxTokens = 400, timeoutMs = 8000, tag = "resumo de episódio")
+            ?.trim()?.ifBlank { null }
+    }
+
+    private fun startCooldown(detail: String) {
+        cooldownUntil = android.os.SystemClock.elapsedRealtime() + COOLDOWN_MS
+        cooldownMessage = limitMessage(detail)
+        android.util.Log.w("DjSuggest", "Gemini 429: $cooldownMessage")
+    }
+
+    /** 429: distingue limite por minuto (espera indicada) de limite diário. */
+    internal fun limitMessage(detail: String): String {
+        val daily = detail.contains("PerDay", true) || detail.contains("per day", true) ||
+            detail.contains("daily", true)
+        if (daily) {
+            return "Limite diário da chave Gemini atingido. Volte amanhã ou gere uma nova chave."
+        }
+        val wait = retryDelaySeconds(detail)
+        return "Muitas pedidas à chave (limite por minuto)." +
+            if (wait != null) " Tente de novo em ~${wait}s." else " Espere um pouco."
+    }
+
+    /** Lê o "retryDelay" (ex.: "27s") que o Gemini manda junto do 429. */
+    internal fun retryDelaySeconds(detail: String): Int? {
+        val match = Regex("\"retryDelay\"\\s*:\\s*\"(\\d+(?:\\.\\d+)?)s\"")
+            .find(detail) ?: return null
+        return match.groupValues[1].toDoubleOrNull()
+            ?.let { kotlin.math.ceil(it).toInt().coerceIn(1, 120) }
     }
 
     /**

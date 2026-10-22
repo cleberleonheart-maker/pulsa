@@ -78,6 +78,47 @@ object VirginMedia {
     }
 
     /**
+     * Música pelo nome no pulso (Wear OS): mesmo fuzzy do [findArtist], contra o título
+     * **e** o artista da faixa.
+     *
+     * O relógio manda só o texto falado ("tocar bohemian rhapsody"), sem passar pela
+     * `MainVirgin`, que é presa a uma `Activity`. Aqui é o mínimo para resolver o pedido
+     * sem abrir a tela do celular. O artista entra no placar porque no pulso é comum falar
+     * "toca Legião Urbana" esperando a música mais conhecida, e o título sozinho devolveria
+     * nada; quando o melhor resultado é de artista, o `WearBridgeService` expande para a
+     * discografia em vez de tocar uma faixa aleatória.
+     */
+    fun findSong(context: Context, query: String?): Song? {
+        val q = DjCommander.norm(query.orEmpty()).trim()
+        if (q.isEmpty()) return null
+        val songs = runCatching { Library.allSongs(context) }.getOrDefault(emptyList())
+        var best: Song? = null
+        var bestScore = -1
+        for (s in songs) {
+            val title = DjCommander.norm(s.title)
+            val artist = DjCommander.norm(s.artist)
+            val titleScore = scoreName(title, q)
+            // Artista vale menos que o título: "toca X" onde X é música não pode perder
+            // para uma faixa qualquer do artista X.
+            val artistScore = if (artist.isNotEmpty()) scoreName(artist, q) / 2 else -1
+            val score = maxOf(titleScore, artistScore)
+            if (score > bestScore) {
+                bestScore = score
+                best = s
+            }
+        }
+        return best
+    }
+
+    private fun scoreName(name: String, q: String): Int = when {
+        name.isEmpty() -> -1
+        name == q -> 1000
+        name.contains(q) -> 100 + q.length
+        q.contains(name) && q.length >= name.length -> 50 + name.length
+        else -> -1
+    }
+
+    /**
      * F2 · Vídeo local pelo nome ("toca o filme X"). Mesmo fuzzy do [findArtist], contra o
      * título do MediaStore — sem artista, porque vídeo não tem. Quem não achar aqui cai no
      * histórico de streams ([com.pulsa.player.data.StreamHistory.find]) no handler.

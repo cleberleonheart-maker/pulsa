@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_app_name">Pulsa</string>
+    <string name="wear_prev">Anterior</string>
+    <string name="wear_play">Tocar</string>
+    <string name="wear_pause">Pausar</string>
+    <string name="wear_next">Próxima</string>
+    <string name="wear_favorite">Favoritar</string>
+    <string name="wear_favorited">Favorita</string>
+    <string name="wear_speak">Falar</string>
+    <string name="wear_connected">Conectado ao celular</string>
+    <string name="wear_connecting">Procurando o celular…</string>
+    <string name="wear_no_phone">Sem celular por perto</string>
+    <string name="wear_idle">Nada tocando</string>
+    <string name="wear_idle_hint">Toque em Tocar para retomar</string>
+    <string name="wear_not_found">Não achei \"%1$s\"</string>
+    <string name="wear_no_permission">Libere o acesso à mídia no celular</string>
+    <string name="wear_no_queue">Nada na fila do celular</string>
+    <string name="wear_error">Não consegui falar com o celular</string>
+    <string name="wear_speak_prompt">O que tocar?</string>
+    <string name="wear_searching">Procurando \"%1$s\"…</string>
+    <string name="wear_invalid">Resposta inválida do celular</string>
+    <string name="wear_speech_unavailable">Sem voz neste relógio</string>
+</resources>

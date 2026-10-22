@@ -188,4 +188,27 @@ class DjSuggestTest {
         cal.set(2026, java.util.Calendar.OCTOBER, 17, 22, 0, 0) // sábado
         assertEquals("sábado, 22h", DjSuggest.momentLabel(cal.timeInMillis))
     }
+
+    @Test
+    fun limitMessage_distingue_limite_diario_do_por_minuto() {
+        val diario = DjSuggest.limitMessage("Quota exceeded: GenerateContentRequestsPerDay")
+        assertTrue(diario.contains("diário", ignoreCase = true))
+
+        val porMinuto = DjSuggest.limitMessage(
+            "\"retryDelay\":\"27s\", \"quotaMetric\":\"GenerateContentRequestsPerMinute\""
+        )
+        assertTrue(porMinuto.contains("minuto", ignoreCase = true))
+        assertTrue(porMinuto.contains("27s"))
+    }
+
+    @Test
+    fun retryDelaySeconds_le_segundos_inteiros_e_decimais() {
+        assertEquals(27, DjSuggest.retryDelaySeconds("\"retryDelay\": \"27s\""))
+        assertEquals(13, DjSuggest.retryDelaySeconds("\"retryDelay\": \"12.4s\""))
+    }
+
+    @Test
+    fun retryDelaySeconds_sem_campo_devolve_null() {
+        assertNull(DjSuggest.retryDelaySeconds("{\"error\":{\"code\":429}}"))
+    }
 }

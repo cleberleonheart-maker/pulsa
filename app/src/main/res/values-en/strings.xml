@@ -30,15 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.5):
- → SETTINGS TABS
- • Appearance, Audio, Sync, DJ/AI, Download, Maintenance and Account are now tabs at the top: tap to jump or swipe sideways.
- • Sync is its own section now: Listen together, remote control, server, backup and restore.
- → TV AND CONNECTION
- • Play on TV (Roku/DLNA): folders by artist/album, playlists and podcasts; a TV in use is never switched on its own.
- • More stable sync and downloads: HTTP connections always closed and podcast queue fixed.
- → MUSIC
- • Scene queues use real BPM (workout, driving, travel, study) and improve with every use.</string>
+    <string name="changelog">What is new (5.12.6):
+ → DJ AND AI
+ • When Gemini rate-limits the key, the app stops retrying for 60 seconds and falls back to offline suggestions.
+ • Changing the key in Settings › DJ/AI unblocks it right away.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

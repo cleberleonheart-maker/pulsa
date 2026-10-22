@@ -7,6 +7,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R
 import com.pulsa.player.SettingsActivity
 import com.pulsa.player.core.Settings
+import com.pulsa.player.dj.DjSuggest
 
 /**
  * DJ / IA — chave Gemini e token de reconhecimento.
@@ -35,6 +36,7 @@ internal fun SettingsActivity.promptGeminiKey() {
         .setView(input)
         .setPositiveButton(R.string.save) { _, _ ->
             val key = input.text.toString().trim()
+            if (key != Settings.geminiKey(this)) DjSuggest.resetQuotaCooldown()
             Settings.setGeminiKey(this, key)
             Settings.setGeminiOn(this, key.isNotBlank())
             refreshGeminiKey()

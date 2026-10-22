@@ -22,8 +22,8 @@ android {
         minSdk = 23
 targetSdk = 34
 
-        versionCode = 202
-        versionName = "5.12.5"
+        versionCode = 203
+        versionName = "5.12.6"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
@@ -91,6 +91,8 @@ dependencies {
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    // Wear OS: Data Layer (mensagens do relógio para o `WearBridgeService`).
+    implementation("com.google.android.gms:play-services-wearable:18.1.0")
     // Sessão "ouvir juntos": QR do código. O core gera a imagem no host; o embedded traz a
     // câmera/prévia pronta pro convidado escanear — tudo offline, sem Play Services.
     implementation("com.google.zxing:core:3.5.3")
@@ -102,4 +104,7 @@ dependencies {
     // A implementação real da referência é a mesma API, então dá para exercitar o backup e o
     // restore de verdade nos testes, em vez de ficar só no `kspDebugKotlin` passando.
     testImplementation("org.json:json:20240303")
+    // Sobe o `:wear:assembleRelease` e embute o APK do relógio no APK do celular.
+    // A versão/assinatura do módulo `:wear` é lida do mesmo build.gradle.kts (ver :wear).
+    wearApp(project(":wear"))
 }
