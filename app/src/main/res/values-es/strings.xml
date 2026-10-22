@@ -30,11 +30,15 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.10.57):
- → NOVEDADES
- • Lista "Rellenar automáticamente": crea reglas (título, álbum, género o artista contiene…) y las canciones que coincidan entran solas en la lista, cada vez que se abre la app.
- → CÓMO USAR
- • En el menú de la lista, toca "Rellenar automáticamente" y añade una regla (ej.: título contiene "opening").</string>
+    <string name="changelog">Novedades de esta versión (5.12.5):
+ → CONFIGURACIÓN EN PESTAÑAS
+ • Apariencia, Audio, Sincronización, DJ/IA, Descarga, Mantenimiento y Cuenta ahora están en pestañas arriba: toca para ir directo o desliza hacia el lado.
+ • Sincronización es una sección propia: Escuchar juntos, control remoto, servidor, copia de seguridad y restauración.
+ → TV Y CONEXIÓN
+ • Reproducir en la TV (Roku/DLNA): carpetas por artista/álbum, listas y podcasts; una TV en uso no cambia de canal sola.
+ • Sincronización y descargas más estables: conexiones HTTP siempre cerradas y cola de podcasts corregida.
+ → MÚSICA
+ • Las colas por escena usan BPM real (entrenar, conducir, viajar, estudiar) y mejoran con cada uso.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -224,6 +228,7 @@
     <string name="settings">Configuración</string>
     <string name="sect_appearance">Apariencia</string>
     <string name="sect_audio">Audio</string>
+    <string name="sect_sync">Sincronización</string>
     <string name="sect_download">Descarga</string>
     <string name="sect_maintenance">Mantenimiento</string>
     <string name="bg_animated">Fondo animado</string>

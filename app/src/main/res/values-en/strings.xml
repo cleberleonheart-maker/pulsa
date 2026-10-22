@@ -30,11 +30,15 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.10.57):
- → NEW
- • Playlist "Fill automatically": create rules (title, album, genre or artist contains…) and matching songs join the playlist on their own, every time the app opens.
- → HOW TO USE
- • In the playlist menu, tap "Fill automatically" and add a rule (e.g. title contains "opening").</string>
+    <string name="changelog">What is new (5.12.5):
+ → SETTINGS TABS
+ • Appearance, Audio, Sync, DJ/AI, Download, Maintenance and Account are now tabs at the top: tap to jump or swipe sideways.
+ • Sync is its own section now: Listen together, remote control, server, backup and restore.
+ → TV AND CONNECTION
+ • Play on TV (Roku/DLNA): folders by artist/album, playlists and podcasts; a TV in use is never switched on its own.
+ • More stable sync and downloads: HTTP connections always closed and podcast queue fixed.
+ → MUSIC
+ • Scene queues use real BPM (workout, driving, travel, study) and improve with every use.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -224,6 +228,7 @@
     <string name="settings">Settings</string>
     <string name="sect_appearance">Appearance</string>
     <string name="sect_audio">Audio</string>
+    <string name="sect_sync">Sync</string>
     <string name="sect_download">Download</string>
     <string name="sect_maintenance">Maintenance</string>
     <string name="bg_animated">Animated background</string>

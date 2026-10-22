@@ -11,6 +11,7 @@ private data class Section(val titleRes: Int, val headerId: Int)
 private val sections = listOf(
     Section(R.string.sect_appearance, R.id.sect_appearance),
     Section(R.string.sect_audio, R.id.sect_audio),
+    Section(R.string.sect_sync, R.id.sect_sync),
     Section(R.string.sect_dj, R.id.sect_dj),
     Section(R.string.sect_download, R.id.sect_download),
     Section(R.string.sect_maintenance, R.id.sect_maintenance),

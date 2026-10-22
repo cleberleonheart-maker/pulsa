@@ -107,7 +107,7 @@ Documentação organizada de todas as preferências e configurações do projeto
 ### 1.4 UI
 - **Tela principal:** `SettingsActivity.kt` + `res/layout/activity_settings.xml`
   - `onCreate` apenas orquestra; cada seção é ligada em `ui/settings/SettingsSections.kt`
-  - Navegação por `TabLayout` + swipe entre seções em `ui/settings/SettingsSectionNav.kt` (a tela segue uma coluna única; a aba rola até o cabeçalho)
+  - Navegação por `TabLayout` + swipe entre seções em `ui/settings/SettingsSectionNav.kt` (a tela segue uma coluna única; a aba rola até o cabeçalho). Abas: Aparência, Áudio, Sincronização, DJ/IA, Download, Manutenção e Conta — `Sincronização` reúne Ouvir juntos/controle remoto/servidor/backup, fora do bloco de Áudio
   - Seções: `bindAppearance`, `bindAudio`, `bindSync`, `bindDj`, `bindDownloads`, `bindMaintenance`, `bindAccount`
   - Diálogos/blocos extraídos (extensions de `SettingsActivity`): `SettingsAppearanceSection.kt`, `SettingsAudioSection.kt`, `SettingsSessionSection.kt`, `SettingsAiSection.kt`, `SettingsDownloadsSection.kt`, `SettingsMaintenanceSection.kt`, `SettingsBackupSection.kt`
 - **Painel rápido:** `PerfilActivity.kt` + `res/layout/activity_perfil.xml`
