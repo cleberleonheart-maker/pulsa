@@ -408,7 +408,10 @@ object RemoteSync {
                 if (code != 200) continue
                 val arr = JSONArray(text)
                 for (i in 0 until arr.length()) {
-                    execute(ctx, arr.getJSONObject(i))
+                    // `optJSONObject` em vez de `getJSONObject`: um item `null`/string na fila
+                    // nao pode lancar e abortar os comandos seguintes (a excecao subia ate o
+                    // catch de fora e descartava o resto, sem log).
+                    arr.optJSONObject(i)?.let { execute(ctx, it) }
                 }
                 return
             } catch (t: Throwable) {

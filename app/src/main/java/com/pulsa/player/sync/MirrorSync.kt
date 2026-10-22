@@ -16,6 +16,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
 
 /**
@@ -42,6 +43,24 @@ object MirrorSync {
 
     @Volatile
     private var running = false
+    /**
+     * Geração da sessão. `start`/`stop` podem partir de threads diferentes (a main ao ligar o
+     * espelho; a thread de rede no handoff/release), então o simples `if (running)` era um
+     * check-then-act sujeito a corrida: um `stop()` que aterrissasse entre o `if` e o
+     * `running = true` era perdido (o espelho continuava seguindo o dono antigo depois do
+     * handoff). A geração é incrementada **no momento da chamada** — o último pedido é
+     * sempre o que vale, independente da ordem em que as threads executam — e uma passada
+     * de rede captura a geração no início e descarta o resultado se ela mudou, evitando
+     * que uma resposta atrasada da sessão velha regrave `hostDevice`/estado.
+     */
+    private val sessionGen = AtomicLong(0)
+    /**
+     * Trava do tick: sem ela, cada 3 s entra uma passada nova no pool mesmo se a anterior
+     * ainda estiver viva. Com o servidor fora, `step()` chega a gastar ~15 s; a fila do pool
+     * (compartilhada com telemetria, downloads e scrobble) crescia sem limite e as varreduras
+     * do MediaStore rodavam sobrepostas. Escrita/limpa sempre na main.
+     */
+    private var busy = false
     /** Escrito na main e lido nas threads de rede — `@Volatile` pela visibilidade entre elas. */
     @Volatile
     private var appContext: Context? = null
@@ -56,7 +75,21 @@ object MirrorSync {
     private val tick = object : Runnable {
         override fun run() {
             if (!running) return
-            ThreadPool.postNetwork { runCatching { step() } }
+            // Não empilha: se a passada anterior ainda não voltou, pula este tick inteiro.
+            if (busy) {
+                handler.postDelayed(this, INTERVAL_MS)
+                return
+            }
+            busy = true
+            ThreadPool.postNetwork {
+                try {
+                    runCatching { step() }
+                } finally {
+                    // `busy` só é tocado na main — volta pra lá para destravar o próximo tick
+                    // (e o `running` aí dentro descarta a volta de uma sessão já encerrada).
+                    handler.post { busy = false }
+                }
+            }
             handler.postDelayed(this, INTERVAL_MS)
         }
     }
@@ -66,21 +99,34 @@ object MirrorSync {
     fun start(context: Context) {
         val code = Settings.mirrorCode(context)
         if (code.isBlank()) return
-        if (running) return
+        val ctx = context.applicationContext
+        val gen = sessionGen.incrementAndGet()
+        // O estado público vale **na hora**: `active` é lido pela UI e pelos comandos de
+        // voz logo depois de `start`, e não pode esperar o próximo passo da fila da main.
         running = true
-        appContext = context.applicationContext
+        appContext = ctx
         lastSeekPos = -1L
         hostDevice = ""
-        handler.removeCallbacks(tick)
-        handler.post(tick)
-        Telemetry.log(context, "MIRROR inicio code=$code")
+        handler.post {
+            // Um `stop` (ou outro `start`) entre o pedido e a execução invalida este pedido.
+            if (gen != sessionGen.get()) return@post
+            busy = false
+            handler.removeCallbacks(tick)
+            handler.post(tick)
+            Telemetry.log(ctx, "MIRROR inicio code=$code")
+        }
     }
 
     fun stop() {
+        val gen = sessionGen.incrementAndGet()
         running = false
-        hostDevice = ""
-        handler.removeCallbacks(tick)
-        appContext?.let { Telemetry.log(it, "MIRROR parado") }
+        handler.post {
+            if (gen != sessionGen.get()) return@post
+            hostDevice = ""
+            busy = false
+            handler.removeCallbacks(tick)
+            appContext?.let { Telemetry.log(it, "MIRROR parado") }
+        }
     }
 
     /**
@@ -130,6 +176,10 @@ object MirrorSync {
 
     private fun step() {
         val ctx = appContext ?: return
+        // Fotografa a geração: se um start/stop acontecer enquanto esta passada está em voo
+        // (fetch pode durar segundos), o resultado é descartado em vez de regravar o estado da
+        // sessão velha.
+        val gen = sessionGen.get()
         val code = Settings.mirrorCode(ctx)
         if (code.isBlank()) {
             stop()
@@ -142,6 +192,7 @@ object MirrorSync {
             stop()
             return
         }
+        if (gen != sessionGen.get() || !running) return
         val host = info.optString("host")
         if (host.isNotBlank()) hostDevice = host
         // A busca de faixa (`findSong` → `Library.allSongs`, varredura do MediaStore) roda
@@ -151,7 +202,7 @@ object MirrorSync {
         // start — que estoura "wrong thread" se vier de outra thread.
         val resolved = resolveMirror(ctx, info)
         handler.post {
-            if (running) applyInfo(ctx, info, resolved)
+            if (running && gen == sessionGen.get()) applyInfo(ctx, info, resolved)
         }
     }
 
