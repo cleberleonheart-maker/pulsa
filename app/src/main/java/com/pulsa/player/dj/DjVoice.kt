@@ -130,6 +130,7 @@ class DjVoice(context: Context, languageTag: String? = null) {
             ThreadPool.onUi { previous() }
         }
         isSpeaking = true
+        val utteranceId = "dj_virgin_${System.nanoTime()}"
         runCatching {
             tts?.setSpeechRate(0.9f)
             tts?.setPitch(pitch())
@@ -141,24 +142,33 @@ class DjVoice(context: Context, languageTag: String? = null) {
                 tts?.language = locale
             }
             var fired = false
-            fun fire() {
+            // Dispara o callback DESTA fala, capturado no closure — não o `pending` corrente.
+            // O listener é reinstalado a cada `speak` com QUEUE_FLUSH; sem capturar o callback
+            // aqui, o `onError` de uma fala interrompida (ou uma callback atrasada) lia o
+            // `pending` já trocado e disparava a próxima fala antes da hora.
+            fun fire(cb: (() -> Unit)?) {
                 if (fired) return
                 fired = true
                 isSpeaking = false
-                val cb = pending
-                pending = null
+                if (pending === cb) pending = null
                 if (cb != null) ThreadPool.onUi { cb() }
             }
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) {}
-                override fun onDone(utteranceId: String?) = fire()
-                override fun onError(utteranceId: String?) = fire()
+                override fun onStart(id: String?) {}
+                override fun onDone(id: String?) {
+                    // Só a fala que ainda é a corrente conclui; uma id antiga é ignorada.
+                    if (id == utteranceId) fire(onDone)
+                }
+                override fun onError(id: String?) {
+                    if (id == utteranceId) fire(onDone)
+                }
             })
             pending = onDone
-            val status = tts?.speak(pronounce(text, locale), TextToSpeech.QUEUE_FLUSH, null, "dj_virgin") ?: TextToSpeech.ERROR
+            val status = tts?.speak(pronounce(text, locale), TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+                ?: TextToSpeech.ERROR
             if (status == TextToSpeech.ERROR) {
                 isSpeaking = false
-                fire()
+                fire(onDone)
             }
         }
     }

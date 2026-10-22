@@ -113,6 +113,13 @@ class PlaybackService : MediaLibraryService() {
          * para e pausa, que é o mesmo desfecho de sempre com uma música só.
          */
         private const val MAX_CONSECUTIVE_ERRORS = 3
+
+        /**
+         * Teto de espera pela voz do resumo de episódio antes de seguir a fila na marra. Um
+         * resumo falado dura poucos segundos; 20 s só pode ser engine de TTS travada, e o
+         * usuário não pode ficar preso no fim do episódio esperando uma fala que não vem.
+         */
+        private const val VOICE_WATCHDOG_MS = 20_000L
     }
 
     var queue: List<Song> = emptyList()
@@ -957,6 +964,16 @@ class PlaybackService : MediaLibraryService() {
         cancelCrossfade()
         removeSleepFade()
         fadeInRunnable?.let { fadeHandler.removeCallbacks(it) }
+        // Sem isto o despertador progressivo (volumeRampRunnable) e o tick de progresso
+        // continuavam agendados e rodavam contra o player logo abaixo já em `release()`, e a
+        // conexão com o serviço de TTS (bgVoice) ficava aberta para sempre.
+        volumeRampRunnable?.let { fadeHandler.removeCallbacks(it) }
+        volumeRampRunnable = null
+        crossfadeStartRunnable?.let { fadeHandler.removeCallbacks(it) }
+        crossfadeRunnable?.let { fadeHandler.removeCallbacks(it) }
+        mainHandler.removeCallbacks(progressTick)
+        runCatching { bgVoice?.shutdown() }
+        bgVoice = null
         playerLink?.let { Playback.detach(it) }
         if (::session.isInitialized) session.release()
         // Item 130 — os dois players (principal + reserva do crossfade) são liberados e
@@ -2454,7 +2471,18 @@ class PlaybackService : MediaLibraryService() {
                     }
                 }
                 voice.init { ready ->
-                    if (ready) voice.speak(text, onDone = { proceed.run() }) else proceed.run()
+                    if (!ready) { proceed.run(); return@init }
+                    // A virada não pode ficar pendurada no callback do TTS: se o `onDone` nunca
+                    // vier (voz que engasga, engine que morre no meio), a maratona parava no fim
+                    // do episódio. O watchdog dispara o `proceed` no pior caso; `proceed` já é
+                    // idempotente o bastante (recheca a faixa atual e o `advanceIndex` avança a
+                    // partir do índice vigente), e cancelamos o timeout quando a voz termina.
+                    val watchdog = Runnable { proceed.run() }
+                    mainHandler.postDelayed(watchdog, VOICE_WATCHDOG_MS)
+                    voice.speak(text, onDone = {
+                        mainHandler.removeCallbacks(watchdog)
+                        proceed.run()
+                    })
                 }
             }
         }
