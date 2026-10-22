@@ -7,15 +7,51 @@ import androidx.security.crypto.MasterKey
 import com.pulsa.player.R
 import com.pulsa.player.playback.QueueKey
 
+
+/**
+ * Configurações centralizadas do Pulsa.
+ *
+ * Armazenamento:
+ * - `pulsa_settings` — SharedPreferences normal (preferências não sensíveis)
+ * - `pulsa_secrets` — EncryptedSharedPreferences via Android Keystore (tokens/segredos)
+ *
+ * Organização por seções:
+ * - Avatares e constantes de valores aceitos
+ * - Infraestrutura de preferências
+ * - Sincronização (ouvir juntos, controle remoto, handoff, servidor)
+ * - Secrets (tokens e credenciais)
+ * - Aparência e idioma
+ * - Áudio (EQ, efeitos espaciais, crossfade, velocidades)
+ * - Alarmes
+ * - DJ/IA
+ * - Mídia (pendrive, visualizador, skin, karaokê, PeerTube)
+ * - Downloads, dados e modo kids
+ * - TV
+ * - Gestos e EQ personalizado
+ * - Last.fm
+ * - Estado (retomada, fila, rádio)
+ * - Cache
+ *
+ * Documentação: CONFIGURACOES.md
+ */
 object Settings {
     // Ids de avatar. Ficam publicos porque as telas desenham o avatar e a voz por causa
     // deles; o numero e gravado em prefs, entao nao pode mudar depois.
+    // ============================================================
+    // AVATARES
+    // ============================================================
     const val VIRGIN = 0
     const val VICTOR = 1
     const val VERA = 2
 
+    // ============================================================
+    // ARQUIVOS DE PREFERÊNCIAS
+    // ============================================================
     private const val FILE = "pulsa_settings"
     private const val SECRET_FILE = "pulsa_secrets"
+    // ============================================================
+    // CHAVES DE PREFERÊNCIA
+    // ============================================================
     private const val KEY_DEVICE_ID = "device_id"
     private const val KEY_MIRROR_CODE = "mirror_code"
     private const val KEY_MIRROR_HOST = "mirror_host"
@@ -29,6 +65,9 @@ object Settings {
     private const val KEY_ALARM_AMBIENT = "alarm_ambient"
     private const val KEY_ALARM_GENTLE = "alarm_gentle"
 
+    // ============================================================
+    // SERVIDOR (constantes)
+    // ============================================================
     const val SERVER_LAN = ""
     const val SERVER_ONLINE = "auto"
     private const val DEFAULT_TELEMETRY_TOKEN = "pulsa-local-2026"
@@ -36,6 +75,9 @@ object Settings {
     /** Servidor público fixo do Pulsa (Elastic IP + sslip.io). Entra sozinho, sem configurar nada. */
     const val DEFAULT_SERVER_URL = "https://pulsa.3.151.24.62.sslip.io"
 
+    // ============================================================
+    // APARÊNCIA (constantes)
+    // ============================================================
     const val ACCENT_PURPLE = "purple"
     const val ACCENT_BLUE = "blue"
     const val ACCENT_GREEN = "green"
@@ -44,6 +86,9 @@ object Settings {
     const val ACCENT_PINK = "pink"
     const val ACCENT_TEAL = "teal"
 
+    // ============================================================
+    // ÁUDIO (constantes)
+    // ============================================================
     const val QUALITY_AUTO = "auto"
     const val QUALITY_DEFAULT = "default"
     const val QUALITY_BASS = "bass"
@@ -70,6 +115,9 @@ object Settings {
     const val LANG_ES = "es"
     const val LANG_PT_PT = "pt-PT"
 
+    // ============================================================
+    // DJ / IA (constantes)
+    // ============================================================
     const val DJ_ALL = "all"
     const val DJ_FAVORITES = "favorites"
 
@@ -77,6 +125,9 @@ object Settings {
     const val DJ_BALANCED = "balanced"
     const val DJ_WILD = "wild"
 
+    // ============================================================
+    // SKINS DO PLAYER
+    // ============================================================
     const val SKIN_OFF = "off"
     const val SKIN_NEON = "neon"
     const val SKIN_AURORA = "aurora"
@@ -84,6 +135,9 @@ object Settings {
     const val SKIN_NEBULA = "nebula"
     val SKIN_ORDER = arrayOf(SKIN_OFF, SKIN_NEON, SKIN_AURORA, SKIN_PARTICLES, SKIN_NEBULA)
 
+    // ============================================================
+    // INFRAESTRUTURA (SharedPreferences)
+    // ============================================================
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
@@ -95,6 +149,9 @@ object Settings {
      * não dá para filtrar por `RELATIVE_PATH`. Cada busca voltava vazia e o espelho
      * virava um arquivo novo por erro. Guardando o URI, a escrita reaproveita o mesmo.
      */
+    // ============================================================
+    // GERAL — ID DO APARELHO E LOG
+    // ============================================================
     fun mirrorLogUri(context: Context): String? =
         prefs(context).getString("mirror_log_uri", null)?.takeIf { it.isNotBlank() }
 
@@ -105,6 +162,9 @@ object Settings {
     }
 
     /** Prefs de dados/controle interno (não sensível). */
+    // ============================================================
+    // ACESSO DIRETO ÀS PREFS
+    // ============================================================
     fun dataPrefs(context: Context): SharedPreferences = prefs(context)
 
     /** ID anônimo único do aparelho (UUID), para distinguir usuários na telemetria. */
@@ -117,6 +177,9 @@ object Settings {
     }
 
     /** Código da sessão "ouvir juntos" (vazio = sem sessão). */
+    // ============================================================
+    // SINCRONIZAÇÃO — OUVIR JUNTOS / REMOTO / HANDOFF
+    // ============================================================
     fun mirrorCode(context: Context): String =
         prefs(context).getString(KEY_MIRROR_CODE, "") ?: ""
 
@@ -153,6 +216,9 @@ object Settings {
     }
 
     /** Endereço do servidor de telemetria (vazio = padrão da LAN/localhost). */
+    // ============================================================
+    // SERVIDOR (configuração e descoberta)
+    // ============================================================
     fun serverBase(context: Context): String = prefs(context).getString(KEY_SERVER, "") ?: ""
 
     fun setServerBase(context: Context, url: String) {
@@ -209,6 +275,9 @@ object Settings {
     }
 
     /** Prefs criptografadas (Android Keystore) para chaves/secrets/sessão. */
+    // ============================================================
+    // SECRETS (EncryptedSharedPreferences)
+    // ============================================================
     private fun secretPrefs(context: Context): SharedPreferences {
         val masterKey = MasterKey.Builder(context.applicationContext)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -237,6 +306,9 @@ object Settings {
         prefs(context).edit().remove(key).apply()
     }
 
+    // ============================================================
+    // SECRETS — TOKEN DE TELEMETRIA
+    // ============================================================
     fun telemetryToken(context: Context): String =
         secret(context, "telemetry_token").ifEmpty { DEFAULT_TELEMETRY_TOKEN }
 
@@ -246,6 +318,9 @@ object Settings {
     fun hasCustomTelemetryToken(context: Context): Boolean =
         secret(context, "telemetry_token").isNotEmpty()
 
+    // ============================================================
+    // APARÊNCIA
+    // ============================================================
     fun setAccent(context: Context, value: String) {
         prefs(context).edit().putString("accent", value).apply()
     }
@@ -294,6 +369,9 @@ object Settings {
     fun sortAlphabetical(context: Context): Boolean =
         prefs(context).getBoolean("sort_alpha", false)
 
+    // ============================================================
+    // ÁUDIO — EQUALIZADOR E EFEITOS
+    // ============================================================
     fun setEqualizerOn(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("equalizer_on", value).apply()
     }
@@ -363,6 +441,9 @@ object Settings {
     fun audioQuality(context: Context): String =
         prefs(context).getString("audio_quality", QUALITY_DEFAULT) ?: QUALITY_DEFAULT
 
+    // ============================================================
+    // ÁUDIO — DANCE E VELOCIDADES
+    // ============================================================
     fun danceSpeed(context: Context): Float =
         if (audioQuality(context) == QUALITY_DANCE) DANCE_SPEED else 1f
 
@@ -420,6 +501,9 @@ object Settings {
     /** A partir de quantas mudanças de velocidade a Virgin troca o anúncio pela fala curiosa. */
     const val SPEED_FAN_THRESHOLD = 5
 
+    // ============================================================
+    // ÁUDIO — RÓTULOS DE QUALIDADE
+    // ============================================================
     fun qualityLabelRes(quality: String): Int = when (quality) {
         QUALITY_AUTO -> R.string.quality_auto
         QUALITY_BASS -> R.string.quality_bass
@@ -436,6 +520,9 @@ object Settings {
         else -> R.string.quality_default
     }
 
+    // ============================================================
+    // ÁUDIO — CROSSFADE (seleção)
+    // ============================================================
     fun setCrossfade(context: Context, value: String) {
         prefs(context).edit().putString("crossfade", value).apply()
     }
@@ -443,6 +530,9 @@ object Settings {
     fun crossfade(context: Context): String =
         prefs(context).getString("crossfade", CROSSFADE_OFF) ?: CROSSFADE_OFF
 
+    // ============================================================
+    // IDIOMA
+    // ============================================================
     fun setLanguage(context: Context, value: String) {
         prefs(context).edit().putString("language", value).apply()
     }
@@ -464,6 +554,9 @@ object Settings {
         else -> "pt"
     }
 
+    // ============================================================
+    // ALARMES
+    // ============================================================
     fun alarmHour(context: Context): Int = prefs(context).getInt(KEY_ALARM_HOUR, -1)
 
     fun alarmMinute(context: Context): Int = prefs(context).getInt(KEY_ALARM_MINUTE, 0)
@@ -494,6 +587,9 @@ object Settings {
         prefs(context).edit().putBoolean(KEY_ALARM_GENTLE, value).apply()
     }
 
+    // ============================================================
+    // ÁUDIO — CROSSFADE (duração/rótulo)
+    // ============================================================
     fun crossfadeMs(value: String): Int = when (value) {
         CROSSFADE_SHORT -> 2000
         CROSSFADE_MEDIUM -> 5000
@@ -508,6 +604,9 @@ object Settings {
         else -> R.string.crossfade_off
     }
 
+    // ============================================================
+    // DJ / IA
+    // ============================================================
     fun setDjSource(context: Context, value: String) {
         prefs(context).edit().putString("dj_source", value).apply()
     }
@@ -592,11 +691,17 @@ object Settings {
     fun recToken(context: Context): String =
         prefs(context).getString("rec_token", "") ?: ""
 
+    // ============================================================
+    // SECRETS — TOKEN DE ADMINISTRAÇÃO
+    // ============================================================
     fun setAdminToken(context: Context, value: String) = setSecret(context, "admin_token", value)
 
     fun adminToken(context: Context): String =
         secret(context, "admin_token")
 
+    // ============================================================
+    // MÍDIA — PENDRIVE, VISUALIZADOR, SKIN, KARAOKÊ
+    // ============================================================
     fun setPendriveTreeUri(context: Context, value: String) {
         prefs(context).edit().putString("pendrive_tree_uri", value).apply()
     }
@@ -625,6 +730,9 @@ object Settings {
     fun karaokeOn(context: Context): Boolean =
         prefs(context).getBoolean("karaoke_on", false)
 
+    // ============================================================
+    // DJ / IA — GEMINI
+    // ============================================================
     fun setGeminiKey(context: Context, value: String) {
         setSecret(context, "gemini_key", value)
     }
@@ -647,6 +755,9 @@ object Settings {
      * o YouTube esconde. Por isso é configurável, e o valor é normalizado na gravação para
      * não depender de o usuário digitar o esquema.
      */
+    // ============================================================
+    // MÍDIA — PEERTUBE
+    // ============================================================
     fun peerTubeInstance(context: Context): String =
         com.pulsa.player.data.PeerTube.normalizeInstance(
             prefs(context).getString("peertube_instance", "").orEmpty()
@@ -658,6 +769,9 @@ object Settings {
             .apply()
     }
 
+    // ============================================================
+    // RETOMADA
+    // ============================================================
     fun setResumeOn(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("resume_on", value).apply()
     }
@@ -672,6 +786,9 @@ object Settings {
      * de a primeira experiência do Download Center virar uma conta de dados. Quem quiser baixar
      * pelos dados desliga aqui.
      */
+    // ============================================================
+    // DOWNLOADS / DADOS / MODO KIDS
+    // ============================================================
     fun setDownloadWifiOnly(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("download_wifi_only", value).apply()
     }
@@ -802,6 +919,9 @@ object Settings {
      * toda vez esperando 3s de descoberta, e em roteador que filtra multicast a descoberta
      * pode falhar e o botão "não achar" uma TV que está ali ligada.
      */
+    // ============================================================
+    // TV
+    // ============================================================
     fun setTvDevice(context: Context, host: String, name: String) {
         prefs(context).edit()
             .putString("tv_host", host)
@@ -839,6 +959,9 @@ object Settings {
 
 
 
+    // ============================================================
+    // GESTOS E EQ PERSONALIZADO
+    // ============================================================
     fun setGesturesOn(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("gestures_on", value).apply()
     }
@@ -860,6 +983,9 @@ object Settings {
     fun customEqBands(context: Context): String =
         prefs(context).getString("custom_eq_bands", "0,0,0,0,0") ?: "0,0,0,0,0"
 
+    // ============================================================
+    // LAST.FM
+    // ============================================================
     fun setLastFmKey(context: Context, value: String) {
         setSecret(context, "lastfm_key", value)
     }
@@ -889,6 +1015,9 @@ object Settings {
         secret(context, "lastfm_session")
 
     // Última reprodução salva (retomar onde parou)
+    // ============================================================
+    // ESTADO — RETOMADA DA FAIXA
+    // ============================================================
     fun setResumeState(context: Context, songId: Long, positionMs: Long, songTitle: String, songArtist: String) {
         prefs(context).edit()
             .putLong("resume_song_id", songId)
@@ -922,6 +1051,9 @@ object Settings {
      * diz de que mídia o item é. A preference continua se chamando `queue_ids` para não
      * invalidar o que já está gravado — o leitor aceita o número solto como sendo áudio.
      */
+    // ============================================================
+    // ESTADO — FILA
+    // ============================================================
     fun setQueueState(context: Context, keys: List<String>, index: Int, positionMs: Long) {
         if (keys.isEmpty()) {
             clearQueueState(context)
@@ -994,6 +1126,9 @@ object Settings {
 
     // Rádio guardado para continuar tocando caso o processo renasça (E4). Só enquanto
     // estava de fato tocando/pausado por estado "tem som"; limpo no pause deliberado.
+    // ============================================================
+    // RÁDIO — RETOMADA
+    // ============================================================
     fun setRadioResume(context: Context, url: String, title: String, genre: String) {
         prefs(context).edit()
             .putString("radio_resume_url", url)
@@ -1018,6 +1153,9 @@ object Settings {
             .apply()
     }
 
+    // ============================================================
+    // CACHE
+    // ============================================================
     private fun isArtDir(file: java.io.File): Boolean = file.isDirectory && file.name == "art"
 
     fun cacheSize(context: Context): Long {
