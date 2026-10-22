@@ -38,7 +38,20 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/settings_tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:tabIndicatorColor="?attr/colorPrimary"
+        app:tabIndicatorFullWidth="false"
+        app:tabMode="scrollable"
+        app:tabRippleColor="@android:color/transparent"
+        app:tabSelectedTextColor="?attr/colorPrimary"
+        app:tabTextColor="@color/text_secondary" />
+
     <ScrollView
+        android:id="@+id/settings_scroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -52,6 +65,7 @@
             android:paddingHorizontal="16dp">
 
             <TextView
+                android:id="@+id/sect_appearance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
@@ -232,6 +246,7 @@
                 android:background="@color/divider" />
 
             <TextView
+                android:id="@+id/sect_audio"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
@@ -864,6 +879,7 @@
                 android:background="@color/divider" />
 
             <TextView
+                android:id="@+id/sect_dj"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
@@ -1108,6 +1124,7 @@
                 android:background="@color/divider" />
 
             <TextView
+                android:id="@+id/sect_download"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
@@ -1530,6 +1547,7 @@
                 android:text="@string/update_from_site" />
 
             <TextView
+                android:id="@+id/sect_maintenance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
@@ -1581,6 +1599,7 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/sect_account"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"

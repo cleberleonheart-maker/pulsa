@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -63,8 +64,17 @@ import com.pulsa.player.ui.settings.joinWithCode
 import com.pulsa.player.ui.settings.buildBackup
 import com.pulsa.player.ui.settings.applyRestore
 import com.pulsa.player.ui.settings.showRestoreReport
+import com.pulsa.player.ui.settings.SettingsSectionNav
+import kotlin.math.abs
 
 class SettingsActivity : AppCompatActivity() {
+
+    private var sectionNav: SettingsSectionNav? = null
+    private val swipeSlop by lazy { 72f * resources.displayMetrics.density }
+    private var swipeStartX = 0f
+    private var swipeStartY = 0f
+    private var swipeActive = false
+    private var swipeBlocked = false
 
     internal val backupLauncher =
         registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -151,6 +161,59 @@ class SettingsActivity : AppCompatActivity() {
         bindDownloads()
         bindMaintenance()
         bindAccount()
+
+        sectionNav = SettingsSectionNav(this).also { it.setup() }
+    }
+
+    /**
+     * Abas horizontais: deslizar troca de seção. O toque é cancelado na view de baixo para não
+     * virar clique acidental; sliders horizontais ficam de fora para não perderem o arrasto.
+     */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        val nav = sectionNav
+        if (nav != null) {
+            when (ev.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    swipeStartX = ev.rawX
+                    swipeStartY = ev.rawY
+                    swipeActive = false
+                    swipeBlocked = touchStartsOnSeekBar(ev)
+                }
+
+                MotionEvent.ACTION_MOVE -> if (!swipeActive && !swipeBlocked) {
+                    val dx = ev.rawX - swipeStartX
+                    val dy = ev.rawY - swipeStartY
+                    if (abs(dx) > swipeSlop && abs(dx) > abs(dy) * 1.2f) {
+                        swipeActive = true
+                        val cancel = MotionEvent.obtain(ev)
+                        cancel.action = MotionEvent.ACTION_CANCEL
+                        super.dispatchTouchEvent(cancel)
+                        cancel.recycle()
+                        nav.goBy(if (dx < 0) 1 else -1)
+                        return true
+                    }
+                }
+
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (swipeActive) {
+                    swipeActive = false
+                    return true
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    private fun touchStartsOnSeekBar(ev: MotionEvent): Boolean {
+        val location = IntArray(2)
+        for (id in intArrayOf(R.id.audio_3d_depth_seek, R.id.surround_intensity_seek)) {
+            val view = findViewById<View>(id) ?: continue
+            if (view.visibility != View.VISIBLE) continue
+            view.getLocationOnScreen(location)
+            val insideX = ev.rawX >= location[0] && ev.rawX <= location[0] + view.width
+            val insideY = ev.rawY >= location[1] && ev.rawY <= location[1] + view.height
+            if (insideX && insideY) return true
+        }
+        return false
     }
 
     override fun onStart() {
