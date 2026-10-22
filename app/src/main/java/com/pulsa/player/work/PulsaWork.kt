@@ -215,7 +215,12 @@ object PulsaWork {
             // Barrido não adianta: o tick para de empurrar estado e de aceitar comandos, mas
             // o playback local continua — e não há como matar o processo de dentro daqui.
             if (Blacklist.isBanned(ctx)) return Result.success()
-            val synced = RemoteSync.syncHeavy(ctx)
+            // `syncHeavy` faz HTTP bloqueante (3 hosts × endpoints, timeouts de 800-1500 ms) e
+            // varredura do MediaStore. O `CoroutineWorker` roda o `doWork` em `Dispatchers.Default`,
+            // ou seja, segurava uma thread do pool de CPU do app durante toda a passada — e as
+            // coroutines de UI/animação que usam Default congelavam junto. IO porque o caminho
+            // é bloqueante de verdade (mesma razão do `refreshPodcasts` logo abaixo).
+            val synced = withContext(Dispatchers.IO) { RemoteSync.syncHeavy(ctx) }
             refreshPodcasts(ctx)
             return if (synced) Result.success() else Result.retry()
         }
