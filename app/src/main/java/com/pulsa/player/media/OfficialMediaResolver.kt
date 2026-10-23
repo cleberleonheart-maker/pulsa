@@ -36,13 +36,23 @@ object OfficialMediaResolver {
 
     private fun resolveItunes(url: String): Resolved? {
         return try {
-            // Tenta extrair termo simples da URL
             val uri = java.net.URI(url)
-            val path = uri.path ?: ""
-            // /us/album/.../id123 / /us/song/.../id123
-            val id = path.substringAfterLast('/').filter { it.isDigit() }
-            if (id.isNotEmpty()) {
-                val lookup = URL("https://itunes.apple.com/lookup?id=$id&entity=song")
+            val query = uri.query ?: ""
+            // Prioriza o ID da música quando vem via ?i= (links do Apple Music)
+            var trackId = ""
+            query.split("&").forEach { part ->
+                if (part.isBlank()) return@forEach
+                val kv = part.split("=")
+                if (kv.size >= 2 && kv[0] == "i") {
+                    trackId = kv[1]
+                }
+            }
+            if (trackId.isBlank()) {
+                val path = uri.path ?: ""
+                trackId = path.substringAfterLast('/').filter { it.isDigit() }
+            }
+            if (trackId.isNotBlank()) {
+                val lookup = URL("https://itunes.apple.com/lookup?id=$trackId")
                 val conn = (lookup.openConnection() as HttpURLConnection).apply {
                     connectTimeout = 8000
                     readTimeout = 8000
