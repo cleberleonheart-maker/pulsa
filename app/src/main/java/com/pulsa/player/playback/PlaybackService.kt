@@ -82,6 +82,7 @@ import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.podcast.PodcastCache
+import com.pulsa.player.podcast.AdSkip
 import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.podcast.PodcastPrefetch
 import com.pulsa.player.podcast.nextEpisodeToPlay
@@ -609,8 +610,19 @@ class PlaybackService : MediaLibraryService() {
      * buffer, então basta atualizá-la aqui para o efeito entrar/sair na virada. Música desliga
      * sempre — pausa em faixa é intenção, não ruído a cortar.
      */
+    /** Item 278 — a opção de pular propaganda mudou: reavalia sem esperar a próxima faixa. */
+    fun refreshAdSkip() {
+        syncSilenceSkip()
+    }
+
     private fun syncSilenceSkip() {
-        SilenceSkipper.enabled = isPodcastPlaying() && Settings.skipSilence(this)
+        val isPod = isPodcastPlaying()
+        SilenceSkipper.enabled = isPod && Settings.skipSilence(this)
+        val epId = currentSong?.podcastId ?: 0L
+        if (isPod && epId > 0L && Settings.adSkip(this)) {
+            AdSkip.watch(this, epId)
+            AdSkip.markAdsIfNeeded(this, epId)
+        }
     }
 
     inner class LocalBinder : Binder() {
@@ -2549,6 +2561,18 @@ class PlaybackService : MediaLibraryService() {
         if (abActive && isPlaying && dur > 0L && abB <= dur && pos >= abB) {
             seekTo(abA)
             return
+        }
+        if (isPlaying && isPodcastPlaying() && Settings.adSkip(this)) {
+            val epId = currentSong?.podcastId ?: 0L
+            val segs = AdSkip.cached(epId)
+            if (segs != null) {
+                val tgt = AdSkip.skipTarget(segs, pos)
+                if (tgt != null) {
+                    // Pula para o fim do bloco publicitário (não volta: não é loop AB).
+                    seekTo(tgt)
+                    return
+                }
+            }
         }
         // Item 130 — perto do fim (~tick de 500 ms), dispara a sobreposição com a próxima
         // faixa. O ramp dura exatamente o que resta, então o fade termina junto com a faixa.

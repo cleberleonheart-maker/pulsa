@@ -861,6 +861,21 @@ object Settings {
 
 
     /**
+     * Pular propaganda falada em podcast (item 278) — usa a transcrição já gerada para
+     * marcar blocos de patrocínio e pular até o fim da leitura, sem cortar pausas musicais.
+     *
+     * Ligado, transcreve o episódio no Wi‑Fi quando ainda não há transcrição (usa a chave do
+     * Gemini) e marca os blocos de patrocínio. Desligado, nada acontece. Padrão `false`.
+     */
+    fun setAdSkip(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean("ad_skip", value).apply()
+    }
+
+    fun adSkip(context: Context): Boolean =
+        prefs(context).getBoolean("ad_skip", false)
+
+
+    /**
      * F2 · Download Center — limite de espaço (MB) que o app pode ocupar com downloads.
      * `0` = sem limite.
      *

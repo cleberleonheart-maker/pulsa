@@ -914,5 +914,23 @@ class DjCommanderTest {
     fun sem_detalhe_nao_e_sessao() {
         assertNull(DjCommander.sessionQuery(DjCommander.norm("abre a sessao")))
     }
+    @Test
+    fun pergunta_sobre_episodio_extrai_o_tema() {
+        val q = DjCommander.podcastAskQuery(
+            DjCommander.norm("virgi, o que falaram sobre bitcoin nesse episodio?")
+        )
+        assertNotNull(q)
+        assertEquals("bitcoin", q!!.question)
+        assertEquals(
+            "podcast_ask",
+            DjCommander.action(DjCommander.norm("o que falaram sobre bitcoin nesse episodio"))
+        )
+    }
+
+    @Test
+    fun pergunta_sobre_podcast_sem_tema_nao_dispara() {
+        assertNull(DjCommander.podcastAskQuery(DjCommander.norm("o que e isso")))
+        assertNull(DjCommander.podcastAskQuery(DjCommander.norm("toca o podcast")))
+    }
 
 }

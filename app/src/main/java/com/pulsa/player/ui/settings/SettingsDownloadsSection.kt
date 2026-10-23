@@ -30,10 +30,13 @@ internal fun SettingsActivity.startDownload() {
         ).show()
         return
     }
-    val finalName = name.ifEmpty { UrlDownloader.guessName(url) }
+    // #277 – tenta resolver via API oficial (iTunes etc) para obter link direto
+    val resolved = UrlDownloader.resolveOfficial(url)
+    val targetUrl = resolved?.directUrl ?: url
+    val finalName = name.ifEmpty { resolved?.name ?: UrlDownloader.guessName(targetUrl) }
     // Virou job do WorkManager: espera a rede, e se a tela fechar no meio o download
     // continua -- antes era uma thread do pool que morria junto com o processo sem aviso.
-    val job = PulsaWork.download(this, url, finalName)
+    val job = PulsaWork.download(this, targetUrl, finalName)
     if (job == null) {
         Toast.makeText(
             this, getString(R.string.download_failed, finalName), Toast.LENGTH_SHORT

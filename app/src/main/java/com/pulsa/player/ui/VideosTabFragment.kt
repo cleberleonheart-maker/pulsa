@@ -131,8 +131,14 @@ class VideosTabFragment : Fragment() {
         dialog.setOnShowListener {
             dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val raw = urlInput.text?.toString().orEmpty()
-                if (StreamKind.playableUrl(raw) == null) {
-                    val blocked = raw.isNotBlank() && StreamKind.urlLooksLikePage(raw)
+                var toPlay = raw.trim()
+                // #277 – tenta resolver via API oficial antes de bloquear
+                if (raw.isNotBlank() && StreamKind.urlLooksLikePage(raw) && com.pulsa.player.media.OfficialMediaResolver.resolve(raw) != null) {
+                    val res = com.pulsa.player.media.OfficialMediaResolver.resolve(raw)
+                    if (res != null) toPlay = res.directUrl
+                }
+                if (StreamKind.playableUrl(toPlay) == null && com.pulsa.player.media.UrlDownloader.validate(toPlay) == R.string.download_direct_only) {
+                    val blocked = raw.isNotBlank() && StreamKind.urlLooksLikePage(raw) && com.pulsa.player.media.OfficialMediaResolver.resolve(raw) == null
                     urlInput.error = getString(
                         if (blocked) R.string.video_stream_url_blocked else R.string.video_stream_url_invalid
                     )
@@ -140,7 +146,7 @@ class VideosTabFragment : Fragment() {
                 }
                 VideoPlayerActivity.startStream(
                     ctx,
-                    raw.trim(),
+                    toPlay,
                     titleInput.text?.toString().orEmpty().trim()
                 )
                 dialog.dismiss()

@@ -15,9 +15,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SongMetaEntity::class,
         PodcastFeedEntity::class,
         PodcastEpisodeEntity::class,
-        AutoRuleEntity::class
+        AutoRuleEntity::class,
+        PodcastTranscriptEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class PulsaDatabase : RoomDatabase() {
@@ -196,6 +197,31 @@ abstract class PulsaDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `podcast_transcripts` (" +
+                        "`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`episode_id` INTEGER NOT NULL, " +
+                        "`podcast_id` INTEGER NOT NULL, " +
+                        "`full_text` TEXT NOT NULL DEFAULT '', " +
+                        "`segments_json` TEXT NOT NULL DEFAULT '[]', " +
+                        "`language` TEXT NOT NULL DEFAULT 'pt', " +
+                        "`duration_ms` INTEGER NOT NULL DEFAULT 0, " +
+                        "`created_at` INTEGER NOT NULL DEFAULT 0, " +
+                        "`status` TEXT NOT NULL DEFAULT 'done')"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_podcast_transcripts_episode_id` " +
+                        "ON `podcast_transcripts` (`episode_id`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_podcast_transcripts_podcast_id` " +
+                        "ON `podcast_transcripts` (`podcast_id`)"
+                )
+            }
+        }
+
         @Volatile
         private var instance: PulsaDatabase? = null
 
@@ -205,7 +231,7 @@ abstract class PulsaDatabase : RoomDatabase() {
                 PulsaDatabase::class.java,
                 NAME
             )
-                .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .build()
                 .also { instance = it }
         }

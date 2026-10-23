@@ -39,6 +39,9 @@ interface PlayerLink {
 
     /** Item 291 — reaplica o teto de resolução de vídeo (mudou o ajuste ou a rede). */
     fun refreshDataSaver()
+
+    /** Item 278 — reavalia o salto de propaganda falada ao ligar/desligar a opção. */
+    fun refreshAdSkip()
     fun reapplyDanceParams()
     fun refreshCurrentMeta()
     fun start(songs: List<Song>, startIndex: Int)
@@ -113,6 +116,7 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
     override fun currentArt(): Bitmap? = service.currentArt()
     override fun refreshFx() = service.refreshFx()
     override fun refreshDataSaver() = service.refreshDataSaver()
+    override fun refreshAdSkip() = service.refreshAdSkip()
     override fun reapplyDanceParams() = service.applyDanceParamsForRefresh()
     override fun setVideoSpeed(value: Float) = service.setVideoSpeed(value)
     override fun setPodcastSpeed(value: Float) = service.setPodcastSpeed(value)

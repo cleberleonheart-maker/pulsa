@@ -469,6 +469,8 @@
     <string name="podcast_prefetch_hint">While an episode plays, it downloads the next one in the queue over Wi-Fi so the switch doesn\'t stop to buffer. Wi-Fi only; never uses your mobile data.</string>
     <string name="skip_silence">Skip silences in podcasts</string>
     <string name="skip_silence_hint">Cuts the long pauses in an episode (segments, the breath before an ad). Podcasts only; music plays untouched.</string>
+    <string name="ad_skip">Skip spoken ads</string>
+    <string name="ad_skip_hint">Transcribes the episode on Wi‑Fi (uses Gemini quota) and skips sponsor blocks.</string>
 
     <string name="downloads_limit">Storage limit</string>
     <string name="downloads_limit_hint">How much disk downloads may use; past the cap, new downloads fail instead of filling your storage.</string>
@@ -956,4 +958,11 @@
     <string name="server_token_hint">Paste your server token here</string>
     <string name="server_token_saved">Token saved!</string>
     <string name="server_token_missing">App default (no custom token)</string>
+    <string name="dj_voice_transcribe_none">There is no transcript for this episode yet. Download it or wait.</string>
+    <string name="dj_voice_transcribe_need_key">Set the Gemini key in DJ/AI to transcribe and search the episode.</string>
+    <string name="dj_voice_transcribe_pending">I will transcribe this episode when I can. Try again shortly.</string>
+    <string name="dj_voice_transcribe_no_match">I could not find anything about that in the transcript.</string>
+    <string name="dj_voice_transcribe_offline">Around %1$s: %2$s</string>
+    <string name="dj_voice_transcribe_failed">I could not transcribe this episode now. Try again later.</string>
+    <string name="dj_commands_transcribe">"Virgin, what did they say about bitcoin in this episode?" — ask about the playing podcast</string>
 </resources>

@@ -255,6 +255,17 @@ fun SettingsActivity.bindDownloads() {
         }
     }
 
+    findViewById<MaterialSwitch>(R.id.ad_skip_switch).apply {
+        isChecked = Settings.adSkip(this@bindDownloads)
+        setOnCheckedChangeListener { _, checked ->
+            Settings.setAdSkip(this@bindDownloads, checked)
+            if (checked) {
+                // Pode haver transcrição pronta: carrega e marca propaganda sem esperar a virada.
+                Playback.refreshAdSkip()
+            }
+        }
+    }
+
     val limitValue = viewOrNull<TextView>(R.id.download_limit_value)
     refreshDownloadLimit(limitValue)
     findViewById<View>(R.id.download_limit_row).setOnClickListener {

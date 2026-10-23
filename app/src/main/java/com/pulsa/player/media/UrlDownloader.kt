@@ -16,13 +16,23 @@ import com.pulsa.player.R
  */
 object UrlDownloader {
 
+    /**
+     * Tenta resolver via API oficial antes de bloquear links de página.
+     * Retorna o [Resolved] caso consiga achar link direto, senão null.
+     */
+    fun resolveOfficial(url: String): OfficialMediaResolver.Resolved? = OfficialMediaResolver.resolve(url)
+
     /** Id de string de erro, ou `null` quando a URL pode ir para a fila do WorkManager. */
-    fun validate(url: String): Int? = when {
-        !url.startsWith("http://") && !url.startsWith("https://") ->
-            R.string.download_invalid_url
-        urlLooksLikePage(url) ->
-            R.string.download_direct_only
-        else -> null
+    fun validate(url: String): Int? {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return R.string.download_invalid_url
+        }
+        if (urlLooksLikePage(url)) {
+            // #277 – tenta API oficial antes de bloquear
+            if (OfficialMediaResolver.resolve(url) != null) return null
+            return R.string.download_direct_only
+        }
+        return null
     }
 
     private fun urlLooksLikePage(url: String): Boolean {

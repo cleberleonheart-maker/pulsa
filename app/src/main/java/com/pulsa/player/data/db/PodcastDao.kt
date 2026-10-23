@@ -171,6 +171,23 @@ interface PodcastDao {
 
     @Query("DELETE FROM podcast_episodes WHERE podcast_id = :podcastId")
     fun deleteEpisodes(podcastId: Long)
+
+    // ---- transcrições --------------------------------------------------------------------
+
+    @Query("SELECT * FROM podcast_transcripts WHERE episode_id = :episodeId LIMIT 1")
+    fun transcriptForEpisode(episodeId: Long): PodcastTranscriptEntity?
+
+    @Query("SELECT * FROM podcast_transcripts WHERE podcast_id = :podcastId ORDER BY created_at DESC")
+    fun transcriptsForPodcast(podcastId: Long): List<PodcastTranscriptEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertTranscript(entity: PodcastTranscriptEntity): Long
+
+    @Query("DELETE FROM podcast_transcripts WHERE episode_id = :episodeId")
+    fun deleteTranscript(episodeId: Long)
+
+    @Query("UPDATE podcast_transcripts SET status = :status WHERE episode_id = :episodeId")
+    fun setTranscriptStatus(episodeId: Long, status: String)
 }
 
 /** Os dois campos que o refresh automático precisa, para não carregar o feed inteiro. */

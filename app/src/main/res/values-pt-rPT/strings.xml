@@ -362,6 +362,8 @@
     <string name="podcast_prefetch_hint">Enquanto um episódio toca, transfere o seguinte da fila por Wi‑Fi para a mudança não parar a carregar. Só por Wi‑Fi; nunca usa os seus dados móveis.</string>
     <string name="skip_silence">Saltar silêncios no podcast</string>
     <string name="skip_silence_hint">Corta as pausas longas do episódio (blocos, o respirar antes da publicidade). Só no podcast, nunca na música.</string>
+    <string name="ad_skip">Saltar publicidade falada</string>
+    <string name="ad_skip_hint">Transcreve o episódio em Wi‑Fi (gasta quota do Gemini) e salta os blocos de patrocínio.</string>
     <string name="downloads_limit_hint">Quanto as transferências podem ocupar no dispositivo; depois do limite, as novas transferências falham em vez de encher o cartão.</string>
     <string name="downloads_limit_reached">Limite de espaço atingido — elimine uma transferência para continuar</string>
     <string name="downloads_warning_free">Pouco espaço livre no dispositivo: %1$s. Considere eliminar transferências.</string>
@@ -402,5 +404,11 @@
     <string name="dj_voice_memory_ask">Ainda não guardei isso. Diz-me o seu %1$s que eu guardo.</string>
     <string name="dj_voice_year">O seu replay do ano: ouviu %1$d músicas em %2$d reproduções. A campeã foi %3$s de %4$s, %5$d vezes. O artista do ano: %6$s. O seu mês mais forte: %7$s.</string>
     <string name="dj_voice_scan_denied">Preciso da permissão de multimédia para procurar novidades. Ative no botão acima.</string>
-
+    <string name="dj_voice_transcribe_none">Ainda não há transcrição deste episódio. Descarregue-o ou aguarde.</string>
+    <string name="dj_voice_transcribe_need_key">Configure a chave do Gemini em DJ/IA para transcrever e pesquisar no episódio.</string>
+    <string name="dj_voice_transcribe_pending">Vou transcrever este episódio quando puder. Tente novamente dentro de momentos.</string>
+    <string name="dj_voice_transcribe_no_match">Não encontrei nada sobre isso na transcrição.</string>
+    <string name="dj_voice_transcribe_offline">Por volta de %1$s: %2$s</string>
+    <string name="dj_voice_transcribe_failed">Não consegui transcrever este episódio agora. Tente mais tarde.</string>
+    <string name="dj_commands_transcribe">"Virgin, o que disseram sobre bitcoin neste episódio?" — pergunta sobre o podcast a tocar</string>
 </resources>

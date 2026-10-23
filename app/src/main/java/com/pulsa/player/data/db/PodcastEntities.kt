@@ -88,3 +88,37 @@ data class PodcastFeedRow(
     @ColumnInfo(name = "last_error") val lastError: String?,
     @ColumnInfo(name = "unplayed") val unplayed: Int?
 )
+
+
+/**
+ * Transcrição de um episódio de podcast, guardada em cache.
+ * Usado para "Virgin, o que falaram sobre X nesse episódio?".
+ */
+@Entity(
+    tableName = "podcast_transcripts",
+    indices = [
+        Index(value = ["episode_id"], unique = true),
+        Index(value = ["podcast_id"])
+    ]
+)
+data class PodcastTranscriptEntity(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "_id")
+    val id: Long = 0L,
+    @ColumnInfo(name = "episode_id")
+    val episodeId: Long,
+    @ColumnInfo(name = "podcast_id")
+    val podcastId: Long,
+    @ColumnInfo(name = "full_text")
+    val fullText: String = "",
+    @ColumnInfo(name = "segments_json")
+    val segmentsJson: String = "[]",
+    @ColumnInfo(name = "language")
+    val language: String = "pt",
+    @ColumnInfo(name = "duration_ms")
+    val durationMs: Long = 0L,
+    @ColumnInfo(name = "created_at")
+    val createdAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "status")
+    val status: String = "done" // pending, processing, done, failed
+)

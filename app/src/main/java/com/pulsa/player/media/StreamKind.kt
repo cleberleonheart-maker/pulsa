@@ -78,7 +78,11 @@ object StreamKind {
         if (url.isEmpty()) return null
         val scheme = runCatching { Uri.parse(url).scheme?.lowercase() }.getOrNull()
         if (scheme != "http" && scheme != "https") return null
-        if (urlLooksLikePage(url)) return null
+        if (urlLooksLikePage(url)) {
+            // #277 – permitir se houver resolução via API oficial
+            if (OfficialMediaResolver.resolve(url) != null) return url
+            return null
+        }
         return url
     }
 

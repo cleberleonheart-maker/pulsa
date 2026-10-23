@@ -9,6 +9,7 @@ object AudioFx {
 
     private var equalizer: Equalizer? = null
     private var bassBoost: BassBoost? = null
+    private var currentSessionId: Int = -1
     private var karaoke = false
 
     /** Faixa audível usada para posicionar frequências no curve padrão. */
@@ -77,9 +78,13 @@ object AudioFx {
     }
 
     fun apply(context: Context, sessionId: Int, genre: String? = null, isPodcast: Boolean = false) {
-        release()
+        // #301 – ao trocar de sessionId (novo player/instância) religar sempre
+        if (currentSessionId != sessionId) {
+            release()
+        }
         karaoke = Settings.karaokeOn(context)
         if (sessionId <= 0) return
+        currentSessionId = sessionId
         if (!Settings.equalizerOn(context) && !karaoke) return
         val eq = try {
             Equalizer(0, sessionId).apply { enabled = true }
@@ -105,6 +110,7 @@ object AudioFx {
         runCatching { bassBoost?.release() }
         equalizer = null
         bassBoost = null
+        currentSessionId = -1
     }
 
     private fun applyPreset(eq: Equalizer, key: String, customLevels: IntArray) {

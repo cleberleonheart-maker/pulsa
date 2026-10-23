@@ -156,6 +156,8 @@ class PodcastDb(
         dao.searchableEpisodes().map(PodcastEpisodeEntity::toEpisode).also(PodcastCache::putAll)
 
     /** Um episódio, com o cache preenchido — é o caminho do clique em "tocar". */
+    fun getEpisodeById(id: Long): Episode? = episode(id)
+
     fun episode(id: Long): Episode? = dao.episode(id)?.toEpisode()?.also {
         PodcastCache.put(it.id, it.playableUrl)
     }

@@ -401,6 +401,8 @@
     <string name="podcast_prefetch_hint">Enquanto um episódio toca, baixa o próximo da fila no Wi‑Fi para a troca não parar para carregar. Só no Wi‑Fi; nunca usa seus dados móveis.</string>
     <string name="skip_silence">Pular silêncios no podcast</string>
     <string name="skip_silence_hint">Corta as pausas longas do episódio — blocos e o respiro antes da propaganda. Só vale para podcast; a música toca inteira.</string>
+    <string name="ad_skip">Pular propagandas faladas</string>
+    <string name="ad_skip_hint">Transcreve o episódio no Wi‑Fi (gasta cota do Gemini) e pula os blocos de patrocínio.</string>
 
     <string name="downloads_limit">Limite de espaço</string>
     <string name="downloads_limit_hint">Quanto os downloads podem ocupar no aparelho; depois do teto, novos downloads falham em vez de encher o cartão.</string>
@@ -1209,4 +1211,11 @@
     <string name="tv_busy">TV em uso — nada foi trocado na tela. Aperte “Abrir Roku Media Player” quando puder trocar.</string>
     <string name="tv_copy">Copiar</string>
     <string name="tv_copied">Diagnóstico copiado</string>
+    <string name="dj_voice_transcribe_none">Ainda não tem transcrição deste episódio. Baixe ou aguarde.</string>
+    <string name="dj_voice_transcribe_need_key">Configure a chave do Gemini em DJ/IA para transcrever e buscar no episódio.</string>
+    <string name="dj_voice_transcribe_pending">Vou transcrever esse episódio quando tiver condições. Tente de novo em instantes.</string>
+    <string name="dj_voice_transcribe_no_match">Não achei nada sobre isso na transcrição.</string>
+    <string name="dj_voice_transcribe_offline">Por volta de %1$s: %2$s</string>
+    <string name="dj_voice_transcribe_failed">Não consegui transcrever esse episódio agora. Tente mais tarde.</string>
+    <string name="dj_commands_transcribe">"Virgin, o que falaram sobre bitcoin nesse episódio?" — pergunta sobre o podcast tocando</string>
 </resources>

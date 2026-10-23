@@ -469,6 +469,8 @@
     <string name="podcast_prefetch_hint">Mientras suena un episodio, descarga el siguiente de la cola por Wi‑Fi para que el cambio no se detenga a cargar. Solo por Wi‑Fi; nunca usa tus datos móviles.</string>
     <string name="skip_silence">Saltar silencios en el podcast</string>
     <string name="skip_silence_hint">Recorta las pausas largas del episodio (bloques, el respiro antes de la publicidad). Solo en podcast, nunca en la música.</string>
+    <string name="ad_skip">Saltar anuncios hablados</string>
+    <string name="ad_skip_hint">Transcribe el episodio en Wi‑Fi (usa cuota de Gemini) y salta los bloques de patrocinio.</string>
 
     <string name="downloads_limit">Límite de espacio</string>
     <string name="downloads_limit_hint">Cuánto disco pueden ocupar las descargas; pasado el tope, las nuevas fallan en vez de llenar la memoria.</string>
@@ -956,4 +958,11 @@
     <string name="server_token_hint">Pega aquí el token del servidor</string>
     <string name="server_token_saved">¡Token guardado!</string>
     <string name="server_token_missing">Predeterminado de la app (sin token propio)</string>
+    <string name="dj_voice_transcribe_none">Aún no hay transcripción de este episodio. Descárgalo o espera.</string>
+    <string name="dj_voice_transcribe_need_key">Configura la clave de Gemini en DJ/IA para transcribir y buscar en el episodio.</string>
+    <string name="dj_voice_transcribe_pending">Transcribiré este episodio cuando pueda. Inténtalo de nuevo en un momento.</string>
+    <string name="dj_voice_transcribe_no_match">No encontré nada sobre eso en la transcripción.</string>
+    <string name="dj_voice_transcribe_offline">Alrededor de %1$s: %2$s</string>
+    <string name="dj_voice_transcribe_failed">No pude transcribir este episodio ahora. Inténtalo más tarde.</string>
+    <string name="dj_commands_transcribe">"Virgin, ¿qué dijeron sobre bitcoin en este episodio?" — pregunta sobre el podcast que suena</string>
 </resources>

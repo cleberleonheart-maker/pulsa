@@ -1285,6 +1285,39 @@ object DjCommander {
         return ChapterQuery("next", null)
     }
 
+    // ----- Transcrição / busca no episódio por voz -----
+
+    data class PodcastAskQuery(
+        val question: String
+    )
+
+    /**
+     * "Virgin, o que falaram sobre bitcoin nesse episódio?"
+     * "o que disseram sobre IA nesse podcast?"
+     */
+    fun podcastAskQuery(norm: String): PodcastAskQuery? {
+        if (!norm.contains("episodio") && !norm.contains("episode") &&
+            !norm.contains("podcast")) {
+            return null
+        }
+        if (!(norm.contains("falaram") || norm.contains("disseram") ||
+                norm.contains("mencionaram") || norm.contains("pergunt") ||
+                norm.contains("o que") && norm.contains("nesse") ||
+                norm.contains("o que") && norm.contains("neste"))) {
+            return null
+        }
+        val sobre = Regex("sobre\\s+(.+?)(?:\\s+nesse|\\s+neste|\\s+no|$)").find(norm)
+        if (sobre != null) {
+            val q = sobre.groupValues[1].trim()
+            if (q.isNotEmpty()) return PodcastAskQuery(q)
+        }
+        if (norm.contains("falaram")) {
+            val rest = norm.substringAfter("falaram").trim()
+            if (rest.isNotEmpty()) return PodcastAskQuery(rest.replace(Regex("^sobre\\s+"), ""))
+        }
+        return null
+    }
+
     // ----- Túnel do tempo por década ("anos 80", "década de 90", "anos 2000") -----
 
     private val DECADE_WORD_YEARS = mapOf(
@@ -1345,6 +1378,7 @@ object DjCommander {
         intervalQuery(norm) != null -> "interval"
         quizQuery(norm) -> "quiz"
         chapterQuery(norm) != null -> "chapter"
+        podcastAskQuery(norm) != null -> "podcast_ask"
         sceneQuery(norm) != null -> "scene"
         weekendMatch(norm) -> "weekend"
         weekMatch(norm) -> "weekly"

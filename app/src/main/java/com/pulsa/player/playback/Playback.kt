@@ -217,6 +217,11 @@ object Playback {
         link?.refreshDataSaver()
     }
 
+    /** Item 278 — pula propaganda falada: reavalia o episódio atual ao ligar/desligar a opção. */
+    fun refreshAdSkip() {
+        link?.refreshAdSkip()
+    }
+
     /** Reaplica velocidade/pitch depois de mudar a qualidade: era o `furo 1` da auditoria. */
     fun reapplyDanceParams() {
         link?.reapplyDanceParams()

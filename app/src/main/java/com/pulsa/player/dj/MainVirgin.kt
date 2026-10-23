@@ -1521,6 +1521,7 @@ class MainVirgin(
             "interval_cancel" -> virgIntervalCancel()
             "quiz" -> virgQuiz()
             "chapter" -> virgChapter(DjCommander.chapterQuery(norm))
+            "podcast_ask" -> virgPodcastAsk(DjCommander.podcastAskQuery(norm))
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
             "video_by_name" -> virgVideoByName(DjCommander.videoQuery(norm))
             "video_play" -> virgVideoPlay()
@@ -2966,5 +2967,38 @@ class MainVirgin(
         welcomeVoice = null
         virginVoice?.shutdown()
         virginVoice = null
+    }
+
+    private fun virgPodcastAsk(query: DjCommander.PodcastAskQuery?) {
+        if (query == null) return
+        val ctx = activity
+        val song = com.pulsa.player.playback.Playback.currentSong
+        if (song == null || !song.isPodcast) {
+            virginSpeak(say(R.string.dj_voice_chapter_not))
+            return
+        }
+        val pid = song.podcastId ?: return
+        val ep = com.pulsa.player.podcast.PodcastDb.get(ctx).getEpisodeById(pid)
+        if (ep == null) {
+            virginSpeak(say(R.string.dj_voice_transcribe_none))
+            return
+        }
+        com.pulsa.player.podcast.PodcastTranscribe.askAboutEpisode(ctx, ep, query.question) { ans ->
+            val text = when {
+                ans == null || ans == "transcribe_none" -> say(R.string.dj_voice_transcribe_none)
+                ans.startsWith("transcribe_need_key") -> say(R.string.dj_voice_transcribe_need_key)
+                ans.startsWith("transcribe_pending") -> say(R.string.dj_voice_transcribe_pending)
+                ans.startsWith("transcribe_failed") -> say(R.string.dj_voice_transcribe_failed)
+                ans.startsWith("transcribe_no_match") -> say(R.string.dj_voice_transcribe_no_match)
+                ans.startsWith("transcribe_offline:") -> {
+                    val parts = ans.split(":")
+                    val time = if (parts.size >= 2) parts[1] else ""
+                    val quote = if (parts.size >= 3) parts.drop(2).joinToString(":") else ""
+                    say(R.string.dj_voice_transcribe_offline, time, quote)
+                }
+                else -> ans
+            }
+            virginSpeak(text)
+        }
     }
 }

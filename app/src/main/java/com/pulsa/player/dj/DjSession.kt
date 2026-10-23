@@ -1270,6 +1270,39 @@ class DjSession(
                     speak(say(R.string.dj_voice_delete_cancel))
                 }
             }
+            "podcast_ask" -> {
+                val q = DjCommander.podcastAskQuery(norm)
+                val song = com.pulsa.player.playback.Playback.currentSong
+                val pid = song?.podcastId
+                if (q == null || song == null || !song.isPodcast) {
+                    if (q != null) speak(say(R.string.dj_voice_chapter_not))
+                } else if (pid == null) {
+                    speak(say(R.string.dj_voice_transcribe_none))
+                } else {
+                    val ep = com.pulsa.player.podcast.PodcastDb.get(activity).getEpisodeById(pid)
+                    if (ep != null) {
+                        com.pulsa.player.podcast.PodcastTranscribe.askAboutEpisode(activity, ep, q.question) { ans ->
+                            val text = when {
+                                ans == null || ans == "transcribe_none" -> say(R.string.dj_voice_transcribe_none)
+                                ans.startsWith("transcribe_need_key") -> say(R.string.dj_voice_transcribe_need_key)
+                                ans.startsWith("transcribe_pending") -> say(R.string.dj_voice_transcribe_pending)
+                                ans.startsWith("transcribe_failed") -> say(R.string.dj_voice_transcribe_failed)
+                                ans.startsWith("transcribe_no_match") -> say(R.string.dj_voice_transcribe_no_match)
+                                ans.startsWith("transcribe_offline:") -> {
+                                    val parts = ans.split(":")
+                                    val t = if (parts.size >= 2) parts[1] else ""
+                                    val quote = if (parts.size >= 3) parts.drop(2).joinToString(":") else ""
+                                    say(R.string.dj_voice_transcribe_offline, t, quote)
+                                }
+                                else -> ans
+                            }
+                            speak(text)
+                        }
+                    } else {
+                        speak(say(R.string.dj_voice_transcribe_none))
+                    }
+                }
+            }
             "suggest" -> suggestSong()
             "identity" -> {
                 speak(DjIdentity.introSpeech())
