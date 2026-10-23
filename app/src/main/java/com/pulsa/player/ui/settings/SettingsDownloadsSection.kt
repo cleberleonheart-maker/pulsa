@@ -23,7 +23,10 @@ import com.pulsa.player.work.PulsaWork
 internal fun SettingsActivity.startDownload() {
     val url = findViewById<EditText>(R.id.download_url).text.toString().trim()
     val name = findViewById<EditText>(R.id.download_name).text.toString().trim()
-    UrlDownloader.validate(url)?.let { errorRes ->
+    // #277 – tenta resolver via API oficial antes de validar
+    val preResolved = UrlDownloader.resolveOfficial(url)
+    val preUrl = preResolved?.directUrl ?: url
+    UrlDownloader.validate(preUrl)?.let { errorRes ->
         Toast.makeText(
             this, errorRes,
             if (errorRes == R.string.download_direct_only) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
@@ -31,8 +34,8 @@ internal fun SettingsActivity.startDownload() {
         return
     }
     // #277 – tenta resolver via API oficial (iTunes etc) para obter link direto
-    val resolved = UrlDownloader.resolveOfficial(url)
-    val targetUrl = resolved?.directUrl ?: url
+    val resolved = preResolved ?: UrlDownloader.resolveOfficial(url)
+    val targetUrl = resolved?.directUrl ?: preUrl
     val finalName = name.ifEmpty { resolved?.name ?: UrlDownloader.guessName(targetUrl) }
     // Virou job do WorkManager: espera a rede, e se a tela fechar no meio o download
     // continua -- antes era uma thread do pool que morria junto com o processo sem aviso.

@@ -40,8 +40,13 @@ object UrlDownloader {
         if (lower.contains("youtube.com") || lower.contains("youtu.be") ||
             lower.contains("spotify.com") || lower.contains("deezer.com") ||
             lower.contains("soundcloud.com") || lower.contains("tidal.com") ||
-            lower.contains("apple.com") || lower.contains("music.youtube.com")
+            lower.contains("music.youtube.com")
         ) return true
+        // #277 – Apple Music/iTunes tratados via OfficialMediaResolver quando possível
+        if (lower.contains("music.apple.com") || lower.contains("itunes.apple.com")) {
+            if (OfficialMediaResolver.resolve(url) != null) return false
+            return true
+        }
         val path = lower.substringBefore('?').substringAfter("://").substringAfter('/')
         if (path.startsWith("watch") || path.startsWith("track") || path.startsWith("album") ||
             path.startsWith("playlist") || path.startsWith("shorts") || path.startsWith("embed")
