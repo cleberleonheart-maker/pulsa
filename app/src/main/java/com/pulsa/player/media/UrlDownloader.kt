@@ -17,19 +17,21 @@ import com.pulsa.player.R
 object UrlDownloader {
 
     /**
-     * Tenta resolver via API oficial antes de bloquear links de página.
-     * Retorna o [Resolved] caso consiga achar link direto, senão null.
+     * Só consulta o cache do [OfficialMediaResolver]. Este método é chamado no main
+     * thread, então não pode fazer rede — a resolução acontece antes, em
+     * [OfficialMediaResolver.resolveAsync].
      */
-    fun resolveOfficial(url: String): OfficialMediaResolver.Resolved? = OfficialMediaResolver.resolve(url)
+    fun resolveOfficial(url: String): OfficialMediaResolver.Resolved? =
+        OfficialMediaResolver.cached(url)
 
     /** Id de string de erro, ou `null` quando a URL pode ir para a fila do WorkManager. */
     fun validate(url: String): Int? {
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             return R.string.download_invalid_url
         }
+        // #277 – se já conseguimos resolver via API oficial, não bloquear
+        if (OfficialMediaResolver.cached(url) != null) return null
         if (urlLooksLikePage(url)) {
-            // #277 – tenta API oficial antes de bloquear
-            if (OfficialMediaResolver.resolve(url) != null) return null
             return R.string.download_direct_only
         }
         return null
@@ -42,11 +44,8 @@ object UrlDownloader {
             lower.contains("soundcloud.com") || lower.contains("tidal.com") ||
             lower.contains("music.youtube.com")
         ) return true
-        // #277 – Apple Music/iTunes tratados via OfficialMediaResolver quando possível
-        if (lower.contains("music.apple.com") || lower.contains("itunes.apple.com")) {
-            if (OfficialMediaResolver.resolve(url) != null) return false
-            return true
-        }
+        // Apple Music/iTunes: página, mesmo /song/ — o áudio real vem do previewUrl.
+        if (lower.contains("music.apple.com") || lower.contains("itunes.apple.com")) return true
         val path = lower.substringBefore('?').substringAfter("://").substringAfter('/')
         if (path.startsWith("watch") || path.startsWith("track") || path.startsWith("album") ||
             path.startsWith("playlist") || path.startsWith("shorts") || path.startsWith("embed")

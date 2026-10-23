@@ -1,6 +1,7 @@
 package com.pulsa.player.ui
 
 import android.app.AlertDialog
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
@@ -25,6 +26,7 @@ import com.pulsa.player.core.Settings
 
 import com.pulsa.player.media.DownloadService
 import com.pulsa.player.media.DownloadStore
+import com.pulsa.player.media.OfficialMediaResolver
 import com.pulsa.player.media.UrlDownloader
 import com.pulsa.player.ui.adapter.DownloadsAdapter
 import com.pulsa.player.work.PulsaWork
@@ -219,10 +221,23 @@ class DownloadsTabFragment : Fragment() {
      */
     private fun startUrlDownload(url: String, name: String) {
         val ctx = requireContext()
-        UrlDownloader.validate(url)?.let { errorRes ->
-            toast(errorRes)
-            return
+        // #277 – resolver na rede em background; no main thread a chamada HTTP falhava.
+        OfficialMediaResolver.resolveAsync(url) { resolved ->
+            val target = resolved?.directUrl ?: url
+            if (resolved == null) {
+                val errorRes = UrlDownloader.validate(url)
+                if (errorRes != null) {
+                    toast(errorRes)
+                } else {
+                    enqueueDownload(ctx, target, name)
+                }
+            } else {
+                enqueueDownload(ctx, target, name.ifEmpty { resolved.name.orEmpty() })
+            }
         }
+    }
+
+    private fun enqueueDownload(ctx: Context, url: String, name: String) {
         val finalName = name.ifEmpty { UrlDownloader.guessName(url) }
         val job = PulsaWork.download(ctx, url, finalName)
         if (job == null) {

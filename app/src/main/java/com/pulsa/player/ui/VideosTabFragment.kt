@@ -130,26 +130,36 @@ class VideosTabFragment : Fragment() {
         // não serve — fechar e cuspir um Toast faz o usuário colar o link de novo.
         dialog.setOnShowListener {
             dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val raw = urlInput.text?.toString().orEmpty()
-                var toPlay = raw.trim()
-                // #277 – tenta resolver via API oficial antes de bloquear
-                if (raw.isNotBlank() && StreamKind.urlLooksLikePage(raw) && com.pulsa.player.media.OfficialMediaResolver.resolve(raw) != null) {
-                    val res = com.pulsa.player.media.OfficialMediaResolver.resolve(raw)
-                    if (res != null) toPlay = res.directUrl
-                }
-                if (StreamKind.playableUrl(toPlay) == null && com.pulsa.player.media.UrlDownloader.validate(toPlay) == R.string.download_direct_only) {
-                    val blocked = raw.isNotBlank() && StreamKind.urlLooksLikePage(raw) && com.pulsa.player.media.OfficialMediaResolver.resolve(raw) == null
-                    urlInput.error = getString(
-                        if (blocked) R.string.video_stream_url_blocked else R.string.video_stream_url_invalid
-                    )
+                val input = urlInput.text?.toString().orEmpty().trim()
+                val title = titleInput.text?.toString().orEmpty().trim()
+                if (input.isEmpty()) {
+                    urlInput.error = getString(R.string.video_stream_url_invalid)
                     return@setOnClickListener
                 }
-                VideoPlayerActivity.startStream(
-                    ctx,
-                    toPlay,
-                    titleInput.text?.toString().orEmpty().trim()
-                )
-                dialog.dismiss()
+                val play: (String) -> Unit = { target ->
+                    VideoPlayerActivity.startStream(ctx, target, title)
+                    dialog.dismiss()
+                }
+                if (StreamKind.urlLooksLikePage(input)) {
+                    // #277 – página (Apple Music etc.): resolução HTTP fora do main thread.
+                    urlInput.error = null
+                    com.pulsa.player.media.OfficialMediaResolver.resolveAsync(input) { res ->
+                        if (res != null) {
+                            play(res.directUrl)
+                        } else {
+                            val blocked = com.pulsa.player.media.UrlDownloader.validate(input) ==
+                                R.string.download_direct_only
+                            urlInput.error = getString(
+                                if (blocked) R.string.video_stream_url_blocked
+                                else R.string.video_stream_url_invalid
+                            )
+                        }
+                    }
+                } else if (StreamKind.playableUrl(input) == null) {
+                    urlInput.error = getString(R.string.video_stream_url_invalid)
+                } else {
+                    play(input)
+                }
             }
         }
         dialog.show()

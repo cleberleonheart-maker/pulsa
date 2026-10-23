@@ -13,6 +13,7 @@ import com.pulsa.player.SettingsActivity
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.KidsMode
 import com.pulsa.player.core.Settings
+import com.pulsa.player.media.OfficialMediaResolver
 import com.pulsa.player.media.UrlDownloader
 import com.pulsa.player.work.PulsaWork
 
@@ -23,20 +24,30 @@ import com.pulsa.player.work.PulsaWork
 internal fun SettingsActivity.startDownload() {
     val url = findViewById<EditText>(R.id.download_url).text.toString().trim()
     val name = findViewById<EditText>(R.id.download_name).text.toString().trim()
-    // #277 – tenta resolver via API oficial antes de validar
-    val preResolved = UrlDownloader.resolveOfficial(url)
-    if (preResolved == null) {
-        UrlDownloader.validate(url)?.let { errorRes ->
-            Toast.makeText(
-                this, errorRes,
-                if (errorRes == R.string.download_direct_only) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
-            ).show()
-            return
+    // #277 – a resolução vai para a rede em background: no main thread o
+    // HttpURLConnection lançaria NetworkOnMainThreadException e o link era
+    // tratado como página comum.
+    OfficialMediaResolver.resolveAsync(url) { resolved ->
+        val targetUrl = resolved?.directUrl ?: url
+        if (resolved == null) {
+            val errorRes = UrlDownloader.validate(url)
+            if (errorRes != null) {
+                Toast.makeText(
+                    this, errorRes,
+                    if (errorRes == R.string.download_direct_only) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                enqueueDownload(targetUrl, name)
+            }
+        } else {
+            // O nome sugerido pelo resolver (artista - faixa) é melhor que o da URL.
+            enqueueDownload(targetUrl, name.ifEmpty { resolved.name.orEmpty() })
         }
     }
-    val resolved = preResolved ?: UrlDownloader.resolveOfficial(url)
-    val targetUrl = resolved?.directUrl ?: url
-    val finalName = name.ifEmpty { resolved?.name ?: UrlDownloader.guessName(targetUrl) }
+}
+
+private fun SettingsActivity.enqueueDownload(targetUrl: String, name: String) {
+    val finalName = name.ifEmpty { UrlDownloader.guessName(targetUrl) }
     // Virou job do WorkManager: espera a rede, e se a tela fechar no meio o download
     // continua -- antes era uma thread do pool que morria junto com o processo sem aviso.
     val job = PulsaWork.download(this, targetUrl, finalName)
