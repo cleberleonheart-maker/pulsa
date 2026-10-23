@@ -25,17 +25,17 @@ internal fun SettingsActivity.startDownload() {
     val name = findViewById<EditText>(R.id.download_name).text.toString().trim()
     // #277 – tenta resolver via API oficial antes de validar
     val preResolved = UrlDownloader.resolveOfficial(url)
-    val preUrl = preResolved?.directUrl ?: url
-    UrlDownloader.validate(preUrl)?.let { errorRes ->
-        Toast.makeText(
-            this, errorRes,
-            if (errorRes == R.string.download_direct_only) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
-        ).show()
-        return
+    if (preResolved == null) {
+        UrlDownloader.validate(url)?.let { errorRes ->
+            Toast.makeText(
+                this, errorRes,
+                if (errorRes == R.string.download_direct_only) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
     }
-    // #277 – tenta resolver via API oficial (iTunes etc) para obter link direto
     val resolved = preResolved ?: UrlDownloader.resolveOfficial(url)
-    val targetUrl = resolved?.directUrl ?: preUrl
+    val targetUrl = resolved?.directUrl ?: url
     val finalName = name.ifEmpty { resolved?.name ?: UrlDownloader.guessName(targetUrl) }
     // Virou job do WorkManager: espera a rede, e se a tela fechar no meio o download
     // continua -- antes era uma thread do pool que morria junto com o processo sem aviso.
