@@ -627,7 +627,7 @@ object UpdateChecker {
                 @Suppress("DEPRECATION")
                 info.signatures
             } ?: return false
-            mine.any { m -> theirs.any { t -> m.toCharsString() == t.toCharsString() } }
+            mine.orEmpty().any { m -> theirs.orEmpty().any { t -> m.toCharsString() == t.toCharsString() } }
         } catch (t: Throwable) {
             false
         }
