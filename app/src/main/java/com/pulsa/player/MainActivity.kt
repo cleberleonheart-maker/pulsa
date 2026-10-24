@@ -46,6 +46,7 @@ import com.pulsa.player.ui.PodcastsTabFragment
 import com.pulsa.player.ui.SongsTabFragment
 import com.pulsa.player.ui.TrendsFragment
 import com.pulsa.player.ui.VideosTabFragment
+import com.pulsa.player.ui.QueueSheetFragment
 import com.pulsa.player.ui.VirginHomeFragment
 import com.pulsa.player.core.Account
 import com.pulsa.player.audio.Ambient
@@ -317,6 +318,12 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         }
 
         bottomNav = findViewById(R.id.bottom_nav)
+        if (UiMode.isTv(this)) {
+            bottomNav.isFocusable = true
+            bottomNav.isFocusableInTouchMode = true
+            bottomNav.isDescendantFocusability = android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
+            bottomNav.requestFocus()
+        }
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
@@ -383,7 +390,11 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         }
         // Android TV: sem toque, o D-pad precisa focar o mini player inteiro para abrir a
         // reprodução; o foco cai primeiro nele quando há algo tocando.
-        if (UiMode.isTv(this)) TvFocus.apply(miniPlayer)
+        if (UiMode.isTv(this)) {
+            TvFocus.apply(miniPlayer)
+            miniPlayer.isFocusable = true
+            miniPlayer.isFocusableInTouchMode = true
+        }
         miniPlay.setOnClickListener { Playback.toggle() }
         miniShuffle.setOnClickListener {
             Playback.setShuffle(!Playback.shuffle)
@@ -535,6 +546,21 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
                     Toast.LENGTH_SHORT
                 ).show()
                 return true
+            }
+        }
+        // TV: botão "Play/Pause" global ou abrir fila rapidamente
+        if (UiMode.isTv(this)) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                    Playback.toggle()
+                    return true
+                }
+                KeyEvent.KEYCODE_MENU -> {
+                    if (Playback.queue.isNotEmpty()) {
+                        QueueSheetFragment.show(supportFragmentManager)
+                        return true
+                    }
+                }
             }
         }
         return super.onKeyDown(keyCode, event)

@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.pulsa.player.util.TvFocus
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -34,6 +35,10 @@ class QueueSheetFragment : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val list = view.findViewById<RecyclerView>(R.id.queue_list)
         list.layoutManager = LinearLayoutManager(requireContext())
+        if (com.pulsa.player.util.UiMode.isTv(requireContext())) {
+            list.isFocusable = true
+            list.isFocusableInTouchMode = true
+        }
         val a = QueueAdapter(
             onClick = { pos ->
                 Playback.jumpTo(pos)

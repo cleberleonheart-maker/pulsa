@@ -103,7 +103,10 @@
             android:paddingVertical="9dp"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:clickable="true" />
 
         <!-- Console segmentado Bombar / Relaxar -->
         <LinearLayout
@@ -122,7 +125,10 @@
                 android:text="@string/btn_party"
                 android:textColor="@color/surface_variant"
                 android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:clickable="true" />
 
             <TextView
                 android:id="@+id/btn_relax"
@@ -134,7 +140,10 @@
                 android:text="@string/btn_relax"
                 android:textColor="@color/surface_variant"
                 android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:clickable="true" />
         </LinearLayout>
 
         <!-- Tocar na TV: atalho na home para subir o DLNA e parear a TV Roku sem ter
@@ -147,6 +156,7 @@
             android:background="@drawable/bg_pill_neon"
             android:clickable="true"
             android:focusable="true"
+            android:focusableInTouchMode="true"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -200,6 +210,7 @@
             android:background="@drawable/bg_mini_player"
             android:clickable="true"
             android:focusable="true"
+            android:focusableInTouchMode="true"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="10dp"

@@ -166,7 +166,23 @@ class NowPlayingFragment : Fragment() {
         if (com.pulsa.player.util.UiMode.isTv(requireContext())) {
             val artFrame = view.findViewById<View>(R.id.np_art_frame)
             com.pulsa.player.util.TvFocus.apply(artFrame)
+            artFrame.isFocusable = true
+            artFrame.isFocusableInTouchMode = true
             artFrame.setOnClickListener { QueueSheetFragment.show(parentFragmentManager) }
+            listOf(R.id.np_prev, R.id.np_play, R.id.np_next, R.id.np_shuffle, R.id.np_repeat, R.id.np_like).forEach { id ->
+                view.findViewById<View>(id)?.let { v ->
+                    com.pulsa.player.util.TvFocus.apply(v)
+                    v.isFocusable = true
+                    v.isFocusableInTouchMode = true
+                }
+            }
+            listOf(R.id.np_rewind, R.id.np_forward, R.id.np_speed, R.id.np_chapters).forEach { id ->
+                view.findViewById<View>(id)?.let { v ->
+                    com.pulsa.player.util.TvFocus.apply(v)
+                    v.isFocusable = true
+                    v.isFocusableInTouchMode = true
+                }
+            }
         }
 
         view.findViewById<View>(R.id.np_prev).setOnClickListener { Playback.prev() }

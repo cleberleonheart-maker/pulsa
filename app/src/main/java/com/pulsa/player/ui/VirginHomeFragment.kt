@@ -82,6 +82,8 @@ class VirginHomeFragment : Fragment() {
         btnRelax.setOnClickListener { relax() }
         val hero = view.findViewById<View>(R.id.hero_avatar)
         TvFocus.apply(hero)
+        hero.isFocusable = true
+        hero.isFocusableInTouchMode = true
         hero.setOnClickListener { speak(getString(R.string.dj_voice_greeting)) }
         hero.setOnLongClickListener {
             startActivity(Intent(requireContext(), BanActivity::class.java))
