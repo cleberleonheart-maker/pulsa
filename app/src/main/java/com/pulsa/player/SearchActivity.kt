@@ -1,5 +1,7 @@
 package com.pulsa.player
 
+import android.app.SearchManager
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -62,6 +64,7 @@ class SearchActivity : AppCompatActivity(), Playback.Listener {
         setContentView(R.layout.activity_search)
 
         AnimatedBackground.apply(this)
+        handleIntent(intent)
 
         adapter = SearchAdapter(
             onSong = { songs, index ->
@@ -272,6 +275,28 @@ class SearchActivity : AppCompatActivity(), Playback.Listener {
         super.onStart()
         AnimatedBackground.apply(this)
         Playback.listener = this
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.action == Intent.ACTION_SEARCH) {
+            val query = intent.getStringExtra(SearchManager.QUERY).orEmpty().trim()
+            if (query.isNotEmpty()) {
+                val input = findViewById<EditText>(R.id.search_input)
+                if (input.text.toString().trim() != query) {
+                    input.setText(query)
+                    input.setSelection(query.length)
+                }
+                lastQuery = query
+                filter(query)
+            }
+        }
     }
 
     override fun onStop() {

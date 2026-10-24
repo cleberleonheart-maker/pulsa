@@ -108,8 +108,8 @@
         <!-- Console segmentado Bombar / Relaxar -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:layout_marginTop="16dp"
+            android:layout_height="72dp"
+            android:layout_marginTop="20dp"
             android:orientation="horizontal">
 
             <TextView
@@ -121,8 +121,11 @@
                 android:gravity="center"
                 android:text="@string/btn_party"
                 android:textColor="@color/surface_variant"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:clickable="true" />
 
             <TextView
                 android:id="@+id/btn_relax"
@@ -133,8 +136,11 @@
                 android:gravity="center"
                 android:text="@string/btn_relax"
                 android:textColor="@color/surface_variant"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:clickable="true" />
         </LinearLayout>
 
         <!-- Tocar na TV: atalho na home para subir o DLNA e parear a TV Roku sem ter
@@ -142,8 +148,8 @@
         <LinearLayout
             android:id="@+id/btn_tv"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="16dp"
             android:background="@drawable/bg_pill_neon"
             android:clickable="true"
             android:focusable="true"
@@ -195,8 +201,8 @@
         <LinearLayout
             android:id="@+id/resume_card"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:layout_marginTop="16dp"
+            android:layout_height="76dp"
+            android:layout_marginTop="18dp"
             android:background="@drawable/bg_mini_player"
             android:clickable="true"
             android:focusable="true"

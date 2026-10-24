@@ -339,7 +339,9 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
                     true
                 }
                 R.id.nav_search -> {
-                    startActivity(Intent(this, SearchActivity::class.java))
+                    val intent = Intent(this, SearchActivity::class.java)
+                    intent.action = Intent.ACTION_SEARCH
+                    startActivity(intent)
                     false
                 }
                 R.id.nav_profile -> {
