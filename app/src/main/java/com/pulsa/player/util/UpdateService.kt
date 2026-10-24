@@ -93,7 +93,7 @@ class UpdateService : Service() {
             return
         }
         nm.notify(NOTIF_PROGRESS, buildProgress(name, 0))
-        val target = UpdateChecker.downloadFromServer(applicationContext, name, url) { pct ->
+        val target = UpdateChecker.downloadFromServer(applicationContext, name, url, code.toLong()) { pct ->
             nm.notify(NOTIF_PROGRESS, buildProgress(name, pct))
         }
         if (target != null) {

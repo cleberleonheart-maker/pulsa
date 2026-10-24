@@ -134,7 +134,7 @@ object UpdateChecker {
             .setCancelable(false)
             .show()
         ThreadPool.postNetwork {
-            val target = downloadFromServer(context.applicationContext, latestName, versionUrl) { pct ->
+            val target = downloadFromServer(context.applicationContext, latestName, versionUrl, latestCode) { pct ->
                 ThreadPool.onUi {
                     runCatching {
                         bar.progress = pct
@@ -511,7 +511,13 @@ object UpdateChecker {
         }
     }
 
-    fun downloadFromServer(context: Context, latestName: String, versionApkUrl: String, onProgress: (Int) -> Unit): File? {
+    fun downloadFromServer(
+        context: Context,
+        latestName: String,
+        versionApkUrl: String,
+        expectedCode: Long,
+        onProgress: (Int) -> Unit
+    ): File? {
         // URL vinda do /version tem prioridade (ex.: Google Drive publico);
         // os servidores privados ficam de fallback.
         val urls = buildList {
@@ -526,7 +532,10 @@ object UpdateChecker {
         val target = File(context.cacheDir, "pulsa-$latestName.apk")
         // Se o APK desta versao ja foi baixado (ex.: o usuario nao chegou a confirmar a
         // instalacao), reaproveita em vez de baixar tudo de novo — assim a re-oferta e barata.
-        if (isApkFile(target)) return target
+        if (isApkFile(context, target, expectedCode)) return target
+        // Cache de uma tentativa anterior pode estar corrompido ou ser de outra versao
+        // (aconteceu com um APK errado publicado por engano): nao reaproveitar.
+        if (target.exists()) target.delete()
         for (u in urls) {
             try {
                 val conn = URL(u).openConnection() as HttpURLConnection
@@ -561,7 +570,7 @@ object UpdateChecker {
                     }
                 }
                 conn.disconnect()
-                val ok = isApkFile(target)
+                val ok = isApkFile(context, target, expectedCode)
                 CrashLogger.writeLog(context, "UPDATE: baixado de $u -> $target (${total}B, ok=$ok)")
                 if (ok) return target
                 if (target.exists()) target.delete()
@@ -574,10 +583,51 @@ object UpdateChecker {
         return null
     }
 
-    private fun isApkFile(f: File): Boolean {
+    /**
+     * Um APK só serve para instalar se for do mesmo pacote, da versão esperada e assinado
+     * com a mesma chave do app instalado. A checagem antiga só abria o ZIP — um APK
+     * errado publicado no servidor passava e o updater o reoferecia para sempre.
+     */
+    private fun isApkFile(context: Context, f: File, expectedCode: Long): Boolean {
         return try {
             if (f.length() < 1024) return false
-            java.util.zip.ZipFile(f).use { it.entries().hasMoreElements() }
+            if (!java.util.zip.ZipFile(f).use { it.entries().hasMoreElements() }) return false
+            val pm = context.packageManager
+            val info = if (android.os.Build.VERSION.SDK_INT >= 33) {
+                pm.getPackageArchiveInfo(f.absolutePath, android.content.pm.PackageManager.PackageInfoFlags.of(android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES.toLong()))
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getPackageArchiveInfo(f.absolutePath, android.content.pm.PackageManager.GET_SIGNATURES)
+            } ?: return false
+            if (info.packageName != context.packageName) return false
+            val code = if (android.os.Build.VERSION.SDK_INT >= 28) {
+                info.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                info.versionCode.toLong()
+            }
+            if (expectedCode > 0 && code != expectedCode) return false
+            val mine = if (android.os.Build.VERSION.SDK_INT >= 33) {
+                val own = pm.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES.toLong()))
+                own.signingInfo?.apkContentsSigners
+            } else if (android.os.Build.VERSION.SDK_INT >= 28) {
+                @Suppress("DEPRECATION")
+                val own = pm.getPackageInfo(context.packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+                @Suppress("DEPRECATION")
+                own.signatures
+            } else {
+                @Suppress("DEPRECATION")
+                val own = pm.getPackageInfo(context.packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+                @Suppress("DEPRECATION")
+                own.signatures
+            } ?: return false
+            val theirs = if (android.os.Build.VERSION.SDK_INT >= 33) {
+                info.signingInfo?.apkContentsSigners
+            } else {
+                @Suppress("DEPRECATION")
+                info.signatures
+            } ?: return false
+            mine.any { m -> theirs.any { t -> m.toCharsString() == t.toCharsString() } }
         } catch (t: Throwable) {
             false
         }
