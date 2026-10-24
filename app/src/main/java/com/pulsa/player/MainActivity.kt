@@ -321,7 +321,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         if (UiMode.isTv(this)) {
             bottomNav.isFocusable = true
             bottomNav.isFocusableInTouchMode = true
-            bottomNav.isDescendantFocusability = android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
+            bottomNav.descendantFocusability = android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
             bottomNav.requestFocus()
         }
         bottomNav.setOnItemSelectedListener { item ->
