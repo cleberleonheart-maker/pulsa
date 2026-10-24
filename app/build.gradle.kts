@@ -22,8 +22,8 @@ android {
         minSdk = 23
 targetSdk = 34
 
-        versionCode = 213
-        versionName = "5.12.16"
+        versionCode = 214
+        versionName = "5.12.17"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
@@ -91,6 +91,9 @@ dependencies {
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    // Google Cast
+    implementation("com.google.android.gms:play-services-cast-framework:21.4.0")
+    implementation("androidx.mediarouter:mediarouter:1.7.0")
     // Wear OS: Data Layer (mensagens do relógio para o `WearBridgeService`).
     implementation("com.google.android.gms:play-services-wearable:18.1.0")
     // Sessão "ouvir juntos": QR do código. O core gera a imagem no host; o embedded traz a

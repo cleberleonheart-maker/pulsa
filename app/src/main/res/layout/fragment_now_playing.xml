@@ -139,8 +139,7 @@
                 android:layout_width="20dp"
                 android:layout_height="1dp" />
 
-            <!-- Tocar na TV (item 290): envia a biblioteca para um Roku via servidor DLNA
-                 embutido e controla o Roku Media Player por ECP. -->
+            <!-- Tocar na TV / Cast (item 290): Roku via DLNA/ECP e Google Cast. -->
             <ImageView
                 android:id="@+id/np_tv"
                 android:layout_width="44dp"
@@ -150,6 +149,12 @@
                 android:padding="10dp"
                 android:src="@drawable/ic_tv"
                 android:tint="@color/text_secondary" />
+
+            <androidx.mediarouter.app.MediaRouteButton
+                android:id="@+id/np_cast"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:mediaRouteTypes="user" />
         </LinearLayout>
 
         <LinearLayout

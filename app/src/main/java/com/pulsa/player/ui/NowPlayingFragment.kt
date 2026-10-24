@@ -23,6 +23,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.pulsa.player.R
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.data.ArtLoader
+import com.google.android.gms.cast.framework.CastButtonFactory
+import com.google.android.gms.cast.framework.CastContext
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.PlaybackSpeeds
@@ -65,6 +67,7 @@ class NowPlayingFragment : Fragment() {
     private var speedRow: View? = null
     private var speedView: TextView? = null
     private var tvButton: ImageView? = null
+    private var castButton: androidx.mediarouter.app.MediaRouteButton? = null
     private var userSeeking = false
     private var lyricsPanel: View? = null
     private var lyricsList: androidx.recyclerview.widget.RecyclerView? = null
@@ -229,6 +232,11 @@ class NowPlayingFragment : Fragment() {
         tvButton = view.findViewById(R.id.np_tv)
         tvButton?.setOnClickListener { onTvClicked() }
         updateTvIcon(com.pulsa.player.media.tv.TvLink.state)
+        castButton = view.findViewById(R.id.np_cast)
+        try {
+            CastButtonFactory.setUpMediaRouteButton(requireContext(), castButton!!)
+        } catch (_: Throwable) {
+        }
     }
 
     private val tvListener: (com.pulsa.player.media.tv.TvLink.State) -> Unit = { state ->

@@ -60,6 +60,7 @@ import com.pulsa.player.media.VideoDeleter
 import com.pulsa.player.media.MusicEditor
 import com.pulsa.player.core.MotionControls
 import com.pulsa.player.core.Permissions
+import com.google.android.gms.cast.framework.CastContext
 import com.pulsa.player.core.Blacklist
 import com.pulsa.player.core.Settings
 import com.pulsa.player.sync.AccountRegister
@@ -273,6 +274,10 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
     private fun createMain(savedInstanceState: Bundle?) {
         appliedAccent = Settings.accent(this)
         setTheme(Settings.accentStyle(this))
+        try {
+            CastContext.getSharedInstance(this)
+        } catch (_: Throwable) {
+        }
         super.onCreate(savedInstanceState)
         Telemetry.log(this, "createMain: super.onCreate ok")
         setContentView(R.layout.activity_main)
