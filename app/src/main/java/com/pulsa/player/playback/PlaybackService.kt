@@ -42,6 +42,9 @@ import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
+import androidx.media3.cast.CastPlayer
+import com.google.android.gms.cast.framework.CastContext
+import com.pulsa.player.cast.SwitchablePlayer
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.Futures
@@ -166,6 +169,47 @@ class PlaybackService : MediaLibraryService() {
      */
     val playerView: Player? get() = player
 
+    /**
+     * O player de transporte: o wrapper da sessão. Sem Cast ele delega ao [player] local,
+     * então todo o resto do serviço continua funcionando igual; com Cast, os comandos
+     * (play/pause/seek/fila) vão para o receptor.
+     */
+    private val transport: Player? get() = if (::sessionPlayer.isInitialized) sessionPlayer else player
+
+    /**
+     * O `ExoPlayer` local não é o único a mudar o estado quando o Cast está no ar. Este
+     * listener só age durante o Cast (o listener local ignora eventos nesse período) para
+     * manter índice, notificação e fila alinhados com o que o receptor está tocando.
+     */
+    private val castListener = object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (!::sessionPlayer.isInitialized || !sessionPlayer.isCasting) return
+            when (playbackState) {
+                Player.STATE_READY -> onPlayerReady()
+                Player.STATE_ENDED -> onTrackEnded()
+            }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            if (!::sessionPlayer.isInitialized || !sessionPlayer.isCasting) return
+            syncExternalPlaybackState(isPlaying)
+        }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            if (!::sessionPlayer.isInitialized || !sessionPlayer.isCasting) return
+            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) return
+            adoptPlayerIndex()
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            if (!::sessionPlayer.isInitialized || !sessionPlayer.isCasting) return
+            // Arquivo baixado (content://) ou mídia que o receptor não alcança: retoma no
+            // player local em vez de pular a faixa. O listener local assume daqui.
+            CrashLogger.writeLog(applicationContext, "CAST: erro no receptor -> local ($error)")
+            sessionPlayer.switchToLocal()
+        }
+    }
+
     private var player: ExoPlayer? = null
     private var awaitingReady = false
     private var playerLink: ServicePlayerLink? = null
@@ -193,6 +237,8 @@ class PlaybackService : MediaLibraryService() {
     /** Folga mínima de fade ao alinhar: não adianta começar a batida faltando som pra sobrepor. */
     private val CROSSFADE_MIN_FADE_MS = 250L
     private lateinit var session: MediaLibraryService.MediaLibrarySession
+    private var castPlayer: CastPlayer? = null
+    private lateinit var sessionPlayer: SwitchablePlayer
     private lateinit var notificationManager: NotificationManager
     private var notificationChangedCallback: MediaNotification.Provider.Callback? = null
     private var largeIcon: android.graphics.Bitmap? = null
@@ -527,7 +573,7 @@ class PlaybackService : MediaLibraryService() {
     private fun crossfadeMs(): Int = Settings.crossfadeMs(Settings.crossfade(this))
 
     val currentSong: Song? get() = queue.getOrNull(index.coerceAtLeast(0))
-    val isPlaying: Boolean get() = player?.isPlaying == true
+    val isPlaying: Boolean get() = transport?.isPlaying == true
 
     /**
      * F2b — a pausa foi pedida por alguém, ou é só o motor entre uma faixa e outra?
@@ -562,7 +608,7 @@ class PlaybackService : MediaLibraryService() {
      * derrubando `playWhenReady`. Sem fila não há o que segurar.
      */
     val holdingForeground: Boolean
-        get() = player?.playWhenReady == true && queue.isNotEmpty()
+        get() = transport?.playWhenReady == true && queue.isNotEmpty()
     val audioSessionId: Int get() = player?.audioSessionId ?: 0
 
     /**
@@ -682,6 +728,15 @@ class PlaybackService : MediaLibraryService() {
         createChannel()
         SpatialAudio.sync(this)
         player = buildPlayer()
+        // O CastPlayer só é criado se o Cast estiver disponível no aparelho. Nenhuma falha
+        // aqui pode impedir o player local: o wrapper usa o ExoPlayer quando não há Cast.
+        try {
+            val ctx = CastContext.getSharedInstance(this)
+            castPlayer = CastPlayer(ctx).also { it.addListener(castListener) }
+        } catch (t: Throwable) {
+            CrashLogger.writeLog(applicationContext, "CAST: init falhou -> $t")
+        }
+        sessionPlayer = SwitchablePlayer(player!!, castPlayer)
         // Item 291 — já nasce com o teto certo: se o app subiu no 4G, o primeiro vídeo não
         // chega a baixar em 1080p antes do callback de rede corrigir.
         refreshDataSaver()
@@ -689,7 +744,7 @@ class PlaybackService : MediaLibraryService() {
         // que aceita `MediaLibrarySession.Callback`), e é o mesmo objeto do E3b. Não chamar
         // `.setCallback()` aqui: o `MediaSession.Builder` base devolveria o `MediaSession`
         // simples e a parte de biblioteca deixaria de existir.
-        session = MediaLibraryService.MediaLibrarySession.Builder(this, player!!, sessionCallback)
+        session = MediaLibraryService.MediaLibrarySession.Builder(this, sessionPlayer, sessionCallback)
             .setSessionActivity(
                 PendingIntent.getActivity(
                     this,
@@ -877,7 +932,7 @@ class PlaybackService : MediaLibraryService() {
             Settings.clearQueueState(this)
             return
         }
-        val pos = runCatching { player?.currentPosition ?: 0L }.getOrDefault(0L)
+        val pos = runCatching { transport?.currentPosition ?: 0L }.getOrDefault(0L)
         Settings.setQueueState(this, keys, savedIndex, pos)
         // O `queue_extras` é a sombra da fila, então grava no mesmo tick — sem a chave dele
         // na frente, um boot novo restauraria um rádio com o URL no lugar do nome.
@@ -988,6 +1043,9 @@ class PlaybackService : MediaLibraryService() {
         bgVoice = null
         playerLink?.let { Playback.detach(it) }
         if (::session.isInitialized) session.release()
+        castPlayer?.removeListener(castListener)
+        if (::sessionPlayer.isInitialized) sessionPlayer.releaseCast()
+        castPlayer = null
         // Item 130 — os dois players (principal + reserva do crossfade) são liberados e
         // perdem o listener próprio. Guardar o par em `playerListeners` evita esquecer a
         // instância que só existe enquanto um crossfade aconteceu.
@@ -1022,7 +1080,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun applyDanceParams() {
-        player?.let { p ->
+        transport?.let { p ->
             runCatching {
                 val song = currentSong
                 p.setPlaybackParameters(
@@ -1078,9 +1136,9 @@ class PlaybackService : MediaLibraryService() {
 
     fun applyDanceParamsForRefresh() {
         val playing = isPlaying
-        player?.pause()
+        transport?.pause()
         applyDanceParams()
-        if (playing) player?.play()
+        if (playing) transport?.play()
     }
 
     private fun updateEightD() {
@@ -1092,6 +1150,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun startEightD() {
+        if (::sessionPlayer.isInitialized && sessionPlayer.isCasting) return
         if (!Settings.audio8d(this)) return
         panAngle = 0.0
         mainHandler.removeCallbacks(panRunnable)
@@ -1152,9 +1211,9 @@ class PlaybackService : MediaLibraryService() {
         abB = -1L
     }
 
-    private fun currentPosMs(): Long = player?.currentPosition ?: 0L
+    private fun currentPosMs(): Long = transport?.currentPosition ?: 0L
 
-    private fun durationMs(): Long = player?.duration?.let { if (it > 0L) it else 0L } ?: 0L
+    private fun durationMs(): Long = transport?.duration?.let { if (it > 0L) it else 0L } ?: 0L
 
     private fun removeSleepFade() {
         sleepFadeRunnable?.let { sleepHandler.removeCallbacks(it) }
@@ -1263,7 +1322,7 @@ class PlaybackService : MediaLibraryService() {
      */
     fun enqueue(songs: List<Song>): Int {
         if (songs.isEmpty()) return 0
-        val p = player ?: return 0
+        val p = transport ?: return 0
         val fresh = QueueKey.filterNew(queue, songs)
         if (fresh.isEmpty()) return 0
         queue = queue + fresh
@@ -1303,7 +1362,7 @@ class PlaybackService : MediaLibraryService() {
      * nossa lista.
      */
     fun moveToEnd(videoType: Boolean, episodeType: Boolean): Song? {
-        val p = player ?: return null
+        val p = transport ?: return null
         val size = queue.size
         if (size < 2) return null
         val curIdx = index.coerceIn(0, size - 1)
@@ -1356,7 +1415,7 @@ class PlaybackService : MediaLibraryService() {
      * Devolve `true` quando a fila mudou.
      */
     fun moveQueueItem(from: Int, to: Int): Boolean {
-        val p = player ?: return false
+        val p = transport ?: return false
         val size = queue.size
         if (size < 2) return false
         val f = from.coerceIn(0, size - 1)
@@ -1400,7 +1459,7 @@ class PlaybackService : MediaLibraryService() {
      * pausado, como um clique em qualquer lista de músicas.
      */
     fun jumpTo(target: Int): Boolean {
-        val p = player ?: return false
+        val p = transport ?: return false
         if (queue.isEmpty()) return false
         val t = target.coerceIn(0, queue.size - 1)
         val ok = runCatching {
@@ -1459,7 +1518,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     fun play() {
-        val p = player ?: return
+        val p = transport ?: return
         // Ao voltar a tocar, o `saveResumeState` precisa valer de novo (grava a posição para o
         // resume). A pausa anterior já cumpriu o seu papel de não deixar o rádio voltar sozinho.
         pauseWasDeliberate = false
@@ -1472,7 +1531,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     fun pause() {
-        val p = player ?: return
+        val p = transport ?: return
         if (p.isPlaying) p.pause()
         saveResumeState()
         // Pausa deliberada (botão/fone/desconexão/erro fatal): não voltar com o rádio sozinho
@@ -1495,10 +1554,13 @@ class PlaybackService : MediaLibraryService() {
     fun stop() {
         cancelCrossfade()
         removeSleepFade()
-        val p = player ?: return
+        val p = transport ?: return
         runCatching { p.stop() }
         runCatching { p.clearMediaItems() }
         runCatching { p.setPlayWhenReady(false) }
+        // Com Cast no ar o `transport` é o receptor; o ExoPlayer local guarda uma cópia da
+        // fila e precisa ser zerado também, senão ela reaparece ao desconectar.
+        runCatching { player?.clearMediaItems() }
         queue = emptyList()
         index = -1
         positionMs = 0L
@@ -1518,7 +1580,7 @@ class PlaybackService : MediaLibraryService() {
 
     fun seekTo(ms: Long) {
         try {
-            player?.seekTo(ms)
+            transport?.seekTo(ms)
             emitProgress()
         } catch (e: Exception) {
         }
@@ -1527,9 +1589,10 @@ class PlaybackService : MediaLibraryService() {
     fun next() = advanceIndex(1)
 
     fun prev() {
-        val pos = player?.currentPosition ?: 0
+        val p = transport
+        val pos = p?.currentPosition ?: 0
         if (pos > 3000) {
-            player?.seekTo(0)
+            p?.seekTo(0)
             emitProgress()
             return
         }
@@ -1606,7 +1669,7 @@ class PlaybackService : MediaLibraryService() {
         resetAbLoop()
         try {
             if (song.path.isBlank()) throw IllegalStateException("sem arquivo")
-            val p = player ?: return
+            val p = transport ?: return
             awaitingReady = true
             p.setPlayWhenReady(false)
             p.setMediaItems(
@@ -1743,6 +1806,7 @@ class PlaybackService : MediaLibraryService() {
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (p !== player) return
+            if (::sessionPlayer.isInitialized && sessionPlayer.isCasting) return
             when (playbackState) {
                 Player.STATE_READY -> onPlayerReady()
                 Player.STATE_ENDED -> onTrackEnded()
@@ -1751,6 +1815,7 @@ class PlaybackService : MediaLibraryService() {
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             if (p !== player) return
+            if (::sessionPlayer.isInitialized && sessionPlayer.isCasting) return
             // E3b: comandos vindos de fora (SystemUI, fone, MediaController) tocam o player
             // direto pela sessão — aqui o serviço sincroniza o que a reprodução precisa fazer
             // por conta própria. Os chamadores internos passam por play()/pause(), e o set é
@@ -1760,6 +1825,7 @@ class PlaybackService : MediaLibraryService() {
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             if (p !== player) return
+            if (::sessionPlayer.isInitialized && sessionPlayer.isCasting) return
             // Repetição é tratada aqui dentro (`onTrackEnded` → `player.seekTo(0)`), e o
             // player nunca recebe `setRepeatMode`, então REPEAT não muda de faixa.
             if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) return
@@ -1768,6 +1834,7 @@ class PlaybackService : MediaLibraryService() {
 
         override fun onPlayerError(error: PlaybackException) {
             if (p !== player) return
+            if (::sessionPlayer.isInitialized && sessionPlayer.isCasting) return
             onTrackError()
         }
     }
@@ -1870,7 +1937,7 @@ class PlaybackService : MediaLibraryService() {
 
 
     private fun adoptPlayerIndex() {
-        val p = player ?: return
+        val p = transport ?: return
         if (queue.isEmpty()) return
         val at = p.currentMediaItemIndex
         if (at == index) return
@@ -2122,6 +2189,20 @@ class PlaybackService : MediaLibraryService() {
     private fun onPlayerReady() {
         if (!awaitingReady) return
         awaitingReady = false
+        // No Cast não há fade/volume/efeitos locais: o áudio está no receptor. Só mantém
+        // o estado (índice, notificação, tick) coerente com ele.
+        if (::sessionPlayer.isInitialized && sessionPlayer.isCasting) {
+            consecutiveErrors = 0
+            pendingAlarmRampMs = 0
+            val paused = startPaused
+            startPaused = false
+            if (!paused) runCatching { transport?.play() }
+            requestAudioFocus()
+            publishState()
+            scheduleTick()
+            applyDanceParams()
+            return
+        }
         val p = player ?: return
         consecutiveErrors = 0
         restoreSavedPosition(p)
@@ -2262,6 +2343,8 @@ class PlaybackService : MediaLibraryService() {
 
     private fun crossfadeEligible(): Boolean {
         if (crossfadeRunning) return false
+        // O crossfade é dois ExoPlayers e efeitos locais; no Cast ele não existe.
+        if (::sessionPlayer.isInitialized && sessionPlayer.isCasting) return false
         if (crossfadeMs() <= 0) return false
         val p = player ?: return false
         if (!p.isPlaying) return false
@@ -2360,7 +2443,8 @@ class PlaybackService : MediaLibraryService() {
         // A sessão prendeu a instância no construtor; sem este `setPlayer` os controladores
         // (notificação, fone, SystemUI, Android Auto) continuariam falando com o player que
         // acabou de sair.
-        runCatching { session.setPlayer(fresh) }
+        // A sessão está presa no wrapper; o novo ExoPlayer local entra por dentro dele.
+        if (::sessionPlayer.isInitialized) sessionPlayer.updateLocalPlayer(fresh)
         attachEffects()
         applyDanceParams()
         crossfadeRunning = false
@@ -2391,8 +2475,8 @@ class PlaybackService : MediaLibraryService() {
         if (SleepTimer.isActive() && SleepTimer.isEndOfTrack()) return
         if (abActive) {
             try {
-                player?.seekTo(abA)
-                player?.play()
+                transport?.seekTo(abA)
+                transport?.play()
                 positionMs = abA
                 emitProgress()
             } catch (e: Exception) {
@@ -2404,8 +2488,8 @@ class PlaybackService : MediaLibraryService() {
         }
         if (repeatOne) {
             try {
-                player?.seekTo(0)
-                player?.play()
+                transport?.seekTo(0)
+                transport?.play()
                 positionMs = 0L
                 emitProgress()
             } catch (e: Exception) {
@@ -2432,7 +2516,7 @@ class PlaybackService : MediaLibraryService() {
             stopEightD()
             pause()
             try {
-                player?.seekTo(0)
+                transport?.seekTo(0)
             } catch (e: Exception) {
             }
         }
@@ -2551,7 +2635,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun emitProgress() {
-        val p = player ?: return
+        val p = transport ?: return
         val pos = p.currentPosition
         val dur = p.duration.let { if (it > 0L) it else 0L }
         positionMs = pos
@@ -2654,7 +2738,7 @@ class PlaybackService : MediaLibraryService() {
             song.radioUrl?.let { Settings.setRadioResume(this, it, song.title, song.artist) }
             return
         }
-        val pos = player?.currentPosition ?: 0L
+        val pos = transport?.currentPosition ?: 0L
         if (pos <= 0) return
         if (song.isPodcast) {
             // F3: o progresso do episódio vai para o podcast, não para o `Settings`.
@@ -2723,7 +2807,7 @@ class PlaybackService : MediaLibraryService() {
         if (!Settings.lastFmKey(this).isNullOrBlank() &&
             Settings.lastFmUser(this).isNotBlank() && Settings.lastFmSession(this).isNotBlank()
         ) {
-            val dur = player?.duration?.let { if (it > 0L) it else 0L } ?: 0L
+            val dur = transport?.duration?.let { if (it > 0L) it else 0L } ?: 0L
             if (dur >= 30000 && positionMs >= dur * 0.5) {
                 LastFm.scrobble(applicationContext, song, dur)
             }
@@ -2731,7 +2815,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun publishMetadata(song: Song) {
-        val p = player ?: return
+        val p = transport ?: return
         // E3b: a metadata da sessão vem dos MediaItems do player; trocar o item da posição
         // corrente dispara o snapshot novo (SystemUI/notificação do sistema).
         runCatching {
@@ -2803,7 +2887,7 @@ class PlaybackService : MediaLibraryService() {
         // no Android 13+; aqui é a linha determinada que o MediaStyle já sabe desenhar)
         // acompanha a posição.
         val lyric = currentLyricLine(positionMs)
-        val dur = player?.duration?.takeIf { it > 0L } ?: 0L
+        val dur = transport?.duration?.takeIf { it > 0L } ?: 0L
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_music_note)

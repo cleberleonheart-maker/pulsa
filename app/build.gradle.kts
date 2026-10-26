@@ -94,6 +94,7 @@ dependencies {
     // Google Cast
     implementation("com.google.android.gms:play-services-cast-framework:21.4.0")
     implementation("androidx.mediarouter:mediarouter:1.7.0")
+    implementation("androidx.media3:media3-cast:1.3.1")
     // Wear OS: Data Layer (mensagens do relógio para o `WearBridgeService`).
     implementation("com.google.android.gms:play-services-wearable:18.1.0")
     // Sessão "ouvir juntos": QR do código. O core gera a imagem no host; o embedded traz a
