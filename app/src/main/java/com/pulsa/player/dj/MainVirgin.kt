@@ -995,6 +995,32 @@ class MainVirgin(
     }
 
     /**
+     * "próximo/anterior filme" só age quando há vídeo, stream ou episódio no motor.
+     * Sem isso, dizer "próximo filme" com uma música tocando pularia a música — o
+     * contrário do que a frase pede.
+     */
+    private fun mediaStepPlaying(): Boolean =
+        Playback.currentSong?.let { it.isVideo || it.isStream || it.isPodcast } == true
+
+    private fun virgVideoNext() {
+        if (!mediaStepPlaying()) {
+            virginSpeak(say(R.string.dj_voice_video_none))
+            return
+        }
+        virginSpeak(say(R.string.dj_voice_next))
+        Playback.next()
+    }
+
+    private fun virgVideoPrev() {
+        if (!mediaStepPlaying()) {
+            virginSpeak(say(R.string.dj_voice_video_none))
+            return
+        }
+        virginSpeak(say(R.string.dj_voice_prev))
+        Playback.prev()
+    }
+
+    /**
      * F2 · "Toca o filme X" — abre o vídeo **pelo nome**, não o que já está na fila.
      *
      * A busca é offline primeiro ([VirginMedia.findVideo], título do MediaStore) e só depois
@@ -1526,6 +1552,8 @@ class MainVirgin(
             "video_by_name" -> virgVideoByName(DjCommander.videoQuery(norm))
             "video_play" -> virgVideoPlay()
             "video_open" -> virgVideoOpen()
+            "video_next" -> virgVideoNext()
+            "video_prev" -> virgVideoPrev()
             "video_back" -> virgVideoBack()
             "video_pause" -> {
                 if (videoPlaying() == null) {

@@ -168,6 +168,25 @@ class DjCommanderTest {
     }
 
     @Test
+    fun action_video_next_prev() {
+        assertEquals("video_next", DjCommander.action(DjCommander.norm("virgin, proximo filme")))
+        assertEquals("video_next", DjCommander.action(DjCommander.norm("virgin, próximo vídeo")))
+        // "toca" não pode transformar o pedido em play/retomada.
+        assertEquals("video_next", DjCommander.action(DjCommander.norm("virgin, toca o proximo filme")))
+        assertEquals("video_next", DjCommander.action(DjCommander.norm("virgin, avanca o episodio")))
+        assertEquals("video_prev", DjCommander.action(DjCommander.norm("virgin, anterior filme")))
+        assertEquals("video_prev", DjCommander.action(DjCommander.norm("virgin, toca o filme anterior")))
+        // O "próximo filme" não pode ser confundido com nome de vídeo na busca.
+        assertNull(DjCommander.videoQuery(DjCommander.norm("virgin, toca o proximo filme")))
+        // Música continua no comando genérico.
+        assertEquals("next", DjCommander.action(DjCommander.norm("virgin, proxima musica")))
+        assertEquals("next", DjCommander.action(DjCommander.norm("virgin, proximo")))
+        // "pula o filme" continua sendo skip (com aprendizado), não next.
+        assertEquals("skip", DjCommander.action(DjCommander.norm("virgin, pula o filme")))
+        assertEquals("video_open", DjCommander.action(DjCommander.norm("virgin, volta pro filme")))
+    }
+
+    @Test
     fun action_video_by_name() {
         // Com nome depois do verbo+artigo+palavra de vídeo, vira busca na biblioteca/histórico
         // em vez de retomar o que já está tocando.

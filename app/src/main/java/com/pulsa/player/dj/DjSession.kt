@@ -632,6 +632,28 @@ class DjSession(
         speak(say(R.string.dj_voice_video_back, Helper.formatDuration(alvo)))
     }
 
+    /** Mesma regra da MainVirgin: "próximo/anterior filme" só age em vídeo, stream ou episódio. */
+    private fun mediaStepPlaying(): Boolean =
+        Playback.currentSong?.let { it.isVideo || it.isStream || it.isPodcast } == true
+
+    private fun virgVideoNext() {
+        if (!mediaStepPlaying()) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        speak(say(R.string.dj_voice_next))
+        Playback.next()
+    }
+
+    private fun virgVideoPrev() {
+        if (!mediaStepPlaying()) {
+            speak(say(R.string.dj_voice_video_none))
+            return
+        }
+        speak(say(R.string.dj_voice_prev))
+        Playback.prev()
+    }
+
     /**
      * F2 · "Toca o filme X" — abre o vídeo pelo nome (local primeiro, depois histórico de
      * streams). Mesma regra de [MainVirgin.virgVideoByName]: a consulta ao MediaStore/disco
@@ -1122,6 +1144,8 @@ class DjSession(
             "video_by_name" -> virgVideoByName(DjCommander.videoQuery(norm))
             "video_play" -> virgVideoPlay()
             "video_open" -> virgVideoOpen()
+            "video_next" -> virgVideoNext()
+            "video_prev" -> virgVideoPrev()
             "video_back" -> virgVideoBack()
             "video_pause" -> {
                 if (videoPlaying() == null) {

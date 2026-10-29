@@ -221,6 +221,19 @@ object DjCommander {
             (norm.contains("pausa") || norm.contains("pausar") || norm.contains("para") ||
                 norm.contains("parar") || norm.contains("pare") || norm.contains("stop"))
 
+    /**
+     * "próximo filme"/"próximo vídeo" é masculino — o `next` genérico só olha
+     * "proxima", então essas frases não eram reconhecidas. "pula o filme" fica de
+     * fora de propósito: continua sendo o skip com aprendizado.
+     */
+    private fun videoNextMatch(norm: String): Boolean =
+        videoWord(norm) &&
+            (norm.contains("proximo") || norm.contains("proxima") ||
+                norm.contains("avanca") || norm.contains("avancar"))
+
+    private fun videoPrevMatch(norm: String): Boolean =
+        videoWord(norm) && norm.contains("anterior")
+
 
     // ----- Fila universal: reordenação por voz ("joga o vídeo pro fim") -----
 
@@ -371,6 +384,9 @@ object DjCommander {
         // "volta pra tras no video" é retrocesso, não busca por nome: sem esta guarda o
         // "volta pra " virava marcador e o resto ("tras no video") era lido como título.
         if (videoSeekBackWord(norm)) return null
+        // "toca o próximo filme" contém verbo + artigo + palavra de vídeo, então sem esta
+        // guarda o "próximo filme" viraria o nome procurado e a biblioteca seria varrida.
+        if (videoNextMatch(norm) || videoPrevMatch(norm)) return null
         val markers = listOf(
             "toca ", "toque ", "tocar ", "abre ", "abrir ", "mostra ", "mostrar ",
             "continua ", "continuar ", "retoma ", "retomar ",
@@ -1434,6 +1450,10 @@ object DjCommander {
 
 
         videoQuery(norm) != null -> "video_by_name"
+        // Próximo/anterior antes de video_play: "toca o próximo filme" contém "toca" e
+        // seria retomado como play em vez de avançar.
+        videoNextMatch(norm) -> "video_next"
+        videoPrevMatch(norm) -> "video_prev"
         videoPlayMatch(norm) -> "video_play"
         videoOpenMatch(norm) -> "video_open"
         videoBackMatch(norm) -> "video_back"
@@ -1445,7 +1465,8 @@ object DjCommander {
         norm.contains("odia") || norm.contains("odeio") || norm.contains("nao gostei") -> "dislike"
         norm.contains("pula") || norm.contains("pular") || norm.contains("pule") ||
             norm.contains("skip") -> "skip"
-        norm.contains("proxima") || norm.contains("passa") || norm.contains("avanc") -> "next"
+        norm.contains("proximo") || norm.contains("proxima") ||
+            norm.contains("passa") || norm.contains("avanc") -> "next"
         resumeMatch(norm) -> "resume"
         playedYesterdayMatch(norm) -> "yesterday"
         norm.contains("anterior") || norm.contains("volta") || norm.contains("voltar") -> "prev"
