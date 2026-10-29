@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.pulsa.player.R
+import com.pulsa.player.util.TvFocus
 
 /**
  * Aba "Biblioteca": hub com chips (Álbuns, Artistas, Favoritas, Playlists,
@@ -57,7 +58,10 @@ class BibliotecaFragment : Fragment() {
         val v = view ?: return
         strip = v.findViewById(R.id.bibl_chip_strip)
         for ((key, chipId) in sections) {
-            v.findViewById<View>(chipId).setOnClickListener { switchSection(key) }
+            val chip = v.findViewById<View>(chipId)
+            chip.setOnClickListener { switchSection(key) }
+            // Foco com rolagem automática: os chips passam da largura da tela em TV.
+            TvFocus.track(chip)
         }
     }
 

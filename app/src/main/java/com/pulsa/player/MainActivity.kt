@@ -562,6 +562,14 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
                     Playback.toggle()
                     return true
                 }
+                KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                    Playback.next()
+                    return true
+                }
+                KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                    Playback.prev()
+                    return true
+                }
                 KeyEvent.KEYCODE_MENU -> {
                     if (Playback.queue.isNotEmpty()) {
                         QueueSheetFragment.show(supportFragmentManager)

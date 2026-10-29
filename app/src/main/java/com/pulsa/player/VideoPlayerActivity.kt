@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import android.app.PictureInPictureParams
 import android.view.GestureDetector
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -44,6 +45,8 @@ import com.pulsa.player.podcast.Chapter
 import com.pulsa.player.podcast.Chapters
 import com.pulsa.player.podcast.FeedParser
 import com.pulsa.player.ui.ChapterSheetFragment
+import com.pulsa.player.util.TvFocus
+import com.pulsa.player.util.UiMode
 import kotlin.math.abs
 
 /**
@@ -341,10 +344,15 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         // vídeo não reiniciar). Sem isto, girar deixaria os botões de 48dp minúsculos
         // numa tela de 2400px de largura.
         applyOrientation(resources.configuration.orientation)
+        setupTv()
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seek: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) currentText.text = Helper.formatDuration(progress.toLong())
+                if (!fromUser) return
+                currentText.text = Helper.formatDuration(progress.toLong())
+                // No D-pad o AbsSeekBar muda o progresso sem chamar start/stopTrackingTouch,
+                // então o seek precisa ser aplicado aqui — no toque quem aplica é o onStop.
+                if (!dragging) Playback.seekTo(progress.toLong())
             }
 
             override fun onStartTrackingTouch(seek: SeekBar) {
@@ -1085,6 +1093,80 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
     }
 
+    /**
+     * Modo TV: sem toque, os controles precisam ser alcançáveis pelo D-pad e as teclas de
+     * mídia do controle precisam agir direto, sem o usuário navegar até o botão.
+     *
+     * PiP e rotação não existem na TV: esconder evita dois botões mortos disputando foco.
+     */
+    private fun setupTv() {
+        if (!UiMode.isTv(this)) return
+        listOf(
+            R.id.vp_back, R.id.vp_prev, R.id.vp_next, R.id.vp_rewind, R.id.vp_forward,
+            R.id.vp_play, R.id.vp_subtitle, R.id.vp_speed, R.id.vp_chapters
+        ).forEach { id ->
+            findViewById<View>(id)?.let { v ->
+                TvFocus.apply(v)
+                v.isFocusable = true
+                v.isFocusableInTouchMode = true
+            }
+        }
+        TvFocus.apply(seekBar)
+        seekBar.isFocusable = true
+        seekBar.isFocusableInTouchMode = true
+        findViewById<View>(R.id.vp_pip)?.visibility = View.GONE
+        findViewById<View>(R.id.vp_rotate)?.visibility = View.GONE
+        playBtn.post { if (!isFinishing) playBtn.requestFocus() }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (!UiMode.isTv(this)) return super.onKeyDown(keyCode, event)
+        when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_PLAY,
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                togglePlayback()
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                step(1)
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                step(-1)
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                seekBy(SEEK_15_MS)
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                seekBy(-SEEK_15_MS)
+                return true
+            }
+            KeyEvent.KEYCODE_DPAD_LEFT,
+            KeyEvent.KEYCODE_DPAD_RIGHT,
+            KeyEvent.KEYCODE_DPAD_UP,
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            KeyEvent.KEYCODE_DPAD_CENTER,
+            KeyEvent.KEYCODE_ENTER,
+            KeyEvent.KEYCODE_NUMPAD_ENTER -> {
+                // Controles escondidos: o D-pad "acorda" a interface em vez de mover um foco
+                // invisível. Esquerda/direita mantém o salto de 15 s do toque duplo.
+                if (topBar.visibility != View.VISIBLE) {
+                    when (keyCode) {
+                        KeyEvent.KEYCODE_DPAD_LEFT -> seekBy(-SEEK_15_MS)
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> seekBy(SEEK_15_MS)
+                        else -> showControls()
+                    }
+                    playBtn.requestFocus()
+                    return true
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
     private fun toggleControls() {
         if (topBar.visibility == View.VISIBLE) hideControls() else showControls()
     }
@@ -1098,6 +1180,9 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
     private fun hideControls() {
         if (errorView.visibility == View.VISIBLE || !Playback.isPlaying) return
+        // Na TV o foco não pode sumir junto com a barra: se algum controle está focado, os
+        // controles ficam abertos até o usuário sair deles.
+        if (UiMode.isTv(this) && (topBar.findFocus() != null || bottomBar.findFocus() != null)) return
         topBar.visibility = View.GONE
         bottomBar.visibility = View.GONE
     }

@@ -186,6 +186,21 @@ class NowPlayingFragment : Fragment() {
                     v.isFocusableInTouchMode = true
                 }
             }
+            // Controles abaixo da dobra (sleep, A-B, EQ, letras, karaokê, playlist) também
+            // precisam de foco e de rolagem automática para serem alcançáveis no controle.
+            listOf(
+                R.id.np_seekbar, R.id.np_sleep, R.id.np_ambient, R.id.np_ab_a, R.id.np_ab_b,
+                R.id.np_ab_clear, R.id.np_eq, R.id.np_lyrics, R.id.np_karaoke,
+                R.id.np_add_playlist, R.id.np_tv
+            ).forEach { id ->
+                view.findViewById<View>(id)?.let { v ->
+                    com.pulsa.player.util.TvFocus.apply(v)
+                    v.isFocusable = true
+                    v.isFocusableInTouchMode = true
+                }
+            }
+            // Sem foco inicial o D-pad fica mudo até o usuário adivinhar uma direção.
+            playButton?.post { if (isAdded) playButton?.requestFocus() }
         }
 
         view.findViewById<View>(R.id.np_prev).setOnClickListener { Playback.prev() }
@@ -202,12 +217,11 @@ class NowPlayingFragment : Fragment() {
         likeView?.setOnClickListener { togglerLike() }
         seekBar?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    val song = Playback.currentSong
-                    if (song != null) {
-                        currentView?.text = Helper.formatDuration(progress.toLong() * song.durationMs / 1000)
-                    }
-                }
+                if (!fromUser) return
+                val song = Playback.currentSong ?: return
+                currentView?.text = Helper.formatDuration(progress.toLong() * song.durationMs / 1000)
+                // No D-pad o SeekBar muda sem start/stopTrackingTouch: aplica direto.
+                if (!userSeeking) Playback.seekTo(progress.toLong() * song.durationMs / 1000)
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {

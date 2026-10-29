@@ -261,6 +261,7 @@ class VirginHomeFragment : Fragment() {
                 Telemetry.log(ctx, "home skin=$key")
                 view?.findViewById<ViewGroup>(R.id.skin_row)?.let { buildSkinRow(it) }
             }
+            TvFocus.track(item)
             val lp = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT

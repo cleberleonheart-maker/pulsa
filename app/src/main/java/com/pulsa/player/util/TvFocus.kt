@@ -4,8 +4,10 @@ import android.graphics.Rect
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewParent
+import android.widget.EditText
 import android.widget.HorizontalScrollView
 import android.widget.ScrollView
+import android.widget.SeekBar
 import com.pulsa.player.R
 
 /**
@@ -28,13 +30,48 @@ object TvFocus {
 
     fun apply(itemView: View) {
         if (!UiMode.isTv(itemView.context)) return
-        itemView.isFocusable = true
-        itemView.isFocusableInTouchMode = true
-        itemView.isClickable = true
         // `foreground` (e nao `background`) de proposito: os itens ja carregam o proprio
         // fundo (bg_vcard, bg_song_normal/selected...). Trocar o background apagaria o
         // estado "ligado" do card e o fundo de selecionado da lista.
         itemView.foreground = itemView.context.getDrawable(R.drawable.bg_tv_focus)
+        track(itemView)
+    }
+
+    /**
+     * Prepara de uma vez todas as views focáveis e clicáveis de uma tela (botões, linhas de
+     * ajuste, atalhos). Para telas grandes demais para marcar item a item.
+     *
+     * Ficam de fora [EditText] e [SeekBar]: o primeiro já desenha o foco no cursor e o
+     * segundo precisa do D-pad livre para mudar o valor. Views que já têm `foreground`
+     * próprio (ripple de card) recebem só o foco e a rolagem, sem trocar o desenho.
+     */
+    fun applyTo(root: View?) {
+        val v = root ?: return
+        if (!UiMode.isTv(v.context)) return
+        v.post { decorateFocusables(v) }
+    }
+
+    private fun decorateFocusables(v: View) {
+        if (v is ViewGroup) {
+            for (i in 0 until v.childCount) decorateFocusables(v.getChildAt(i))
+        }
+        if (v.isFocusable && v.isClickable && v !is EditText && v !is SeekBar) {
+            if (v.foreground == null) {
+                v.foreground = v.context.getDrawable(R.drawable.bg_tv_focus)
+            }
+            track(v)
+        }
+    }
+
+    /**
+     * Só o foco e a rolagem, sem o `foreground` de destaque — para views que já desenham
+     * o próprio estado de foco no background/selector (chips, tabs).
+     */
+    fun track(itemView: View) {
+        if (!UiMode.isTv(itemView.context)) return
+        itemView.isFocusable = true
+        itemView.isFocusableInTouchMode = true
+        itemView.isClickable = true
         itemView.setOnFocusChangeListener { _, focused ->
             nudgeIntoView(itemView, focused)
         }

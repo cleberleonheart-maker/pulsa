@@ -1,5 +1,6 @@
 package com.pulsa.player
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.pulsa.player.model.Song
@@ -7,6 +8,7 @@ import com.pulsa.player.playback.Playback
 import com.pulsa.player.core.Settings
 import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.ui.NowPlayingFragment
+import com.pulsa.player.util.UiMode
 
 /**
  * Now Playing como Activity própria: abre por cima da navegação, tem toolbar
@@ -20,6 +22,9 @@ class NowPlayingActivity : AppCompatActivity(), Playback.Listener {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(Settings.accentStyle(this))
         super.onCreate(savedInstanceState)
+        // O manifest trava retrato no celular; em TV a tela é sempre paisagem e o retrato
+        // apareceria com tarjas pretas nas laterais.
+        if (UiMode.isTv(this)) requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         setContentView(R.layout.activity_now_playing)
         AnimatedBackground.apply(this)
 

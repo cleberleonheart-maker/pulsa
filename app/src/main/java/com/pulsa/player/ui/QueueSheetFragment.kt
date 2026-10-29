@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.doOnLayout
 import com.pulsa.player.util.TvFocus
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -57,6 +58,11 @@ class QueueSheetFragment : BottomSheetDialogFragment() {
         val current = Playback.index
         a.submit(Playback.queue, current)
         if (current in Playback.queue.indices) list.scrollToPosition(current)
+        if (com.pulsa.player.util.UiMode.isTv(requireContext())) {
+            // Dá foco ao primeiro item depois do layout: sem isso a lista abre focável,
+            // mas o D-pad não entra nela.
+            list.doOnLayout { TvFocus.focusFirst(list) }
+        }
 
         val callback = object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN,

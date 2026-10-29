@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <gradient
+                android:angle="0"
+                android:centerColor="@color/aurora_pink_a66"
+                android:endColor="@color/aurora_violet_a40"
+                android:startColor="@color/aurora_rose_a2E" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/primary_light" />
+        </shape>
+    </item>
     <item android:state_selected="true">
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />

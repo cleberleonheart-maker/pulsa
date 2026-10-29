@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.doOnLayout
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -14,6 +15,8 @@ import com.pulsa.player.R
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.podcast.Chapter
 import com.pulsa.player.ui.adapter.ChapterAdapter
+import com.pulsa.player.util.TvFocus
+import com.pulsa.player.util.UiMode
 
 /**
  * Os capítulos do episódio em reprodução, aberto pelo botão de listas na tela de reprodução.
@@ -45,6 +48,11 @@ class ChapterSheetFragment : BottomSheetDialogFragment() {
         })
         a.submit(chapters, positionMs, durationMs)
         list.adapter = a
+        if (UiMode.isTv(requireContext())) {
+            list.isFocusable = true
+            list.isFocusableInTouchMode = true
+            list.doOnLayout { TvFocus.focusFirst(list) }
+        }
     }
 
     override fun onStart() {
