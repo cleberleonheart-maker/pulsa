@@ -2,6 +2,7 @@ package com.pulsa.player
 
 import android.animation.ValueAnimator
 import android.content.Intent
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
@@ -23,6 +24,7 @@ import com.pulsa.player.dj.DjSession
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.audio.Ambient
+import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.Settings
 import com.pulsa.player.ui.VoiceCommands
 
@@ -39,7 +41,7 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
     private lateinit var voiceBtn: MaterialButton
     private lateinit var micBtn: MaterialButton
     private lateinit var configHint: TextView
-    private var avatarView: android.view.View? = null
+    private var avatarView: ImageView? = null
     private var avatarBob: ValueAnimator? = null
 
     private var triggered = false
@@ -327,7 +329,22 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         playBtn.setIconTintResource(if (playing) R.color.primary else R.color.text_primary)
         bindDeck(now, titleA, artistA, artA)
         bindDeck(next, titleB, artistB, artB)
+        updateAvatarSleep()
         animateAvatar(playing)
+    }
+
+    /** `.sleep` do avatar: timer ativo ou mix dormir (CALM) tocando. */
+    private fun updateAvatarSleep() {
+        val v = avatarView ?: return
+        val res = if (SleepTimer.isActive() || Playback.sleepMix) {
+            R.drawable.virgin_avatar_sleep
+        } else {
+            R.drawable.virgin_avatar_animated
+        }
+        if (v.tag == res) return
+        v.tag = res
+        v.setImageResource(res)
+        (v.drawable as? AnimatedVectorDrawable)?.start()
     }
 
     private fun stopAvatarBob() {

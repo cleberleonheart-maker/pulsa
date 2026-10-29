@@ -365,6 +365,8 @@ object Playback {
         link?.setRepeatOne(value)
     }
 
+    val sleepMix: Boolean get() = link?.sleepMix ?: false
+
     fun setSleepMix(on: Boolean) {
         link?.setSleepMix(on)
     }

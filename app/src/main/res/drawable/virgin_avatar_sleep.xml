@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/virgin_avatar">
+    <target
+        android:name="eyeL"
+        android:animation="@animator/eye_sleep" />
+    <target
+        android:name="eyeR"
+        android:animation="@animator/eye_sleep" />
+</animated-vector>

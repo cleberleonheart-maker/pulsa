@@ -65,7 +65,7 @@
 
 ### Ganhar do TAMI (o que o VectorDrawable não tem)
 
-- [ ] **Estados de verdade**: o TAMI tem `.playing` (dança + boca abrindo) e `.sleep` (olhos viram tracinho) via `tamiSpeakMood()`. No XML dá pra fazer com `AnimatedVectorDrawable` + `ObjectAnimator`, mas são N animações por estado, não uma
+- [~] **Estados de verdade**: o TAMI tem `.playing` (dança + boca abrindo) e `.sleep` (olhos viram tracinho) via `tamiSpeakMood()`. **`.sleep` FEITO**: `animator/eye_sleep.xml` + `virgin_avatar_sleep`/`avatar_masculino_sleep`/`avatar_vera_sleep`, acionado quando o `SleepTimer` está ativo ou o mix dormir (`Playback.sleepMix`) toca; falta o `.playing` (boca abrindo). No XML são N animações por estado, não uma
 - [ ] **Cabelo de verdade**: no TAMI é emoji com classe por personagem (`p.hair.cls`); no XML cada um teria que ser desenhado à mão
 
 ## DJ Virgin (mais natural)

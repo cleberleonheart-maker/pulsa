@@ -74,6 +74,7 @@ interface PlayerLink {
     fun setShuffle(value: Boolean)
     fun setRepeatAll(value: Boolean)
     fun setRepeatOne(value: Boolean)
+    val sleepMix: Boolean
     fun setSleepMix(on: Boolean)
     fun setMarkerA()
     fun setMarkerB()
@@ -138,6 +139,7 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
     override fun setShuffle(value: Boolean) = service.setShuffle(value)
     override fun setRepeatAll(value: Boolean) = service.setRepeatAll(value)
     override fun setRepeatOne(value: Boolean) = service.setRepeatOne(value)
+    override val sleepMix: Boolean get() = service.isSleepMix
     override fun setSleepMix(on: Boolean) = service.setSleepMix(on)
     override fun setMarkerA() = service.setMarkerA()
     override fun setMarkerB() = service.setMarkerB()

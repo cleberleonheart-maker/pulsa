@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Estado "dormindo" do avatar, como o `.sleep` do TAMI: o olho fecha no tracinho e
+    fica assim (o AnimatedVectorDrawable mantem o valor final). Reaproveita o mesmo
+    <group> do blink (eyeL/eyeR), porque so escala em grupo e animada. Nao tem
+    repeatCount: fecha uma vez e nao pisca.
+-->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="300"
+    android:propertyName="scaleY"
+    android:valueFrom="1"
+    android:valueTo="0.12"
+    android:valueType="floatType" />

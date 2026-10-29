@@ -1176,6 +1176,9 @@ class PlaybackService : MediaLibraryService() {
         if (value) repeatAll = false
     }
 
+    /** O mix dormir está ligado? O avatar usa isso para o estado `.sleep`. */
+    val isSleepMix: Boolean get() = sleepMix
+
     /** Liga/desliga o modo dormir (mix CALM): ao fechar o set, fade e pausa no lugar de repetir. */
     fun setSleepMix(on: Boolean) {
         if (sleepMix == on) return

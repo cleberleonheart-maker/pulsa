@@ -9,7 +9,9 @@ import android.view.View
 import android.view.animation.LinearInterpolator
 import com.pulsa.player.R
 import com.pulsa.player.audio.MusicVisualizer
+import com.pulsa.player.audio.SleepTimer
 import com.pulsa.player.core.Settings
+import com.pulsa.player.playback.Playback
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -28,6 +30,7 @@ class DancingVirginView @JvmOverloads constructor(
     private var sm = 0f
     private var phase = 0f
     private var animator: ValueAnimator? = null
+    private var sleeping = false
 
     /** Força um gênero específico; null segue o avatar ativo em [Settings]. */
     private var requestedMale: Boolean? = null
@@ -82,12 +85,24 @@ class DancingVirginView @JvmOverloads constructor(
         sm += (target - sm) * 0.25f
     }
 
+    /** Estado `.sleep` do avatar: timer ativo ou mix dormir (CALM) tocando. */
+    private fun isSleeping(): Boolean = SleepTimer.isActive() || Playback.sleepMix
+
     private fun refreshAvatar() {
         val style = forceStyle ?: Settings.avatarStyle(context)
-        val res = when (style) {
-            Settings.VICTOR -> R.drawable.avatar_masculino_animated
-            Settings.VERA -> R.drawable.avatar_vera_animated
-            else -> R.drawable.virgin_avatar_animated
+        sleeping = isSleeping()
+        val res = if (sleeping) {
+            when (style) {
+                Settings.VICTOR -> R.drawable.avatar_masculino_sleep
+                Settings.VERA -> R.drawable.avatar_vera_sleep
+                else -> R.drawable.virgin_avatar_sleep
+            }
+        } else {
+            when (style) {
+                Settings.VICTOR -> R.drawable.avatar_masculino_animated
+                Settings.VERA -> R.drawable.avatar_vera_animated
+                else -> R.drawable.virgin_avatar_animated
+            }
         }
         val fresh = resources.getDrawable(res, null) as AnimatedVectorDrawable
         avatar?.stop()
@@ -104,6 +119,7 @@ class DancingVirginView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        if (isSleeping() != sleeping) refreshAvatar()
         val a = avatar ?: return
         val cw = width / 2f
         val cy = height * 0.52f
