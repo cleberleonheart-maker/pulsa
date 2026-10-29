@@ -775,6 +775,7 @@
     <string name="podcast_summary_desc">When an episode ends, Virgin sums up "what stuck" and rolls into the next one</string>
     <string name="chapters">Chapters</string>
     <string name="chapters_empty">This episode has no chapters.</string>
+    <string name="video_chapters_empty">This video has no chapters.</string>
 
     <string name="tami_radio_title">Virgin Radio</string>
     <string name="tami_radio_badge">Virgin radio mode — all of your songs, non-stop</string>

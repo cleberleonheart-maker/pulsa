@@ -40,6 +40,10 @@ import com.pulsa.player.model.Video
 import com.pulsa.player.model.toSong
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.PlaybackSpeeds
+import com.pulsa.player.podcast.Chapter
+import com.pulsa.player.podcast.Chapters
+import com.pulsa.player.podcast.FeedParser
+import com.pulsa.player.ui.ChapterSheetFragment
 import kotlin.math.abs
 
 /**
@@ -61,6 +65,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         private const val EXTRA_STREAM_URL = "stream_url"
         private const val EXTRA_STREAM_TITLE = "stream_title"
         private const val EXTRA_STREAM_CAPTIONS = "stream_captions"
+        private const val EXTRA_STREAM_DESCRIPTION = "stream_description"
         private const val EXTRA_ATTACH = "video_attach"
         private const val HIDE_DELAY = 3000L
 
@@ -110,7 +115,8 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             captions: List<PeerTube.Caption> = emptyList(),
             uuid: String = "",
             pageUrl: String = "",
-            thumbnail: String = ""
+            thumbnail: String = "",
+            description: String = ""
         ) {
             // F2 · registra no histórico aqui, e não em cada chamador: este é o único ponto
             // por onde um stream (ou o download dele) vira reprodução, então "toca o filme X"
@@ -122,12 +128,14 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
                     url = url,
                     pageUrl = pageUrl,
                     uuid = uuid,
-                    thumbnail = thumbnail
+                    thumbnail = thumbnail,
+                    description = description
                 )
             )
             val intent = Intent(context, VideoPlayerActivity::class.java)
                 .putExtra(EXTRA_STREAM_URL, url)
                 .putExtra(EXTRA_STREAM_TITLE, title)
+                .putExtra(EXTRA_STREAM_DESCRIPTION, description)
             if (captions.isNotEmpty()) {
                 intent.putStringArrayListExtra(
                     EXTRA_STREAM_CAPTIONS,
@@ -188,6 +196,10 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
      */
     private var streamUrl: String? = null
     private var streamTitle: String = ""
+    /** Descrição do PeerTube: fonte dos capítulos do vídeo (o mesmo parser do podcast). */
+    private var streamDescription: String = ""
+    /** Índice já extraído da descrição; vazio esconde o botão de capítulos. */
+    private var videoChapters: List<Chapter> = emptyList()
     private var resumeQueue: List<Song> = emptyList()
     private var resumeIndex = -1
     private var resumePlaying = false
@@ -313,6 +325,14 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
         speedView = findViewById(R.id.vp_speed)
         speedView.setOnClickListener { cycleSpeed() }
+
+        // Capítulos do vídeo longo: só aparece quando a descrição trouxe um índice de verdade
+        // (dois carimbos em ordem), então um vídeo local não ganha um botão que só daria erro.
+        // A visibilidade é decidida quando os extras são lidos, mais abaixo.
+        findViewById<View>(R.id.vp_chapters).apply {
+            visibility = View.GONE
+            setOnClickListener { showChapters() }
+        }
 
         findViewById<ImageButton>(R.id.vp_rotate).setOnClickListener { toggleOrientation() }
 
@@ -457,6 +477,10 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             streamUrl = url
             streamTitle = intent.getStringExtra(EXTRA_STREAM_TITLE).orEmpty()
                 .ifBlank { getString(R.string.stream_default_title) }
+            streamDescription = intent.getStringExtra(EXTRA_STREAM_DESCRIPTION).orEmpty()
+            videoChapters = Chapters.parse(FeedParser.stripHtml(streamDescription))
+            findViewById<View>(R.id.vp_chapters)?.visibility =
+                if (videoChapters.isEmpty()) View.GONE else View.VISIBLE
             videoSongs = listOf(
                 Song(
                     id = streamId(url),
@@ -648,7 +672,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         val lado = if (paisagem) 64.dp else 48.dp
         for (id in intArrayOf(
             R.id.vp_back, R.id.vp_pip, R.id.vp_rotate, R.id.vp_prev, R.id.vp_next,
-            R.id.vp_rewind, R.id.vp_forward, R.id.vp_play
+            R.id.vp_rewind, R.id.vp_forward, R.id.vp_play, R.id.vp_chapters
         )) {
             findViewById<View>(id)?.let { b ->
                 b.layoutParams = b.layoutParams.apply { width = lado; height = lado }
@@ -727,6 +751,23 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         )
         // Os controles precisam aparecer, senão o número troca sozinho e parece não ter
         // acontecido nada.
+        showControls()
+    }
+
+    /**
+     * Capítulos do vídeo longo: a descrição do PeerTube já traz o índice "00:00 ...", então
+     * o parser é o mesmo do podcast ([Chapters]). Tocar num capítulo usa o
+     * [ChapterSheetFragment] existente, que pula direto com `Playback.seekTo`.
+     */
+    private fun showChapters() {
+        val chapters = videoChapters
+        if (chapters.isEmpty()) {
+            Toast.makeText(this, R.string.video_chapters_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val duration = Playback.currentSong?.durationMs?.takeIf { it > 0L }
+            ?: seekBar.max.toLong()
+        ChapterSheetFragment.show(supportFragmentManager, chapters, Playback.position, duration)
         showControls()
     }
 

@@ -775,6 +775,7 @@
     <string name="podcast_summary_desc">Al terminar un episodio, la Virgin resume "lo que quedó" y enlaza con el siguiente</string>
     <string name="chapters">Capítulos</string>
     <string name="chapters_empty">Este episodio no tiene capítulos.</string>
+    <string name="video_chapters_empty">Este video no tiene capítulos.</string>
 
     <string name="tami_radio_title">Radio Virgin</string>
     <string name="tami_radio_badge">Modo radio de Virgin — todas tus canciones, sin parar</string>

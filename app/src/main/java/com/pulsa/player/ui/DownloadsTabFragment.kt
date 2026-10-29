@@ -22,6 +22,7 @@ import com.pulsa.player.VideoPlayerActivity
 
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.Settings
+import com.pulsa.player.data.StreamHistory
 
 
 import com.pulsa.player.media.DownloadService
@@ -281,7 +282,12 @@ class DownloadsTabFragment : Fragment() {
         // começar, então confirmava uma coisa que ainda não tinha acontecido.
         VideoPlayerActivity.startStream(
             ctx, Uri.fromFile(file).toString(), item.title,
-            uuid = item.id, pageUrl = item.pageUrl
+            uuid = item.id, pageUrl = item.pageUrl,
+            // O arquivo baixado não guarda a descrição, mas o histórico do stream guarda:
+            // é dela que saem os capítulos, e perder isso ao baixar seria regressão.
+            description = StreamHistory.list(ctx)
+                .firstOrNull { it.uuid == item.id || it.url == item.url }
+                ?.description.orEmpty()
         )
     }
 

@@ -78,7 +78,13 @@ object PeerTube {
         /** Instância onde a busca foi feita — base do `thumbnailPath` relativo. */
         val instanceRoot: String = DEFAULT_INSTANCE,
         /** Legendas da API. Vazio na maioria dos vídeos: só quem enviou legenda tem. */
-        val captions: List<Caption> = emptyList()
+        val captions: List<Caption> = emptyList(),
+        /**
+         * Descrição do vídeo. É onde quase todo PeerTube publica o índice de capítulos
+         * ("00:00 Abertura / 03:20 ..."), então a tela de vídeo reaproveita o mesmo
+         * [com.pulsa.player.podcast.Chapters] do podcast em vez de inventar um formato novo.
+         */
+        val description: String = ""
     )
 
     /**
@@ -163,7 +169,8 @@ object PeerTube {
             durationSec = obj.optInt("duration", 0),
             pageUrl = pageUrl,
             thumbnail = thumbnailOf(obj, instanceRoot),
-            instanceRoot = instanceRoot
+            instanceRoot = instanceRoot,
+            description = obj.optString("description")
         )
     }
 
@@ -245,7 +252,8 @@ object PeerTube {
             downloadUrl = fileUrl.ifBlank { null },
             durationSec = obj.optInt("duration", fallback.durationSec),
             thumbnail = thumbnailOf(obj, fallback.instanceRoot) ?: fallback.thumbnail,
-            captions = captionsOf(obj, fallback.instanceRoot)
+            captions = captionsOf(obj, fallback.instanceRoot),
+            description = obj.optString("description").ifBlank { fallback.description }
         )
     }
 

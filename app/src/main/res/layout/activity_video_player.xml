@@ -225,6 +225,16 @@
                 android:textColor="@color/white"
                 android:textSize="13sp"
                 android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/vp_chapters"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/chapters"
+                android:padding="10dp"
+                android:src="@drawable/ic_chapters"
+                android:tint="@color/white" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

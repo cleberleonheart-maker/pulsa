@@ -250,7 +250,8 @@ class VideosTabFragment : Fragment() {
             dialog?.dismiss()
             VideoPlayerActivity.startStream(
                 ctx, ready, item.title, item.captions,
-                uuid = item.uuid, pageUrl = item.pageUrl, thumbnail = item.thumbnail.orEmpty()
+                uuid = item.uuid, pageUrl = item.pageUrl, thumbnail = item.thumbnail.orEmpty(),
+                description = item.description
             )
             return
         }
@@ -266,7 +267,8 @@ class VideosTabFragment : Fragment() {
             VideoPlayerActivity.startStream(
                 ctx, url, resolved.title, resolved.captions,
                 uuid = resolved.uuid, pageUrl = resolved.pageUrl,
-                thumbnail = resolved.thumbnail.orEmpty()
+                thumbnail = resolved.thumbnail.orEmpty(),
+                description = resolved.description
             )
         }
     }

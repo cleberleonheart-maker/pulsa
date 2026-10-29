@@ -24,6 +24,11 @@ object StreamHistory {
         val pageUrl: String = "",
         val uuid: String = "",
         val thumbnail: String = "",
+        /**
+         * Descrição original (PeerTube). Guardada porque é dela que saem os capítulos:
+         * sem isso, reabrir pelo histórico perderia o índice que a busca já tinha trazido.
+         */
+        val description: String = "",
         val at: Long = 0L
     )
 
@@ -48,6 +53,7 @@ object StreamHistory {
                 pageUrl = o.optString("pageUrl"),
                 uuid = o.optString("uuid"),
                 thumbnail = o.optString("thumbnail"),
+                description = o.optString("description"),
                 at = o.optLong("at", 0L)
             )
         }
@@ -77,6 +83,7 @@ object StreamHistory {
                     .put("pageUrl", e.pageUrl)
                     .put("uuid", e.uuid)
                     .put("thumbnail", e.thumbnail)
+                    .put("description", e.description)
                     .put("at", e.at)
             )
         }

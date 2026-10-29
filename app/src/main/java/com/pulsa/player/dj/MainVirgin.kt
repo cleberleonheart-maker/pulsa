@@ -1055,7 +1055,7 @@ class MainVirgin(
                         VideoPlayerActivity.startStream(
                             activity, stream.url, stream.title,
                             uuid = stream.uuid, pageUrl = stream.pageUrl,
-                            thumbnail = stream.thumbnail
+                            thumbnail = stream.thumbnail, description = stream.description
                         )
                     }
                     else -> {
