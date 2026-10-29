@@ -105,6 +105,8 @@ class PerfilActivity : AppCompatActivity() {
 
         setupAccentSwatches()
         findAccentValue().text = getString(Settings.accentLabelRes(Settings.accent(this)))
+
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
     }
 
     override fun onStart() {
@@ -200,6 +202,9 @@ class PerfilActivity : AppCompatActivity() {
                     Settings.setAccent(this@PerfilActivity, key)
                     recreate()
                 }
+                // O swatch é criado em código sem focusable: no controle ele nem era
+                // alcançável, então a troca de accent ficava impossível na TV.
+                com.pulsa.player.util.TvFocus.track(this)
             }
             row.addView(dot)
         }

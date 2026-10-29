@@ -48,13 +48,18 @@ class RewindActivity : AppCompatActivity() {
         container = findViewById(R.id.rw_container)
         styleTabs()
         load()
+
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
     }
 
     private fun setupTab(id: Int, d: Int) {
-        findViewById<View>(id).setOnClickListener {
-            days = d
-            styleTabs()
-            load()
+        findViewById<View>(id).apply {
+            setOnClickListener {
+                days = d
+                styleTabs()
+                load()
+            }
+            com.pulsa.player.util.TvFocus.apply(this)
         }
     }
 
@@ -323,6 +328,7 @@ class RewindActivity : AppCompatActivity() {
         row.addView(play)
 
         row.setOnClickListener { playTop(index, top) }
+        com.pulsa.player.util.TvFocus.apply(row)
         return row
     }
 

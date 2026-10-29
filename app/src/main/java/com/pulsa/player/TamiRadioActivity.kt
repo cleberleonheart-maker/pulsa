@@ -41,6 +41,8 @@ class TamiRadioActivity : AppCompatActivity() {
             if (!isFinishing && !isDestroyed) render()
         }
         render()
+
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
     }
 
     override fun onDestroy() {

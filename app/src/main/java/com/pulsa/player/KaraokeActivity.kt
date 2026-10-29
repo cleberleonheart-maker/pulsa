@@ -67,6 +67,8 @@ class KaraokeActivity : AppCompatActivity(), Playback.Listener {
             Playback.toggle()
             render()
         }
+
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
     }
 
     override fun onStart() {

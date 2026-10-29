@@ -170,6 +170,8 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         findViewById<MaterialButton>(R.id.dj_btn_commands).setOnClickListener { showCommandsDialog() }
 
         session.create(savedInstanceState)
+
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
     }
 
     override fun onStart() {

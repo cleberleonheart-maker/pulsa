@@ -107,6 +107,8 @@ class LoginActivity : AppCompatActivity() {
         forgot.setOnClickListener { confirmReset() }
         findViewById<TextView>(R.id.btn_login_guest).setOnClickListener { enterGuest() }
 
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
+
         animateEntrance()
     }
 

@@ -101,6 +101,8 @@ class DriveActivity : AppCompatActivity(), Playback.Listener {
         voiceBtn.setOnClickListener { session.toggleVoice() }
 
         session.create(savedInstanceState)
+
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
     }
 
     override fun onStart() {

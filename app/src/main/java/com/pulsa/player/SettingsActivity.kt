@@ -163,6 +163,8 @@ class SettingsActivity : AppCompatActivity() {
         bindAccount()
 
         sectionNav = SettingsSectionNav(this).also { it.setup() }
+
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
     }
 
     /**

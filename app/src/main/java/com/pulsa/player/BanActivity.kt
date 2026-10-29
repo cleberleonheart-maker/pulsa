@@ -61,6 +61,8 @@ class BanActivity : AppCompatActivity() {
         } else {
             showLogin()
         }
+
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
     }
 
     private fun showLogin() {
@@ -195,6 +197,7 @@ class BanActivity : AppCompatActivity() {
         btn.gravity = Gravity.CENTER
         btn.setPadding(dp(16), dp(9), dp(16), dp(9))
         btn.setOnClickListener { confirmBan(d) }
+        com.pulsa.player.util.TvFocus.apply(btn)
         row.addView(btn)
 
         return row

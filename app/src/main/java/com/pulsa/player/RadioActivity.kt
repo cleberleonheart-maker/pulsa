@@ -60,6 +60,8 @@ class RadioActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_radio_back).setOnClickListener { finish() }
         rebuildList()
         renderStatus()
+
+        com.pulsa.player.util.TvFocus.applyTo(findViewById(android.R.id.content))
     }
 
     override fun onStart() {
@@ -164,6 +166,8 @@ class RadioActivity : AppCompatActivity() {
             listContainer.addView(row)
             rowByIndex.add(row)
         }
+        // A lista é reconstruída a cada mudança; o foco precisa ser reaplicado junto.
+        com.pulsa.player.util.TvFocus.applyTo(listContainer)
     }
 
     /**
