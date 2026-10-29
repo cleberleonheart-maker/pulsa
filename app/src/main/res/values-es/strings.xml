@@ -30,10 +30,18 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.6):
- → DJ E IA
- • Cuando Gemini limita las solicitudes de la clave, la app deja de insistir durante 60 segundos y vuelve a las sugerencias sin conexión.
- • Si cambias la clave en Ajustes › DJ/IA, el acceso se desbloquea al instante.</string>
+    <string name="changelog">Novedades de esta versión (5.12.22):
+ → TV Y MANDO
+ • Modo TV de 10 pies en la app y en la versión web: foco con el mando, navegación con flechas y desplazamiento automático.
+ • Reproductor de vídeo con teclas multimedia, avance de 15 s, capítulos y controles que no desaparecen con el foco.
+ • Reproduciendo ahora, cola, búsqueda y pantallas de ajustes, perfil, radio y DJ navegables con el mando; búsqueda por voz en TV.
+ → CAST Y MEDIOS
+ • Chromecast: botón en Reproduciendo ahora y cambio automático al reproductor local si la TV no responde.
+ • Descarga y "reproducir por stream" con API oficial (Apple Music/iTunes) y radio HLS/DASH incluso sin extensión en la URL.
+ → PODCAST Y DJ
+ • Saltar anuncios hablados del podcast (transcripción; opción desactivada por defecto).
+ • Avatar durmiendo con el temporizador y voz para "película siguiente/anterior".
+ • El actualizador comprueba firma y código antes de instalar.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
