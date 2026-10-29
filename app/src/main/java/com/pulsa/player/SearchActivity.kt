@@ -28,6 +28,7 @@ import com.pulsa.player.ui.adapter.SearchResult
 import com.pulsa.player.ui.AnimatedBackground
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.util.TvFocus
 
 /**
  * F5 — a busca unificada.
@@ -126,11 +127,13 @@ class SearchActivity : AppCompatActivity(), Playback.Listener {
 
     private fun setUpFilters() {
         for ((key, chipId) in FILTER_CHIPS) {
-            findViewById<View>(chipId).setOnClickListener {
+            val chip = findViewById<View>(chipId)
+            chip.setOnClickListener {
                 typeFilter = key
                 syncFilterChips()
                 filter(lastQuery)
             }
+            TvFocus.track(chip)
         }
         syncFilterChips()
     }
@@ -148,11 +151,13 @@ class SearchActivity : AppCompatActivity(), Playback.Listener {
      */
     private fun setUpContentFilters() {
         for ((key, chipId) in CONTENT_CHIPS) {
-            findViewById<View>(chipId).setOnClickListener {
+            val chip = findViewById<View>(chipId)
+            chip.setOnClickListener {
                 contentFilter = key
                 syncContentChips()
                 filter(lastQuery)
             }
+            TvFocus.track(chip)
         }
         syncContentChips()
     }
