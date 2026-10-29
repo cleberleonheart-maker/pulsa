@@ -9,18 +9,11 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.22):
- → TV E COMANDO
- • Modo TV 10 pés na app e na versão web: foco com o comando, navegação por setas e deslocamento automático.
- • Leitor de vídeo com teclas de multimédia, avanço de 15 s, capítulos e controlos que não desaparecem com o foco.
- • A tocar agora, fila, busca e ecrãs de definições, perfil, rádio e DJ navegáveis pelo comando; busca por voz na TV.
- → CAST E MÉDIA
- • Chromecast: botão em A tocar agora e troca automática para o leitor local se a TV não responder.
- • Download e "tocar por stream" com API oficial (Apple Music/iTunes) e rádio HLS/DASH mesmo sem extensão no URL.
- → PODCAST E DJ
- • Saltar anúncios falados no podcast (transcrição; opção desligada por predefinição).
- • Avatar a dormir com o temporizador e voz para "filme seguinte/anterior".
- • Atualizador verifica assinatura e código antes de instalar.</string>
+    <string name="changelog">Novidades desta versão (5.12.23):
+ → CAST
+ • O Chromecast passa a tocar a biblioteca local: mídia e capa através de um servidor HTTP no aparelho, com fila e posição preservadas.
+ • Capa do álbum/vídeo e do episódio na TV; a fila continua a funcionar ao adicionar ou trocar faixas durante o Cast.
+ • Ao desligar, o som volta para o telemóvel na mesma faixa e posição.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

@@ -33,18 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.22):
- → TV E CONTROLE
- • Modo TV 10 pés no app e na versão web: foco com o controle, navegação por setas e rolagem automática.
- • Player de vídeo com teclas de mídia, seek de 15 s, capítulos e controles que não somem com o foco.
- • Tocando agora, fila, busca e as telas de ajustes, perfil, rádio e DJ agora são navegáveis pelo controle; busca por voz na TV.
- → CAST E MÍDIA
- • Chromecast: botão no Tocando agora e troca automática para o player local se a TV não responder.
- • Download e "tocar por stream" com API oficial (Apple Music/iTunes) e rádio HLS/DASH mesmo sem extensão na URL.
- → PODCAST E DJ
- • Pular propagandas faladas no podcast (transcrição; opção desligada por padrão).
- • Avatar dormindo junto do timer e voz para "próximo/anterior filme".
- • Atualizador confere assinatura e código antes de instalar.</string>
+    <string name="changelog">Novidades desta versão (5.12.23):
+ → CAST
+ • Chromecast agora toca a biblioteca local: mídia e capa passam por um servidor HTTP no aparelho, com fila e posição preservadas.
+ • Capa do álbum/vídeo e do episódio na TV; a fila continua funcionando ao adicionar ou trocar faixas durante o Cast.
+ • Ao desconectar, o som volta para o celular na mesma faixa e posição.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>

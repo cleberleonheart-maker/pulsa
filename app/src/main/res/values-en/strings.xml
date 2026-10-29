@@ -30,18 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.22):
- → TV AND REMOTE
- • 10-foot TV mode in the app and on the web: remote-friendly focus, arrow navigation and auto-scroll.
- • Video player with media keys, 15 s seek, chapters and controls that stay visible while focused.
- • Now Playing, queue, search and the settings, profile, radio and DJ screens navigable by remote; voice search on TV.
- → CAST AND MEDIA
- • Chromecast: button in Now Playing and automatic fallback to the local player if the TV does not respond.
- • Download and "play by stream" through official APIs (Apple Music/iTunes) and HLS/DASH radio even without a file extension.
- → PODCAST AND DJ
- • Skip spoken podcast ads (transcription; off by default).
- • Sleeping avatar with the sleep timer and voice for "next/previous movie".
- • Updater checks signature and version code before installing.</string>
+    <string name="changelog">What is new (5.12.23):
+ → CAST
+ • Chromecast now plays your local library: media and artwork are served over HTTP from the phone, keeping queue and position.
+ • Album/video and episode artwork on the TV; the queue keeps working when you add or change tracks while casting.
+ • Disconnecting returns audio to the phone on the same track and position.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
