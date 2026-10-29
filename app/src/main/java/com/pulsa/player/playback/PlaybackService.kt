@@ -1706,9 +1706,11 @@ class PlaybackService : MediaLibraryService() {
 
     private fun mediaItemFor(song: Song): MediaItem {
         val streamUrl = song.streamUrl
+        val radioUrl = song.radioUrl
+        val remoteUrl = streamUrl ?: radioUrl
         val podcastUrl = podcastUrlOf(song)
         val uri = song.videoId?.let { VideoLibrary.contentUri(it) }
-            ?: song.radioUrl?.let(Uri::parse)
+            ?: radioUrl?.let(Uri::parse)
             ?: podcastUrl?.let { Uri.parse(it) }
             ?: streamUrl?.let(Uri::parse)
             ?: Uri.fromFile(File(song.path))
@@ -1716,8 +1718,9 @@ class PlaybackService : MediaLibraryService() {
             .setUri(uri)
             // F2: HLS/DASH na URL sem extensão (o Media3 1.3.1 só infere pela extensão, ver
             // StreamKind) e nenhum mime type para arquivo local — aí o Media3 infere como
-            // sempre. `setMimeType(null)` é o mesmo que não chamar.
-            .setMimeType(streamUrl?.let { StreamKind.mimeTypeOf(it) })
+            // sempre. `setMimeType(null)` é o mesmo que não chamar. Vale para rádio também:
+            // emissoras como `.../stream?type=hls` não têm extensão e caíam no progressivo.
+            .setMimeType(remoteUrl?.let { StreamKind.mimeTypeOf(it) })
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(song.title)
