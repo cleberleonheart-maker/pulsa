@@ -44,6 +44,7 @@ import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import androidx.media3.cast.CastPlayer
 import com.google.android.gms.cast.framework.CastContext
+import com.pulsa.player.cast.CastBridge
 import com.pulsa.player.cast.SwitchablePlayer
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionResult
@@ -208,6 +209,45 @@ class PlaybackService : MediaLibraryService() {
             CrashLogger.writeLog(applicationContext, "CAST: erro no receptor -> local ($error)")
             sessionPlayer.switchToLocal()
         }
+    }
+
+    /**
+     * Tradução da fila para o Cast: o receptor não abre `content://`, então a mídia local
+     * vira URL do [CastBridge]; na volta, o item é remontado com a URI local.
+     *
+     * A busca pelo [Song] usa o `mediaId` que [mediaItemFor] grava — o mesmo par
+     * tipo:id da fila, para não confundir o vídeo 42 com a música 42.
+     */
+    private val castItemMapper = object : SwitchablePlayer.ItemMapper {
+        override fun onCastStarted() {
+            CastBridge.start(applicationContext, queue)
+        }
+
+        override fun onCastStopped() {
+            CastBridge.stop()
+        }
+
+        override fun mapForCast(item: MediaItem): MediaItem {
+            val song = songForItem(item) ?: return item
+            return CastBridge.castItem(song, item)
+        }
+
+        override fun mapForLocal(item: MediaItem): MediaItem {
+            val song = songForItem(item) ?: return item
+            return mediaItemFor(song)
+        }
+    }
+
+    private fun songForItem(item: MediaItem): Song? {
+        val id = item.mediaId
+        if (id.isNotEmpty()) {
+            queue.firstOrNull { queueMediaId(it) == id }?.let { return it }
+        }
+        // Item sem mediaId (fila antiga ou montada por outra tela): cai na URI só quando
+        // ela identifica exatamente o que está tocando, para não trocar a faixa errada.
+        val uri = item.localConfiguration?.uri?.toString() ?: return null
+        val current = currentSong ?: return null
+        return current.takeIf { mediaItemFor(it).localConfiguration?.uri?.toString() == uri }
     }
 
     private var player: ExoPlayer? = null
@@ -737,6 +777,7 @@ class PlaybackService : MediaLibraryService() {
             CrashLogger.writeLog(applicationContext, "CAST: init falhou -> $t")
         }
         sessionPlayer = SwitchablePlayer(player!!, castPlayer)
+        sessionPlayer.setItemMapper(castItemMapper)
         // Item 291 — já nasce com o teto certo: se o app subiu no 4G, o primeiro vídeo não
         // chega a baixar em 1080p antes do callback de rede corrigir.
         refreshDataSaver()
@@ -1044,6 +1085,7 @@ class PlaybackService : MediaLibraryService() {
         playerLink?.let { Playback.detach(it) }
         if (::session.isInitialized) session.release()
         castPlayer?.removeListener(castListener)
+        CastBridge.stop()
         if (::sessionPlayer.isInitialized) sessionPlayer.releaseCast()
         castPlayer = null
         // Item 130 — os dois players (principal + reserva do crossfade) são liberados e
@@ -1704,6 +1746,15 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    /**
+     * Identidade do item na fila. Reusa o formato de [PulsaLibraryTree.mediaIdFor] para os
+     * itens que a árvore conhece; stream não está lá, então ganha um prefixo próprio.
+     */
+    private fun queueMediaId(song: Song): String = when {
+        song.isStream -> "stream:${song.streamUrl}"
+        else -> libraryTree.mediaIdFor(song) ?: "musica:${song.id}"
+    }
+
     private fun mediaItemFor(song: Song): MediaItem {
         val streamUrl = song.streamUrl
         val radioUrl = song.radioUrl
@@ -1716,6 +1767,10 @@ class PlaybackService : MediaLibraryService() {
             ?: Uri.fromFile(File(song.path))
         return MediaItem.Builder()
             .setUri(uri)
+            // O Cast reencontra o Song pelo mediaId, não pela URI (que muda de local para
+            // HTTP na conexão). O formato é o mesmo da árvore de biblioteca (`musica:`,
+            // `video:`, `radio:`, `e:`) para o Auto/Wear continuarem resolvendo os itens.
+            .setMediaId(queueMediaId(song))
             // F2: HLS/DASH na URL sem extensão (o Media3 1.3.1 só infere pela extensão, ver
             // StreamKind) e nenhum mime type para arquivo local — aí o Media3 infere como
             // sempre. `setMimeType(null)` é o mesmo que não chamar. Vale para rádio também:

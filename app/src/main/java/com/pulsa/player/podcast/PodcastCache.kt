@@ -22,6 +22,15 @@ object PodcastCache {
     private val audioByEpisode = java.util.concurrent.ConcurrentHashMap<Long, String>()
 
     /**
+     * Capa do episódio, para o Chromecast mostrar a arte na TV.
+     *
+     * Mesmo motivo do áudio: quem monta o `MediaItem` do Cast roda na main thread e não pode
+     * consultar o Room. A capa vem do feed ([Episode.artworkUrl]) e é sempre uma URL remota,
+     * então o receptor busca direto — não passa pelo servidor local.
+     */
+    private val artByEpisode = java.util.concurrent.ConcurrentHashMap<Long, String>()
+
+    /**
      * Grava o endereço da mídia de um episódio.
      *
      * `id <= 0` e URL vazia são **ignorados**, não gravados: um id `0` é o `Episode()`
@@ -53,7 +62,10 @@ object PodcastCache {
      * ids que ela tinha — quem chama já leu os episódios para poder apagar os arquivos.
      */
     fun forget(episodeIds: Collection<Long>) {
-        episodeIds.forEach { audioByEpisode.remove(it) }
+        episodeIds.forEach {
+            audioByEpisode.remove(it)
+            artByEpisode.remove(it)
+        }
     }
 
     /**
@@ -62,5 +74,12 @@ object PodcastCache {
      * O caminho é o [Episode.playableUrl], que já prefere o arquivo baixado — é o que faz o
      * episódio offline tocar sem passar pela URL.
      */
-    fun prepare(ep: Episode) = put(ep.id, ep.playableUrl)
+    fun prepare(ep: Episode) {
+        put(ep.id, ep.playableUrl)
+        if (ep.id > 0L && ep.artworkUrl.isNotBlank()) artByEpisode[ep.id] = ep.artworkUrl
+    }
+
+    /** A capa do episódio, ou `null` quando o feed não publicou uma. */
+    fun artUrl(episodeId: Long): String? =
+        if (episodeId <= 0L) null else artByEpisode[episodeId]
 }

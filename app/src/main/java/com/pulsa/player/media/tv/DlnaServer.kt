@@ -59,6 +59,18 @@ class DlnaServer(
      * carrega o id do *arquivo*, não o id do nó. Este mapa fecha essa fresta.
      */
     private val mimes: Map<String, String> = emptyMap(),
+    /**
+     * `false` quando o servidor existe só para o Cast: o receptor busca a mídia por HTTP
+     * direto (a URL vai no `MediaItem`), então não há M-SEARCH de TV para responder e o
+     * anúncio SSDP seria só multicast e bateria à toa.
+     */
+    private val announce: Boolean = true,
+    /**
+     * Capa por fileId, no mesmo formato do [resolve] (path local ou URL http). Fica separado
+     * da mídia porque o Chromecast pede a arte numa requisição própria, e o DLNA não tem
+     * esse endpoint — só o Cast usa este resolvedor.
+     */
+    private val art: ((String) -> String?)? = null,
 ) {
 
     private val app = context.applicationContext
@@ -104,19 +116,23 @@ class DlnaServer(
             ss.bind(InetSocketAddress(0)) // efêmera: evita brigar com porta ocupada
             serverSocket = ss
             port = ss.localPort
-            val ip = localIp() ?: return false
+            val ip = localIp() ?: error("sem endereço local")
             baseUrl = "http://$ip:$port"
             startHttp(ss)
-            startSsdp()
-            sendSsdpAlive()
-            // segundo alive 1,5s depois: multicast em Wi-Fi barato engole o primeiro
-            Thread({
-                runCatching { Thread.sleep(1500) }
-                if (running.get()) sendSsdpAlive()
-            }, "pulsa-dlna-alive").apply { isDaemon = true; start() }
+            if (announce) {
+                startSsdp()
+                sendSsdpAlive()
+                // segundo alive 1,5s depois: multicast em Wi-Fi barato engole o primeiro
+                Thread({
+                    runCatching { Thread.sleep(1500) }
+                    if (running.get()) sendSsdpAlive()
+                }, "pulsa-dlna-alive").apply { isDaemon = true; start() }
+            }
             true
         }.getOrElse {
             running.set(false)
+            runCatching { serverSocket?.close() }
+            serverSocket = null
             false
         }
     }
@@ -124,7 +140,7 @@ class DlnaServer(
     fun stop() {
         if (!running.compareAndSet(true, false)) return
         // byebye antes de fechar o socket: a TV precisa ver a saída enquanto ainda há porta.
-        runCatching { sendSsdpByebye() }
+        if (announce) runCatching { sendSsdpByebye() }
         runCatching { serverSocket?.close() }
         runCatching { ssdpSocket?.close() }
         runCatching { multicastLock?.release() }
@@ -204,6 +220,10 @@ class DlnaServer(
                     method == "GET" && path.startsWith("/f/") -> {
                         registrar("GET /f/…")
                         serveMedia(path.removePrefix("/f/"), headers, out)
+                    }
+                    method == "GET" && path.startsWith("/art/") -> {
+                        registrar("GET /art/…")
+                        serveArt(path.removePrefix("/art/"), headers, out)
                     }
                     else -> {
                         registrar("404 $method $path")
@@ -385,6 +405,44 @@ class DlnaServer(
             notFound(out)
         } catch (e: IOException) {
             // TV desconectou no meio do transfer: normal, não é erro para o usuário.
+        }
+    }
+
+    /**
+     * Capa para o Chromecast. Mesmas origens do [serveMedia]: URL http vira redirect (a TV
+     * busca a arte direto do feed/CDN) e arquivo local é servido com `image/jpeg`.
+     */
+    private fun serveArt(fileId: String, headers: Map<String, String>, out: OutputStream) {
+        val target = art?.invoke(fileId)
+        if (target == null) {
+            notFound(out)
+            return
+        }
+        if (target.startsWith("http://") || target.startsWith("https://")) {
+            out.write(
+                (
+                    "HTTP/1.1 302 Found\r\n" +
+                        "Location: $target\r\n" +
+                        "Content-Length: 0\r\n" +
+                        "Connection: close\r\n\r\n"
+                    ).toByteArray(),
+            )
+            out.flush()
+            return
+        }
+        try {
+            val file = File(target)
+            if (!file.exists() || !file.canRead()) {
+                notFound(out)
+                return
+            }
+            serveStream(file.length(), "image/jpeg", headers, out) { start, _ ->
+                FileInputStream(file).also { it.skip(start) }
+            }
+        } catch (e: FileNotFoundException) {
+            notFound(out)
+        } catch (e: IOException) {
+            // O Chromecast desistiu da capa no meio: normal.
         }
     }
 

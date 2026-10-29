@@ -52,7 +52,44 @@ public class SwitchablePlayer implements Player {
   private Player localPlayer;
   @Nullable private final CastPlayer castPlayer;
   private boolean casting;
+  @Nullable private ItemMapper itemMapper;
   private final Map<Listener, ForwardingListener> forwardingListeners = new IdentityHashMap<>();
+
+  /**
+   * Traduz os itens da fila entre o player local e o receptor.
+   *
+   * <p>O Chromecast não abre {@code content://} nem arquivo do aparelho, e o ExoPlayer não
+   * precisa de URL HTTP. Sem esta tradução a fila copiada na conexão levaria as URIs locais
+   * para o receptor e toda música do MediaStore falharia no Cast.
+   */
+  public interface ItemMapper {
+    /** Item que o {@link CastPlayer} deve tocar (normalmente URL HTTP + capa). */
+    default MediaItem mapForCast(MediaItem item) {
+      return item;
+    }
+
+    /** Item que o ExoPlayer local deve retomar ao sair do Cast. */
+    default MediaItem mapForLocal(MediaItem item) {
+      return item;
+    }
+
+    /** Chamado antes de copiar a fila para o receptor (sobe o servidor HTTP). */
+    default void onCastStarted() {}
+
+    /** Chamado depois de copiar a fila de volta ao player local (derruba o servidor). */
+    default void onCastStopped() {}
+  }
+
+  public void setItemMapper(@Nullable ItemMapper mapper) {
+    this.itemMapper = mapper;
+    // A sessão pode já estar conectada quando o serviço nasce (app reaberto com o Cast no
+    // ar). Nesse caso o construtor copiou a fila antes de o mapper existir; refaz a cópia
+    // agora que as URIs locais podem ser traduzidas.
+    if (casting && mapper != null) {
+      mapper.onCastStarted();
+      transfer(localPlayer, castPlayer, true);
+    }
+  }
 
   public SwitchablePlayer(Player localPlayer, @Nullable CastPlayer castPlayer) {
     this.player = localPlayer;
@@ -103,10 +140,16 @@ public class SwitchablePlayer implements Player {
       return;
     }
     casting = true;
+    if (itemMapper != null) {
+      itemMapper.onCastStarted();
+    }
     switchDelegate(castPlayer);
-    if (!transfer(localPlayer, castPlayer)) {
+    if (!transfer(localPlayer, castPlayer, true)) {
       casting = false;
       switchDelegate(localPlayer);
+      if (itemMapper != null) {
+        itemMapper.onCastStopped();
+      }
       return;
     }
     localPlayer.pause();
@@ -118,17 +161,24 @@ public class SwitchablePlayer implements Player {
     }
     casting = false;
     switchDelegate(localPlayer);
-    transfer(castPlayer, localPlayer);
+    transfer(castPlayer, localPlayer, false);
+    if (itemMapper != null) {
+      itemMapper.onCastStopped();
+    }
     castPlayer.pause();
   }
 
-  private boolean transfer(Player from, Player to) {
+  private boolean transfer(Player from, Player to, boolean toCast) {
     try {
       int count = from.getMediaItemCount();
       if (count > 0) {
         List<MediaItem> items = new java.util.ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-          items.add(from.getMediaItemAt(i));
+          MediaItem item = from.getMediaItemAt(i);
+          if (itemMapper != null) {
+            item = toCast ? itemMapper.mapForCast(item) : itemMapper.mapForLocal(item);
+          }
+          items.add(item);
         }
         int index = Math.max(0, Math.min(from.getCurrentMediaItemIndex(), items.size() - 1));
         to.setMediaItems(items, index, Math.max(0L, from.getCurrentPosition()));
@@ -178,64 +228,83 @@ public class SwitchablePlayer implements Player {
     }
   }
 
+  /** Mapeia um item quando quem vai recebê-lo é o receptor. */
+  private MediaItem mapForDelegate(MediaItem item) {
+    if (itemMapper != null && player == castPlayer) {
+      return itemMapper.mapForCast(item);
+    }
+    return item;
+  }
+
+  private List<MediaItem> mapForDelegate(List<MediaItem> items) {
+    if (itemMapper == null || player != castPlayer) {
+      return items;
+    }
+    List<MediaItem> mapped = new java.util.ArrayList<>(items.size());
+    for (MediaItem item : items) {
+      mapped.add(itemMapper.mapForCast(item));
+    }
+    return mapped;
+  }
+
   /** Calls {@link Player#setMediaItems(List)} on the delegate. */
   @Override
   public void setMediaItems(List<MediaItem> mediaItems) {
-    player.setMediaItems(mediaItems);
+    player.setMediaItems(mapForDelegate(mediaItems));
   }
 
   /** Calls {@link Player#setMediaItems(List, boolean)} ()} on the delegate. */
   @Override
   public void setMediaItems(List<MediaItem> mediaItems, boolean resetPosition) {
-    player.setMediaItems(mediaItems, resetPosition);
+    player.setMediaItems(mapForDelegate(mediaItems), resetPosition);
   }
 
   /** Calls {@link Player#setMediaItems(List, int, long)} on the delegate. */
   @Override
   public void setMediaItems(List<MediaItem> mediaItems, int startIndex, long startPositionMs) {
-    player.setMediaItems(mediaItems, startIndex, startPositionMs);
+    player.setMediaItems(mapForDelegate(mediaItems), startIndex, startPositionMs);
   }
 
   /** Calls {@link Player#setMediaItem(MediaItem)} on the delegate. */
   @Override
   public void setMediaItem(MediaItem mediaItem) {
-    player.setMediaItem(mediaItem);
+    player.setMediaItem(mapForDelegate(mediaItem));
   }
 
   /** Calls {@link Player#setMediaItem(MediaItem, long)} on the delegate. */
   @Override
   public void setMediaItem(MediaItem mediaItem, long startPositionMs) {
-    player.setMediaItem(mediaItem, startPositionMs);
+    player.setMediaItem(mapForDelegate(mediaItem), startPositionMs);
   }
 
   /** Calls {@link Player#setMediaItem(MediaItem, boolean)} on the delegate. */
   @Override
   public void setMediaItem(MediaItem mediaItem, boolean resetPosition) {
-    player.setMediaItem(mediaItem, resetPosition);
+    player.setMediaItem(mapForDelegate(mediaItem), resetPosition);
   }
 
   /** Calls {@link Player#addMediaItem(MediaItem)} on the delegate. */
   @Override
   public void addMediaItem(MediaItem mediaItem) {
-    player.addMediaItem(mediaItem);
+    player.addMediaItem(mapForDelegate(mediaItem));
   }
 
   /** Calls {@link Player#addMediaItem(int, MediaItem)} on the delegate. */
   @Override
   public void addMediaItem(int index, MediaItem mediaItem) {
-    player.addMediaItem(index, mediaItem);
+    player.addMediaItem(index, mapForDelegate(mediaItem));
   }
 
   /** Calls {@link Player#addMediaItems(List)} on the delegate. */
   @Override
   public void addMediaItems(List<MediaItem> mediaItems) {
-    player.addMediaItems(mediaItems);
+    player.addMediaItems(mapForDelegate(mediaItems));
   }
 
   /** Calls {@link Player#addMediaItems(int, List)} on the delegate. */
   @Override
   public void addMediaItems(int index, List<MediaItem> mediaItems) {
-    player.addMediaItems(index, mediaItems);
+    player.addMediaItems(index, mapForDelegate(mediaItems));
   }
 
   /** Calls {@link Player#moveMediaItem(int, int)} on the delegate. */
@@ -253,13 +322,13 @@ public class SwitchablePlayer implements Player {
   /** Calls {@link Player#replaceMediaItem(int, MediaItem)} on the delegate. */
   @Override
   public void replaceMediaItem(int index, MediaItem mediaItem) {
-    player.replaceMediaItem(index, mediaItem);
+    player.replaceMediaItem(index, mapForDelegate(mediaItem));
   }
 
   /** Calls {@link Player#replaceMediaItems(int, int, List)} on the delegate. */
   @Override
   public void replaceMediaItems(int fromIndex, int toIndex, List<MediaItem> mediaItems) {
-    player.replaceMediaItems(fromIndex, toIndex, mediaItems);
+    player.replaceMediaItems(fromIndex, toIndex, mapForDelegate(mediaItems));
   }
 
   /** Calls {@link Player#removeMediaItem(int)} on the delegate. */
