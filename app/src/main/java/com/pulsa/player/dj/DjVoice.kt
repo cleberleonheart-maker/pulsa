@@ -6,6 +6,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
 import com.pulsa.player.R
+import com.pulsa.player.core.NetworkStatus
 import com.pulsa.player.core.Settings
 import java.util.Locale
 
@@ -72,8 +73,14 @@ class DjVoice(context: Context, languageTag: String? = null) {
 
     private fun resolveVoice(locale: Locale): Voice? {
         val male = Settings.masculineAvatar(appContext)
-        chosenVoices["${locale}|$male"]?.let { return it }
-        val voices = tts?.voices ?: return null
+        val online = NetworkStatus.isOnline(appContext)
+        val cacheKey = "$locale|$male|$online"
+        chosenVoices[cacheKey]?.let { return it }
+        val all = tts?.voices ?: return null
+        // Voz de rede sem internet falha no `speak` (o callback de erro engole a locução):
+        // era por isso que a Virgin ficava muda offline mesmo com o aparelho tocando local.
+        // Online também prefere a voz local — só usa a de nuvem quando não há outra.
+        val voices = if (online) all else all.filter { !it.isNetworkConnectionRequired }
         val femaleTokens = listOf(
             "female", "feminina", "femenina", "femenine", "woman", "mulher", "voz feminina"
         )
@@ -82,7 +89,9 @@ class DjVoice(context: Context, languageTag: String? = null) {
         )
 
         fun genderFirst(list: List<Voice>): Voice? {
-            val sorted = list.sortedBy { it.name ?: "" }
+            val sorted = list.sortedWith(
+                compareBy({ it.isNetworkConnectionRequired }, { it.name ?: "" })
+            )
             val tokens = if (male) maleTokens else femaleTokens
             val wanted = sorted.firstOrNull { v ->
                 v.name?.let { n -> tokens.any { t -> n.contains(t, ignoreCase = true) } } == true
@@ -100,7 +109,7 @@ class DjVoice(context: Context, languageTag: String? = null) {
         // Nunca cai para outro idioma, para a voz ficar sempre no idioma pedido.
         val sameLang = voices.filter { runCatching { it.locale.language == locale.language }.getOrDefault(false) }
         val chosen = genderFirst(sameLang) ?: sameLang.firstOrNull()
-        if (chosen != null) chosenVoices["${locale}|$male"] = chosen
+        if (chosen != null) chosenVoices[cacheKey] = chosen
         return chosen
     }
 

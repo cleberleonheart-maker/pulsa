@@ -9,6 +9,7 @@ import android.os.SystemClock
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import com.pulsa.player.core.NetworkStatus
 import com.pulsa.player.core.Settings
 import java.util.Locale
 
@@ -114,7 +115,13 @@ class DjCommandListener(
                     SpeechRecognizer.ERROR_NO_MATCH,
                     SpeechRecognizer.ERROR_SPEECH_TIMEOUT,
                     SpeechRecognizer.ERROR_RECOGNIZER_BUSY,
-                    SpeechRecognizer.ERROR_CLIENT -> {
+                    SpeechRecognizer.ERROR_CLIENT,
+                    // Sem internet o reconhecedor devolve NETWORK/NETWORK_TIMEOUT. Antes isso
+                    // caía no ramo fatal, marcava "__unsupported__" e parava de ouvir de vez:
+                    // a Virgin ficava surda até reabrir a tela. Agora só espera e tenta de
+                    // novo, o que também permite voltar sozinha quando a rede retorna.
+                    SpeechRecognizer.ERROR_NETWORK,
+                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> {
                         // Janela ativa (escuta por pedido): erro transiente nao pode fechar a
                         // janela na hora — e o "tenho que apertar de novo". Com musica tocando o
                         // reconhecedor devolve BUSY/NO_MATCH no meio da janela ou logo ao reabrir
@@ -249,6 +256,12 @@ class DjCommandListener(
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, appContext.packageName)
+            // Sem rede, pede o modelo on-device: o Google normalmente tenta a nuvem primeiro
+            // e devolve ERROR_NETWORK, que aqui virava o "falo e ela não troca de música".
+            // Com internet o hint fica de fora para não perder qualidade no reconhecimento.
+            if (!NetworkStatus.isOnline(appContext)) {
+                putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            }
             // Janela curta de silencio: sem isso o reconhecedor segura o microfone
             // aberto pelo tempo padrao mesmo depois de voce terminar de falar.
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1200L)

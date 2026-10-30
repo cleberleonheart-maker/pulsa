@@ -13,6 +13,21 @@ import android.net.NetworkCapabilities
  */
 object NetworkStatus {
 
+    /**
+     * Há internet de verdade agora?
+     *
+     * `NET_CAPABILITY_INTERNET` sozinho mente em portal cativo (Wi-Fi conectado sem saída);
+     * `VALIDATED` é o que o sistema só marca depois de uma sondagem bem-sucedida. É essa a
+     * pergunta que o reconhecimento de voz offline e o TTS precisam fazer.
+     */
+    fun isOnline(context: Context): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            ?: return false
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork ?: return false) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
     fun isMetered(context: Context): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
             ?: return false
