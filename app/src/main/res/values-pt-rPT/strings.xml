@@ -9,11 +9,11 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.24):
- → VIRGIN OFFLINE
- • A Virgin passa a falar sem internet, dando prioridade às vozes locais instaladas no telemóvel.
- • Os comandos de voz passam a pedir reconhecimento no próprio aparelho quando não há rede.
- • As falhas de rede no microfone já não desligam a escuta: a Virgin volta a ouvir sozinha.</string>
+    <string name="changelog">Novidades desta versão (5.12.25):
+ → VOZ OFFLINE
+ • Novo diagnóstico no Perfil: veja se o reconhecimento no aparelho e as vozes locais estão instalados.
+ • Atalhos para os ajustes de voz e para a app Google, onde ficam os pacotes offline.
+ • Continua a valer a correção da 5.12.24: a Virgin fala e ouve sem internet quando o modelo está instalado.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -116,6 +116,18 @@
     <string name="dj_mic_denied">Permita o acesso ao microfone para dar ordens à Virgin.</string>
     <string name="hands_free_no_mic">Sem o acesso ao microfone não dá para ficar de mãos livres.</string>
     <string name="dj_voice_hands_free_ui">Essa só faço com o ecrã aberto. Abre a aplicação e pede-me outra vez.</string>
+    <string name="voice_diag_title">Diagnóstico de voz</string>
+    <string name="voice_diag_subtitle">Veja se o reconhecimento e a voz offline estão disponíveis</string>
+    <string name="voice_diag_recognition">Reconhecimento de voz: %1$s</string>
+    <string name="voice_diag_on_device">Reconhecimento no aparelho: %1$s</string>
+    <string name="voice_diag_language">Idioma da voz instalado: %1$s</string>
+    <string name="voice_diag_voices">Vozes locais em %1$s: %2$d\nVozes que exigem internet: %3$d</string>
+    <string name="voice_diag_hint">Na app Google, transfira o pacote de reconhecimento offline. Nos ajustes de voz, instale uma voz local em português. O teste definitivo é falar em modo avião.</string>
+    <string name="voice_diag_yes">sim</string>
+    <string name="voice_diag_no">não</string>
+    <string name="voice_diag_android_old">indisponível neste Android</string>
+    <string name="voice_diag_open_tts">Ajustes de voz</string>
+    <string name="voice_diag_open_google">App Google</string>
     <string name="dj_voice_delete_failed">Não consegui eliminar. Esse ficheiro pode estar protegido pelo sistema.</string>
     <string name="dj_voice_dup_failed">Não consegui eliminar as repetidas. Pode haver um problema com alguns ficheiros.</string>
     <string name="dj_voice_unplayed_search">Vou ver quais músicas nunca ouviste.</string>

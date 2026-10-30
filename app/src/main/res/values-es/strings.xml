@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.24):
- → VIRGIN SIN CONEXIÓN
- • Virgin ahora habla sin internet, priorizando las voces locales instaladas en el dispositivo.
- • Los comandos de voz piden reconocimiento en el propio dispositivo cuando no hay red.
- • Los fallos de red ya no apagan el micrófono: Virgin vuelve a escuchar por sí sola.</string>
+    <string name="changelog">Novedades de esta versión (5.12.25):
+ → VOZ SIN CONEXIÓN
+ • Nuevo diagnóstico en Perfil: comprueba si el reconocimiento en el dispositivo y las voces locales están instalados.
+ • Atajos a los ajustes de voz y a la app Google, donde están los paquetes sin conexión.
+ • Sigue vigente la corrección de la 5.12.24: Virgin habla y escucha sin internet cuando el modelo está instalado.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -510,6 +510,18 @@
     <string name="sect_virgin">Virgin (DJ virtual)</string>
     <string name="dj_voice_voz">Voz de Virgin</string>
     <string name="dj_voice_subtitle">Virgin responde por voz a tus comandos</string>
+    <string name="voice_diag_title">Diagnóstico de voz</string>
+    <string name="voice_diag_subtitle">Comprueba si el reconocimiento y la voz sin conexión están disponibles</string>
+    <string name="voice_diag_recognition">Reconocimiento de voz: %1$s</string>
+    <string name="voice_diag_on_device">Reconocimiento en el dispositivo: %1$s</string>
+    <string name="voice_diag_language">Idioma de voz instalado: %1$s</string>
+    <string name="voice_diag_voices">Voces locales en %1$s: %2$d\nVoces que requieren internet: %3$d</string>
+    <string name="voice_diag_hint">En la app Google, descarga el paquete de reconocimiento sin conexión. En los ajustes de voz, instala una voz local en portugués. La prueba definitiva es hablar en modo avión.</string>
+    <string name="voice_diag_yes">sí</string>
+    <string name="voice_diag_no">no</string>
+    <string name="voice_diag_android_old">no disponible en este Android</string>
+    <string name="voice_diag_open_tts">Ajustes de voz</string>
+    <string name="voice_diag_open_google">App Google</string>
     <string name="sect_my_music">Mi música</string>
     <string name="stats_title">Mis estadísticas</string>
     <string name="stats_subtitle">Tus más escuchadas de los últimos 30 días</string>

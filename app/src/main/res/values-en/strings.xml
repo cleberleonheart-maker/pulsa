@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.24):
- → VIRGIN OFFLINE
- • Virgin now speaks without internet, preferring the local voices installed on the device.
- • Voice commands now request on-device recognition when there is no network.
- • Network errors no longer turn off the microphone: Virgin resumes listening by itself.</string>
+    <string name="changelog">What is new (5.12.25):
+ → OFFLINE VOICE
+ • New diagnostics in Profile: check whether on-device recognition and local voices are installed.
+ • Shortcuts to voice settings and the Google app, where the offline packs live.
+ • The 5.12.24 fix still applies: Virgin speaks and listens without internet when the model is installed.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -510,6 +510,18 @@
     <string name="sect_virgin">Virgin (virtual DJ)</string>
     <string name="dj_voice_voz">Virgin voice</string>
     <string name="dj_voice_subtitle">Virgin replies by voice to your commands</string>
+    <string name="voice_diag_title">Voice diagnostics</string>
+    <string name="voice_diag_subtitle">Check whether offline recognition and voice are available</string>
+    <string name="voice_diag_recognition">Voice recognition: %1$s</string>
+    <string name="voice_diag_on_device">On-device recognition: %1$s</string>
+    <string name="voice_diag_language">Installed voice language: %1$s</string>
+    <string name="voice_diag_voices">Local voices in %1$s: %2$d\nVoices that require internet: %3$d</string>
+    <string name="voice_diag_hint">In the Google app, download the offline recognition pack. In voice settings, install a local Portuguese voice. The definitive test is speaking in airplane mode.</string>
+    <string name="voice_diag_yes">yes</string>
+    <string name="voice_diag_no">no</string>
+    <string name="voice_diag_android_old">unavailable on this Android</string>
+    <string name="voice_diag_open_tts">Voice settings</string>
+    <string name="voice_diag_open_google">Google app</string>
     <string name="sect_my_music">My music</string>
     <string name="stats_title">My stats</string>
     <string name="stats_subtitle">Your most played songs of the last 30 days</string>

@@ -20,6 +20,7 @@ import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.pulsa.player.data.Library
 import com.pulsa.player.ui.AnimatedBackground
+import com.pulsa.player.ui.VoiceDiagnostics
 import com.pulsa.player.core.Changelog
 import com.pulsa.player.dj.DjLearn
 import com.pulsa.player.core.Helper
@@ -79,6 +80,8 @@ class PerfilActivity : AppCompatActivity() {
                 Settings.setDjVoice(this@PerfilActivity, checked)
             }
         }
+
+        findViewById<View>(R.id.voice_diag_row).setOnClickListener { showVoiceDiagnostics() }
 
         findViewById<View>(R.id.stats_row).setOnClickListener { showStats() }
         findViewById<View>(R.id.rewind_row).setOnClickListener {
@@ -244,6 +247,83 @@ class PerfilActivity : AppCompatActivity() {
             .setMessage(lines.joinToString("\n"))
             .setNegativeButton(R.string.close, null)
             .show()
+    }
+
+    private fun showVoiceDiagnostics() {
+        VoiceDiagnostics.inspect(
+            this,
+            Settings.languageTag(Settings.language(this))
+        ) { report ->
+            if (isFinishing || isDestroyed) return@inspect
+            val yes = getString(R.string.voice_diag_yes)
+            val no = getString(R.string.voice_diag_no)
+            val onDevice = when {
+                report.androidTooOld -> getString(R.string.voice_diag_android_old)
+                report.onDeviceAvailable -> yes
+                else -> no
+            }
+            val message = buildString {
+                appendLine(
+                    getString(
+                        R.string.voice_diag_recognition,
+                        if (report.recognitionAvailable) yes else no
+                    )
+                )
+                appendLine(getString(R.string.voice_diag_on_device, onDevice))
+                appendLine(
+                    getString(
+                        R.string.voice_diag_language,
+                        if (report.languageAvailable) yes else no
+                    )
+                )
+                appendLine(
+                    getString(
+                        R.string.voice_diag_voices,
+                        report.languageLabel,
+                        report.localVoices,
+                        report.networkVoices
+                    )
+                )
+                append(getString(R.string.voice_diag_hint))
+            }
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.voice_diag_title)
+                .setMessage(message)
+                .setPositiveButton(R.string.voice_diag_open_tts) { _, _ -> openTtsSettings() }
+                .setNeutralButton(R.string.voice_diag_open_google) { _, _ -> openGoogleApp() }
+                .setNegativeButton(R.string.close, null)
+                .show()
+        }
+    }
+
+    private fun openTtsSettings() {
+        runCatching {
+            startActivity(Intent("com.android.settings.TTS_SETTINGS"))
+        }.onFailure {
+            runCatching {
+                startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+        }
+    }
+
+    private fun openGoogleApp() {
+        runCatching {
+            startActivity(
+                Intent(
+                    android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:com.google.android.googlequicksearchbox")
+                )
+            )
+        }.onFailure {
+            runCatching {
+                startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("market://details?id=com.google.android.googlequicksearchbox")
+                    )
+                )
+            }
+        }
     }
 
     private fun updateCacheLabel(view: TextView) {

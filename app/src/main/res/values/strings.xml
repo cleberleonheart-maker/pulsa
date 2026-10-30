@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.24):
- → VIRGIN OFFLINE
- • A Virgin agora fala sem internet, priorizando as vozes locais instaladas no aparelho.
- • Os comandos de voz passam a pedir reconhecimento no próprio aparelho quando não há rede.
- • Falhas de rede no microfone não desligam mais a escuta: a Virgin volta a ouvir sozinha.</string>
+    <string name="changelog">Novidades desta versão (5.12.25):
+ → VOZ OFFLINE
+ • Novo diagnóstico no Perfil: veja se o reconhecimento no aparelho e as vozes locais estão instalados.
+ • Atalhos para os ajustes de voz e para o app Google, onde ficam os pacotes offline.
+ • Continua valendo a correção da 5.12.24: a Virgin fala e ouve sem internet quando o modelo está instalado.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -517,6 +517,18 @@
     <string name="sect_virgin">Virgin (DJ virtual)</string>
     <string name="dj_voice_voz">Voz da Virgin</string>
     <string name="dj_voice_subtitle">A Virgin responde por voz aos comandos</string>
+    <string name="voice_diag_title">Diagnóstico de voz</string>
+    <string name="voice_diag_subtitle">Veja se o reconhecimento e a voz offline estão disponíveis</string>
+    <string name="voice_diag_recognition">Reconhecimento de voz: %1$s</string>
+    <string name="voice_diag_on_device">Reconhecimento no aparelho: %1$s</string>
+    <string name="voice_diag_language">Idioma da voz instalado: %1$s</string>
+    <string name="voice_diag_voices">Vozes locais em %1$s: %2$d\nVozes que exigem internet: %3$d</string>
+    <string name="voice_diag_hint">No app Google, baixe o pacote de reconhecimento offline. Nos ajustes de voz, instale uma voz local em português. O teste definitivo é falar em modo avião.</string>
+    <string name="voice_diag_yes">sim</string>
+    <string name="voice_diag_no">não</string>
+    <string name="voice_diag_android_old">indisponível neste Android</string>
+    <string name="voice_diag_open_tts">Ajustes de voz</string>
+    <string name="voice_diag_open_google">App Google</string>
     <string name="sect_my_music">Minha música</string>
     <string name="stats_title">Minhas estatísticas</string>
     <string name="stats_subtitle">Suas mais tocadas dos últimos 30 dias</string>
