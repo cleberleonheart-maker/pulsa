@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.23):
- → CAST
- • Chromecast agora toca a biblioteca local: mídia e capa passam por um servidor HTTP no aparelho, com fila e posição preservadas.
- • Capa do álbum/vídeo e do episódio na TV; a fila continua funcionando ao adicionar ou trocar faixas durante o Cast.
- • Ao desconectar, o som volta para o celular na mesma faixa e posição.</string>
+    <string name="changelog">Novidades desta versão (5.12.24):
+ → VIRGIN OFFLINE
+ • A Virgin agora fala sem internet, priorizando as vozes locais instaladas no aparelho.
+ • Os comandos de voz passam a pedir reconhecimento no próprio aparelho quando não há rede.
+ • Falhas de rede no microfone não desligam mais a escuta: a Virgin volta a ouvir sozinha.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>

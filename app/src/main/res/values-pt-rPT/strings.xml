@@ -9,11 +9,11 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.23):
- → CAST
- • O Chromecast passa a tocar a biblioteca local: mídia e capa através de um servidor HTTP no aparelho, com fila e posição preservadas.
- • Capa do álbum/vídeo e do episódio na TV; a fila continua a funcionar ao adicionar ou trocar faixas durante o Cast.
- • Ao desligar, o som volta para o telemóvel na mesma faixa e posição.</string>
+    <string name="changelog">Novidades desta versão (5.12.24):
+ → VIRGIN OFFLINE
+ • A Virgin passa a falar sem internet, dando prioridade às vozes locais instaladas no telemóvel.
+ • Os comandos de voz passam a pedir reconhecimento no próprio aparelho quando não há rede.
+ • As falhas de rede no microfone já não desligam a escuta: a Virgin volta a ouvir sozinha.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

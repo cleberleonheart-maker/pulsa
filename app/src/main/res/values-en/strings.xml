@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.23):
- → CAST
- • Chromecast now plays your local library: media and artwork are served over HTTP from the phone, keeping queue and position.
- • Album/video and episode artwork on the TV; the queue keeps working when you add or change tracks while casting.
- • Disconnecting returns audio to the phone on the same track and position.</string>
+    <string name="changelog">What is new (5.12.24):
+ → VIRGIN OFFLINE
+ • Virgin now speaks without internet, preferring the local voices installed on the device.
+ • Voice commands now request on-device recognition when there is no network.
+ • Network errors no longer turn off the microphone: Virgin resumes listening by itself.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
