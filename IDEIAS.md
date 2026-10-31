@@ -66,7 +66,7 @@
 ### Ganhar do TAMI (o que o VectorDrawable não tem)
 
 - [~] **Estados de verdade**: o TAMI tem `.playing` (dança + boca abrindo) e `.sleep` (olhos viram tracinho) via `tamiSpeakMood()`. **`.sleep` FEITO**: `animator/eye_sleep.xml` + `virgin_avatar_sleep`/`avatar_masculino_sleep`/`avatar_vera_sleep`, acionado quando o `SleepTimer` está ativo ou o mix dormir (`Playback.sleepMix`) toca; falta o `.playing` (boca abrindo). No XML são N animações por estado, não uma
-- [ ] **Cabelo de verdade**: no TAMI é emoji com classe por personagem (`p.hair.cls`); no XML cada um teria que ser desenhado à mão
+- [x] **Cabelo de verdade** (5.12.26): no TAMI é emoji com classe por personagem (`p.hair.cls`); no XML foi desenhado em path. Virgin = franja com risco lateral + mechas longas (`#AD1457`, brilho `#E91E63`); Victor = cabelo curto aparecendo sob a aba do boné (`#3E2723`/`#5D4037`); Vera = bob com franja reta (`#0F766E`, brilho `#14B8A6`). As franjas param acima dos olhos (y ≤ 44 só nas laterais), então `eye_blink` e `eye_sleep` continuam funcionando; os `_animated`/`_sleep` herdam o cabelo do drawable base
 
 ## DJ Virgin (mais natural)
 - [x] **Relembrar contexto** (4.2.5): memória persistida (`DjMemory`) — "meu telefone/whats é 99999-9999" é guardado e "qual é meu número?" é respondido; também pergunta/elembra do Bluetooth

@@ -33,11 +33,10 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.25):
- → VOZ OFFLINE
- • Novo diagnóstico no Perfil: veja se o reconhecimento no aparelho e as vozes locais estão instalados.
- • Atalhos para os ajustes de voz e para o app Google, onde ficam os pacotes offline.
- • Continua valendo a correção da 5.12.24: a Virgin fala e ouve sem internet quando o modelo está instalado.</string>
+    <string name="changelog">Novidades desta versão (5.12.26):
+ → AVATARES COM CABELO
+ • Virgin, Victor e Vera ganharam cabelo desenhado de verdade: franja e mechas longas na Virgin, cabelo curto sob o boné do Victor e bob com franja na Vera.
+ • O cabelo não cobre os olhos: a piscada e o modo dormir continuam funcionando.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>

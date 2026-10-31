@@ -30,11 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.25):
- → OFFLINE VOICE
- • New diagnostics in Profile: check whether on-device recognition and local voices are installed.
- • Shortcuts to voice settings and the Google app, where the offline packs live.
- • The 5.12.24 fix still applies: Virgin speaks and listens without internet when the model is installed.</string>
+    <string name="changelog">What is new (5.12.26):
+ → AVATARS WITH HAIR
+ • Virgin, Victor and Vera now have real drawn hair: bangs and long locks on Virgin, short hair under Victor\'s cap and a bob with bangs on Vera.
+ • The hair stays clear of the eyes, so blinking and sleep mode still work.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

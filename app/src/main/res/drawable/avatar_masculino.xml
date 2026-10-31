@@ -7,7 +7,8 @@
     Paleta azul com adereco laranja, que e a do Lingo/TAMI — antes a cabeca era
     roxa identica a da Virgin, e os dois so se distinguiam de perto.
     O bone era o 🧢 do Lingo; aqui ele continua desenhado em path, porque
-    VectorDrawable nao renderiza emoji.
+    VectorDrawable nao renderiza emoji. O cabelo curto aparece em path sob a
+    aba do bone — antes so havia o bone e a cabeca parecia careca.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
@@ -46,7 +47,18 @@
         </aapt:attr>
     </path>
 
-    <!-- Bone do Victor: coroa (sem cabelo) -->
+    <!-- Cabelo curto aparecendo sob a aba do bone -->
+    <path
+        android:fillColor="#3E2723"
+        android:pathData="M24,33 C20,42 20,52 24,60 C27,54 27,45 26,37 Z" />
+    <path
+        android:fillColor="#3E2723"
+        android:pathData="M84,33 C88,42 88,52 84,60 C81,54 81,45 82,37 Z" />
+    <path
+        android:fillColor="#5D4037"
+        android:pathData="M25,39 C23,45 23,51 24,56 C26,51 26,45 26,41 Z" />
+
+    <!-- Bone do Victor: coroa -->
     <path
         android:fillColor="#FF9E40"
         android:pathData="M26,32 C24,11 34,4 54,4 C74,4 84,11 82,32 C76,29 70,27 54,27 C38,27 32,29 26,32 Z" />

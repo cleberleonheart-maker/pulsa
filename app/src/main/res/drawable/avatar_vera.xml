@@ -8,6 +8,8 @@
     meio-sorriso, piscada encolhendo o olho em scaleY (@animator/eye_blink).
     Aqui o olho e a propria lente do oculos, entao o grupo que pisca carrega
     lente + abridor + brilho e os tres encolhem juntos.
+    O cabelo bob com franja reta e desenhado em path (o TAMI usa emoji), com a
+    franja acima da armação para nao atrapalhar a piscada.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
@@ -45,6 +47,20 @@
                 android:endColor="#0E7490" />
         </aapt:attr>
     </path>
+
+    <!-- Cabelo bob com franja reta (desenhado em path; o TAMI usa emoji) -->
+    <path
+        android:fillColor="#0F766E"
+        android:pathData="M8,44 C6,22 26,4 54,4 C82,4 102,22 100,44 C97,36 94,33 90,32 C88,24 80,20 70,20 C64,26 58,26 54,26 C50,26 44,26 38,20 C28,20 20,24 18,32 C14,33 11,36 8,44 Z" />
+    <path
+        android:fillColor="#0F766E"
+        android:pathData="M8,44 C4,56 6,68 12,78 C16,70 18,60 17,50 C15,47 11,45 8,44 Z" />
+    <path
+        android:fillColor="#0F766E"
+        android:pathData="M100,44 C104,56 102,68 96,78 C92,70 90,60 91,50 C93,47 97,45 100,44 Z" />
+    <path
+        android:fillColor="#14B8A6"
+        android:pathData="M30,24 C40,17 52,16 62,18 C54,20 46,24 40,30 C36,29 33,27 30,24 Z" />
 
     <!-- Estrela de 4 pontas no topo (sparkrate) -->
     <path
