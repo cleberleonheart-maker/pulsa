@@ -30,10 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.26):
- → AVATARES CON PELO
- • Virgin, Victor y Vera ahora tienen pelo dibujado de verdad: flequillo y mechones largos en Virgin, pelo corto bajo la gorra de Victor y bob con flequillo en Vera.
- • El pelo no tapa los ojos, así que el parpadeo y el modo dormir siguen funcionando.</string>
+    <string name="changelog">Novedades de esta versión (5.12.27):
+ → AVATAR QUE HABLA
+ • Virgin, Victor y Vera ahora abren y cierran la boca mientras suena la música (estado .playing, como en TAMI).
+ • La pausa cierra la boca; el modo dormir sigue con los ojos cerrados.
+ • La cabina del DJ ahora muestra el avatar activo (Virgin, Victor o Vera).</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

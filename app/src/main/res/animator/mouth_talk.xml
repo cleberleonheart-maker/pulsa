@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Estado `.playing` do avatar (o que faltava do TAMI): a boca abre e fecha no
+    ritmo da fala. O alvo e o <group name="mouthOpen">, que nasce com scaleY 0
+    (invisivel); escalar em grupo e o que o AnimatedVectorDrawable anima de
+    forma confiavel, do mesmo jeito que o eye_blink faz com os olhos.
+
+    Os valores variam de propósito (abre muito, abre pouco, fecha) para nao
+    parecer respiracao. Ciclo de 1000ms, em loop enquanto Playback.isPlaying.
+-->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="1000"
+    android:propertyName="scaleY"
+    android:repeatCount="infinite"
+    android:valueType="floatType">
+    <propertyValuesHolder android:propertyName="scaleY">
+        <keyframe android:fraction="0" android:value="0" />
+        <keyframe android:fraction="0.10" android:value="0.90" />
+        <keyframe android:fraction="0.22" android:value="0.20" />
+        <keyframe android:fraction="0.34" android:value="1" />
+        <keyframe android:fraction="0.48" android:value="0.25" />
+        <keyframe android:fraction="0.62" android:value="0.75" />
+        <keyframe android:fraction="0.76" android:value="0.15" />
+        <keyframe android:fraction="0.88" android:value="0.65" />
+        <keyframe android:fraction="1" android:value="0" />
+    </propertyValuesHolder>
+</objectAnimator>

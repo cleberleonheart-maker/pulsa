@@ -31,6 +31,7 @@ class DancingVirginView @JvmOverloads constructor(
     private var phase = 0f
     private var animator: ValueAnimator? = null
     private var sleeping = false
+    private var playing = false
 
     /** Força um gênero específico; null segue o avatar ativo em [Settings]. */
     private var requestedMale: Boolean? = null
@@ -88,17 +89,25 @@ class DancingVirginView @JvmOverloads constructor(
     /** Estado `.sleep` do avatar: timer ativo ou mix dormir (CALM) tocando. */
     private fun isSleeping(): Boolean = SleepTimer.isActive() || Playback.sleepMix
 
+    /** Estado `.playing` do avatar: tocando de verdade (pausa fecha a boca). */
+    private fun isPlaying(): Boolean = !isSleeping() && Playback.isPlaying
+
     private fun refreshAvatar() {
         val style = forceStyle ?: Settings.avatarStyle(context)
         sleeping = isSleeping()
-        val res = if (sleeping) {
-            when (style) {
+        playing = isPlaying()
+        val res = when {
+            sleeping -> when (style) {
                 Settings.VICTOR -> R.drawable.avatar_masculino_sleep
                 Settings.VERA -> R.drawable.avatar_vera_sleep
                 else -> R.drawable.virgin_avatar_sleep
             }
-        } else {
-            when (style) {
+            playing -> when (style) {
+                Settings.VICTOR -> R.drawable.avatar_masculino_playing
+                Settings.VERA -> R.drawable.avatar_vera_playing
+                else -> R.drawable.virgin_avatar_playing
+            }
+            else -> when (style) {
                 Settings.VICTOR -> R.drawable.avatar_masculino_animated
                 Settings.VERA -> R.drawable.avatar_vera_animated
                 else -> R.drawable.virgin_avatar_animated
@@ -119,7 +128,7 @@ class DancingVirginView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (isSleeping() != sleeping) refreshAvatar()
+        if (isSleeping() != sleeping || isPlaying() != playing) refreshAvatar()
         val a = avatar ?: return
         val cw = width / 2f
         val cy = height * 0.52f

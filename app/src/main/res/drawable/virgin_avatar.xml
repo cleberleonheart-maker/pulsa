@@ -135,4 +135,17 @@
         android:strokeColor="#33113A"
         android:strokeLineCap="round"
         android:strokeWidth="3.2" />
+
+    <!-- Boca aberta do estado .playing: o grupo fica encolhido em scaleY 0
+         (invisivel) e o animator mouth_talk abre/fecha no ritmo da fala. Fica
+         por cima do sorriso e usa a mesma cor, entao fechado nao aparece. -->
+    <group
+        android:name="mouthOpen"
+        android:pivotX="54"
+        android:pivotY="70"
+        android:scaleY="0">
+        <path
+            android:fillColor="#33113A"
+            android:pathData="M45,65.5 C48,63.5 60,63.5 63,65.5 C63,71.5 59,76.5 54,76.5 C49,76.5 45,71.5 45,65.5 Z" />
+    </group>
 </vector>

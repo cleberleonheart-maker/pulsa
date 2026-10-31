@@ -331,17 +331,33 @@ class DjActivity : AppCompatActivity(), Playback.Listener {
         playBtn.setIconTintResource(if (playing) R.color.primary else R.color.text_primary)
         bindDeck(now, titleA, artistA, artA)
         bindDeck(next, titleB, artistB, artB)
-        updateAvatarSleep()
+        updateAvatarState(playing)
         animateAvatar(playing)
     }
 
-    /** `.sleep` do avatar: timer ativo ou mix dormir (CALM) tocando. */
-    private fun updateAvatarSleep() {
+    /**
+     * Estado do avatar na cabine: `.sleep` (timer/mix dormir), `.playing` (boca
+     * abre no ritmo) ou o normal (pisca). Segue o avatar ativo em [Settings].
+     */
+    private fun updateAvatarState(playing: Boolean) {
         val v = avatarView ?: return
-        val res = if (SleepTimer.isActive() || Playback.sleepMix) {
-            R.drawable.virgin_avatar_sleep
-        } else {
-            R.drawable.virgin_avatar_animated
+        val style = Settings.avatarStyle(this)
+        val res = when {
+            SleepTimer.isActive() || Playback.sleepMix -> when (style) {
+                Settings.VICTOR -> R.drawable.avatar_masculino_sleep
+                Settings.VERA -> R.drawable.avatar_vera_sleep
+                else -> R.drawable.virgin_avatar_sleep
+            }
+            playing -> when (style) {
+                Settings.VICTOR -> R.drawable.avatar_masculino_playing
+                Settings.VERA -> R.drawable.avatar_vera_playing
+                else -> R.drawable.virgin_avatar_playing
+            }
+            else -> when (style) {
+                Settings.VICTOR -> R.drawable.avatar_masculino_animated
+                Settings.VERA -> R.drawable.avatar_vera_animated
+                else -> R.drawable.virgin_avatar_animated
+            }
         }
         if (v.tag == res) return
         v.tag = res
