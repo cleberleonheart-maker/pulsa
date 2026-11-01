@@ -14,6 +14,7 @@ import com.pulsa.player.core.Helper
 import com.pulsa.player.core.KidsMode
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.media.DownloadService
 import com.pulsa.player.media.OfflineSpace
 import com.pulsa.player.media.OfficialMediaResolver
 import com.pulsa.player.media.UrlDownloader
@@ -77,27 +78,11 @@ private fun SettingsActivity.enqueueDownload(targetUrl: String, name: String) {
 }
 
 private fun SettingsActivity.enqueueNow(targetUrl: String, finalName: String) {
-    // Virou job do WorkManager: espera a rede, e se a tela fechar no meio o download
-    // continua -- antes era uma thread do pool que morria junto com o processo sem aviso.
-    val job = PulsaWork.download(this, targetUrl, finalName)
-    if (job == null) {
-        Toast.makeText(
-            this, getString(R.string.download_failed, finalName), Toast.LENGTH_SHORT
-        ).show()
-        return
-    }
+    // Fila própria do Download Center: pausa/retomada, progresso e limite de espaço iguais
+    // aos do vídeo. O Worker continua só para podcast e prefetch, que precisam gravar o
+    // `file_path` do episódio no Room.
+    DownloadService.enqueueUrl(this, finalName, targetUrl, finalName)
     Toast.makeText(this, R.string.download_started, Toast.LENGTH_SHORT).show()
-    // O callback pode chegar depois desta tela fechar; o Toast usa o contexto de aplicacao
-    // para nao prender uma Activity destruida.
-    val app = applicationContext
-    PulsaWork.watchDownload(this, job) { ok, _ ->
-        val message = if (ok) {
-            app.getString(R.string.download_done, finalName)
-        } else {
-            app.getString(R.string.download_failed, finalName)
-        }
-        Toast.makeText(app, message, Toast.LENGTH_SHORT).show()
-    }
 }
 
 internal fun SettingsActivity.refreshDownloadLimit(valueView: TextView?) {

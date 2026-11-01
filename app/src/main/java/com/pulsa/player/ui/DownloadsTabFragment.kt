@@ -2,6 +2,7 @@ package com.pulsa.player.ui
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.pulsa.player.NowPlayingActivity
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
 
@@ -30,8 +32,9 @@ import com.pulsa.player.media.DownloadStore
 import com.pulsa.player.media.OfflineSpace
 import com.pulsa.player.media.OfficialMediaResolver
 import com.pulsa.player.media.UrlDownloader
+import com.pulsa.player.model.Song
+import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.DownloadsAdapter
-import com.pulsa.player.work.PulsaWork
 
 /**
  * F2 — aba "Baixados": os vídeos PeerTube que estão no aparelho, e só eles.
@@ -254,8 +257,8 @@ class DownloadsTabFragment : Fragment() {
     }
 
     /**
-     * Mesmo caminho das Configurações: valida (http/https + não é página), joga no
-     * WorkManager e avisa quando o arquivo cai no MediaStore.
+     * Mesmo caminho das Configurações: valida (http/https + não é página) e joga na fila
+     * do Download Center, onde pausar/retomar e o limite de espaço são os mesmos do vídeo.
      */
     private fun startUrlDownload(url: String, name: String) {
         val ctx = requireContext()
@@ -310,21 +313,8 @@ class DownloadsTabFragment : Fragment() {
     }
 
     private fun enqueueNow(ctx: Context, url: String, finalName: String) {
-        val job = PulsaWork.download(ctx, url, finalName)
-        if (job == null) {
-            toast(R.string.download_failed, finalName)
-            return
-        }
+        DownloadService.enqueueUrl(ctx, finalName, url, finalName)
         toast(R.string.download_started)
-        val app = ctx.applicationContext
-        PulsaWork.watchDownload(ctx, job) { ok, _ ->
-            val message = if (ok) {
-                app.getString(R.string.download_done, finalName)
-            } else {
-                app.getString(R.string.download_failed, finalName)
-            }
-            Toast.makeText(app, message, Toast.LENGTH_SHORT).show()
-        }
     }
 
     private fun play(item: DownloadStore.Item) {
@@ -334,6 +324,10 @@ class DownloadsTabFragment : Fragment() {
             // não existe ainda. Um aviso e nada mais deixava a tela sem resposta, e o que o
             // usuário quer nesse momento é cancelar ou continuar — então abre o menu.
             menu(item)
+            return
+        }
+        if (item.kind == DownloadStore.Kind.URL && item.mediaUri.isNotBlank()) {
+            playPublished(ctx, item)
             return
         }
         val file = DownloadStore.fileFor(ctx, item)
@@ -359,6 +353,40 @@ class DownloadsTabFragment : Fragment() {
                 .firstOrNull { it.uuid == item.id || it.url == item.url }
                 ?.description.orEmpty()
         )
+    }
+
+    /**
+     * Toca um download de URL já publicado no MediaStore.
+     *
+     * Vídeo abre a tela de vídeo; áudio entra na fila normal pela `content://`. O `Song`
+     * leva o id da linha do MediaStore para o restore da fila conseguir reencontrá-lo.
+     */
+    private fun playPublished(ctx: Context, item: DownloadStore.Item) {
+        if (item.mediaMime.startsWith("video/")) {
+            VideoPlayerActivity.startStream(
+                ctx, item.mediaUri, item.title,
+                uuid = item.id, pageUrl = item.pageUrl
+            )
+            return
+        }
+        val id = item.mediaId.takeIf { it != 0L }
+            ?: (item.mediaUri.hashCode().toLong() and 0x7fffffffL)
+        Playback.start(
+            listOf(
+                Song(
+                    id = id,
+                    title = item.title,
+                    artist = "",
+                    album = getString(R.string.downloads_tab),
+                    albumId = 0L,
+                    durationMs = 0L,
+                    path = item.mediaUri,
+                    year = 0
+                )
+            ),
+            0
+        )
+        startActivity(Intent(ctx, NowPlayingActivity::class.java))
     }
 
     private fun menu(item: DownloadStore.Item) {

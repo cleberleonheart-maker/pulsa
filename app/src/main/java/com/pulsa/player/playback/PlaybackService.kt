@@ -1764,6 +1764,10 @@ class PlaybackService : MediaLibraryService() {
             ?: radioUrl?.let(Uri::parse)
             ?: podcastUrl?.let { Uri.parse(it) }
             ?: streamUrl?.let(Uri::parse)
+            // Download por URL concluído: o `Song` guarda o `content://` do MediaStore no
+            // `path` (não é stream nem podcast), e `Uri.fromFile` trataria isso como um
+            // arquivo chamado "content:/..." — que não existe.
+            ?: song.path.takeIf { it.startsWith("content://") }?.let(Uri::parse)
             ?: Uri.fromFile(File(song.path))
         return MediaItem.Builder()
             .setUri(uri)

@@ -1,6 +1,7 @@
 package com.pulsa.player.media
 
 import android.content.Context
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import org.json.JSONArray
@@ -25,13 +26,33 @@ object DownloadStore {
 
     enum class Status { QUEUED, RUNNING, PAUSED, DONE, FAILED, CANCELLED }
 
+    /**
+     * De onde veio o download.
+     *
+     * [VIDEO] é o PeerTube: o arquivo final fica privado em `filesDir/downloads` e toca pelo
+     * caminho. [URL] é o "baixar por URL" (música, vídeo solto, episódio avulso): usa a
+     * mesma fila e o mesmo `.part`, mas ao terminar publica no MediaStore e guarda o
+     * `content://` em [Item.mediaUri] — é o que mantém o arquivo visível na biblioteca.
+     */
+    enum class Kind { VIDEO, URL }
+
     data class Item(
-        /** UUID do PeerTube, ou o hash da URL quando não há. Serve de chave e de nome de arquivo. */
+        /**
+         * UUID do PeerTube, ou `url-<hash>` no download por URL. Serve de chave e de nome do
+         * parcial; o nome de exibição com extensão só é decidido ao publicar no MediaStore.
+         */
         val id: String,
         val title: String,
         val url: String,
         val pageUrl: String,
         val fileName: String,
+        val kind: Kind = Kind.VIDEO,
+        /** `content://` do MediaStore quando [kind] é [Kind.URL] e o download terminou. */
+        val mediaUri: String = "",
+        /** MIME decidido pelo servidor (ou pela extensão), para escolher o player certo. */
+        val mediaMime: String = "",
+        /** Id da linha no MediaStore; 0 quando não há ou não foi possível ler. */
+        val mediaId: Long = 0L,
         val bytes: Long = 0L,
         /** -1 quando o servidor não manda `Content-Length`. */
         val total: Long = -1L,
@@ -71,8 +92,16 @@ object DownloadStore {
      */
     fun usedBytes(context: Context): Long =
         list().sumOf { item ->
-            (runCatching { fileFor(context, item).length() }.getOrDefault(0L)) +
+            val local = (runCatching { fileFor(context, item).length() }.getOrDefault(0L)) +
                 (runCatching { partFor(context, item).length() }.getOrDefault(0L))
+            // URL concluída mora no MediaStore: o arquivo privado já foi apagado, mas o
+            // espaço continua ocupado. `bytes` é o tamanho publicado, então entra na conta
+            // do teto mesmo sem um `File` local para medir.
+            if (local == 0L && item.kind == Kind.URL && item.isDone() && item.mediaUri.isNotBlank()) {
+                item.bytes
+            } else {
+                local
+            }
         }
 
 
@@ -178,6 +207,12 @@ object DownloadStore {
         // aparecer na lista, e ninguém ia apagar.
         runCatching { partFor(context, item).delete() }
         runCatching { fileFor(context, item).delete() }
+        // URL concluída não tem arquivo privado: apagar só o registro deixaria a música no
+        // MediaStore ocupando espaço para sempre. O `runCatching` cobre o caso de o usuário
+        // já ter apagado o arquivo por fora.
+        if (item.mediaUri.isNotBlank()) {
+            runCatching { context.contentResolver.delete(Uri.parse(item.mediaUri), null, null) }
+        }
         synchronized(items) { items.removeAll { it.id == id } }
         save(context)
         notifyChanged()
@@ -211,6 +246,10 @@ object DownloadStore {
                 url = o.optString("url"),
                 pageUrl = o.optString("pageUrl"),
                 fileName = name,
+                kind = runCatching { Kind.valueOf(o.optString("kind")) }.getOrDefault(Kind.VIDEO),
+                mediaUri = o.optString("mediaUri"),
+                mediaMime = o.optString("mediaMime"),
+                mediaId = o.optLong("mediaId"),
                 bytes = o.optLong("bytes"),
                 total = o.optLong("total", -1L),
                 status = runCatching { Status.valueOf(o.optString("status")) }.getOrDefault(Status.DONE),
@@ -219,12 +258,15 @@ object DownloadStore {
             )
             val temFinal = File(dir, name).exists()
             val temParcial = File(dir, "$name.part").length() > 0L
+            val temPublicado = saved.kind == Kind.URL && saved.mediaUri.isNotBlank()
             // Só some da lista o que não tem nem final nem parcial. Exigir o arquivo final
             // — como fazia a primeira versão — apagava da tela todo download na fila ou em
             // andamento: eles não têm arquivo final ainda, e fechar o app no meio do vídeo
             // fazia o download sumir da lista e o espaço ficar ocupado por um `.part` sem
             // dono, que ninguém conseguia mais retomar nem apagar.
-            if (!temFinal && !temParcial && saved.status != Status.QUEUED && saved.status != Status.FAILED) {
+            if (!temFinal && !temParcial && !temPublicado &&
+                saved.status != Status.QUEUED && saved.status != Status.FAILED
+            ) {
                 continue
             }
             out.add(
@@ -239,9 +281,9 @@ object DownloadStore {
                     )
                 } else {
                     saved.copy(
-                        status = if (!temFinal && saved.status == Status.DONE) Status.FAILED else saved.status,
+                        status = if (!temFinal && !temPublicado && saved.status == Status.DONE) Status.FAILED else saved.status,
                         bytes = if (temFinal) File(dir, name).length() else saved.bytes,
-                        error = if (!temFinal && saved.status == Status.DONE) "arquivo não encontrado" else saved.error
+                        error = if (!temFinal && !temPublicado && saved.status == Status.DONE) "arquivo não encontrado" else saved.error
                     )
                 }
             )
@@ -255,6 +297,10 @@ object DownloadStore {
         put("url", url)
         put("pageUrl", pageUrl)
         put("fileName", fileName)
+        put("kind", kind.name)
+        put("mediaUri", mediaUri)
+        put("mediaMime", mediaMime)
+        put("mediaId", mediaId)
         put("bytes", bytes)
         put("total", total)
         put("status", status.name)

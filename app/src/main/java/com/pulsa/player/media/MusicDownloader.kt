@@ -3,6 +3,7 @@ import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.ThreadPool
 
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
@@ -27,6 +28,14 @@ object MusicDownloader {
 
     /** O cartão não tem espaço livre nem com a folga de segurança. */
     class NoSpaceException : Exception()
+
+    /** Arquivo já baixado e publicado no MediaStore, com o que a fila precisa para tocá-lo. */
+    data class Published(
+        val uri: String,
+        val mime: String,
+        val mediaId: Long,
+        val displayName: String
+    )
 
     fun download(
         context: Context,
@@ -121,10 +130,7 @@ object MusicDownloader {
             // um arquivo com dois começos.
             val append = shouldAppend(code, existing)
             val ext = extFromUrl(urlText, contentType)
-            val mime = contentType.substringBefore(';').trim().ifEmpty {
-                MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
-                    ?: if (isVideoExt(ext)) "video/mp4" else "audio/mpeg"
-            }
+            val mime = mimeFor(ext, contentType)
             val fileName = Helper.sanitizeFileName(name) + ".$ext"
             val isVideo = mime.startsWith("video/") || isVideoExt(ext)
             // Com `206` o `Content-Length` é só o resto; o total real vem do `Content-Range`.
@@ -168,6 +174,39 @@ object MusicDownloader {
         } finally {
             conn.disconnect()
         }
+    }
+
+    /**
+     * Publica um arquivo já completo (o `.part` promovido pelo DownloadService) no
+     * MediaStore, sem baixar nada de novo.
+     *
+     * O download de URL usa a mesma fila do vídeo, mas o destino final continua sendo a
+     * biblioteca: o arquivo privado é uma cópia temporária, apagada depois por quem chamou.
+     * Devolve também o MIME e o id da linha, porque a tela precisa escolher entre o player
+     * de vídeo e o de música e o restore da fila usa o id do MediaStore.
+     */
+    fun publish(
+        context: Context,
+        file: File,
+        urlText: String,
+        name: String,
+        contentType: String?
+    ): Published? {
+        if (!file.exists()) return null
+        val type = contentType.orEmpty()
+        val ext = extFromUrl(urlText, type)
+        val mime = mimeFor(ext, type)
+        val fileName = Helper.sanitizeFileName(name) + ".$ext"
+        val isVideo = mime.startsWith("video/") || isVideoExt(ext)
+        val uri = runCatching {
+            file.inputStream().use { saveStream(context, it, fileName, mime, file.length(), isVideo) }
+        }.getOrNull() ?: return null
+        return Published(
+            uri = uri.toString(),
+            mime = mime,
+            mediaId = runCatching { ContentUris.parseId(uri) }.getOrDefault(0L),
+            displayName = fileName
+        )
     }
 
     private fun saveStream(context: Context, input: InputStream, fileName: String, mime: String, length: Long, isVideo: Boolean): Uri? {
@@ -307,6 +346,12 @@ object MusicDownloader {
     private fun isVideoExt(ext: String): Boolean {
         return ext in setOf("mp4", "webm", "mkv", "3gp", "3gpp", "mov", "avi", "flv", "m2ts", "ts")
     }
+
+    private fun mimeFor(ext: String, contentType: String): String =
+        contentType.substringBefore(';').trim().ifEmpty {
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+                ?: if (isVideoExt(ext)) "video/mp4" else "audio/mpeg"
+        }
 
     private fun extFromUrl(url: String, contentType: String): String {
         val fromPath = url.substringBefore('?').substringAfterLast('.').lowercase()

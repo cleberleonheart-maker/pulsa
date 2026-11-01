@@ -57,4 +57,17 @@ object UrlDownloader {
         val segment = url.substringBefore('?').substringAfterLast('/')
         return segment.substringBeforeLast('.', segment).ifEmpty { "música" }
     }
+
+    /**
+     * Chave estável do download de URL no [DownloadStore].
+     *
+     * O mesmo par URL + nome é o mesmo item da fila: pedir de novo substitui o anterior em
+     * vez de criar uma segunda linha. O hash é só de 32 bits, mas a chave também carrega o
+     * prefixo `url-`; colisão entre dois downloads do mesmo usuário é improvável e o pior
+     * caso é um substituir o outro, nunca misturar bytes (cada `.part` tem o mesmo id).
+     */
+    fun itemId(url: String, name: String): String {
+        val hash = (url.trim() + "\n" + name.trim()).hashCode().toLong() and 0xffffffffL
+        return "url-" + java.lang.Long.toHexString(hash)
+    }
 }

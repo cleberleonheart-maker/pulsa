@@ -30,10 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.31):
- → PODCAST BOOKMARKS
- • In the chapter list, tap “Bookmark this moment” to save where you are.
- • Tap a bookmark to jump back; touch and hold to remove it.</string>
+    <string name="changelog">What is new (5.12.32):
+ → URL DOWNLOADS IN THE QUEUE
+ • Music and videos downloaded by URL now use the Download Center queue, with pause, resume, speed and Wi‑Fi only.
+ • Downloads appear in Downloads, play straight from the library and respect the storage limit.
+ • Page links (YouTube/Spotify) are rejected with a clear message instead of becoming a broken file.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

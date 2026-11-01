@@ -9,10 +9,11 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.31):
- → MARCADORES NO PODCAST
- • Na lista de capítulos, toque em «Marcar este momento» para guardar onde está.
- • Toque no marcador para voltar; mantenha premido para remover.</string>
+    <string name="changelog">Novidades desta versão (5.12.32):
+ → DOWNLOADS POR URL NA FILA
+ • Músicas e vídeos descarregados por URL passam a usar a fila do Download Center, com pausa, retoma, velocidade e «só no Wi-Fi».
+ • O download aparece em Transferidos, toca diretamente da biblioteca e respeita o limite de espaço.
+ • Ligações de página (YouTube/Spotify) são recusadas com aviso em vez de criarem um ficheiro inválido.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

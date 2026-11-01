@@ -54,6 +54,7 @@ class DownloadService : Service() {
         const val EXTRA_URL = "url"
         const val EXTRA_PAGE_URL = "pageUrl"
         const val EXTRA_FILE_NAME = "fileName"
+        const val EXTRA_KIND = "kind"
 
         private const val CHANNEL_ID = "downloads"
         private const val NOTIFICATION_ID = 11
@@ -89,6 +90,31 @@ class DownloadService : Service() {
                     .putExtra(EXTRA_PAGE_URL, pageUrl)
                     .putExtra(EXTRA_FILE_NAME, fileName)
             )
+        }
+
+        /**
+         * Download por URL (música, vídeo solto, episódio avulso) na mesma fila do vídeo.
+         *
+         * O `fileName` interno é o id, sem extensão: o nome de exibição e a extensão só são
+         * conhecidos depois do `Content-Type`, na hora de publicar no MediaStore. O `.part`
+         * continua sendo `<id>.part`, então pausar/retomar funciona igual.
+         *
+         * @return o id do item no [DownloadStore], para a tela conseguir localizá-lo.
+         */
+        fun enqueueUrl(context: Context, title: String, url: String, name: String): String {
+            val id = UrlDownloader.itemId(url, name)
+            androidx.core.content.ContextCompat.startForegroundService(
+                context,
+                Intent(context, DownloadService::class.java)
+                    .setAction(ACTION_ENQUEUE)
+                    .putExtra(EXTRA_ID, id)
+                    .putExtra(EXTRA_TITLE, title)
+                    .putExtra(EXTRA_URL, url)
+                    .putExtra(EXTRA_PAGE_URL, "")
+                    .putExtra(EXTRA_FILE_NAME, id)
+                    .putExtra(EXTRA_KIND, DownloadStore.Kind.URL.name)
+            )
+            return id
         }
 
         fun cancel(context: Context, id: String) {
@@ -178,6 +204,9 @@ class DownloadService : Service() {
                 url = intent.getStringExtra(EXTRA_URL).orEmpty(),
                 pageUrl = intent.getStringExtra(EXTRA_PAGE_URL).orEmpty(),
                 fileName = intent.getStringExtra(EXTRA_FILE_NAME).orEmpty(),
+                kind = runCatching {
+                    DownloadStore.Kind.valueOf(intent.getStringExtra(EXTRA_KIND).orEmpty())
+                }.getOrDefault(DownloadStore.Kind.VIDEO),
                 status = DownloadStore.Status.QUEUED,
                 addedAt = System.currentTimeMillis()
             )
@@ -355,6 +384,11 @@ class DownloadService : Service() {
                 break
             }
             if (response !in 200..299) throw IllegalStateException("HTTP $response")
+            val contentType = conn.contentType.orEmpty()
+            // O link de página (YouTube/Spotify) baixaria o HTML e o arquivo entraria na
+            // biblioteca como se fosse mídia. A UI já barra os sites conhecidos, mas a
+            // resolução oficial pode devolver um endereço que mente sobre o tipo.
+            if (contentType.contains("text/html", ignoreCase = true)) throw HtmlResponseException()
 
             // Com `206` o `Content-Length` é só o resto do arquivo; somar com o que já
             // temos é o que faz a barra chegar a 100% em vez de estourar. O `Content-Range`
@@ -451,18 +485,46 @@ class DownloadService : Service() {
             // exatamente nisso: o arquivo antigo é apagado antes.
             runCatching { destino.delete() }
             if (part.renameTo(destino)) {
-                DownloadStore.put(
-                    this,
-                    original.copy(
-                        status = DownloadStore.Status.DONE,
-                        bytes = destino.length(),
-                        total = if (total > 0L) total else destino.length(),
-                        error = null
+                if (original.kind == DownloadStore.Kind.URL) {
+                    // O arquivo privado é só o parcial promovido; a cópia que fica é a do
+                    // MediaStore, para a música continuar aparecendo na biblioteca.
+                    val size = destino.length()
+                    val published = MusicDownloader.publish(
+                        this, destino, original.url, original.title, contentType
                     )
-                )
+                    if (published == null) {
+                        runCatching { destino.delete() }
+                        failure = getString(R.string.download_failed, original.title)
+                    } else {
+                        runCatching { destino.delete() }
+                        DownloadStore.put(
+                            this,
+                            original.copy(
+                                status = DownloadStore.Status.DONE,
+                                bytes = size,
+                                total = if (total > 0L) total else size,
+                                error = null,
+                                mediaUri = published.uri,
+                                mediaMime = published.mime,
+                                mediaId = published.mediaId
+                            )
+                        )
+                    }
+                } else {
+                    DownloadStore.put(
+                        this,
+                        original.copy(
+                            status = DownloadStore.Status.DONE,
+                            bytes = destino.length(),
+                            total = if (total > 0L) total else destino.length(),
+                            error = null
+                        )
+                    )
+                }
             } else {
                 failure = "não foi possível gravar o arquivo"
             }
+            if (failure != null) throw IllegalStateException(failure)
         } catch (e: Paused) {
             // Diferente do cancel, o aviso é "Pausado" (fila esperando, não tentativa morta):
             // a tela mostra "Continuar" como primeira ação e não o cachorro de lixo.
@@ -475,6 +537,18 @@ class DownloadService : Service() {
             val current = DownloadStore.byId(id)
             if (current != null) {
                 DownloadStore.put(this, current.copy(status = DownloadStore.Status.CANCELLED, speed = 0L), persist = false)
+            }
+        } catch (e: HtmlResponseException) {
+            val current = DownloadStore.byId(id)
+            if (current != null) {
+                DownloadStore.put(
+                    this,
+                    current.copy(
+                        status = DownloadStore.Status.FAILED,
+                        error = getString(R.string.download_html_error),
+                        speed = 0L
+                    )
+                )
             }
         } catch (t: Throwable) {
             failure = t.message ?: t.javaClass.simpleName
@@ -490,6 +564,8 @@ class DownloadService : Service() {
     private class Cancelled : Exception()
 
     private class Paused : Exception()
+
+    private class HtmlResponseException : Exception()
 
     private fun isCancelled(id: String): Boolean =
         synchronized(cancelled) { cancelled.contains(id) }

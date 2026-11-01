@@ -33,10 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.31):
- → MARCADORES NO PODCAST
- • Na lista de capítulos, toque em “Marcar este momento” para guardar onde você está.
- • Toque no marcador para voltar; toque e segure para remover.</string>
+    <string name="changelog">Novidades desta versão (5.12.32):
+ → DOWNLOADS POR URL NA FILA
+ • Músicas e vídeos baixados por URL agora usam a fila do Download Center, com pausa, retomada, velocidade e “só no Wi-Fi”.
+ • O download aparece em Baixados, toca direto da biblioteca e respeita o limite de espaço.
+ • Links de página (YouTube/Spotify) são recusados com aviso em vez de virar arquivo quebrado.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
