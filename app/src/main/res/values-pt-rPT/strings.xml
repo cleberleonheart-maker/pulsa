@@ -9,11 +9,11 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.27):
- → AVATAR QUE FALA
- • A Virgin, o Victor e a Vera agora abrem e fecham a boca enquanto a música toca (estado .playing, como no TAMI).
- • A pausa fecha a boca; o modo dormir continua com os olhos fechados.
- • A cabine do DJ agora mostra o avatar ativo (Virgin, Victor ou Vera).</string>
+    <string name="changelog">Novidades desta versão (5.12.28):
+ → ESPAÇO OFFLINE ÚNICO
+ • O limite de espaço passa a contar vídeos transferidos e episódios de podcast juntos.
+ • Transferir um episódio ou ficheiro por URL avisa antes de estourar o limite ou encher o cartão.
+ • O aviso da aba Transferências mostra o total real (vídeos + podcasts).</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>

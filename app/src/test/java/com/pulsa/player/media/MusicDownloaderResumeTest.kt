@@ -26,6 +26,13 @@ class MusicDownloaderResumeTest {
     }
 
     @Test
+    fun espacoNecessarioContaOArquivoFinalInteiro() {
+        assertEquals("parcial retomado não desconta: o final é uma cópia", 1000L, MusicDownloader.neededBytes(1000L))
+        assertEquals("sem Content-Length não dá para prever", 0L, MusicDownloader.neededBytes(-1L))
+        assertEquals(0L, MusicDownloader.neededBytes(0L))
+    }
+
+    @Test
     fun soAnexaQuandoServidorConfirma206ComParcial() {
         assertTrue(MusicDownloader.shouldAppend(206, 500L))
         assertFalse("200 é o arquivo inteiro: anexar duplicaria o começo", MusicDownloader.shouldAppend(200, 500L))

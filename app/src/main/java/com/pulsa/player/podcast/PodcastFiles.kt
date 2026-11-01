@@ -2,6 +2,7 @@ package com.pulsa.player.podcast
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import java.io.File
 
 /**
@@ -37,6 +38,31 @@ object PodcastFiles {
             }.getOrDefault(false)
             "file" -> uri.path?.let { File(it).delete() } ?: false
             else -> false
+        }
+    }
+
+    /**
+     * Tamanho real de um episódio baixado.
+     *
+     * O `content://` do MediaStore não tem `File` correspondente, então `File(path).length()`
+     * devolve `0` — e um teto que soma zero para podcast nunca acusa nada. O tamanho vem da
+     * coluna `OpenableColumns.SIZE`, que é a mesma que o sistema usa para mostrar o arquivo.
+     */
+    fun size(context: Context, path: String): Long {
+        if (path.isBlank()) return 0L
+        val uri = runCatching { Uri.parse(path) }.getOrNull() ?: return 0L
+        return when (uri.scheme?.lowercase()) {
+            null -> File(path).length()
+            "content" -> runCatching {
+                context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)
+                    ?.use { cursor ->
+                        if (!cursor.moveToFirst()) return@use 0L
+                        val column = cursor.getColumnIndex(OpenableColumns.SIZE)
+                        if (column < 0 || cursor.isNull(column)) 0L else cursor.getLong(column)
+                    } ?: 0L
+            }.getOrDefault(0L)
+            "file" -> uri.path?.let { File(it).length() } ?: 0L
+            else -> 0L
         }
     }
 }

@@ -69,13 +69,6 @@ class DownloadService : Service() {
         private const val CHUNK = 64 * 1024
         private const val MAX_REDIRECTS = 5
 
-        /**
-         * Folga que tem que sobrar no aparelho além do tamanho do arquivo. Baixar até o
-         * último byte livre deixa o celular sem espaço para o próprio sistema respirar; um
-         * download que enche o cartão é pior do que um download recusado.
-         */
-        private const val MIN_FREE = 32L * 1024L * 1024L
-
         private val running = AtomicBoolean(false)
 
         fun enqueue(
@@ -297,7 +290,7 @@ class DownloadService : Service() {
         // Um item novo que já passaria dele é recusado antes de gastar um byte de rede — o
         // aviso aqui é mais barato que o aviso no meio do download, e é o que deixa o
         // cartão protegido de propósito em vez de por sorte.
-        if (limitExceeded(0L)) {
+        if (limitExceeded(0L, fresh = true)) {
             DownloadStore.put(
                 this,
                 original.copy(status = DownloadStore.Status.FAILED, error = getString(R.string.downloads_limit_reached)),
@@ -383,7 +376,7 @@ class DownloadService : Service() {
             // A checagem definitiva do limite também: com o total real, dá para recusar o
             // download que estouraria o teto de propósito sem depender do tamanho conhecido
             // antes de abrir a conexão.
-            if (total > 0L && limitExceeded(need)) {
+            if (total > 0L && limitExceeded(need, fresh = true)) {
                 throw IllegalStateException(getString(R.string.downloads_limit_reached))
             }
 
@@ -552,31 +545,25 @@ class DownloadService : Service() {
     }
 
     /**
-     * Espaço livre para um download, com a folga de [MIN_FREE] sobrando de verdade.
+     * Espaço livre para um download, com a folga sobrando de verdade.
      *
      * `usableSpace` pode dar `0` em alguns file systems; sem um número confiável não bloqueia
      * — quem avisa nessas horas é o `IllegalStateException("download incompleto")` do fim.
      */
-    private fun hasRoomFor(need: Long): Boolean {
-        val free = runCatching { DownloadStore.dir(this).usableSpace }.getOrDefault(0L)
-        if (free <= 0L) return true
-        return free >= need + MIN_FREE
-    }
-
+    private fun hasRoomFor(need: Long): Boolean = OfflineSpace.hasRoomFor(this, need)
 
     /**
-     * O teto do Download Center (`Settings.downloadLimitMb`) está estourado por `extra` bytes.
+     * O teto de espaço (`Settings.downloadLimitMb`) está estourado por `extra` bytes.
      *
-     * `0` quando o limite não está definido — sem limite, não há nada a recusar. O `extra` é
-     * sempre o que o download vai **adicionar** ao disco (nunca o total dele), porque o
-     * `.part` de um item que retoma já está contado dentro de [DownloadStore.usedBytes].
+     * A conta inclui vídeos do Download Center **e** episódios de podcast ([OfflineSpace]):
+     * os dois moram no mesmo cartão. O `extra` é sempre o que o download vai **adicionar** ao
+     * disco (nunca o total dele), porque o `.part` de um item que retoma já está contado.
+     *
+     * `fresh = true` nas checagens de entrada; no laço de 400 ms o cache de podcast evita
+     * varrer o banco e o MediaStore a cada bloco.
      */
-    private fun limitExceeded(extra: Long): Boolean {
-        val limitMb = Settings.downloadLimitMb(this)
-        if (limitMb <= 0) return false
-        val limit = limitMb * 1024L * 1024L
-        return DownloadStore.usedBytes(this) + extra > limit
-    }
+    private fun limitExceeded(extra: Long, fresh: Boolean = false): Boolean =
+        OfflineSpace.limitExceeded(this, extra, fresh)
 
 
 

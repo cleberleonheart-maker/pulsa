@@ -12,7 +12,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R
+import com.pulsa.player.core.Helper
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.media.OfflineSpace
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.podcast.Episode
 import com.pulsa.player.podcast.PodcastDb
@@ -199,6 +201,37 @@ class PodcastDetailFragment : Fragment() {
     private fun download(ep: Episode) {
         val ctx = context ?: return
         val app = ctx.applicationContext
+        // O teto e o espaço livre são lidos fora da main: o tamanho dos episódios baixados
+        // vem do Room + MediaStore, e uma varredura dessas na main travava a lista.
+        ThreadPool.post {
+            val limit = OfflineSpace.limitBytes(app)
+            val used = OfflineSpace.usedBytes(app, fresh = true)
+            val free = OfflineSpace.freeBytes(app)
+            ThreadPool.onUi {
+                if (!isAdded) return@onUi
+                when {
+                    limit > 0L && used >= limit -> MaterialAlertDialogBuilder(ctx)
+                        .setMessage(R.string.downloads_limit_reached)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show()
+
+                    free in 1 until OfflineSpace.LOW_FREE_BYTES -> MaterialAlertDialogBuilder(ctx)
+                        .setMessage(
+                            getString(R.string.downloads_warning_free, Helper.formatBytes(free))
+                        )
+                        .setPositiveButton(R.string.download) { _, _ -> startDownload(ep) }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
+
+                    else -> startDownload(ep)
+                }
+            }
+        }
+    }
+
+    private fun startDownload(ep: Episode) {
+        val ctx = context ?: return
+        val app = ctx.applicationContext
         val job = PulsaWork.download(app, ep.audioUrl, "podcast-ep${ep.id}")
         if (job == null) {
             Toast.makeText(ctx, failureMessage(ep), Toast.LENGTH_SHORT).show()
@@ -211,7 +244,10 @@ class PodcastDetailFragment : Fragment() {
             val message = when {
                 !ok || path.isBlank() -> failureMessage(ep)
                 else -> {
-                    ThreadPool.post { PodcastDb.get(app).setFilePath(ep.id, path) }
+                    ThreadPool.post {
+                        PodcastDb.get(app).setFilePath(ep.id, path)
+                        OfflineSpace.invalidate()
+                    }
                     ctx.getString(R.string.podcast_download_done)
                 }
             }
@@ -235,6 +271,7 @@ class PodcastDetailFragment : Fragment() {
         ThreadPool.post {
             PodcastFiles.delete(app, ep.filePath)
             PodcastDb.get(app).setFilePath(ep.id, "")
+            OfflineSpace.invalidate()
             ThreadPool.onUi {
                 if (isAdded) load()
                 Toast.makeText(app, R.string.download_deleted, Toast.LENGTH_SHORT).show()

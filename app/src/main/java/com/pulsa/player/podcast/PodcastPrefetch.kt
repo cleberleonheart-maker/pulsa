@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.media.OfflineSpace
 import com.pulsa.player.model.Song
 import com.pulsa.player.work.PulsaWork
 import java.util.concurrent.atomic.AtomicLong
@@ -56,6 +57,7 @@ object PodcastPrefetch {
                     ThreadPool.post {
                         db.setFilePath(ep.id, path)
                         PodcastCache.put(ep.id, path)
+                        OfflineSpace.invalidate()
                     }
                 } else {
                     // O `compareAndSet` devolve a chance: se o usuário voltar a este episódio

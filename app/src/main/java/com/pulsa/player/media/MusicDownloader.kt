@@ -22,6 +22,12 @@ object MusicDownloader {
 
     private class HtmlResponseException : Exception()
 
+    /** O download passaria do teto de espaço configurado. */
+    class SpaceLimitException : Exception()
+
+    /** O cartão não tem espaço livre nem com a folga de segurança. */
+    class NoSpaceException : Exception()
+
     fun download(
         context: Context,
         urlText: String,
@@ -41,6 +47,10 @@ object MusicDownloader {
                 }
             } catch (t: HtmlResponseException) {
                 message = context.getString(R.string.download_html_error)
+            } catch (t: SpaceLimitException) {
+                message = context.getString(R.string.downloads_limit_reached)
+            } catch (t: NoSpaceException) {
+                message = context.getString(R.string.downloads_no_space)
             } catch (t: Throwable) {
                 message = context.getString(R.string.download_failed, name)
             }
@@ -68,7 +78,15 @@ object MusicDownloader {
      * localizar o arquivo depois — nem para tocar, nem para apagar quando a assinatura sai.
      */
     fun downloadBlockingUri(context: Context, urlText: String, name: String): String? =
-        runCatching { downloadToStore(context, urlText, name)?.toString() }.getOrNull()
+        try {
+            downloadToStore(context, urlText, name)?.toString()
+        } catch (t: SpaceLimitException) {
+            throw t
+        } catch (t: NoSpaceException) {
+            throw t
+        } catch (t: Throwable) {
+            null
+        }
 
     private fun downloadToStore(context: Context, urlText: String, name: String): Uri? {
         // O parcial fica em `cacheDir` (privado do app, some sozinho), e não no
@@ -118,6 +136,12 @@ object MusicDownloader {
             if (append) runCatching {
                 CrashLogger.writeLog(context, "download: retomando de $existing bytes (total $total) — $urlText")
             }
+            // O teto vale para podcast e para o download por URL, não só para o vídeo do
+            // Download Center. O arquivo final é uma cópia do parcial para o MediaStore,
+            // então o pico conta o total — não a diferença da retomada.
+            val need = neededBytes(total)
+            if (!OfflineSpace.hasRoomFor(context, need)) throw NoSpaceException()
+            if (OfflineSpace.limitExceeded(context, need, fresh = true)) throw SpaceLimitException()
             part.parentFile?.mkdirs()
             conn.inputStream.use { input ->
                 FileOutputStream(part, append).use { out -> copyWithProgress(input, out, total) }
@@ -242,6 +266,16 @@ object MusicDownloader {
      */
     fun shouldAppend(code: Int, existingBytes: Long): Boolean =
         code == 206 && existingBytes > 0L
+
+    /**
+     * Quanto o download vai **acrescentar** ao que o app já contabiliza.
+     *
+     * Diferente do `.part` do Download Center, o parcial daqui fica em `cacheDir` e não entra
+     * no "usado" — e o arquivo final é uma **cópia** dele para o MediaStore, então o pico usa
+     * o total, não a diferença. Sem `Content-Length`, `0`: a checagem de entrada ainda pega o
+     * teto já estourado, mas não dá para prever o tamanho.
+     */
+    fun neededBytes(total: Long): Long = if (total <= 0L) 0L else total
 
     /**
      * O parcial bate com o total anunciado pelo servidor.

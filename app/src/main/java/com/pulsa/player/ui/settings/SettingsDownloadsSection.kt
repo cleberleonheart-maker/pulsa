@@ -13,6 +13,8 @@ import com.pulsa.player.SettingsActivity
 import com.pulsa.player.core.Helper
 import com.pulsa.player.core.KidsMode
 import com.pulsa.player.core.Settings
+import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.media.OfflineSpace
 import com.pulsa.player.media.OfficialMediaResolver
 import com.pulsa.player.media.UrlDownloader
 import com.pulsa.player.work.PulsaWork
@@ -48,6 +50,33 @@ internal fun SettingsActivity.startDownload() {
 
 private fun SettingsActivity.enqueueDownload(targetUrl: String, name: String) {
     val finalName = name.ifEmpty { UrlDownloader.guessName(targetUrl) }
+    val app = applicationContext
+    // O teto e o espaço livre vêm do Room + MediaStore (podcast), então a leitura sai da main.
+    ThreadPool.post {
+        val limit = OfflineSpace.limitBytes(app)
+        val used = OfflineSpace.usedBytes(app, fresh = true)
+        val free = OfflineSpace.freeBytes(app)
+        runOnUiThread {
+            if (isFinishing || isDestroyed) return@runOnUiThread
+            when {
+                limit > 0L && used >= limit -> MaterialAlertDialogBuilder(this)
+                    .setMessage(R.string.downloads_limit_reached)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+
+                free in 1 until OfflineSpace.LOW_FREE_BYTES -> MaterialAlertDialogBuilder(this)
+                    .setMessage(getString(R.string.downloads_warning_free, Helper.formatBytes(free)))
+                    .setPositiveButton(R.string.download) { _, _ -> enqueueNow(targetUrl, finalName) }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+
+                else -> enqueueNow(targetUrl, finalName)
+            }
+        }
+    }
+}
+
+private fun SettingsActivity.enqueueNow(targetUrl: String, finalName: String) {
     // Virou job do WorkManager: espera a rede, e se a tela fechar no meio o download
     // continua -- antes era uma thread do pool que morria junto com o processo sem aviso.
     val job = PulsaWork.download(this, targetUrl, finalName)

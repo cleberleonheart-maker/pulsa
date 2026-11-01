@@ -55,6 +55,7 @@ object OfflineCleanupRunner {
                 if (c.path.isNotBlank()) PodcastFiles.delete(context, c.path)
                 db.setFilePath(epId, "")
             }
+            OfflineSpace.invalidate()
         }
 
         Settings.setPendingOfflineClean(context, plan.count, plan.bytes)
@@ -103,7 +104,7 @@ object OfflineCleanupRunner {
                     id = ep.id.toString(),
                     title = ep.title,
                     kind = OfflineCleanup.Kind.EPISODE,
-                    bytes = runCatching { file.length() }.getOrDefault(0L),
+                    bytes = PodcastFiles.size(context, ep.filePath),
                     lastUsedMs = maxOf(
                         (lastPlayed[-ep.id] ?: 0L) * 1000L,
                         runCatching { file.lastModified() }.getOrDefault(0L)

@@ -21,6 +21,7 @@ import com.pulsa.player.data.CoverFetcher
 import com.pulsa.player.data.Library
 import com.pulsa.player.media.MusicDownloader
 import com.pulsa.player.media.OfflineCleanupRunner
+import com.pulsa.player.media.OfflineSpace
 import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.podcast.PodcastSync
 import com.pulsa.player.sync.RemoteSync
@@ -273,16 +274,37 @@ object PulsaWork {
             val url = inputData.getString(KEY_URL).orEmpty()
             val name = inputData.getString(KEY_NAME).orEmpty()
             if (url.isBlank() || name.isBlank()) return Result.failure()
+            val ctx = applicationContext
             return withContext(Dispatchers.IO) {
-                MusicDownloader.downloadBlockingUri(applicationContext, url, name)
-            }.let { path ->
-                // O endereço vai no `outputData` de propósito: o podcast (F3) precisa saber
-                // **onde** ficou o episódio para tocar offline e para apagar depois. Um
-                // `success()` sem caminho obrigaria a UI a procurar o arquivo pelo nome, e a
-                // extensão é decidida pelo servidor — a busca voltaria vazia na maioria dos
-                // feeds.
-                if (path.isNullOrBlank()) Result.retry()
-                else Result.success(workDataOf(DownloadWorker.KEY_OUT_PATH to path))
+                // A checagem de entrada é o que cobre o podcast e o download por URL: o
+                // `DownloadService` já faz o mesmo para vídeo. Sem espaço (ou com o teto
+                // estourado) não adianta nem abrir a conexão, e `failure()` evita o retry
+                // infinito de um limite que só o usuário pode mudar.
+                if (!OfflineSpace.hasRoomFor(ctx, 0L) ||
+                    OfflineSpace.limitExceeded(ctx, 0L, fresh = true)
+                ) {
+                    return@withContext Result.failure()
+                }
+                try {
+                    val path = MusicDownloader.downloadBlockingUri(ctx, url, name)
+                    // O endereço vai no `outputData` de propósito: o podcast (F3) precisa saber
+                    // **onde** ficou o episódio para tocar offline e para apagar depois. Um
+                    // `success()` sem caminho obrigaria a UI a procurar o arquivo pelo nome, e a
+                    // extensão é decidida pelo servidor — a busca voltaria vazia na maioria dos
+                    // feeds.
+                    if (path.isNullOrBlank()) {
+                        Result.retry()
+                    } else {
+                        // Um episódio novo muda a conta do teto; o cache curto do
+                        // [OfflineSpace] não pode continuar dizendo o tamanho de antes.
+                        OfflineSpace.invalidate()
+                        Result.success(workDataOf(DownloadWorker.KEY_OUT_PATH to path))
+                    }
+                } catch (t: MusicDownloader.SpaceLimitException) {
+                    Result.failure()
+                } catch (t: MusicDownloader.NoSpaceException) {
+                    Result.failure()
+                }
             }
         }
 

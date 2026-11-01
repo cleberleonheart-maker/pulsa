@@ -21,12 +21,13 @@ import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
 
 import com.pulsa.player.core.Helper
-import com.pulsa.player.core.Settings
+import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.StreamHistory
 
 
 import com.pulsa.player.media.DownloadService
 import com.pulsa.player.media.DownloadStore
+import com.pulsa.player.media.OfflineSpace
 import com.pulsa.player.media.OfficialMediaResolver
 import com.pulsa.player.media.UrlDownloader
 import com.pulsa.player.ui.adapter.DownloadsAdapter
@@ -48,15 +49,16 @@ import com.pulsa.player.work.PulsaWork
 class DownloadsTabFragment : Fragment() {
 
 
-    // Barra de 512 MB: abaixo disto, o Android começa a chiar (limpeza de cache, apps que
-    // se recusam a atualizar), então o aviso do app tem que acender antes, não junto.
-    private val LOW_FREE_BYTES = 512L * 1024L * 1024L
-
     private lateinit var adapter: DownloadsAdapter
     private lateinit var emptyView: TextView
     private lateinit var banner: TextView
 
     private var observer: (() -> Unit)? = null
+
+    /** Total offline (vídeos + podcasts), medido fora da main. `-1` = ainda não medido. */
+    private var offlineUsed = -1L
+    private var scanningSpace = false
+    private var lastSpaceScan = 0L
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val ctx = requireContext()
@@ -124,10 +126,18 @@ class DownloadsTabFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         DownloadStore.ensureLoaded(requireContext())
+        offlineUsed = DownloadStore.usedBytes(requireContext())
         val obs: () -> Unit = { render() }
         observer = obs
         DownloadStore.addObserver(obs)
         render()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // O podcast pode ter baixado com a aba em segundo plano; o total offline tem que
+        // voltar atualizado em vez de esperar a próxima mudança do DownloadStore.
+        primeOfflineSpace(force = true)
     }
 
     override fun onDestroyView() {
@@ -143,6 +153,34 @@ class DownloadsTabFragment : Fragment() {
         emptyView.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
 
         refreshBanner()
+        primeOfflineSpace()
+    }
+
+    /**
+     * Mede o total offline fora da main.
+     *
+     * O tamanho dos episódios vem do Room + um `query` por `content://`; fazer isso no
+     * `render()` — que roda a cada 400 ms durante um download — travava a lista. O cache do
+     * [OfflineSpace] e o intervalo daqui mantêm o banner perto do real sem varrer o banco a
+     * cada bloco.
+     */
+    private fun primeOfflineSpace(force: Boolean = false) {
+        if (scanningSpace) return
+        val now = System.currentTimeMillis()
+        if (!force && offlineUsed >= 0L && now - lastSpaceScan < 5_000L) return
+        val app = context?.applicationContext ?: return
+        scanningSpace = true
+        ThreadPool.post {
+            val used = OfflineSpace.usedBytes(app)
+            val at = System.currentTimeMillis()
+            ThreadPool.onUi {
+                scanningSpace = false
+                if (!isAdded) return@onUi
+                offlineUsed = used
+                lastSpaceScan = at
+                refreshBanner()
+            }
+        }
     }
 
     /**
@@ -159,18 +197,17 @@ class DownloadsTabFragment : Fragment() {
         val ctx = context ?: return
         val messages = ArrayList<String>()
 
-        val limitMb = Settings.downloadLimitMb(ctx)
-        if (limitMb > 0) {
-            val used = DownloadStore.usedBytes(ctx)
-            val limit = limitMb * 1024L * 1024L
+        val limit = OfflineSpace.limitBytes(ctx)
+        if (limit > 0L) {
+            val used = if (offlineUsed >= 0L) offlineUsed else DownloadStore.usedBytes(ctx)
             messages += getString(R.string.downloads_used_cap, Helper.formatBytes(used), Helper.formatBytes(limit))
             if (used >= limit) {
                 messages += getString(R.string.downloads_warning_limit)
             }
         }
 
-        val free = runCatching { DownloadStore.dir(ctx).usableSpace }.getOrDefault(0L)
-        if (free in 1 until LOW_FREE_BYTES) {
+        val free = OfflineSpace.freeBytes(ctx)
+        if (free in 1 until OfflineSpace.LOW_FREE_BYTES) {
             messages += getString(R.string.downloads_warning_free, Helper.formatBytes(free))
         }
 
@@ -238,8 +275,41 @@ class DownloadsTabFragment : Fragment() {
         }
     }
 
+    /**
+     * Aviso antes de baixar por URL: o Worker recusa o teto estourado de qualquer jeito, mas
+     * um "falhou" depois é pior do que dizer na hora que não cabe. O espaço livre também
+     * ganha confirmação, porque o usuário pode querer abrir espaço e tentar de novo.
+     */
     private fun enqueueDownload(ctx: Context, url: String, name: String) {
         val finalName = name.ifEmpty { UrlDownloader.guessName(url) }
+        val app = ctx.applicationContext
+        ThreadPool.post {
+            val limit = OfflineSpace.limitBytes(app)
+            val used = OfflineSpace.usedBytes(app, fresh = true)
+            val free = OfflineSpace.freeBytes(app)
+            ThreadPool.onUi {
+                if (!isAdded) return@onUi
+                when {
+                    limit > 0L && used >= limit -> MaterialAlertDialogBuilder(ctx)
+                        .setMessage(R.string.downloads_limit_reached)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show()
+
+                    free in 1 until OfflineSpace.LOW_FREE_BYTES -> MaterialAlertDialogBuilder(ctx)
+                        .setMessage(
+                            getString(R.string.downloads_warning_free, Helper.formatBytes(free))
+                        )
+                        .setPositiveButton(R.string.download) { _, _ -> enqueueNow(ctx, url, finalName) }
+                        .setNegativeButton(R.string.cancel, null)
+                        .show()
+
+                    else -> enqueueNow(ctx, url, finalName)
+                }
+            }
+        }
+    }
+
+    private fun enqueueNow(ctx: Context, url: String, finalName: String) {
         val job = PulsaWork.download(ctx, url, finalName)
         if (job == null) {
             toast(R.string.download_failed, finalName)

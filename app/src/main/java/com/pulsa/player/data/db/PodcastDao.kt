@@ -144,6 +144,10 @@ interface PodcastDao {
     @Query("SELECT _id FROM podcast_episodes WHERE file_path != '' ORDER BY _id DESC LIMIT :limit")
     fun downloadedIds(limit: Int): List<Long>
 
+    /** Caminhos de todos os episódios baixados, para somar o espaço offline. */
+    @Query("SELECT file_path FROM podcast_episodes WHERE file_path != ''")
+    fun downloadedPaths(): List<String>
+
     @Query("UPDATE podcast_episodes SET file_path = :path WHERE _id = :id")
     fun setFilePath(id: Long, path: String)
 

@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.27):
- → TALKING AVATAR
- • Virgin, Victor and Vera now open and close their mouths while music plays (.playing state, like TAMI).
- • Pausing closes the mouth; sleep mode still keeps the eyes shut.
- • The DJ booth now shows the active avatar (Virgin, Victor or Vera).</string>
+    <string name="changelog">What is new (5.12.28):
+ → ONE OFFLINE SPACE
+ • The storage limit now counts downloaded videos and podcast episodes together.
+ • Downloading an episode or URL file warns before hitting the limit or filling the card.
+ • The Downloads banner shows the real total (videos + podcasts).</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>

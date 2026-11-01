@@ -182,6 +182,9 @@ class PodcastDb(
 
     fun downloadedIds(limit: Int = 200): List<Long> = dao.downloadedIds(limit)
 
+    /** Caminhos de todos os episódios baixados, para o teto de espaço offline. */
+    fun downloadedPaths(): List<String> = dao.downloadedPaths()
+
     /** Os episódios com arquivo em disco, para apagar antes de remover a assinatura. */
     fun downloadedEpisodes(podcastId: Long): List<Episode> =
         dao.downloadedEpisodes(podcastId).map(PodcastEpisodeEntity::toEpisode)
