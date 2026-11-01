@@ -29,14 +29,17 @@ class PodcastDb(
      * usuário cola o endereço de novo em vez de achar na lista, e um feed duplicado apareceria
      * duas vezes na tela com os mesmos episódios.
      */
-    fun subscribe(podcast: Podcast): Long {
+    fun subscribe(podcast: Podcast): Long = subscribeDetailed(podcast).podcastId
+
+    internal fun subscribeDetailed(podcast: Podcast): SubscribeResult {
         dao.feedIdByUrl(podcast.feedUrl)?.let { existing ->
             dao.setSubscribed(existing, true)
             dao.applyFeed(
                 existing, podcast.title, podcast.author, podcast.description,
                 podcast.artworkUrl, System.currentTimeMillis()
             )
-            return existing
+            val stored = storeEpisodesDetailed(existing, podcast.episodes)
+            return SubscribeResult(existing, stored.newEpisodes)
         }
         val id = dao.insertFeed(
             PodcastFeedEntity(
@@ -51,16 +54,18 @@ class PodcastDb(
         // `insertFeed` é `IGNORE`, então devolve `-1` quando o `feed_url` bateu com uma linha
         // existente entre a consulta acima e o insert (duas abas do app, um refresh em paralelo).
         if (id > 0) {
-            storeEpisodes(id, podcast.episodes)
-            return id
+            val stored = storeEpisodesDetailed(id, podcast.episodes)
+            return SubscribeResult(id, stored.newEpisodes)
         }
         dao.feedIdByUrl(podcast.feedUrl)?.let { existing ->
             dao.setSubscribed(existing, true)
-            storeEpisodes(existing, podcast.episodes)
-            return existing
+            val stored = storeEpisodesDetailed(existing, podcast.episodes)
+            return SubscribeResult(existing, stored.newEpisodes)
         }
-        return 0L
+        return SubscribeResult(0L, emptyList())
     }
+
+    internal data class SubscribeResult(val podcastId: Long, val newEpisodes: List<Episode>)
 
     fun feeds(): List<PodcastFeedRow> = dao.subscribedFeeds()
 
@@ -86,14 +91,26 @@ class PodcastDb(
      * `file_path` sobrevivem ao refresh — é o que permite atualizar o mesmo podcast todo dia
      * sem perder onde a pessoa parou.
      */
-    fun storeEpisodes(podcastId: Long, episodes: List<Episode>): Int {
-        if (podcastId <= 0L) return 0
+    fun storeEpisodes(podcastId: Long, episodes: List<Episode>): Int =
+        storeEpisodesDetailed(podcastId, episodes).added
+
+    /**
+     * A mesma gravação do [storeEpisodes], mas devolvendo **quais** episódios entraram.
+     *
+     * O auto-download precisa saber os novos, e não só quantos: baixar "os N mais recentes do
+     * feed" depois de um refresh baixaria também o acervo antigo na primeira assinatura. A
+     * lista carrega o id local já atribuído pelo Room, que é o que o download usa.
+     */
+    private fun storeEpisodesDetailed(podcastId: Long, episodes: List<Episode>): StoreResult {
+        if (podcastId <= 0L) return StoreResult(0, emptyList())
         var added = 0
+        val newEpisodes = ArrayList<Episode>()
         for (ep in episodes) {
             val row = ep.toEntity(podcastId)
             val inserted = dao.insertEpisode(row)
             val id = if (inserted > 0) {
                 added++
+                newEpisodes += ep.copy(id = inserted, podcastId = podcastId)
                 inserted
             } else {
                 // `IGNORE` devolve `-1` no conflito; sem este SELECT o `refreshEpisode` não
@@ -113,8 +130,10 @@ class PodcastDb(
         // player cairia no `Uri.fromFile("podcast:123")` — o episódio mais recente, o mais
         // provável de ser tocado, seria justamente o que não toca.
         PodcastCache.putAll(episodes)
-        return added
+        return StoreResult(added, newEpisodes)
     }
+
+    private data class StoreResult(val added: Int, val newEpisodes: List<Episode>)
 
     /**
      * Aplica um feed já baixado a uma assinatura existente.
@@ -126,7 +145,10 @@ class PodcastDb(
         dao.applyFeed(
             ref.id, podcast.title, podcast.author, podcast.description, podcast.artworkUrl, now
         )
-        return RefreshResult(ref.id, storeEpisodes(ref.id, podcast.episodes))
+        val stored = storeEpisodesDetailed(ref.id, podcast.episodes)
+        return RefreshResult(
+            ref.id, stored.added, newEpisodes = stored.newEpisodes
+        )
     }
 
     fun setFeedError(id: Long, error: String) = dao.setFeedError(id, error)
@@ -259,7 +281,9 @@ class PodcastDb(
     data class RefreshResult(
         val podcastId: Long,
         val added: Int,
-        val error: String = ""
+        val error: String = "",
+        /** Episódios que este refresh inseriu, com o id local já preenchido. */
+        val newEpisodes: List<Episode> = emptyList()
     ) {
         val ok: Boolean get() = error.isEmpty()
     }
@@ -335,7 +359,8 @@ object PodcastSync {
             db.logFeedFailure("assinar", url, full.ifBlank { "feed inválido" })
             return SubscribeOutcome(0L, message)
         }
-        return SubscribeOutcome(db.subscribe(podcast), "")
+        val result = db.subscribeDetailed(podcast)
+        return SubscribeOutcome(result.podcastId, "", result.newEpisodes)
     }
 
     /**
@@ -366,16 +391,21 @@ object PodcastSync {
     }
 
     /** Atualiza todas as assinaturas. Usado pelo worker. */
-    fun refreshAll(db: PodcastDb): Int {
-        var added = 0
+    fun refreshAll(db: PodcastDb): List<PodcastDb.RefreshResult> {
+        val results = ArrayList<PodcastDb.RefreshResult>()
         for (ref in db.feedsToRefresh()) {
             if (ref.feedUrl.isNullOrBlank()) continue
-            added += refreshFeed(db, ref).added
+            results += refreshFeed(db, ref)
         }
-        return added
+        return results
     }
 
-    data class SubscribeOutcome(val podcastId: Long, val error: String) {
+    data class SubscribeOutcome(
+        val podcastId: Long,
+        val error: String,
+        /** Episódios que a assinatura inseriu, para o auto-download. */
+        val newEpisodes: List<Episode> = emptyList()
+    ) {
         val ok: Boolean get() = error.isEmpty() && podcastId > 0L
     }
 }

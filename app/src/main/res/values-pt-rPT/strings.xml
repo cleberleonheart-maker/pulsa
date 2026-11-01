@@ -9,10 +9,10 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.29):
- → CABELO MAIS NATURAL
- • A Virgin e a Vera agora têm franja e mechas finas que emolduram o rosto, sem o volume escuro de antes.
- • O Victor mantém o boné, com o cabelo curto mais discreto nas laterais.</string>
+    <string name="changelog">Novidades desta versão (5.12.30):
+ → NOVOS EPISÓDIOS NO OFFLINE
+ • Em Configurações → Transferências, escolha transferir 1, 3 ou 5 episódios novos de cada podcast (desligado por predefinição).
+ • A transferência só acontece por Wi‑Fi e respeita o limite de espaço já configurado.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -372,6 +372,10 @@
     <string name="kids_pin_mismatch">As palavras-passe não coincidem</string>
     <string name="podcast_prefetch">Adiantar o próximo episódio</string>
     <string name="podcast_prefetch_hint">Enquanto um episódio toca, transfere o seguinte da fila por Wi‑Fi para a mudança não parar a carregar. Só por Wi‑Fi; nunca usa os seus dados móveis.</string>
+    <string name="podcast_auto_download">Transferir novos episódios</string>
+    <string name="podcast_auto_download_hint">Transfere automaticamente os episódios novos de cada podcast, só por Wi‑Fi e dentro do limite de espaço. Desligado por predefinição.</string>
+    <string name="podcast_auto_download_off">Desligado</string>
+    <string name="podcast_auto_download_value">%1$d por podcast</string>
     <string name="skip_silence">Saltar silêncios no podcast</string>
     <string name="skip_silence_hint">Corta as pausas longas do episódio (blocos, o respirar antes da publicidade). Só no podcast, nunca na música.</string>
     <string name="ad_skip">Saltar publicidade falada</string>

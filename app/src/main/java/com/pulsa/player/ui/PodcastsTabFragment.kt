@@ -20,6 +20,7 @@ import com.pulsa.player.R
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.db.FeedRef
 import com.pulsa.player.data.db.PodcastFeedRow
+import com.pulsa.player.podcast.PodcastAutoDownload
 import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.podcast.PodcastFiles
 import com.pulsa.player.podcast.PodcastNet
@@ -161,6 +162,7 @@ class PodcastsTabFragment : Fragment() {
         ThreadPool.postNetwork {
             val ref = FeedRef(feed.id, feed.feedUrl)
             val result = PodcastSync.refreshFeed(PodcastDb.get(ctx), ref)
+            PodcastAutoDownload.afterRefresh(ctx, listOf(result))
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
                 if (result.ok) {
@@ -296,6 +298,7 @@ class PodcastsTabFragment : Fragment() {
         status.setText(R.string.podcast_loading)
         ThreadPool.postNetwork {
             val outcome = PodcastSync.subscribeByUrl(PodcastDb.get(ctx), url)
+            PodcastAutoDownload.afterNewEpisodes(ctx, outcome.newEpisodes)
             ThreadPool.onUi {
                 loadingView.visibility = View.GONE
                 if (outcome.ok) {

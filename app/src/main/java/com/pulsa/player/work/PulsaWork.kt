@@ -22,6 +22,8 @@ import com.pulsa.player.data.Library
 import com.pulsa.player.media.MusicDownloader
 import com.pulsa.player.media.OfflineCleanupRunner
 import com.pulsa.player.media.OfflineSpace
+import com.pulsa.player.podcast.PodcastAutoDownload
+import com.pulsa.player.podcast.PodcastCache
 import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.podcast.PodcastSync
 import com.pulsa.player.sync.RemoteSync
@@ -121,9 +123,14 @@ object PulsaWork {
      * obrigatório; e `KEEP` para a mesma chamada repetida na troca de faixa não recomeçar um
      * download já rodando.
      */
-    fun prefetch(context: Context, url: String, name: String): UUID? {
+    fun prefetch(context: Context, url: String, name: String, episodeId: Long = 0L): UUID? {
+        val data = workDataOf(
+            DownloadWorker.KEY_URL to url,
+            DownloadWorker.KEY_NAME to name,
+            DownloadWorker.KEY_EPISODE_ID to episodeId
+        )
         val request = OneTimeWorkRequestBuilder<DownloadWorker>()
-            .setInputData(workDataOf(DownloadWorker.KEY_URL to url, DownloadWorker.KEY_NAME to name))
+            .setInputData(data)
             .setConstraints(
                 Constraints.Builder().setRequiredNetworkType(NetworkType.UNMETERED).build()
             )
@@ -240,7 +247,10 @@ object PulsaWork {
          */
         private suspend fun refreshPodcasts(ctx: Context) {
             withContext(Dispatchers.IO) {
-                runCatching { PodcastSync.refreshAll(PodcastDb.get(ctx)) }
+                runCatching {
+                    val db = PodcastDb.get(ctx)
+                    PodcastAutoDownload.afterRefresh(ctx, PodcastSync.refreshAll(db))
+                }
             }
         }
     }
@@ -273,6 +283,7 @@ object PulsaWork {
         override suspend fun doWork(): Result {
             val url = inputData.getString(KEY_URL).orEmpty()
             val name = inputData.getString(KEY_NAME).orEmpty()
+            val episodeId = inputData.getLong(KEY_EPISODE_ID, 0L)
             if (url.isBlank() || name.isBlank()) return Result.failure()
             val ctx = applicationContext
             return withContext(Dispatchers.IO) {
@@ -295,6 +306,14 @@ object PulsaWork {
                     if (path.isNullOrBlank()) {
                         Result.retry()
                     } else {
+                        // O worker grava o caminho, e não só quem chamou: o auto-download
+                        // pode terminar com o processo já morto, e um `watchDownload` que
+                        // não existe mais deixaria o arquivo baixado sem referência no banco.
+                        if (episodeId > 0L) {
+                            val db = PodcastDb.get(ctx)
+                            db.setFilePath(episodeId, path)
+                            PodcastCache.put(episodeId, path)
+                        }
                         // Um episódio novo muda a conta do teto; o cache curto do
                         // [OfflineSpace] não pode continuar dizendo o tamanho de antes.
                         OfflineSpace.invalidate()
@@ -311,6 +330,7 @@ object PulsaWork {
         companion object {
             const val KEY_URL = "url"
             const val KEY_NAME = "name"
+            const val KEY_EPISODE_ID = "episodeId"
             const val KEY_OUT_PATH = "outPath"
         }
     }

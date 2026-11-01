@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.29):
- → PELO MÁS NATURAL
- • Virgin y Vera ahora tienen flequillo y mechones finos que enmarcan la cara, sin el volumen oscuro de antes.
- • Victor mantiene la gorra, con el pelo corto más discreto a los lados.</string>
+    <string name="changelog">Novedades de esta versión (5.12.30):
+ → EPISODIOS NUEVOS OFFLINE
+ • En Ajustes → Descargas, elige descargar 1, 3 o 5 episodios nuevos de cada podcast (desactivado por defecto).
+ • Las descargas solo ocurren por Wi‑Fi y respetan el límite de espacio configurado.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -467,6 +467,10 @@
     <string name="kids_pin_mismatch">Las contraseñas no coinciden</string>
     <string name="podcast_prefetch">Adelantar el próximo episodio</string>
     <string name="podcast_prefetch_hint">Mientras suena un episodio, descarga el siguiente de la cola por Wi‑Fi para que el cambio no se detenga a cargar. Solo por Wi‑Fi; nunca usa tus datos móviles.</string>
+    <string name="podcast_auto_download">Descargar episodios nuevos</string>
+    <string name="podcast_auto_download_hint">Descarga automáticamente los episodios nuevos de cada podcast, solo por Wi‑Fi y dentro del límite de espacio. Desactivado por defecto.</string>
+    <string name="podcast_auto_download_off">Desactivado</string>
+    <string name="podcast_auto_download_value">%1$d por podcast</string>
     <string name="skip_silence">Saltar silencios en el podcast</string>
     <string name="skip_silence_hint">Recorta las pausas largas del episodio (bloques, el respiro antes de la publicidad). Solo en podcast, nunca en la música.</string>
     <string name="ad_skip">Saltar anuncios hablados</string>

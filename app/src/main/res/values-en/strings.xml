@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.29):
- → MORE NATURAL HAIR
- • Virgin and Vera now have a fringe and thin strands framing their faces, without the heavy dark look from before.
- • Victor keeps the cap, with shorter, subtler hair on the sides.</string>
+    <string name="changelog">What is new (5.12.30):
+ → NEW EPISODES OFFLINE
+ • In Settings → Downloads, choose to download 1, 3 or 5 new episodes from each podcast (off by default).
+ • Downloads only happen over Wi‑Fi and respect your storage limit.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -467,6 +467,10 @@
     <string name="kids_pin_mismatch">The passwords don\'t match</string>
     <string name="podcast_prefetch">Preload the next episode</string>
     <string name="podcast_prefetch_hint">While an episode plays, it downloads the next one in the queue over Wi-Fi so the switch doesn\'t stop to buffer. Wi-Fi only; never uses your mobile data.</string>
+    <string name="podcast_auto_download">Download new episodes</string>
+    <string name="podcast_auto_download_hint">Automatically downloads each podcast\'s new episodes over Wi‑Fi, within the storage limit. Off by default.</string>
+    <string name="podcast_auto_download_off">Off</string>
+    <string name="podcast_auto_download_value">%1$d per podcast</string>
     <string name="skip_silence">Skip silences in podcasts</string>
     <string name="skip_silence_hint">Cuts the long pauses in an episode (segments, the breath before an ad). Podcasts only; music plays untouched.</string>
     <string name="ad_skip">Skip spoken ads</string>

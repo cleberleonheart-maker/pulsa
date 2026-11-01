@@ -1,13 +1,9 @@
 package com.pulsa.player.podcast
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
-import com.pulsa.player.media.OfflineSpace
 import com.pulsa.player.model.Song
-import com.pulsa.player.work.PulsaWork
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -42,29 +38,19 @@ object PodcastPrefetch {
                 enabled = Settings.podcastPrefetch(app),
                 episodeId = epId,
                 alreadyRequested = already,
-                unmetered = unmetered(app)
+                unmetered = PodcastDownloads.unmetered(app)
             )
         ) return
         requested.set(epId)
         ThreadPool.post {
-            val db = PodcastDb.get(app)
-            val ep = db.episode(epId) ?: return@post
+            val ep = PodcastDb.get(app).episode(epId) ?: return@post
             // Já baixado, é vídeo (a tela cuida do download sozinha) ou nem tem URL de áudio.
             if (ep.downloaded || ep.isVideo || !ep.audioUrl.startsWith("http")) return@post
-            val job = PulsaWork.prefetch(app, ep.audioUrl, "podcast-ep${ep.id}") ?: return@post
-            PulsaWork.watchDownload(app, job) { ok, path ->
-                if (ok && path.isNotBlank()) {
-                    ThreadPool.post {
-                        db.setFilePath(ep.id, path)
-                        PodcastCache.put(ep.id, path)
-                        OfflineSpace.invalidate()
-                    }
-                } else {
-                    // O `compareAndSet` devolve a chance: se o usuário voltar a este episódio
-                    // mais tarde, a próxima troca de faixa tenta de novo em vez de ficar presa
-                    // no "já pedi" de uma tentativa que falhou.
-                    requested.compareAndSet(ep.id, 0L)
-                }
+            PodcastDownloads.enqueue(app, ep) { ok ->
+                // O `compareAndSet` devolve a chance: se o usuário voltar a este episódio
+                // mais tarde, a próxima troca de faixa tenta de novo em vez de ficar presa
+                // no "já pedi" de uma tentativa que falhou.
+                if (!ok) requested.compareAndSet(ep.id, 0L)
             }
         }
     }
@@ -83,20 +69,4 @@ object PodcastPrefetch {
         alreadyRequested: Boolean,
         unmetered: Boolean
     ): Boolean = currentIsPodcast && enabled && episodeId > 0L && !alreadyRequested && unmetered
-
-    /**
-     * A rede atual é Wi-Fi/Ethernet (não medida).
-     *
-     * A constraint do job já é `UNMETERED`, mas checar aqui evita enfileirar num momento em
-     * que só há dados móveis: sem isto, o job entraria na fila do WorkManager e esperaria o
-     * Wi-Fi voltar, o que segura recurso à toa para um "se der" que pode nunca acontecer.
-     */
-    private fun unmetered(context: Context): Boolean {
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-            ?: return false
-        val caps = cm.getNetworkCapabilities(cm.activeNetwork ?: return false) ?: return false
-        if (!caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) return false
-        return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-            caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-    }
 }

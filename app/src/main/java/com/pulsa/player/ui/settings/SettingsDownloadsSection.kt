@@ -274,6 +274,35 @@ internal fun SettingsActivity.promptOfflineCleanup(valueView: TextView?) {
         .show()
 }
 
+internal fun SettingsActivity.refreshPodcastAutoDownload(valueView: TextView?) {
+    val count = Settings.podcastAutoDownloadCount(this)
+    valueView?.text = if (count <= 0) {
+        getString(R.string.podcast_auto_download_off)
+    } else {
+        getString(R.string.podcast_auto_download_value, count)
+    }
+}
+
+internal fun SettingsActivity.promptPodcastAutoDownload(valueView: TextView?) {
+    val current = Settings.podcastAutoDownloadCount(this)
+    val options = intArrayOf(0, 1, 3, 5)
+    val labels = options.map { count ->
+        if (count <= 0) getString(R.string.podcast_auto_download_off)
+        else getString(R.string.podcast_auto_download_value, count)
+    }.toTypedArray()
+    MaterialAlertDialogBuilder(this)
+        .setTitle(R.string.podcast_auto_download)
+        .setSingleChoiceItems(
+            labels,
+            options.indexOfFirst { it == current }.let { if (it < 0) 0 else it }
+        ) { _, which ->
+            Settings.setPodcastAutoDownloadCount(this, options[which])
+            refreshPodcastAutoDownload(valueView)
+        }
+        .setNegativeButton(R.string.cancel, null)
+        .show()
+}
+
 internal fun SettingsActivity.startCoverDownload() {
     val id = PulsaWork.downloadCovers(this)
     if (id == null) {

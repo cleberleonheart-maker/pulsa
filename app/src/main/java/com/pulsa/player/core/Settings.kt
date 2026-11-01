@@ -845,6 +845,21 @@ object Settings {
         prefs(context).getBoolean("podcast_prefetch", true)
 
     /**
+     * Quantos episódios novos de cada feed baixar automaticamente. `0` desliga.
+     *
+     * Padrão desligado: diferente do prefetch (que só adianta o próximo da fila), esta regra
+     * baixa episódios que a pessoa ainda nem escolheu ouvir. Ligar é uma decisão explícita.
+     */
+    fun setPodcastAutoDownloadCount(context: Context, value: Int) {
+        prefs(context).edit()
+            .putInt("podcast_auto_download_count", value.coerceAtLeast(0))
+            .apply()
+    }
+
+    fun podcastAutoDownloadCount(context: Context): Int =
+        prefs(context).getInt("podcast_auto_download_count", 0).coerceAtLeast(0)
+
+    /**
      * Pular silêncios no podcast — corta as pausas longas do episódio (blocos, respiro antes da
      * propaganda). Só vale para podcast, nunca para música (ver
      * [com.pulsa.player.audio.SilenceSkipper]): numa faixa, pausa é parte da obra.
