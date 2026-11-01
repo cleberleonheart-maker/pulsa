@@ -299,9 +299,9 @@ class NowPlayingFragment : Fragment() {
     }
 
     /**
-     * F5 · Capítulos do episódio: lê a descrição do feed (que já tem o índice "00:00 ...") em
-     * background e abre a folha deles. Sem capítulos, avisa — o botão vive na linha do podcast
-     * justamente porque só episódio tem índice a oferecer.
+     * F5 · Capítulos e marcadores do episódio: lê a descrição do feed (que já tem o índice
+     * "00:00 ...") em background e abre a folha. Mesmo sem capítulos a folha abre, porque o
+     * usuário ainda pode criar marcadores no ponto atual.
      */
     private fun showChapters() {
         val song = Playback.currentSong ?: return
@@ -313,11 +313,13 @@ class NowPlayingFragment : Fragment() {
             val chapters = Chapters.parse(desc)
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
-                if (chapters.isEmpty()) {
-                    Toast.makeText(requireContext(), R.string.chapters_empty, Toast.LENGTH_SHORT).show()
-                    return@onUi
-                }
-                ChapterSheetFragment.show(parentFragmentManager, chapters, Playback.position, song.durationMs)
+                ChapterSheetFragment.show(
+                    parentFragmentManager,
+                    chapters,
+                    Playback.position,
+                    song.durationMs,
+                    epId
+                )
             }
         }
     }

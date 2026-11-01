@@ -16,9 +16,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         PodcastFeedEntity::class,
         PodcastEpisodeEntity::class,
         AutoRuleEntity::class,
-        PodcastTranscriptEntity::class
+        PodcastTranscriptEntity::class,
+        PodcastBookmarkEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class PulsaDatabase : RoomDatabase() {
@@ -222,6 +223,36 @@ abstract class PulsaDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * 10 → 11 são os marcadores do usuário no episódio.
+         *
+         * Tabela nova, nenhuma linha antiga tocada. O índice único em
+         * `(episode_id, position_ms)` é o que impede dois marcadores no mesmo instante — sem
+         * ele, tocar duas vezes no botão criaria uma lista com itens idênticos. Os `DEFAULT`
+         * espelham a entidade porque o Room compara coluna a coluna na validação de esquema.
+         */
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `podcast_bookmarks` (" +
+                        "`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`episode_id` INTEGER NOT NULL, " +
+                        "`position_ms` INTEGER NOT NULL DEFAULT 0, " +
+                        "`title` TEXT NOT NULL DEFAULT '', " +
+                        "`created_at` INTEGER NOT NULL DEFAULT 0)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "`index_podcast_bookmarks_episode_id_position_ms` " +
+                        "ON `podcast_bookmarks` (`episode_id`, `position_ms`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_podcast_bookmarks_episode_id` " +
+                        "ON `podcast_bookmarks` (`episode_id`)"
+                )
+            }
+        }
+
         @Volatile
         private var instance: PulsaDatabase? = null
 
@@ -231,7 +262,10 @@ abstract class PulsaDatabase : RoomDatabase() {
                 PulsaDatabase::class.java,
                 NAME
             )
-                .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+                .addMigrations(
+                    MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
+                    MIGRATION_10_11
+                )
                 .build()
                 .also { instance = it }
         }

@@ -28,4 +28,12 @@
         android:maxLines="2"
         android:textColor="@color/text_primary"
         android:textSize="15sp" />
+
+    <ImageView
+        android:id="@+id/chapter_bookmark"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="10dp"
+        android:contentDescription="@string/bookmark"
+        android:src="@drawable/ic_bookmark" />
 </LinearLayout>

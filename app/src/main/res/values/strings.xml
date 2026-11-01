@@ -33,10 +33,10 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.30):
- → NOVOS EPISÓDIOS NO OFFLINE
- • Em Configurações → Downloads, escolha baixar 1, 3 ou 5 episódios novos de cada podcast (desligado por padrão).
- • O download só acontece no Wi‑Fi e respeita o limite de espaço já configurado.</string>
+    <string name="changelog">Novidades desta versão (5.12.31):
+ → MARCADORES NO PODCAST
+ • Na lista de capítulos, toque em “Marcar este momento” para guardar onde você está.
+ • Toque no marcador para voltar; toque e segure para remover.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -910,6 +910,13 @@
     <string name="podcast_summary_desc">Ao terminar um episódio, a Virgin resume "o que ficou" e já emenda o próximo</string>
     <string name="chapters">Capítulos</string>
     <string name="chapters_empty">Este episódio não tem capítulos.</string>
+    <string name="bookmark">Marcador</string>
+    <string name="bookmark_add">Marcar este momento</string>
+    <string name="bookmark_default_title">Marcador em %1$s</string>
+    <string name="chapters_and_bookmarks">Capítulos e marcadores</string>
+    <string name="bookmark_remove">Remover marcador</string>
+    <string name="bookmark_remove_message">Remover “%1$s”?</string>
+    <string name="chapters_bookmarks_empty">Nenhum capítulo ou marcador neste episódio. Use “Marcar este momento” para guardar onde você está.</string>
     <string name="video_chapters_empty">Este vídeo não tem capítulos.</string>
 
     <string name="tami_radio_title">Rádio Virgin</string>

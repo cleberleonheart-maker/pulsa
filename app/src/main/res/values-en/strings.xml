@@ -30,10 +30,10 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.30):
- → NEW EPISODES OFFLINE
- • In Settings → Downloads, choose to download 1, 3 or 5 new episodes from each podcast (off by default).
- • Downloads only happen over Wi‑Fi and respect your storage limit.</string>
+    <string name="changelog">What is new (5.12.31):
+ → PODCAST BOOKMARKS
+ • In the chapter list, tap “Bookmark this moment” to save where you are.
+ • Tap a bookmark to jump back; touch and hold to remove it.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -791,6 +791,13 @@
     <string name="podcast_summary_desc">When an episode ends, Virgin sums up "what stuck" and rolls into the next one</string>
     <string name="chapters">Chapters</string>
     <string name="chapters_empty">This episode has no chapters.</string>
+    <string name="bookmark">Bookmark</string>
+    <string name="bookmark_add">Bookmark this moment</string>
+    <string name="bookmark_default_title">Bookmark at %1$s</string>
+    <string name="chapters_and_bookmarks">Chapters and bookmarks</string>
+    <string name="bookmark_remove">Remove bookmark</string>
+    <string name="bookmark_remove_message">Remove “%1$s”?</string>
+    <string name="chapters_bookmarks_empty">No chapters or bookmarks in this episode. Use “Bookmark this moment” to save where you are.</string>
     <string name="video_chapters_empty">This video has no chapters.</string>
 
     <string name="tami_radio_title">Virgin Radio</string>

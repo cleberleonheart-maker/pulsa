@@ -83,6 +83,21 @@ data class Episode(
 }
 
 /**
+ * Um marcador do usuário num episódio.
+ *
+ * Diferente do [Chapter], que vem pronto na descrição do feed, este é criado no aparelho para
+ * guardar um momento — uma frase, um trecho para voltar depois. Fica no banco (e não no
+ * `ChapterSheet` em memória) porque o motivo de existir é justamente atravessar sessões.
+ */
+data class Bookmark(
+    val id: Long = 0L,
+    val episodeId: Long = 0L,
+    val positionMs: Long = 0L,
+    val title: String = "",
+    val createdAt: Long = 0L
+)
+
+/**
  * Qual episódio tocar em seguida numa maratona, dado o atual e os candidatos.
  *
  * Pura de propósito: é a regra que decide a ordem do "próximo da série" tanto na fila

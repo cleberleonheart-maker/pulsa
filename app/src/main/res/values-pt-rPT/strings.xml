@@ -9,10 +9,10 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.30):
- → NOVOS EPISÓDIOS NO OFFLINE
- • Em Configurações → Transferências, escolha transferir 1, 3 ou 5 episódios novos de cada podcast (desligado por predefinição).
- • A transferência só acontece por Wi‑Fi e respeita o limite de espaço já configurado.</string>
+    <string name="changelog">Novidades desta versão (5.12.31):
+ → MARCADORES NO PODCAST
+ • Na lista de capítulos, toque em «Marcar este momento» para guardar onde está.
+ • Toque no marcador para voltar; mantenha premido para remover.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -427,4 +427,12 @@
     <string name="dj_voice_transcribe_offline">Por volta de %1$s: %2$s</string>
     <string name="dj_voice_transcribe_failed">Não consegui transcrever este episódio agora. Tente mais tarde.</string>
     <string name="dj_commands_transcribe">"Virgin, o que disseram sobre bitcoin neste episódio?" — pergunta sobre o podcast a tocar</string>
+
+    <string name="bookmark">Marcador</string>
+    <string name="bookmark_add">Marcar este momento</string>
+    <string name="bookmark_default_title">Marcador em %1$s</string>
+    <string name="chapters_and_bookmarks">Capítulos e marcadores</string>
+    <string name="bookmark_remove">Remover marcador</string>
+    <string name="bookmark_remove_message">Remover «%1$s»?</string>
+    <string name="chapters_bookmarks_empty">Nenhum capítulo ou marcador neste episódio. Use «Marcar este momento» para guardar onde está.</string>
 </resources>

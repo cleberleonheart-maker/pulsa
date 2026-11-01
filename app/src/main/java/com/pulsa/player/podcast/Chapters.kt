@@ -12,6 +12,45 @@ package com.pulsa.player.podcast
 data class Chapter(val startMs: Long, val title: String)
 
 /**
+ * Uma linha da folha de capítulos: capítulo do feed ou marcador do usuário.
+ *
+ * `bookmarkId > 0` identifica o marcador — é o que a folha usa para oferecer a remoção só
+ * nele, sem transformar um capítulo do feed em algo apagável.
+ */
+data class ChapterRow(
+    val startMs: Long,
+    val title: String,
+    val bookmarkId: Long = 0L
+) {
+    val isBookmark: Boolean get() = bookmarkId > 0L
+}
+
+/**
+ * Junta capítulos e marcadores numa lista só, na ordem do tempo.
+ *
+ * Puro para o teste cobrir a parte que decide a ordem e o título de reserva — o banco e a
+ * folha ficam de fora. Marcador sem título (o usuário apagou o texto no diálogo) usa o
+ * carimbo do tempo, que continua sendo uma posição reconhecível.
+ */
+object PodcastBookmarks {
+
+    fun rows(
+        chapters: List<Chapter>,
+        bookmarks: List<Bookmark>,
+        fallbackTitle: (Long) -> String = { Chapters.formatTime(it) }
+    ): List<ChapterRow> =
+        (chapters.map { ChapterRow(it.startMs, it.title) } +
+            bookmarks.map {
+                ChapterRow(
+                    startMs = it.positionMs,
+                    title = it.title.ifBlank { fallbackTitle(it.positionMs) },
+                    bookmarkId = it.id
+                )
+            })
+            .sortedWith(compareBy<ChapterRow> { it.startMs }.thenBy { if (it.isBookmark) 0 else 1 })
+}
+
+/**
  * Extrai os capítulos da descrição do episódio.
  *
  * A descrição chega aqui já sem HTML ([FeedParser.stripHtml]), então as marcações de tempo

@@ -91,6 +91,29 @@ data class PodcastFeedRow(
 
 
 /**
+ * Marcador do usuário num episódio — o "voltar neste minuto" que o feed não publica.
+ *
+ * O índice único em `(episode_id, position_ms)` evita dois marcadores no mesmo instante: tocar
+ * duas vezes no botão não deve criar uma lista com itens idênticos. O `REPLACE` do DAO usa
+ * esse índice para atualizar o título quando o usuário marca o mesmo ponto de novo.
+ */
+@Entity(
+    tableName = "podcast_bookmarks",
+    indices = [
+        Index(value = ["episode_id", "position_ms"], unique = true),
+        Index(value = ["episode_id"])
+    ]
+)
+data class PodcastBookmarkEntity(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "_id") val id: Long = 0L,
+    @ColumnInfo(name = "episode_id") val episodeId: Long,
+    @ColumnInfo(name = "position_ms", defaultValue = "0") val positionMs: Long = 0L,
+    @ColumnInfo(name = "title", defaultValue = "") val title: String = "",
+    @ColumnInfo(name = "created_at", defaultValue = "0") val createdAt: Long = 0L
+)
+
+/**
  * Transcrição de um episódio de podcast, guardada em cache.
  * Usado para "Virgin, o que falaram sobre X nesse episódio?".
  */

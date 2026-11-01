@@ -4,29 +4,32 @@ import com.pulsa.player.util.TvFocus
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
-import com.pulsa.player.podcast.Chapter
+import com.pulsa.player.podcast.ChapterRow
 import com.pulsa.player.podcast.Chapters
 
 /**
- * Lista de capítulos do episódio na tela de reprodução.
+ * Lista de capítulos e marcadores do episódio na tela de reprodução.
  *
  * Liga o carimbo de tempo do lado do rótulo; tocar pula direto para o capítulo
  * ([onClick] → `Playback.seekTo`). O capítulo em reprodução fica destacado — é o único
- * pedaço da lista em que a posição do player importa, então ela entra no [submit].
+ * pedaço da lista em que a posição do player importa, então ela entra no [submit]. O toque
+ * longo só faz algo quando a linha é um marcador do usuário ([onLongClick]).
  */
 class ChapterAdapter(
-    private val onClick: (Int) -> Unit
+    private val onClick: (Int) -> Unit,
+    private val onLongClick: ((Int) -> Unit)? = null
 ) : RecyclerView.Adapter<ChapterAdapter.VH>() {
 
-    private val items = mutableListOf<Chapter>()
+    private val items = mutableListOf<ChapterRow>()
     private var currentIndex = -1
 
-    fun submit(chapters: List<Chapter>, positionMs: Long, durationMs: Long) {
+    fun submit(rows: List<ChapterRow>, positionMs: Long, durationMs: Long) {
         items.clear()
-        items.addAll(chapters)
+        items.addAll(rows)
         currentIndex = when {
             items.isEmpty() -> -1
             else -> {
@@ -57,10 +60,12 @@ class ChapterAdapter(
     inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val time: TextView = itemView.findViewById(R.id.chapter_time)
         private val title: TextView = itemView.findViewById(R.id.chapter_title)
+        private val mark: ImageView = itemView.findViewById(R.id.chapter_bookmark)
 
-        fun bind(chapter: Chapter, current: Boolean) {
-            time.text = Chapters.formatTime(chapter.startMs)
-            title.text = chapter.title
+        fun bind(row: ChapterRow, current: Boolean) {
+            time.text = Chapters.formatTime(row.startMs)
+            title.text = row.title
+            mark.visibility = if (row.isBookmark) View.VISIBLE else View.INVISIBLE
             title.setTextColor(
                 itemView.context.getColor(if (current) R.color.primary else R.color.text_primary)
             )
@@ -70,6 +75,15 @@ class ChapterAdapter(
             itemView.setOnClickListener {
                 val pos = bindingAdapterPosition
                 if (pos != RecyclerView.NO_POSITION) onClick(pos)
+            }
+            itemView.setOnLongClickListener {
+                val pos = bindingAdapterPosition
+                if (row.isBookmark && pos != RecyclerView.NO_POSITION && onLongClick != null) {
+                    onLongClick.invoke(pos)
+                    true
+                } else {
+                    false
+                }
             }
         }
     }

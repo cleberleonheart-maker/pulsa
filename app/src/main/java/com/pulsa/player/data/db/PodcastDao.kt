@@ -176,6 +176,23 @@ interface PodcastDao {
     @Query("DELETE FROM podcast_episodes WHERE podcast_id = :podcastId")
     fun deleteEpisodes(podcastId: Long)
 
+    // ---- marcadores ----------------------------------------------------------------------
+
+    @Query("SELECT * FROM podcast_bookmarks WHERE episode_id = :episodeId ORDER BY position_ms ASC")
+    fun bookmarks(episodeId: Long): List<PodcastBookmarkEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertBookmark(entity: PodcastBookmarkEntity): Long
+
+    @Query("DELETE FROM podcast_bookmarks WHERE _id = :id")
+    fun deleteBookmark(id: Long)
+
+    @Query(
+        "DELETE FROM podcast_bookmarks WHERE episode_id IN " +
+            "(SELECT _id FROM podcast_episodes WHERE podcast_id = :podcastId)"
+    )
+    fun deleteBookmarksForPodcast(podcastId: Long)
+
     // ---- transcrições --------------------------------------------------------------------
 
     @Query("SELECT * FROM podcast_transcripts WHERE episode_id = :episodeId LIMIT 1")

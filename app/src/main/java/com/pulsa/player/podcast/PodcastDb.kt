@@ -3,6 +3,7 @@ package com.pulsa.player.podcast
 import android.content.Context
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.data.db.FeedRef
+import com.pulsa.player.data.db.PodcastBookmarkEntity
 import com.pulsa.player.data.db.PodcastDao
 import com.pulsa.player.data.db.PodcastEpisodeEntity
 import com.pulsa.player.data.db.PodcastFeedEntity
@@ -211,6 +212,32 @@ class PodcastDb(
     fun downloadedEpisodes(podcastId: Long): List<Episode> =
         dao.downloadedEpisodes(podcastId).map(PodcastEpisodeEntity::toEpisode)
 
+    // ---- marcadores ----------------------------------------------------------------------
+
+    fun bookmarks(episodeId: Long): List<Bookmark> =
+        dao.bookmarks(episodeId).map(PodcastBookmarkEntity::toBookmark)
+
+    /**
+     * Cria ou atualiza um marcador no instante pedido.
+     *
+     * O `positionMs` é limitado a zero porque um `Playback.position` negativo (motor ainda
+     * sem timeline) não é um momento do episódio. O `REPLACE` do DAO usa o índice único para
+     * atualizar o título quando o mesmo ponto é marcado de novo, em vez de duplicar a linha.
+     */
+    fun addBookmark(episodeId: Long, positionMs: Long, title: String): Long {
+        if (episodeId <= 0L) return 0L
+        return dao.upsertBookmark(
+            PodcastBookmarkEntity(
+                episodeId = episodeId,
+                positionMs = positionMs.coerceAtLeast(0L),
+                title = title.trim(),
+                createdAt = System.currentTimeMillis()
+            )
+        )
+    }
+
+    fun deleteBookmark(id: Long) = dao.deleteBookmark(id)
+
     /**
      * Remove a assinatura.
      *
@@ -225,6 +252,9 @@ class PodcastDb(
         // baixados: um episódio streaming também está no [PodcastCache], e esquecer só os
         // baixados deixaria a URL do resto presa na memória.
         PodcastCache.forget(all.map { it.id })
+        // Os marcadores são filhos dos episódios: apagar os episódios sem apagar os marcadores
+        // deixaria linhas órfãs que ninguém consegue mais abrir nem remover pela tela.
+        dao.deleteBookmarksForPodcast(podcastId)
         // `deleteEpisodes` e não `deleteUndownloaded`: este último só apaga quem tem
         // `file_path = ''`, o que deixava os baixados no banco **depois** do feed sumir —
         // linhas órfãs ocupando espaço, sem podcast ao qual pertencem e sem como o usuário
@@ -421,6 +451,14 @@ private fun Episode.toEntity(podcastId: Long) = PodcastEpisodeEntity(
     artworkUrl = artworkUrl,
     isVideo = isVideo,
     videoPageUrl = videoPageUrl
+)
+
+private fun PodcastBookmarkEntity.toBookmark() = Bookmark(
+    id = id,
+    episodeId = episodeId,
+    positionMs = positionMs,
+    title = title,
+    createdAt = createdAt
 )
 
 private fun PodcastEpisodeEntity.toEpisode() = Episode(
