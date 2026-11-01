@@ -33,11 +33,12 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.32):
- → DOWNLOADS POR URL NA FILA
- • Músicas e vídeos baixados por URL agora usam a fila do Download Center, com pausa, retomada, velocidade e “só no Wi-Fi”.
- • O download aparece em Baixados, toca direto da biblioteca e respeita o limite de espaço.
- • Links de página (YouTube/Spotify) são recusados com aviso em vez de virar arquivo quebrado.</string>
+    <string name="changelog">Novidades desta versão (5.12.33):
+ → CORREÇÕES NA FILA DE URL
+ • A retomada de um download que mudou no servidor recomeça do zero, em vez de gerar arquivo corrompido.
+ • Cancelar ou apagar durante a finalização remove a mídia recém-publicada e não deixa cópia órfã.
+ • Baixar a mesma URL de novo substitui a cópia antiga, sem duplicar espaço na biblioteca.
+ • Conexões são fechadas mesmo em falha, e uma publicação falhada não deixa lixo na biblioteca.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>

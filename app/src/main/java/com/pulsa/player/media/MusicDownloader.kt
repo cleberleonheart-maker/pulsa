@@ -237,9 +237,12 @@ object MusicDownloader {
         }
         val uri = resolver.insert(collection, values) ?: return null
         return try {
-            resolver.openOutputStream(uri)?.use { out ->
-                copyWithProgress(input, out, length)
-            } ?: return null
+            val out = resolver.openOutputStream(uri)
+            if (out == null) {
+                runCatching { resolver.delete(uri, null, null) }
+                return null
+            }
+            out.use { copyWithProgress(input, it, length) }
             resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
             uri
         } catch (t: Throwable) {

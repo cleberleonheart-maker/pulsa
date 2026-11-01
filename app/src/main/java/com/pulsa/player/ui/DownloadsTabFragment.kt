@@ -37,7 +37,8 @@ import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.DownloadsAdapter
 
 /**
- * F2 — aba "Baixados": os vídeos PeerTube que estão no aparelho, e só eles.
+ * F2 — aba "Baixados": os vídeos PeerTube e os arquivos pedidos por URL que estão no
+ * aparelho, e só eles.
  *
  * A tela é uma `RecyclerView` própria e não uma lista dentro do `VideosTabFragment`. A
  * busca mostra o que existe lá fora e some quando a rede cai; esta mostra o que existe

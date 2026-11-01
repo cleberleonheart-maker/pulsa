@@ -11,6 +11,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.os.SystemClock
@@ -26,7 +27,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * F2 — baixa os vídeos do PeerTube para assistir sem internet.
+ * F2 — baixa os vídeos do PeerTube e os arquivos pedidos por URL para usar sem internet.
  *
  * **Serviço em foreground com fila própria, e não o `ThreadPool.postNetwork`**, por dois
  * motivos. O primeiro é o mesmo que separou o pool de rede do local: download é transferência
@@ -211,6 +212,15 @@ class DownloadService : Service() {
                 addedAt = System.currentTimeMillis()
             )
             if (item.id.isNotBlank() && item.url.isNotBlank()) {
+                // Reenfileirar a mesma URL depois de concluída trocaria o registro e deixaria
+                // a cópia antiga no MediaStore sem ninguém apontando para ela.
+                val existing = DownloadStore.byId(item.id)
+                if (existing != null && !existing.isActive() && existing.mediaUri.isNotBlank()) {
+                    DownloadStore.remove(this, item.id)
+                }
+                // Um cancelamento/pausa antigo não pode matar a nova tentativa enfileirada.
+                synchronized(cancelled) { cancelled.remove(item.id) }
+                synchronized(paused) { paused.remove(item.id) }
                 DownloadStore.put(this, item)
             }
         } else {
@@ -361,8 +371,14 @@ class DownloadService : Service() {
                     // anterior e agora é a assinatura disso.
                     val anterior = original.total
                     if (anterior > 0L && totalAnunciado > 0L && totalAnunciado != anterior) {
+                        // O `206` que está aberto começa no offset antigo. Só apagar o
+                        // parcial e continuar lendo dele colaria o miolo do arquivo novo no
+                        // começo: tem de fechar esta resposta e pedir de novo a partir do
+                        // zero, para o servidor devolver o arquivo inteiro.
                         part.delete()
                         startingAt = 0L
+                        aberta.disconnect()
+                        continue
                     }
                     conn = aberta
                     break
@@ -383,103 +399,108 @@ class DownloadService : Service() {
                 conn = aberta
                 break
             }
-            if (response !in 200..299) throw IllegalStateException("HTTP $response")
-            val contentType = conn.contentType.orEmpty()
-            // O link de página (YouTube/Spotify) baixaria o HTML e o arquivo entraria na
-            // biblioteca como se fosse mídia. A UI já barra os sites conhecidos, mas a
-            // resolução oficial pode devolver um endereço que mente sobre o tipo.
-            if (contentType.contains("text/html", ignoreCase = true)) throw HtmlResponseException()
+            var contentType: String
+            var total: Long
+            try {
+                if (response !in 200..299) throw IllegalStateException("HTTP $response")
+                contentType = conn.contentType.orEmpty()
+                // O link de página (YouTube/Spotify) baixaria o HTML e o arquivo entraria na
+                // biblioteca como se fosse mídia. A UI já barra os sites conhecidos, mas a
+                // resolução oficial pode devolver um endereço que mente sobre o tipo.
+                if (contentType.contains("text/html", ignoreCase = true)) throw HtmlResponseException()
 
-            // Com `206` o `Content-Length` é só o resto do arquivo; somar com o que já
-            // temos é o que faz a barra chegar a 100% em vez de estourar. O `Content-Range`
-            // é melhor ainda, porque traz o total real em vez de reconstruí-lo por soma.
-            val restante = conn.contentLength.toLong().takeIf { it > 0L } ?: -1L
-            val total = when {
-                totalAnunciado > 0L -> totalAnunciado
-                startingAt > 0L && restante > 0L -> startingAt + restante
-                else -> restante
-            }
+                // Com `206` o `Content-Length` é só o resto do arquivo; somar com o que já
+                // temos é o que faz a barra chegar a 100% em vez de estourar. O `Content-Range`
+                // é melhor ainda, porque traz o total real em vez de reconstruí-lo por soma.
+                val restante = conn.contentLength.toLong().takeIf { it > 0L } ?: -1L
+                total = when {
+                    totalAnunciado > 0L -> totalAnunciado
+                    startingAt > 0L && restante > 0L -> startingAt + restante
+                    else -> restante
+                }
 
-            // Agora o tamanho real é conhecido: a primeira checagem foi às cegas, esta é a
-            // definitiva. Só conta o que falta baixar — o que já está no `.part` não ocupa.
-            val need = if (total > 0L) (total - startingAt).coerceAtLeast(0L) else 0L
-            if (!hasRoomFor(need)) {
-                throw IllegalStateException(getString(R.string.downloads_no_space))
-            }
+                // Agora o tamanho real é conhecido: a primeira checagem foi às cegas, esta é a
+                // definitiva. Só conta o que falta baixar — o que já está no `.part` não ocupa.
+                val need = if (total > 0L) (total - startingAt).coerceAtLeast(0L) else 0L
+                if (!hasRoomFor(need)) {
+                    throw IllegalStateException(getString(R.string.downloads_no_space))
+                }
 
-            // A checagem definitiva do limite também: com o total real, dá para recusar o
-            // download que estouraria o teto de propósito sem depender do tamanho conhecido
-            // antes de abrir a conexão.
-            if (total > 0L && limitExceeded(need, fresh = true)) {
-                throw IllegalStateException(getString(R.string.downloads_limit_reached))
-            }
+                // A checagem definitiva do limite também: com o total real, dá para recusar o
+                // download que estouraria o teto de propósito sem depender do tamanho conhecido
+                // antes de abrir a conexão.
+                if (total > 0L && limitExceeded(need, fresh = true)) {
+                    throw IllegalStateException(getString(R.string.downloads_limit_reached))
+                }
 
 
 
-            DownloadStore.put(
-                this,
-                original.copy(status = DownloadStore.Status.RUNNING, bytes = part.length(), total = total, speed = 0L),
-                persist = false
-            )
+                DownloadStore.put(
+                    this,
+                    original.copy(status = DownloadStore.Status.RUNNING, bytes = part.length(), total = total, speed = 0L),
+                    persist = false
+                )
 
-            conn.inputStream.use { input ->
-                RandomAccessFile(part, "rw").use { out ->
-                    out.seek(startingAt)
-                    val buffer = ByteArray(CHUNK)
-                    // `lastUi` evita `put` a cada bloco: o download de um vídeo grande gera
-                    // milhares de chunks de 64k, e cada `put` acorda a UI e redesenha a linha.
-                    var lastUi = SystemClock.elapsedRealtime()
-                    var lastBytes = startingAt
-                    var n: Int
-                    while (input.read(buffer).also { n = it } > 0) {
-                        if (isCancelled(id)) {
-                            out.fd.sync()
-                            throw Cancelled()
-                        }
-                        if (isPaused(id)) {
-                            // O `.part` fica de propósito: é ele que faz "continuar" retomar
-                            // pelo `Range` sem perder o que já baixou — o mesmo trato do cancel.
-                            out.fd.sync()
-                            throw Paused()
-                        }
-                        out.write(buffer, 0, n)
-                        val now = SystemClock.elapsedRealtime()
-                        if (now - lastUi > 400L) {
-                            // Velocidade pelo intervalo real, não pelo nominal do chunk: a
-                            // conta usa `out.length()` porque é o que o `put` vai reportar.
-                            val speed = ((out.length() - lastBytes) * 1000L) / (now - lastUi).coerceAtLeast(1L)
-                            lastUi = now
-                            lastBytes = out.length()
-
-                            // Tamanho desconhecido escorrega: sem total não dá para recusar
-                            // antes de começar, então o `.part` em crescimento é que acusa a
-                            // passagem do teto. O custo é uma checagem por 400 ms, o mesmo
-                            // batimento do `put`.
-                            if (limitExceeded(0L)) {
+                conn.inputStream.use { input ->
+                    RandomAccessFile(part, "rw").use { out ->
+                        out.seek(startingAt)
+                        val buffer = ByteArray(CHUNK)
+                        // `lastUi` evita `put` a cada bloco: o download de um vídeo grande gera
+                        // milhares de chunks de 64k, e cada `put` acorda a UI e redesenha a linha.
+                        var lastUi = SystemClock.elapsedRealtime()
+                        var lastBytes = startingAt
+                        var n: Int
+                        while (input.read(buffer).also { n = it } > 0) {
+                            if (isCancelled(id)) {
                                 out.fd.sync()
-                                throw IllegalStateException(getString(R.string.downloads_limit_reached))
+                                throw Cancelled()
                             }
+                            if (isPaused(id)) {
+                                // O `.part` fica de propósito: é ele que faz "continuar" retomar
+                                // pelo `Range` sem perder o que já baixou — o mesmo trato do cancel.
+                                out.fd.sync()
+                                throw Paused()
+                            }
+                            out.write(buffer, 0, n)
+                            val now = SystemClock.elapsedRealtime()
+                            if (now - lastUi > 400L) {
+                                // Velocidade pelo intervalo real, não pelo nominal do chunk: a
+                                // conta usa `out.length()` porque é o que o `put` vai reportar.
+                                val speed = ((out.length() - lastBytes) * 1000L) / (now - lastUi).coerceAtLeast(1L)
+                                lastUi = now
+                                lastBytes = out.length()
+
+                                // Tamanho desconhecido escorrega: sem total não dá para recusar
+                                // antes de começar, então o `.part` em crescimento é que acusa a
+                                // passagem do teto. O custo é uma checagem por 400 ms, o mesmo
+                                // batimento do `put`.
+                                if (limitExceeded(0L)) {
+                                    out.fd.sync()
+                                    throw IllegalStateException(getString(R.string.downloads_limit_reached))
+                                }
 
 
-                            DownloadStore.put(
-                                this,
-                                original.copy(
-                                    status = DownloadStore.Status.RUNNING,
-                                    bytes = out.length(),
-                                    total = total,
-                                    speed = speed
-                                ),
-                                persist = false
-                            )
+                                DownloadStore.put(
+                                    this,
+                                    original.copy(
+                                        status = DownloadStore.Status.RUNNING,
+                                        bytes = out.length(),
+                                        total = total,
+                                        speed = speed
+                                    ),
+                                    persist = false
+                                )
+                            }
                         }
-                    }
-                    out.fd.sync()
-                    if (total > 0L && out.length() < total) {
-                        throw IllegalStateException("download incompleto (${out.length()}/$total)")
+                        out.fd.sync()
+                        if (total > 0L && out.length() < total) {
+                            throw IllegalStateException("download incompleto (${out.length()}/$total)")
+                        }
                     }
                 }
+            } finally {
+                conn.disconnect()
             }
-            conn.disconnect()
             val destino = File(DownloadStore.dir(this), original.fileName)
             // `renameTo` falha se o destino já existe, e um retry de item já baixado cai
             // exatamente nisso: o arquivo antigo é apagado antes.
@@ -488,14 +509,28 @@ class DownloadService : Service() {
                 if (original.kind == DownloadStore.Kind.URL) {
                     // O arquivo privado é só o parcial promovido; a cópia que fica é a do
                     // MediaStore, para a música continuar aparecendo na biblioteca.
+                    if (isCancelled(id)) {
+                        runCatching { destino.delete() }
+                        throw Cancelled()
+                    }
                     val size = destino.length()
                     val published = MusicDownloader.publish(
                         this, destino, original.url, original.title, contentType
                     )
                     if (published == null) {
                         runCatching { destino.delete() }
+                        if (isCancelled(id)) throw Cancelled()
                         failure = getString(R.string.download_failed, original.title)
                     } else {
+                        // Publicar é uma cópia local: se o usuário cancelou/apagou nesse
+                        // meio-tempo, a mídia recém-criada precisa sair junto com o parcial.
+                        if (isCancelled(id)) {
+                            runCatching {
+                                contentResolver.delete(Uri.parse(published.uri), null, null)
+                            }
+                            runCatching { destino.delete() }
+                            throw Cancelled()
+                        }
                         runCatching { destino.delete() }
                         DownloadStore.put(
                             this,

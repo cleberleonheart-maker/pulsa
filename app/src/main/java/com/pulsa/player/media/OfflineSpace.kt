@@ -14,10 +14,10 @@ import com.pulsa.player.podcast.PodcastFiles
  * aparelho. Aqui a conta é uma só, para vídeo e podcast, e é a mesma que o serviço, o Worker
  * e o banner usam.
  *
- * O download por URL também passa pelo [com.pulsa.player.work.PulsaWork.DownloadWorker] e é
- * barrado pelo mesmo teto; o que ele não tem é histórico de tamanho (o arquivo cai no
- * MediaStore sem um manifesto do app), então a conta dele é feita na entrada, com o
- * `Content-Length` que o servidor manda — não no "usado" do banner.
+ * O download por URL também é barrado pelo mesmo teto. Ele entra na fila do
+ * [DownloadService], guarda o parcial em `filesDir` e, ao concluir, publica no MediaStore e
+ * registra `mediaUri` no [DownloadStore] — por isso o tamanho final aparece no "usado" do
+ * banner como qualquer vídeo baixado.
  */
 object OfflineSpace {
 
