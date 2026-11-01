@@ -30,11 +30,10 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.28):
- → ESPACIO OFFLINE ÚNICO
- • El límite de espacio ahora cuenta vídeos descargados y episodios de podcast juntos.
- • Descargar un episodio o archivo por URL avisa antes de superar el límite o llenar la tarjeta.
- • El aviso de la pestaña Descargas muestra el total real (vídeos + podcasts).</string>
+    <string name="changelog">Novedades de esta versión (5.12.29):
+ → PELO MÁS NATURAL
+ • Virgin y Vera ahora tienen flequillo y mechones finos que enmarcan la cara, sin el volumen oscuro de antes.
+ • Victor mantiene la gorra, con el pelo corto más discreto a los lados.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>

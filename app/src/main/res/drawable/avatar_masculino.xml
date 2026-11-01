@@ -47,16 +47,18 @@
         </aapt:attr>
     </path>
 
-    <!-- Cabelo curto aparecendo sob a aba do bone -->
+    <!-- Cabelo curto aparecendo sob a aba do bone: duas mechas curtas e
+         afinadas nas laterais, em vez de faixas retas descendo pelo rosto. -->
     <path
         android:fillColor="#3E2723"
-        android:pathData="M24,33 C20,42 20,52 24,60 C27,54 27,45 26,37 Z" />
+        android:pathData="M24,33 C20,39 19,47 22,55 C25,49 26,42 27,36 C26,34 25,33 24,33 Z" />
     <path
         android:fillColor="#3E2723"
-        android:pathData="M84,33 C88,42 88,52 84,60 C81,54 81,45 82,37 Z" />
+        android:pathData="M84,33 C88,39 89,47 86,55 C83,49 82,42 81,36 C82,34 83,33 84,33 Z" />
     <path
         android:fillColor="#5D4037"
-        android:pathData="M25,39 C23,45 23,51 24,56 C26,51 26,45 26,41 Z" />
+        android:fillAlpha="0.7"
+        android:pathData="M25,39 C23,44 23,49 24,53 C26,49 26,44 26,41 Z" />
 
     <!-- Bone do Victor: coroa -->
     <path

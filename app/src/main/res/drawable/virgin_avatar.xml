@@ -49,22 +49,28 @@
         </aapt:attr>
     </path>
 
-    <!-- Cabelo: franja com risco lateral e mechas longas emoldurando o rosto -->
+    <!-- Franja com risco lateral: cobre a coroa, mas deixa a testa aparecer
+         acima dos olhos que piscam. -->
     <path
         android:fillColor="#AD1457"
-        android:pathData="M8,44 C6,22 26,4 54,4 C82,4 102,22 100,44 C96,34 92,30 86,30 C80,22 72,20 64,22 C58,28 50,30 42,26 C34,24 26,28 24,34 C18,32 12,36 8,44 Z" />
-    <path
-        android:fillColor="#AD1457"
-        android:pathData="M8,44 C4,60 6,78 14,92 C18,82 20,70 18,58 C16,52 12,48 8,44 Z" />
-    <path
-        android:fillColor="#AD1457"
-        android:pathData="M100,44 C104,60 102,78 94,92 C90,82 88,70 90,58 C92,52 96,48 100,44 Z" />
+        android:pathData="M10,44 C8,22 26,2 54,2 C82,2 100,22 98,44 C94,38 90,34 84,32 C78,26 70,24 62,26 C56,30 50,30 44,27 C36,24 28,28 24,34 C18,35 13,39 10,44 Z" />
     <path
         android:fillColor="#E91E63"
-        android:pathData="M28,30 C34,20 46,15 58,16 C50,20 44,25 40,32 C36,32 32,31 28,30 Z" />
+        android:fillAlpha="0.55"
+        android:pathData="M26,34 C32,24 42,19 54,18 C48,22 42,27 38,34 C34,34 30,34 26,34 Z" />
+
+    <!-- Mechas finas na frente das orelhas: emolduram o rosto sem cobrir a
+         bochecha nem parecer um capacete. -->
+    <path
+        android:fillColor="#AD1457"
+        android:pathData="M6,38 C2,52 2,68 8,84 C12,74 12,60 10,48 C9,44 7,40 6,38 Z" />
+    <path
+        android:fillColor="#AD1457"
+        android:pathData="M102,38 C106,52 106,68 100,84 C96,74 96,60 98,48 C99,44 101,40 102,38 Z" />
     <path
         android:fillColor="#E91E63"
-        android:pathData="M11,50 C9,60 10,72 14,82 C16,72 17,62 16,54 Z" />
+        android:fillAlpha="0.55"
+        android:pathData="M8,48 C7,56 7,64 9,72 C11,66 11,58 10,52 Z" />
 
     <!-- Estrela de 4 pontas no topo (sparkle) -->
     <path

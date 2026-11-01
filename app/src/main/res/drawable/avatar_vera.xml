@@ -48,19 +48,21 @@
         </aapt:attr>
     </path>
 
-    <!-- Cabelo bob com franja reta (desenhado em path; o TAMI usa emoji) -->
+    <!-- Cabelo bob: franja redonda e duas mechas finas que caem ate o queixo.
+         A franja cobre a coroa, mas a testa fica livre acima da armacao. -->
     <path
         android:fillColor="#0F766E"
-        android:pathData="M8,44 C6,22 26,4 54,4 C82,4 102,22 100,44 C97,36 94,33 90,32 C88,24 80,20 70,20 C64,26 58,26 54,26 C50,26 44,26 38,20 C28,20 20,24 18,32 C14,33 11,36 8,44 Z" />
+        android:pathData="M10,44 C8,22 26,2 54,2 C82,2 100,22 98,44 C94,38 90,34 84,32 C76,30 68,30 60,32 C56,34 52,34 48,32 C40,30 32,30 24,34 C18,35 13,39 10,44 Z" />
     <path
         android:fillColor="#0F766E"
-        android:pathData="M8,44 C4,56 6,68 12,78 C16,70 18,60 17,50 C15,47 11,45 8,44 Z" />
+        android:pathData="M6,38 C2,50 2,66 10,82 C14,74 14,62 12,50 C11,46 8,41 6,38 Z" />
     <path
         android:fillColor="#0F766E"
-        android:pathData="M100,44 C104,56 102,68 96,78 C92,70 90,60 91,50 C93,47 97,45 100,44 Z" />
+        android:pathData="M102,38 C106,50 106,66 98,82 C94,74 94,62 96,50 C97,46 100,41 102,38 Z" />
     <path
         android:fillColor="#14B8A6"
-        android:pathData="M30,24 C40,17 52,16 62,18 C54,20 46,24 40,30 C36,29 33,27 30,24 Z" />
+        android:fillAlpha="0.5"
+        android:pathData="M30,26 C40,18 52,17 62,19 C54,21 46,25 40,31 C36,30 33,28 30,26 Z" />
 
     <!-- Estrela de 4 pontas no topo (sparkrate) -->
     <path

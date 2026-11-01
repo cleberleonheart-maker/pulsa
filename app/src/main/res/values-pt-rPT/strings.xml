@@ -9,11 +9,10 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.28):
- → ESPAÇO OFFLINE ÚNICO
- • O limite de espaço passa a contar vídeos transferidos e episódios de podcast juntos.
- • Transferir um episódio ou ficheiro por URL avisa antes de estourar o limite ou encher o cartão.
- • O aviso da aba Transferências mostra o total real (vídeos + podcasts).</string>
+    <string name="changelog">Novidades desta versão (5.12.29):
+ → CABELO MAIS NATURAL
+ • A Virgin e a Vera agora têm franja e mechas finas que emolduram o rosto, sem o volume escuro de antes.
+ • O Victor mantém o boné, com o cabelo curto mais discreto nas laterais.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
