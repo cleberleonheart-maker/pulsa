@@ -33,12 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.34):
- → MARCADORES DE PODCAST
- • Agora dá para marcar o momento por voz: "Virgin, marca esse momento".
- • "Quais marcadores" fala a lista dos marcadores do episódio que está tocando.
- • "Apaga o marcador" apaga o mais recente, depois de confirmar.
- • O backup leva os marcadores junto, e o restore diz o que não voltou.</string>
+    <string name="changelog">Novidades desta versão (5.12.35):
+ → FILA UNIVERSAL
+ • O rádio agora entra na fila: toque longo na estação e escolha "Adicionar à fila".
+ • Os vídeos do PeerTube também: no resultado da busca, "Adicionar à fila".
+ • A fila pode misturar música, rádio e vídeo — o próximo item continua na ordem.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -572,6 +571,8 @@
     <string name="radio_add_save">Salvar estação</string>
     <string name="radio_saved">Estação salva: %1$s</string>
     <string name="radio_removed">Estação removida</string>
+    <string name="radio_added_to_queue">Rádio adicionada à fila</string>
+    <string name="radio_already_in_queue">Essa rádio já está na fila</string>
     <string name="radio_tune_auto">Sintonia no automático</string>
     <string name="radio_tune_auto_have">Sintonia (%1$d)</string>
     <string name="radio_tune_done">%1$d rádios na sintonia</string>

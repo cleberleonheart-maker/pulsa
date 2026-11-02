@@ -30,6 +30,7 @@ import com.pulsa.player.media.DownloadService
 import com.pulsa.player.media.DownloadStore
 import com.pulsa.player.media.StreamKind
 import com.pulsa.player.playback.Playback
+import com.pulsa.player.model.RemoteSongs
 import com.pulsa.player.model.Video
 import com.pulsa.player.model.toSong
 import com.pulsa.player.ui.adapter.PeerTubeAdapter
@@ -337,6 +338,7 @@ class VideosTabFragment : Fragment() {
         // apagar é a ação que o usuário procura quando quer o vídeo no aparelho.
         val labels = arrayOf(
             getString(R.string.video_play),
+            getString(R.string.add_to_queue),
             getString(R.string.peertube_download),
             getString(R.string.peertube_open_browser),
             getString(R.string.peertube_copy_link)
@@ -346,13 +348,53 @@ class VideosTabFragment : Fragment() {
             .setItems(labels) { d, which ->
                 when (which) {
                     0 -> playPeerTube(ctx, item, parent)
-                    1 -> downloadPeerTube(ctx, item, parent)
-                    2 -> openExternal(ctx, item.pageUrl, "text/html")
-                    3 -> copyToClipboard(ctx, item.pageUrl)
+                    1 -> enqueuePeerTube(ctx, item, parent)
+                    2 -> downloadPeerTube(ctx, item, parent)
+                    3 -> openExternal(ctx, item.pageUrl, "text/html")
+                    4 -> copyToClipboard(ctx, item.pageUrl)
                 }
                 d.dismiss()
             }
             .show()
+    }
+
+    /**
+     * "Adicionar à fila" de um resultado do PeerTube.
+     *
+     * Igual ao [playPeerTube], o item da busca não tem stream: precisa do endpoint do vídeo
+     * para descobrir o HLS/MP4. Mas aqui o destino não é a tela de vídeo e sim a fila — o
+     * vídeo entra no fim, a música segue tocando, e a fila vira de fato misturada.
+     */
+    private fun enqueuePeerTube(ctx: Context, item: PeerTube.Item, parent: AlertDialog?) {
+        val ready = item.streamUrl
+        if (ready != null) {
+            parent?.dismiss()
+            enqueueStream(ctx, ready, item.title)
+            return
+        }
+        Toast.makeText(ctx, R.string.peertube_resolving, Toast.LENGTH_SHORT).show()
+        PeerTube.resolve(item) { resolved ->
+            if (!isAdded) return@resolve
+            val url = resolved?.streamUrl
+            if (url == null) {
+                Toast.makeText(ctx, R.string.peertube_no_stream, Toast.LENGTH_LONG).show()
+                return@resolve
+            }
+            parent?.dismiss()
+            enqueueStream(ctx, url, resolved.title)
+        }
+    }
+
+    /** Junta o stream no fim da fila. O aviso é o do número que o motor aceitou. */
+    private fun enqueueStream(ctx: Context, url: String, title: String) {
+        val song = RemoteSongs.stream(url, title, getString(R.string.tab_videos))
+        val added = Playback.enqueue(listOf(song))
+        Toast.makeText(
+            ctx,
+            if (added > 0) getString(R.string.video_added_to_queue, added)
+            else getString(R.string.video_already_in_queue),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun openExternal(ctx: Context, url: String, mime: String) {

@@ -30,12 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.34):
- → MARCADORES DE PODCAST
- • Ahora puedes marcar el momento por voz: "Virgin, marca este momento".
- • "Qué marcadores" lee en voz alta los marcadores del episodio que suena.
- • "Borra el marcador" borra el más reciente, después de confirmar.
- • La copia de seguridad ya lleva los marcadores, y la restauración te dice qué no volvió.</string>
+    <string name="changelog">Novedades de esta versión (5.12.35):
+ → COLA UNIVERSAL
+ • Ahora la radio puede entrar en la cola: mantén pulsada una estación y elige "Añadir a la cola".
+ • También los vídeos de PeerTube: en el resultado de búsqueda, "Añadir a la cola".
+ • La cola puede mezclar música, radio y vídeo — el siguiente sigue en orden.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -500,6 +499,8 @@
     <string name="download_start_running">Empezando a descargar…</string>
     <string name="download_deleted">Descarga borrada</string>
     <string name="peertube_download">Descargar</string>
+    <string name="peertube_resolving">Buscando el stream…</string>
+    <string name="peertube_no_stream">Ese vídeo ya no tiene stream reproducible: el archivo se eliminó del servidor o la dirección que guardó la instancia está muerta. Prueba otro resultado.</string>
     <string name="close">Cerrar</string>
     <string name="more">Más opciones</string>
     <string name="profile_title">Perfil</string>
@@ -565,6 +566,8 @@
     <string name="radio_add_save">Guardar estación</string>
     <string name="radio_saved">Estación guardada: %1$s</string>
     <string name="radio_removed">Estación eliminada</string>
+    <string name="radio_added_to_queue">Radio añadida a la cola</string>
+    <string name="radio_already_in_queue">Esa radio ya está en la cola</string>
     <string name="radio_tune_auto">Sintonía automática</string>
     <string name="radio_tune_auto_have">Sintonía (%1$d)</string>
     <string name="radio_tune_done">%1$d emisoras en la sintonía</string>

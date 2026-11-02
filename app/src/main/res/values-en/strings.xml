@@ -30,12 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.34):
- → PODCAST BOOKMARKS
- • You can now bookmark the moment by voice: "Virgin, bookmark this moment".
- • "Which bookmarks" reads out the bookmarks of the episode that is playing.
- • "Remove the bookmark" removes the most recent one, after you confirm.
- • The backup now carries the bookmarks, and the restore tells you what didn\'t come back.</string>
+    <string name="changelog">What is new (5.12.35):
+ → UNIVERSAL QUEUE
+ • Radio can now join the queue: long-press a station and choose "Add to queue".
+ • PeerTube videos too: in the search result, "Add to queue".
+ • The queue can mix music, radio and video — the next item stays in order.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -565,6 +564,8 @@
     <string name="radio_add_save">Save station</string>
     <string name="radio_saved">Station saved: %1$s</string>
     <string name="radio_removed">Station removed</string>
+    <string name="radio_added_to_queue">Radio added to the queue</string>
+    <string name="radio_already_in_queue">This radio is already in the queue</string>
     <string name="radio_tune_auto">Auto-tune</string>
     <string name="radio_tune_auto_have">Auto-tune (%1$d)</string>
     <string name="radio_tune_done">%1$d stations in the tuner</string>

@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.pulsa.player.model.RemoteSongs
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.AnimatedBackground
@@ -158,9 +159,7 @@ class RadioActivity : AppCompatActivity() {
             row.setOnClickListener { toggleStation(idx) }
             btn.setOnClickListener { toggleStation(idx) }
             row.setOnLongClickListener {
-                if (RadioStations.list(this).any { it.url == station.url }) {
-                    confirmRemove(station)
-                }
+                showStationMenu(station)
                 true
             }
             listContainer.addView(row)
@@ -224,6 +223,51 @@ class RadioActivity : AppCompatActivity() {
         RadioStations.save(this, name, "", url)
         Toast.makeText(this, getString(R.string.radio_saved, name), Toast.LENGTH_SHORT).show()
         rebuildList()
+    }
+
+    /**
+     * Menu da estação: tocar, enfileirar ou remover.
+     *
+     * O toque longo antes removia direto — e só fazia sentido nas estações que o usuário tinha
+     * salvo. Com a "Adicionar à fila" (a fila universal), o toque longo virou menu, e a
+     * remoção continua destrutiva como era: com a confirmação dela.
+     *
+     * "Adicionar à fila" não substitui o que está tocando: a rádio entra no fim, como
+     * qualquer outro item, e o `QueueKey` recusa o que já está na fila — por isso o aviso é
+     * o do número que o motor aceitou, e não o do que foi pedido.
+     */
+    private fun showStationMenu(station: Station) {
+        val saved = RadioStations.list(this).any { it.url == station.url }
+        val labels = mutableListOf(
+            getString(R.string.radio_play),
+            getString(R.string.add_to_queue)
+        )
+        if (saved) labels += getString(R.string.delete)
+        AlertDialog.Builder(this, Settings.accentStyle(this))
+            .setTitle(station.name)
+            .setItems(labels.toTypedArray()) { d, which ->
+                when (which) {
+                    0 -> {
+                        val idx = stations.indexOf(station)
+                        if (idx >= 0) toggleStation(idx)
+                    }
+                    1 -> enqueueStation(station)
+                    else -> confirmRemove(station)
+                }
+                d.dismiss()
+            }
+            .show()
+    }
+
+    /** Junta a estação no fim da fila, sem trocar o que está tocando. */
+    private fun enqueueStation(station: Station) {
+        val added = Playback.enqueue(listOf(songFor(station)))
+        Toast.makeText(
+            this,
+            if (added > 0) getString(R.string.radio_added_to_queue)
+            else getString(R.string.radio_already_in_queue),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun confirmRemove(station: Station) {
@@ -423,15 +467,11 @@ class RadioActivity : AppCompatActivity() {
         renderStatus()
     }
 
-    private fun songFor(station: Station) = Song(
-        id = (station.url.hashCode() and 0x7fffffff).toLong(),
-        title = station.name,
-        artist = station.genre,
-        album = getString(R.string.radio),
-        albumId = 0L,
-        durationMs = 0L,
-        path = Song.RADIO_PREFIX + station.url,
-        year = 0
+    private fun songFor(station: Station) = RemoteSongs.radio(
+        station.url,
+        station.name,
+        station.genre,
+        getString(R.string.radio)
     )
 
     private fun syncActiveFromPlayback() {

@@ -59,6 +59,7 @@ import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.media.StreamKind
+import com.pulsa.player.model.RemoteSongs
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.SongMeta
 import com.pulsa.player.model.Video
@@ -1027,27 +1028,9 @@ class PlaybackService : MediaLibraryService() {
         val title = extras?.get(key)?.first?.takeIf { it.isNotBlank() } ?: url
         val artist = extras?.get(key)?.second.orEmpty()
         return if (QueueKey.isRadio(key)) {
-            Song(
-                id = (url.hashCode() and 0x7fffffff).toLong(),
-                title = title,
-                artist = artist,
-                album = getString(R.string.radio),
-                albumId = 0L,
-                durationMs = 0L,
-                path = Song.RADIO_PREFIX + url,
-                year = 0
-            )
+            RemoteSongs.radio(url, title, artist, getString(R.string.radio))
         } else {
-            Song(
-                id = url.hashCode().toLong() and 0x7FFFFFFFFFFFFFFFL,
-                title = title,
-                artist = artist,
-                album = getString(R.string.tab_videos),
-                albumId = 0L,
-                durationMs = 0L,
-                path = Song.STREAM_PREFIX + url,
-                year = 0
-            )
+            RemoteSongs.stream(url, title, getString(R.string.tab_videos), artist)
         }
     }
 
@@ -1651,7 +1634,12 @@ class PlaybackService : MediaLibraryService() {
         // botão de avançar parecia morto. Aqui a fila é remontada com todas as estações do
         // usuário, na ordem da tela do rádio, e a que está tocando vira o ponto de partida —
         // aí o mesmo `((index + delta) % size)` da música passa a girar de verdade.
-        if (currentSong?.isRadio == true) {
+        //
+        // Só quando a fila é **inteira** de rádio: numa fila misturada (música com uma rádio
+        // no fim, que a "Adicionar à fila" da tela do rádio agora permite), o botão tem que
+        // andar no que a pessoa montou — trocar a fila inteira pela lista de estações
+        // perderia as músicas que estavam depois.
+        if (currentSong?.isRadio == true && RemoteSongs.isRadioOnly(queue)) {
             advanceRadioStation(delta)
             return
         }
@@ -1696,15 +1684,11 @@ class PlaybackService : MediaLibraryService() {
         start(ordered, 0)
     }
 
-    private fun stationSong(station: com.pulsa.player.core.UserStation) = Song(
-        id = (station.url.hashCode() and 0x7fffffff).toLong(),
-        title = station.name,
-        artist = station.genre,
-        album = getString(R.string.radio),
-        albumId = 0L,
-        durationMs = 0L,
-        path = Song.RADIO_PREFIX + station.url,
-        year = 0
+    private fun stationSong(station: com.pulsa.player.core.UserStation) = RemoteSongs.radio(
+        station.url,
+        station.name,
+        station.genre,
+        getString(R.string.radio)
     )
 
     private fun prepareCurrent() {

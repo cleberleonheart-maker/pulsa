@@ -36,6 +36,7 @@ import com.pulsa.player.data.StreamHistory
 import com.pulsa.player.data.VideoLibrary
 import com.pulsa.player.media.SubtitleConfig
 import com.pulsa.player.media.Subtitles
+import com.pulsa.player.model.RemoteSongs
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.model.toSong
@@ -80,16 +81,6 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
 
         /** Salto dos botões: 15 s, o outro valor do YouTube. */
         private const val SEEK_15_MS = 15_000L
-
-        /**
-         * Id sintético do item de stream, derivado da URL.
-         *
-         * Antes era uma constante `-1L` para todo stream, e isso quebrava a legenda: a
-         * `SubtitleConfig` guarda a escolha por id, então abrir dois streams seguidos fazia
-         * o segundo herdar a legenda do primeiro. O hash da URL dá id estável por endereço e
-         * diferente para cada um.
-         */
-        private fun streamId(url: String): Long = url.hashCode().toLong() and 0x7FFFFFFFFFFFFFFFL
 
         fun start(context: Context, videos: List<Video>, index: Int) {
             val ids = ArrayList(videos.map { it.id })
@@ -490,17 +481,10 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             findViewById<View>(R.id.vp_chapters)?.visibility =
                 if (videoChapters.isEmpty()) View.GONE else View.VISIBLE
             videoSongs = listOf(
-                Song(
-                    id = streamId(url),
-                    title = streamTitle,
-                    artist = "",
-                    album = getString(R.string.tab_videos),
-                    albumId = 0L,
-                    // Duração desconhecida até o manifesto carregar: 0 deixa a barra em modo
-                    // indeterminado em vez de mentir que o vídeo tem 1 segundo.
-                    durationMs = 0L,
-                    path = Song.STREAM_PREFIX + url,
-                    year = 0
+                RemoteSongs.stream(
+                    url,
+                    streamTitle,
+                    getString(R.string.tab_videos)
                 )
             )
             index = 0

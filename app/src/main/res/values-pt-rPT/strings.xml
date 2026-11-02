@@ -9,12 +9,11 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.34):
- → MARCADORES DE PODCAST
- • Agora dá para marcar o momento por voz: "Virgin, marca este momento".
- • "Quais marcadores" fala a lista dos marcadores do episódio que está a tocar.
- • "Apaga o marcador" apaga o mais recente, depois de confirmar.
- • A cópia de segurança leva os marcadores junto, e a restauração diz o que não voltou.</string>
+    <string name="changelog">Novidades desta versão (5.12.35):
+ → FILA UNIVERSAL
+ • Agora o rádio pode entrar na fila: toque longo na estação e escolha "Adicionar à fila".
+ • Os vídeos do PeerTube também: no resultado da pesquisa, "Adicionar à fila".
+ • A fila pode misturar música, rádio e vídeo — o próximo item continua pela ordem.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -261,6 +260,10 @@
     <string name="radio_add_subtitle">Procurar ou guardar uma estação de rádio</string>
     <string name="radio_add_save">Guardar estação</string>
     <string name="radio_saved">Estação guardada: %1$s</string>
+    <string name="radio_removed">Estação removida</string>
+    <string name="radio_added_to_queue">Rádio adicionada à fila</string>
+    <string name="radio_already_in_queue">Essa rádio já está na fila</string>
+    <string name="radio_remove_confirm">Remover %1$s das suas estações?</string>
 
     <string name="dj_deck_now">A tocar agora</string>
     <string name="dj_mic_on">A ouvir…</string>
