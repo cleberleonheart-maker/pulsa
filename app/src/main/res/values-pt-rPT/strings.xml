@@ -9,12 +9,12 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.33):
- → CORREÇÕES NA FILA DE URL
- • A retoma de um download que mudou no servidor recomeça do zero, em vez de gerar um ficheiro corrompido.
- • Cancelar ou apagar durante a finalização remove a multimédia recém-publicada e não deixa cópia órfã.
- • Descarregar a mesma ligação novamente substitui a cópia antiga, sem duplicar espaço na biblioteca.
- • As ligações são fechadas mesmo em falha, e uma publicação falhada não deixa lixo na biblioteca.</string>
+    <string name="changelog">Novidades desta versão (5.12.34):
+ → MARCADORES DE PODCAST
+ • Agora dá para marcar o momento por voz: "Virgin, marca este momento".
+ • "Quais marcadores" fala a lista dos marcadores do episódio que está a tocar.
+ • "Apaga o marcador" apaga o mais recente, depois de confirmar.
+ • A cópia de segurança leva os marcadores junto, e a restauração diz o que não voltou.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -161,6 +161,12 @@
     <string name="dj_voice_chapter_list">São %1$d capítulos: %2$s.</string>
     <string name="dj_voice_chapter_last">Este já é o último capítulo.</string>
     <string name="dj_voice_chapter_first">Este já é o primeiro capítulo.</string>
+    <string name="dj_voice_bookmark_saved">Marcador criado em %1$s.</string>
+    <string name="dj_voice_bookmark_list">São %1$d marcadores: %2$s.</string>
+    <string name="dj_voice_bookmark_none">Este episódio ainda não tem marcadores.</string>
+    <string name="dj_voice_bookmark_more">e mais %1$d</string>
+    <string name="dj_voice_bookmark_remove_confirm">Apago o marcador %1$s? Confirma.</string>
+    <string name="dj_voice_bookmark_removed">Marcador apagado.</string>
     <string name="dj_voice_pen_confirm">Encontrei %1$d músicas novas no pendrive. Quer que eu copie para o seu telemóvel? Diga sim para confirmar.</string>
     <string name="dj_voice_pen_copy_done">Pronto! Copiei %1$d músicas novas do pendrive para o seu telemóvel.</string>
     <string name="dj_voice_pen_copy_done_dups">Encontrei %1$d músicas no pendrive; %2$d já existiam ou estavam repetidas, mas copiei as %3$d novas para o seu telemóvel.</string>
@@ -321,6 +327,13 @@
     <string name="restore_failed">Ficheiro inválido ou sem dados da PULSA</string>
     <string name="restore_empty">O ficheiro é da PULSA, mas não tinha nada para restaurar.</string>
     <string name="restore_needs_permission_body">O ficheiro está inteiro, mas a PULSA ainda não pode ler a sua biblioteca para emparelhar as músicas pelo caminho.\n\nConceda o acesso às músicas e restaure de novo.</string>
+    <string name="restore_needs_permission_title">Preciso do acesso às músicas</string>
+    <string name="restore_n_playlists">%1$d playlists</string>
+    <string name="restore_n_songs">%1$d músicas nas playlists</string>
+    <string name="restore_n_favorites">%1$d favoritas</string>
+    <string name="restore_n_meta">%1$d nomes corrigidos</string>
+    <string name="restore_n_bookmarks">%1$d marcadores de podcast</string>
+    <string name="restore_n_bookmarks_missing">%1$d marcadores de podcast não voltaram: o episódio não está neste aparelho</string>
 
     <string name="widget_pulsa_desc">Leitor Pulsa: tocar, pausar e trocar de faixa</string>
     <string name="update_uptodate">Já está na última versão!</string>
@@ -412,6 +425,7 @@
     <string name="v_stats_msg">Músicas: %1$d\nFavoritas: %2$d\nPlaylists: %3$d\nCache: %4$d MB\nReproduzidas: %5$d\nTempo ouvido: %6$s</string>
     <string name="eq_device_bands">Bandas reais do dispositivo: %d</string>
     <string name="restore_missing_title">%1$d músicas não estão neste dispositivo:</string>
+    <string name="restore_missing_hint">\nElas não foram apagadas da cópia. Só não existem aqui ainda — copie a pasta de músicas para o cartão e restaure de novo.</string>
 
     <string name="dj_scan">Procurar novidades</string>
     <string name="dj_voice_count_none">Ainda não encontrei nenhuma música. Procure no dispositivo primeiro.</string>
@@ -429,6 +443,7 @@
     <string name="dj_voice_transcribe_offline">Por volta de %1$s: %2$s</string>
     <string name="dj_voice_transcribe_failed">Não consegui transcrever este episódio agora. Tente mais tarde.</string>
     <string name="dj_commands_transcribe">"Virgin, o que disseram sobre bitcoin neste episódio?" — pergunta sobre o podcast a tocar</string>
+    <string name="dj_commands_bookmark">"Virgin, marca este momento / quais marcadores" — marca, lista e apaga marcadores do podcast a tocar</string>
 
     <string name="bookmark">Marcador</string>
     <string name="bookmark_add">Marcar este momento</string>

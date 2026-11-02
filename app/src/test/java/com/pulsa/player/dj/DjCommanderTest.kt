@@ -952,4 +952,55 @@ class DjCommanderTest {
         assertNull(DjCommander.podcastAskQuery(DjCommander.norm("toca o podcast")))
     }
 
+    @Test
+    fun marcador_por_voz_marca_lista_e_apaga() {
+        assertEquals("bookmark", DjCommander.action(DjCommander.norm("virgin, marca esse momento")))
+        assertEquals("bookmark", DjCommander.action(DjCommander.norm("quais marcadores")))
+        assertEquals("bookmark", DjCommander.action(DjCommander.norm("apaga o marcador")))
+        assertEquals(
+            "mark",
+            DjCommander.bookmarkQuery(DjCommander.norm("salva o ponto"))?.mode
+        )
+        assertEquals(
+            "mark",
+            DjCommander.bookmarkQuery(DjCommander.norm("guarda esse instante"))?.mode
+        )
+        assertEquals(
+            "list",
+            DjCommander.bookmarkQuery(DjCommander.norm("mostra os marcadores"))?.mode
+        )
+        assertEquals(
+            "remove",
+            DjCommander.bookmarkQuery(DjCommander.norm("remove o marcador"))?.mode
+        )
+    }
+
+    @Test
+    fun marcador_nao_roba_os_outros_comandos() {
+        // "salva a fila como playlist" continua sendo playlist — "salva" sozinho não é marcador.
+        assertEquals(
+            "queue_save",
+            DjCommander.action(DjCommander.norm("salva a fila como playlist viagem"))
+        )
+        // "quais músicas tocaram" continua sendo histórico.
+        assertEquals(
+            "queue_history",
+            DjCommander.action(DjCommander.norm("virgin, o que ja toceu de video hoje"))
+        )
+        // "apaga essa música" continua sendo o delete de música.
+        assertEquals("delete", DjCommander.action(DjCommander.norm("apaga essa musica")))
+        // "marcadores" sozinho não é comando: sem verbo, não há o que fazer.
+        assertNull(DjCommander.bookmarkQuery(DjCommander.norm("marcadores")))
+        assertNull(DjCommander.bookmarkQuery(DjCommander.norm("favorita essa")))
+    }
+
+    @Test
+    fun marcador_pega_o_nome_falado_depois_de_como() {
+        assertEquals(
+            "bitcoin",
+            DjCommander.bookmarkQuery(DjCommander.norm("marca esse momento como bitcoin"))?.title
+        )
+        assertNull(DjCommander.bookmarkQuery(DjCommander.norm("marca esse momento"))?.title)
+    }
+
 }

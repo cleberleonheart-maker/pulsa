@@ -1118,6 +1118,10 @@ class DjSession(
             pendingDelete = null
             uiHandler.removeCallbacksAndMessages(null)
         }
+        // A pergunta do marcador que ficou no ar vale só até o próximo comando: só o "sim" ou
+        // o "cancel" que vem logo depois de "apaga o marcador" fecham aquela pergunta. Sem
+        // isto, um "apaga essa música" no meio deixaria o "sim" seguinte apagando o marcador.
+        if (action != "confirm" && action != "cancel") DjBookmark.clearPending()
         when (action) {
             "mix" -> {
                 speak(say(R.string.dj_voice_mix))
@@ -1265,7 +1269,16 @@ class DjSession(
                 }
             }
             "confirm" -> {
-                if (pendingPendriveFiles != null) {
+                // O marcador pendente tem a primeira vez: é a pergunta mais recente, e o "sim"
+                // é para ela — não para a música ou para a limpeza que ficaram pendentes antes.
+                if (DjBookmark.confirmRemoval(
+                        activity,
+                        { id, args -> say(id, *args) },
+                        { speak(it) }
+                    )
+                ) {
+                    uiHandler.removeCallbacksAndMessages(null)
+                } else if (pendingPendriveFiles != null) {
                     uiHandler.removeCallbacksAndMessages(null)
                     completePendriveCopy()
                 } else if (pendingClean) {
@@ -1280,7 +1293,13 @@ class DjSession(
                 }
             }
             "cancel" -> {
-                if (pendingPendriveFiles != null) {
+                if (DjBookmark.cancelRemoval(
+                        { id, args -> say(id, *args) },
+                        { speak(it) }
+                    )
+                ) {
+                    uiHandler.removeCallbacksAndMessages(null)
+                } else if (pendingPendriveFiles != null) {
                     pendingPendriveFiles = null
                     uiHandler.removeCallbacksAndMessages(null)
                     speak(say(R.string.dj_voice_pen_cancel))
@@ -1294,6 +1313,7 @@ class DjSession(
                     speak(say(R.string.dj_voice_delete_cancel))
                 }
             }
+            "bookmark" -> voiceBookmark(norm)
             "podcast_ask" -> {
                 val q = DjCommander.podcastAskQuery(norm)
                 val song = com.pulsa.player.playback.Playback.currentSong
@@ -1364,6 +1384,18 @@ class DjSession(
             "thanks" -> speak(activity.getString(R.string.dj_voice_thanks))
             "hello" -> speak(activity.getString(R.string.dj_voice_hello))
         }
+    }
+
+    /** Marcador de podcast por voz — "marca esse momento", "quais marcadores", "apaga o marcador". */
+    private fun voiceBookmark(norm: String) {
+        val query = DjCommander.bookmarkQuery(norm)
+        DjBookmark.execute(
+            activity,
+            query?.mode ?: DjBookmark.MODE_MARK,
+            query?.title,
+            { id, args -> say(id, *args) },
+            { speak(it) }
+        )
     }
 
     private fun memoryLabel(key: String): String = when (key) {

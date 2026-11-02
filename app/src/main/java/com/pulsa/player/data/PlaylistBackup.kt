@@ -2,6 +2,7 @@ package com.pulsa.player.data
 
 import android.content.Context
 import com.pulsa.player.core.Permissions
+import com.pulsa.player.data.db.PulsaDatabase
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -83,8 +84,16 @@ object PlaylistBackup {
             put("playlists", plArray)
             put("favorites", favArray)
             put("songMeta", metaArray)
+            // Os marcadores de podcast moram no mesmo bloco: são trabalho manual da pessoa,
+            // do mesmo jeito que a playlist é, e perder um ao trocar de aparelho é a mesma
+            // coisa que perder a playlist.
+            put("podcastBookmarks", PodcastBookmarkBackup.export(podcastDao(context)))
         }
     }
+
+    /** O DAO de podcast: o bloco de biblioteca é o único que sabe dos dois lados do app. */
+    private fun podcastDao(context: Context) =
+        PulsaDatabase.get(context.applicationContext).podcastDao()
 
     /**
      * Aplica o bloco. Devolve sempre um [Report] — nunca lança — para que um bloco corrompido
@@ -94,17 +103,28 @@ object PlaylistBackup {
     fun import(context: Context, db: PlaylistDb, block: JSONObject?): Report {
         if (block == null) return Report()
 
-        // Sem permissão de mídia a resolução volta vazia — e "40 músicas não encontradas no
-        // aparelho" seria mentira: o arquivo está inteiro, o app é que não pode ler a
-        // biblioteca. O relatório separa os dois casos, senão quem restaura num celular sem
-        // permissão conclui que o backup estragou.
-        if (!Permissions.hasAccess(context)) return Report(mediaPermissionMissing = true)
-
         // Ler o arquivo e decidir o que fazer com ele são coisas distintas: o parse é puro e é
         // o único pedaço testável sem aparelho (o resto é MediaStore e banco). Também é onde
         // mora a tolerância a arquivo velho — um `pulsa-backup.json` de antes do bloco passa
         // por aqui e sai como lista vazia em vez de estourar.
         val parsed = parse(block)
+
+        // Os marcadores de podcast são resolvidos pelo feed e pelo `guid` do episódio, e não
+        // pelo caminho da música — por isso vão **antes** da trava de permissão de mídia: um
+        // celular sem acesso às músicas ainda assim tem podcast, e o marcador volta igual.
+        val bookmarks = PodcastBookmarkBackup.import(podcastDao(context), parsed.podcastBookmarks)
+
+        // Sem permissão de mídia a resolução volta vazia — e "40 músicas não encontradas no
+        // aparelho" seria mentira: o arquivo está inteiro, o app é que não pode ler a
+        // biblioteca. O relatório separa os dois casos, senão quem restaura num celular sem
+        // permissão conclui que o backup estragou.
+        if (!Permissions.hasAccess(context)) {
+            return Report(
+                mediaPermissionMissing = true,
+                bookmarks = bookmarks.restored,
+                bookmarksMissing = bookmarks.missing
+            )
+        }
 
         var songsOk = 0
         var favOk = 0
@@ -168,6 +188,8 @@ object PlaylistBackup {
             favorites = favOk,
             favoritesMissing = missingFavorites.size,
             metaOverrides = metaSaved,
+            bookmarks = bookmarks.restored,
+            bookmarksMissing = bookmarks.missing,
             missingExamples = (missingInPlaylists + missingFavorites)
                 .take(MISSING_EXAMPLES)
                 .map(::fileName)
@@ -232,13 +254,16 @@ object PlaylistBackup {
             }
         }
 
-        return Parsed(playlists, favorites, meta)
+        val bookmarks = PodcastBookmarkBackup.parse(block.optJSONArray("podcastBookmarks"))
+
+        return Parsed(playlists, favorites, meta, bookmarks)
     }
 
     data class Parsed(
         val playlists: List<BackupPlaylist> = emptyList(),
         val favorites: List<BackupFavorite> = emptyList(),
-        val meta: List<BackupMeta> = emptyList()
+        val meta: List<BackupMeta> = emptyList(),
+        val podcastBookmarks: List<PodcastBookmarkBackup.BackupBookmark> = emptyList()
     )
 
 
@@ -252,10 +277,16 @@ object PlaylistBackup {
         val favorites: Int = 0,
         val favoritesMissing: Int = 0,
         val metaOverrides: Int = 0,
+        /** Marcadores de podcast que voltaram. */
+        val bookmarks: Int = 0,
+        /** Marcadores de podcast que não voltaram: o episódio não está neste aparelho. */
+        val bookmarksMissing: Int = 0,
         val missingExamples: List<String> = emptyList(),
         val mediaPermissionMissing: Boolean = false
     ) {
-        val changed: Boolean get() = playlists > 0 || songs > 0 || favorites > 0 || metaOverrides > 0
+        val changed: Boolean
+            get() = playlists > 0 || songs > 0 || favorites > 0 || metaOverrides > 0 ||
+                bookmarks > 0
         val missing: Int get() = songsMissing + favoritesMissing
     }
 }

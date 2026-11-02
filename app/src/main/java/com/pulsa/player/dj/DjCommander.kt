@@ -1334,6 +1334,101 @@ object DjCommander {
         return null
     }
 
+    // ----- Marcadores de podcast por voz ("marca esse momento", "quais marcadores") -----
+
+    /** `mode`: "mark" | "list" | "remove". O `title` é o nome falado depois de "como". */
+    data class BookmarkQuery(val mode: String, val title: String? = null)
+
+    private val BOOKMARK_NOUNS = setOf("marcador", "marcadores", "bookmark", "bookmarks")
+
+    private val BOOKMARK_MARK_VERBS = setOf(
+        "marca", "marcar", "marque", "cria", "criar", "crie", "adiciona", "adicionar",
+        "salva", "salvar", "salve", "guarda", "guardar", "anota", "anotar",
+        "mark", "save", "store"
+    )
+
+    /** Verbos que, sozinhos, já dizem "marcar aqui". */
+    private val BOOKMARK_STRONG_MARK = setOf("marca", "marcar", "marque", "mark")
+
+    private val BOOKMARK_LIST_WORDS = setOf(
+        "lista", "liste", "listar", "quais", "qual", "mostra", "mostrar", "mostre",
+        "todos", "todas", "list", "show"
+    )
+
+    private val BOOKMARK_REMOVE_WORDS = setOf(
+        "apaga", "apagar", "apague", "remove", "remover", "deleta", "deletar", "delete",
+        "exclui", "excluir", "tira", "tirar"
+    )
+
+    /** Objeto do marcador: "marca aqui", "salva o ponto", "guarda esse instante". */
+    private val BOOKMARK_MOMENT_WORDS = setOf(
+        "momento", "momentos", "ponto", "pontos", "instante", "aqui", "agora", "trecho",
+        "moment", "here", "now"
+    )
+
+    /** Ruído da frase: o que sobrar é o que define o comando. */
+    private val BOOKMARK_FILLER = setOf(
+        "virgin", "virgi", "virgem", "vargin", "o", "a", "os", "as", "um", "uma",
+        "esse", "esta", "isso", "isto", "por", "favor", "obrigado", "obrigada", "please"
+    )
+
+    /**
+     * Palavras de outro ramo. Sem a palavra "marcador", uma frase que fala de música, de
+     * playlist ou de fila **não** é marcador — é o comando de sempre ("salva a fila como
+     * playlist", "marca essa música como favorita").
+     */
+    private val BOOKMARK_OTHER_WORDS = setOf(
+        "playlist", "playlists", "lista", "listas", "fila", "queue",
+        "musica", "musicas", "faixa", "faixas", "cancion", "canciones", "song", "songs",
+        "album", "banda", "video", "filme"
+    )
+
+    /**
+     * Reconhece o comando de marcador.
+     *
+     * Por token, e não por `contains`: "marca" está dentro de "marcador", e um `contains`
+     * transformaria "quais marcadores" num pedido de marcar.
+     *
+     * Com a palavra "marcador", o verbo é que decide (marcar, listar ou apagar). Sem ela, só
+     * vale com verbo de marcar **e** objeto de momento ("marca aqui", "salva o ponto") — senão
+     * "salva" seria a fila e "cria" seria playlist.
+     */
+    fun bookmarkQuery(norm: String): BookmarkQuery? {
+        val tokens = norm.split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotBlank() }
+        if (tokens.isEmpty()) return null
+        val title = bookmarkTitle(tokens)
+        if (tokens.any { it in BOOKMARK_NOUNS }) {
+            if (tokens.any { it in BOOKMARK_REMOVE_WORDS }) return BookmarkQuery("remove")
+            if (tokens.any { it in BOOKMARK_LIST_WORDS }) return BookmarkQuery("list")
+            if (tokens.any { it in BOOKMARK_MARK_VERBS }) return BookmarkQuery("mark", title)
+            return null
+        }
+        if (tokens.any { it in BOOKMARK_OTHER_WORDS }) return null
+        if (tokens.any { it in BOOKMARK_MARK_VERBS } && tokens.any { it in BOOKMARK_MOMENT_WORDS }) {
+            return BookmarkQuery("mark", title)
+        }
+        // "Virgin, marca" — o verbo sozinho, sem nenhum outro conteúdo.
+        if (tokens.any { it in BOOKMARK_STRONG_MARK } &&
+            tokens.all { it in BOOKMARK_FILLER || it in BOOKMARK_STRONG_MARK }
+        ) {
+            return BookmarkQuery("mark", title)
+        }
+        return null
+    }
+
+    /** O nome falado depois de "como": "marca esse momento como bitcoin". */
+    private fun bookmarkTitle(tokens: List<String>): String? {
+        val idx = tokens.indexOfFirst {
+            it == "como" || it == "chamado" || it == "chamada" || it == "nome"
+        }
+        if (idx < 0) return null
+        val text = tokens.drop(idx + 1)
+            .filterNot { it in BOOKMARK_FILLER }
+            .joinToString(" ")
+            .trim()
+        return text.takeIf { it.length >= 2 }?.take(40)
+    }
+
     // ----- Túnel do tempo por década ("anos 80", "década de 90", "anos 2000") -----
 
     private val DECADE_WORD_YEARS = mapOf(
@@ -1394,6 +1489,9 @@ object DjCommander {
         intervalQuery(norm) != null -> "interval"
         quizQuery(norm) -> "quiz"
         chapterQuery(norm) != null -> "chapter"
+        // Marcador antes de "podcast_ask" e do "delete"/"info" do fim: "quais marcadores" tem
+        // "qual" (que seria "info") e "apaga o marcador" tem "apaga" (que seria "delete").
+        bookmarkQuery(norm) != null -> "bookmark"
         podcastAskQuery(norm) != null -> "podcast_ask"
         sceneQuery(norm) != null -> "scene"
         weekendMatch(norm) -> "weekend"

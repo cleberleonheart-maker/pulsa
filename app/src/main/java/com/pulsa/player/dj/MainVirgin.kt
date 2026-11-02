@@ -1469,6 +1469,10 @@ class MainVirgin(
             stopInterval()
             virginHandler.removeCallbacksAndMessages(null)
         }
+        // A pergunta do marcador que ficou no ar vale só até o próximo comando: só o "sim" ou
+        // o "cancel" que vem logo depois de "apaga o marcador" fecham aquela pergunta. Sem
+        // isto, um "apaga essa música" no meio deixaria o "sim" seguinte apagando o marcador.
+        if (action != "confirm" && action != "cancel") DjBookmark.clearPending()
         // Um comando novo encerra o mix "Relança antigas" (só ele mantém o aviso de intervalo).
         if (action != "relaunch") relaunchIds = emptySet()
         when (action) {
@@ -1547,6 +1551,7 @@ class MainVirgin(
             "interval_cancel" -> virgIntervalCancel()
             "quiz" -> virgQuiz()
             "chapter" -> virgChapter(DjCommander.chapterQuery(norm))
+            "bookmark" -> virgBookmark(norm)
             "podcast_ask" -> virgPodcastAsk(DjCommander.podcastAskQuery(norm))
             "mixwith" -> virgMixWithArtist(DjCommander.mixArtist(norm))
             "video_by_name" -> virgVideoByName(DjCommander.videoQuery(norm))
@@ -1660,7 +1665,16 @@ class MainVirgin(
             }
             "confirm" -> {
                 val pen = pendingPendriveFiles
-                if (pen != null) {
+                // O marcador pendente tem a primeira vez: é a pergunta mais recente, e o "sim"
+                // é para ela — não para a música ou para a limpeza que ficaram pendentes antes.
+                if (DjBookmark.confirmRemoval(
+                        activity,
+                        { id, args -> say(id, *args) },
+                        { virginSpeak(it) }
+                    )
+                ) {
+                    virginHandler.removeCallbacksAndMessages(null)
+                } else if (pen != null) {
                     pendingPendriveFiles = null
                     virginHandler.removeCallbacksAndMessages(null)
                     completePendriveCopy(pen)
@@ -1681,7 +1695,13 @@ class MainVirgin(
                 }
             }
             "cancel" -> {
-                if (pendingPendriveFiles != null) {
+                if (DjBookmark.cancelRemoval(
+                        { id, args -> say(id, *args) },
+                        { virginSpeak(it) }
+                    )
+                ) {
+                    virginHandler.removeCallbacksAndMessages(null)
+                } else if (pendingPendriveFiles != null) {
                     pendingPendriveFiles = null
                     virginHandler.removeCallbacksAndMessages(null)
                     virginSpeak(say(R.string.dj_voice_pen_cancel))
@@ -2376,6 +2396,24 @@ class MainVirgin(
             pendingQuiz = next
             virginSpeak(line + " " + next.prompt)
         }
+    }
+
+    /**
+     * Marcador de podcast por voz — "Virgin, marca esse momento", "quais marcadores",
+     * "apaga o marcador".
+     *
+     * O trabalho no banco é do [DjBookmark] (compartilhado com o modo DJ); aqui é só a voz:
+     * o idioma da pergunta e a fala da Virgin.
+     */
+    private fun virgBookmark(norm: String) {
+        val query = DjCommander.bookmarkQuery(norm)
+        DjBookmark.execute(
+            activity,
+            query?.mode ?: DjBookmark.MODE_MARK,
+            query?.title,
+            { id, args -> say(id, *args) },
+            { virginSpeak(it) }
+        )
     }
 
     /**

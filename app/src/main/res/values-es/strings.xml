@@ -30,12 +30,12 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.33):
- → CORRECCIONES EN LA COLA DE URL
- • Reanudar una descarga que cambió en el servidor empieza de cero en vez de generar un archivo dañado.
- • Cancelar o borrar durante la finalización elimina el contenido recién publicado y no deja una copia huérfana.
- • Descargar la misma URL de nuevo reemplaza la copia anterior sin duplicar espacio en la biblioteca.
- • Las conexiones se cierran incluso si fallan, y una publicación fallida no deja basura en la biblioteca.</string>
+    <string name="changelog">Novedades de esta versión (5.12.34):
+ → MARCADORES DE PODCAST
+ • Ahora puedes marcar el momento por voz: "Virgin, marca este momento".
+ • "Qué marcadores" lee en voz alta los marcadores del episodio que suena.
+ • "Borra el marcador" borra el más reciente, después de confirmar.
+ • La copia de seguridad ya lleva los marcadores, y la restauración te dice qué no volvió.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -748,6 +748,12 @@
     <string name="dj_voice_chapter_list">Son %1$d capítulos: %2$s.</string>
     <string name="dj_voice_chapter_last">Este ya es el último capítulo.</string>
     <string name="dj_voice_chapter_first">Este ya es el primer capítulo.</string>
+    <string name="dj_voice_bookmark_saved">Marcador guardado en %1$s.</string>
+    <string name="dj_voice_bookmark_list">Son %1$d marcadores: %2$s.</string>
+    <string name="dj_voice_bookmark_none">Este episodio todavía no tiene marcadores.</string>
+    <string name="dj_voice_bookmark_more">y %1$d más</string>
+    <string name="dj_voice_bookmark_remove_confirm">¿Borro el marcador %1$s? Confirma.</string>
+    <string name="dj_voice_bookmark_removed">Marcador borrado.</string>
     <string name="dj_voice_pen_search">Voy a ver si tienes un pendrive o tarjeta conectado y buscar las canciones que tenga.</string>
     <string name="dj_voice_pen_none">No encontré ningún pendrive o tarjeta extra conectado.</string>
     <string name="dj_voice_pen_done">¡Listo! Encontré %1$d canciones nuevas en el pendrive y las agregué a tu colección.</string>
@@ -971,6 +977,17 @@
     <string name="backup_failed">No se pudo guardar la copia</string>
     <string name="restore_done">¡Copia restaurada!</string>
     <string name="restore_failed">Archivo no válido o sin datos de PULSA</string>
+    <string name="restore_empty">El archivo es de PULSA, pero no tenía nada que restaurar.</string>
+    <string name="restore_needs_permission_title">Necesito el permiso de las canciones</string>
+    <string name="restore_needs_permission_body">El archivo está entero, pero PULSA todavía no puede leer tu biblioteca para emparejar las canciones por ruta.\n\nDa acceso a las canciones y restaura de nuevo.</string>
+    <string name="restore_n_playlists">%1$d listas</string>
+    <string name="restore_n_songs">%1$d canciones en las listas</string>
+    <string name="restore_n_favorites">%1$d favoritas</string>
+    <string name="restore_n_meta">%1$d nombres corregidos</string>
+    <string name="restore_n_bookmarks">%1$d marcadores de podcast</string>
+    <string name="restore_n_bookmarks_missing">%1$d marcadores de podcast no volvieron: el episodio no está en este dispositivo</string>
+    <string name="restore_missing_title">%1$d canciones no están en este dispositivo:</string>
+    <string name="restore_missing_hint">\nNo se borraron de la copia. Es que todavía no existen aquí — copia la carpeta de música a la tarjeta y restaura de nuevo.</string>
     <string name="server_title">Servidor</string>
     <string name="server_default">Automático (servidor público + red local)</string>
     <string name="server_hint">https://tu-servidor:8081</string>
@@ -991,4 +1008,5 @@
     <string name="dj_voice_transcribe_offline">Alrededor de %1$s: %2$s</string>
     <string name="dj_voice_transcribe_failed">No pude transcribir este episodio ahora. Inténtalo más tarde.</string>
     <string name="dj_commands_transcribe">"Virgin, ¿qué dijeron sobre bitcoin en este episodio?" — pregunta sobre el podcast que suena</string>
+    <string name="dj_commands_bookmark">"Virgin, marca este momento / qué marcadores" — marca, lista y borra marcadores del podcast que suena</string>
 </resources>

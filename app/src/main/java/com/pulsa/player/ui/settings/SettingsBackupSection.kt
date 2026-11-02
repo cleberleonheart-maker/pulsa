@@ -33,10 +33,10 @@ internal fun SettingsActivity.buildBackup(): String {
     }
     return JSONObject().apply {
         put("app", "pulsa")
-        // 2 = acrescenta o bloco de biblioteca (playlists, favoritas, correções de nome).
-        // Um `pulsa-backup.json` da v1 continua restaurando normalmente: o `applyRestore`
+        // 3 = acrescenta os marcadores de podcast ao bloco de biblioteca. Um
+        // `pulsa-backup.json` da v1 continua restaurando normalmente: o `applyRestore`
         // lê o bloco novo com `optJSONObject`, que devolve `null` quando ele não existe.
-        put("backupVersion", 2)
+        put("backupVersion", 3)
         put("learn", learn)
         put("memoryFacts", memoryFacts)
         put("eq", eq)
@@ -113,7 +113,10 @@ internal fun SettingsActivity.showRestoreReport(report: PlaylistBackup.Report) {
     val body: String
     if (report.mediaPermissionMissing) {
         title = R.string.restore_needs_permission_title
-        body = getString(R.string.restore_needs_permission_body)
+        // Os marcadores de podcast não dependem da permissão de mídia: podem ter voltado
+        // mesmo com a biblioteca bloqueada, e o diálogo precisa dizer isso.
+        body = getString(R.string.restore_needs_permission_body) +
+            restoreBookmarksSummary(report).let { if (it.isEmpty()) "" else "\n\n" + it }
     } else if (!report.changed && report.missing == 0) {
         title = R.string.restore_done
         body = getString(R.string.restore_empty)
@@ -135,10 +138,31 @@ internal fun SettingsActivity.restoreSummary(r: PlaylistBackup.Report): String {
     if (r.songs > 0) sb.append("• ").append(getString(R.string.restore_n_songs, r.songs)).append('\n')
     if (r.favorites > 0) sb.append("• ").append(getString(R.string.restore_n_favorites, r.favorites)).append('\n')
     if (r.metaOverrides > 0) sb.append("• ").append(getString(R.string.restore_n_meta, r.metaOverrides)).append('\n')
+    val bookmarks = restoreBookmarksSummary(r)
+    if (bookmarks.isNotEmpty()) sb.append(bookmarks).append('\n')
     if (r.missing > 0) {
         sb.append('\n').append(getString(R.string.restore_missing_title, r.missing)).append('\n')
         r.missingExamples.forEach { sb.append("• ").append(it).append('\n') }
         sb.append(getString(R.string.restore_missing_hint))
+    }
+    return sb.toString().trim()
+}
+
+/**
+ * As linhas dos marcadores de podcast, e só delas.
+ *
+ * Ficam fora do [restoreSummary] porque o caso "sem permissão de mídia" também precisa delas:
+ * a biblioteca bloqueada impede as músicas de voltarem, mas o podcast não depende dela.
+ */
+internal fun SettingsActivity.restoreBookmarksSummary(r: PlaylistBackup.Report): String {
+    val sb = StringBuilder()
+    if (r.bookmarks > 0) {
+        sb.append("• ").append(getString(R.string.restore_n_bookmarks, r.bookmarks)).append('\n')
+    }
+    if (r.bookmarksMissing > 0) {
+        sb.append("• ")
+            .append(getString(R.string.restore_n_bookmarks_missing, r.bookmarksMissing))
+            .append('\n')
     }
     return sb.toString().trim()
 }

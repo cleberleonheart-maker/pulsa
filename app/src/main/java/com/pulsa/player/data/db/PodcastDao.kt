@@ -193,6 +193,35 @@ interface PodcastDao {
     )
     fun deleteBookmarksForPodcast(podcastId: Long)
 
+    /**
+     * Todos os marcadores com a identidade do episódio (feed + guid), para o backup.
+     *
+     * O `JOIN` é o que dá a identidade portátil: o `_id` do episódio é local e muda de
+     * máquina para máquina, mas a URL do feed e o `guid` do episódio são os mesmos no celular
+     * novo. Sem os dois, o marcador restaurado cairia num episódio qualquer — ou em nenhum.
+     */
+    @Query(
+        "SELECT b.position_ms AS position_ms, b.title AS title, b.created_at AS created_at, " +
+            "e.guid AS guid, f.feed_url AS feed_url " +
+            "FROM podcast_bookmarks b " +
+            "JOIN podcast_episodes e ON e._id = b.episode_id " +
+            "JOIN podcast_feeds f ON f._id = e.podcast_id"
+    )
+    fun bookmarksWithEpisode(): List<PodcastBookmarkExportRow>
+
+    /**
+     * O episódio local de um par (feed, guid) — o caminho inverso de [bookmarksWithEpisode].
+     *
+     * `null` quando o episódio não está neste aparelho: aí o marcador **não** volta, e o
+     * restore diz isso em vez de fingir que restaurou.
+     */
+    @Query(
+        "SELECT e._id FROM podcast_episodes e " +
+            "JOIN podcast_feeds f ON f._id = e.podcast_id " +
+            "WHERE f.feed_url = :feedUrl AND e.guid = :guid LIMIT 1"
+    )
+    fun episodeIdByFeedAndGuid(feedUrl: String, guid: String): Long?
+
     // ---- transcrições --------------------------------------------------------------------
 
     @Query("SELECT * FROM podcast_transcripts WHERE episode_id = :episodeId LIMIT 1")

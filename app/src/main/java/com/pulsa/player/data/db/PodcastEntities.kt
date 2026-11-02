@@ -114,6 +114,21 @@ data class PodcastBookmarkEntity(
 )
 
 /**
+ * Marcador com a **identidade portátil** do episódio, para o backup.
+ *
+ * O `episode_id` do marcador é o id local do Room (autoincrement) e não vale nada em outro
+ * aparelho. O que identifica o episódio em qualquer máquina é o `guid` do feed **junto com** a
+ * URL do feed — por isso a consulta traz os dois.
+ */
+data class PodcastBookmarkExportRow(
+    @ColumnInfo(name = "position_ms") val positionMs: Long,
+    @ColumnInfo(name = "title") val title: String,
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+    @ColumnInfo(name = "guid") val guid: String,
+    @ColumnInfo(name = "feed_url") val feedUrl: String
+)
+
+/**
  * Transcrição de um episódio de podcast, guardada em cache.
  * Usado para "Virgin, o que falaram sobre X nesse episódio?".
  */

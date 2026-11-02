@@ -30,12 +30,12 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.33):
- → URL QUEUE FIXES
- • Resuming a download that changed on the server restarts from zero instead of producing a corrupted file.
- • Canceling or deleting during finalization removes the newly published media and leaves no orphan copy.
- • Downloading the same URL again replaces the old copy without duplicating space in the library.
- • Connections are closed even on failure, and a failed publish leaves no junk in the library.</string>
+    <string name="changelog">What is new (5.12.34):
+ → PODCAST BOOKMARKS
+ • You can now bookmark the moment by voice: "Virgin, bookmark this moment".
+ • "Which bookmarks" reads out the bookmarks of the episode that is playing.
+ • "Remove the bookmark" removes the most recent one, after you confirm.
+ • The backup now carries the bookmarks, and the restore tells you what didn\'t come back.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -748,6 +748,12 @@
     <string name="dj_voice_chapter_list">There are %1$d chapters: %2$s.</string>
     <string name="dj_voice_chapter_last">This is already the last chapter.</string>
     <string name="dj_voice_chapter_first">This is already the first chapter.</string>
+    <string name="dj_voice_bookmark_saved">Bookmark saved at %1$s.</string>
+    <string name="dj_voice_bookmark_list">There are %1$d bookmarks: %2$s.</string>
+    <string name="dj_voice_bookmark_none">This episode has no bookmarks yet.</string>
+    <string name="dj_voice_bookmark_more">and %1$d more</string>
+    <string name="dj_voice_bookmark_remove_confirm">Shall I remove the bookmark %1$s? Confirm.</string>
+    <string name="dj_voice_bookmark_removed">Bookmark removed.</string>
     <string name="dj_voice_pen_search">Let me check if there\'s a USB drive or card connected and find the music on it.</string>
     <string name="dj_voice_pen_none">I didn\'t find any extra USB drive or card connected.</string>
     <string name="dj_voice_pen_done">Done! I found %1$d new songs on the USB drive and added them to your library.</string>
@@ -971,6 +977,17 @@
     <string name="backup_failed">Could not save the backup</string>
     <string name="restore_done">Backup restored!</string>
     <string name="restore_failed">Invalid file or no PULSA data</string>
+    <string name="restore_empty">The file is from PULSA, but it had nothing to restore.</string>
+    <string name="restore_needs_permission_title">I need the music permission</string>
+    <string name="restore_needs_permission_body">The file is complete, but PULSA can\'t read your library yet to match the songs by path.\n\nAllow access to the music and restore again.</string>
+    <string name="restore_n_playlists">%1$d playlists</string>
+    <string name="restore_n_songs">%1$d songs in the playlists</string>
+    <string name="restore_n_favorites">%1$d favorites</string>
+    <string name="restore_n_meta">%1$d fixed names</string>
+    <string name="restore_n_bookmarks">%1$d podcast bookmarks</string>
+    <string name="restore_n_bookmarks_missing">%1$d podcast bookmarks did not come back: the episode is not on this device</string>
+    <string name="restore_missing_title">%1$d songs are not on this device:</string>
+    <string name="restore_missing_hint">\nThey were not deleted from the backup. They just don\'t exist here yet — copy the music folder to the card and restore again.</string>
     <string name="server_title">Server</string>
     <string name="server_default">Automatic (public server + local network)</string>
     <string name="server_hint">https://your-server:8081</string>
@@ -991,4 +1008,5 @@
     <string name="dj_voice_transcribe_offline">Around %1$s: %2$s</string>
     <string name="dj_voice_transcribe_failed">I could not transcribe this episode now. Try again later.</string>
     <string name="dj_commands_transcribe">"Virgin, what did they say about bitcoin in this episode?" — ask about the playing podcast</string>
+    <string name="dj_commands_bookmark">"Virgin, bookmark this moment / which bookmarks" — marks, lists and removes bookmarks on the playing podcast</string>
 </resources>
