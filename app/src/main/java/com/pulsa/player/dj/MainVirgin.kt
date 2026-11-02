@@ -1081,36 +1081,51 @@ class MainVirgin(
             virginSpeak(say(R.string.dj_voice_queue_move_none))
             return
         }
-        val moved = Playback.moveToEnd(q.video, q.episode)
+        val moved = Playback.moveToEnd(q.kind)
         if (moved == null) {
             virginSpeak(say(R.string.dj_voice_queue_move_none))
             return
         }
         host.syncMiniPlayer()
-        Telemetry.log(activity, "Virgin queue_move type=video:${q.video} episode:${q.episode} -> ${moved.title}")
+        Telemetry.log(activity, "Virgin queue_move type=${q.kind} -> ${moved.title}")
         virginSpeak(say(R.string.dj_voice_queue_move_done, moved.title))
     }
 
     /**
-     * Histórico do dia por tipo ("virgi, o que já tocou de vídeo hoje?"). Fala só os mais
+     * Histórico por tipo ("virgi, o que já tocou de vídeo hoje?"). Fala só os mais
      * recentes, porque uma lista inteira do dia não é legível de ouvido.
+     *
+     * O `dayOffset` é o dia da pergunta: `-1` quando a pessoa disse "ontem" — o sinal "o que
+     * tocou" serve aos dois dias, e responder o dia errado é pior do que não responder.
      */
-    private fun virgQueueHistory(type: String?) {
+    private fun virgQueueHistory(type: String?, dayOffset: Int) {
         val t = type ?: return
         ThreadPool.post {
-            val ranks = DjLearn.playedByKind(activity.applicationContext, t, 0, 8)
+            val ranks = DjLearn.playedByKind(activity.applicationContext, t, dayOffset, 8)
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
+                val yesterday = dayOffset < 0
                 if (ranks.isEmpty()) {
-                    virginSpeak(say(R.string.dj_voice_history_none))
+                    virginSpeak(
+                        say(
+                            if (yesterday) R.string.dj_voice_history_none_yesterday
+                            else R.string.dj_voice_history_none
+                        )
+                    )
                     return@onUi
                 }
                 val items = ranks.map { (artist, title) ->
                     if (artist.isBlank()) title else
                         activity.getString(R.string.dj_voice_yesterday_item, artist, title)
                 }
-                Telemetry.log(activity, "Virgin queue_history kind=$t items=${items.size}")
-                virginSpeak(say(R.string.dj_voice_history_all, items.joinToString("; ")))
+                Telemetry.log(activity, "Virgin queue_history kind=$t day=$dayOffset items=${items.size}")
+                virginSpeak(
+                    say(
+                        if (yesterday) R.string.dj_voice_history_all_yesterday
+                        else R.string.dj_voice_history_all,
+                        items.joinToString("; ")
+                    )
+                )
             }
         }
     }
@@ -1570,7 +1585,10 @@ class MainVirgin(
             }
 
 "queue_move"    -> virgQueueMove(DjCommander.moveToEndQuery(norm))
-            "queue_history" -> virgQueueHistory(DjCommander.historyQuery(norm))
+            "queue_history" -> virgQueueHistory(
+                DjCommander.historyQuery(norm),
+                DjCommander.historyDayOffset(norm)
+            )
             "download_episode" -> virgDownloadEpisode()
             "clean_space" -> virgCleanSpace()
 

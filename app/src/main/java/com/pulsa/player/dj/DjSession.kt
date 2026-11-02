@@ -709,31 +709,47 @@ class DjSession(
             speak(say(R.string.dj_voice_queue_move_none))
             return
         }
-        val moved = Playback.moveToEnd(q.video, q.episode)
+        val moved = Playback.moveToEnd(q.kind)
         if (moved == null) {
             speak(say(R.string.dj_voice_queue_move_none))
             return
         }
-        Telemetry.log(activity, "DJ queue_move type=video:${q.video} episode:${q.episode} -> ${moved.title}")
+        Telemetry.log(activity, "DJ queue_move type=${q.kind} -> ${moved.title}")
         speak(say(R.string.dj_voice_queue_move_done, moved.title))
     }
 
-    private fun voiceQueueHistory(type: String?) {
+    /**
+     * Histórico por tipo. O `dayOffset` é o dia da pergunta (`-1` = ontem) — mesmo caminho do
+     * [MainVirgin.virgQueueHistory].
+     */
+    private fun voiceQueueHistory(type: String?, dayOffset: Int) {
         val t = type ?: return
         ThreadPool.post {
-            val ranks = DjLearn.playedByKind(activity.applicationContext, t, 0, 8)
+            val ranks = DjLearn.playedByKind(activity.applicationContext, t, dayOffset, 8)
             ThreadPool.onUi {
                 if (activity.isFinishing || activity.isDestroyed) return@onUi
+                val yesterday = dayOffset < 0
                 if (ranks.isEmpty()) {
-                    speak(say(R.string.dj_voice_history_none))
+                    speak(
+                        say(
+                            if (yesterday) R.string.dj_voice_history_none_yesterday
+                            else R.string.dj_voice_history_none
+                        )
+                    )
                     return@onUi
                 }
                 val items = ranks.map { (artist, title) ->
                     if (artist.isBlank()) title else
                         say(R.string.dj_voice_yesterday_item, artist, title)
                 }
-                Telemetry.log(activity, "DJ queue_history kind=$t items=${items.size}")
-                speak(say(R.string.dj_voice_history_all, items.joinToString("; ")))
+                Telemetry.log(activity, "DJ queue_history kind=$t day=$dayOffset items=${items.size}")
+                speak(
+                    say(
+                        if (yesterday) R.string.dj_voice_history_all_yesterday
+                        else R.string.dj_voice_history_all,
+                        items.joinToString("; ")
+                    )
+                )
             }
         }
     }
@@ -1162,7 +1178,10 @@ class DjSession(
             }
 
             "queue_move" -> voiceQueueMove(DjCommander.moveToEndQuery(norm))
-            "queue_history" -> voiceQueueHistory(DjCommander.historyQuery(norm))
+            "queue_history" -> voiceQueueHistory(
+                DjCommander.historyQuery(norm),
+                DjCommander.historyDayOffset(norm)
+            )
             "download_episode" -> voiceDownloadEpisode()
             "clean_space" -> voiceCleanSpace()
 

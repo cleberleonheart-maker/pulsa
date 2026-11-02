@@ -270,8 +270,11 @@ object Playback {
     /**
      * Fila universal — reordenação por voz ("virgi, joga o vídeo pro fim"). Move o item
      * pedido pro fim da fila e devolve o que moveu (ou `null` quando não há nada).
+     *
+     * O `kind` é o tipo citado na voz (`video`, `podcast`, `radio`, `stream` — o vocabulário
+     * de [com.pulsa.player.dj.Kinds]) ou `null` para qualquer item.
      */
-    fun moveToEnd(video: Boolean, episode: Boolean): Song? = link?.moveToEnd(video, episode)
+    fun moveToEnd(kind: String?): Song? = link?.moveToEnd(kind)
 
     /** Reordena um item da fila (arrastar para reordenar na tela de reprodução). */
     fun moveQueueItem(from: Int, to: Int): Boolean = link?.moveQueueItem(from, to) ?: false

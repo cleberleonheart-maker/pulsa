@@ -49,7 +49,7 @@ interface PlayerLink {
 
 
     /** Fila universal: move o item pedido pro fim da fila e devolve o que moveu (ou `null`). */
-    fun moveToEnd(video: Boolean, episode: Boolean): Song?
+    fun moveToEnd(kind: String?): Song?
 
     /** Reordena um item da fila para outra posição (arrastar para reordenar). */
     fun moveQueueItem(from: Int, to: Int): Boolean
@@ -125,7 +125,7 @@ class ServicePlayerLink(val service: PlaybackService) : PlayerLink {
     override fun start(songs: List<Song>, startIndex: Int) = service.start(songs, startIndex)
     override fun enqueue(songs: List<Song>): Int = service.enqueue(songs)
 
-    override fun moveToEnd(video: Boolean, episode: Boolean): Song? = service.moveToEnd(video, episode)
+    override fun moveToEnd(kind: String?): Song? = service.moveToEnd(kind)
     override fun moveQueueItem(from: Int, to: Int): Boolean = service.moveQueueItem(from, to)
     override fun jumpTo(index: Int): Boolean = service.jumpTo(index)
 

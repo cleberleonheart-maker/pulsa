@@ -33,11 +33,11 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.35):
- → FILA UNIVERSAL
- • O rádio agora entra na fila: toque longo na estação e escolha "Adicionar à fila".
- • Os vídeos do PeerTube também: no resultado da busca, "Adicionar à fila".
- • A fila pode misturar música, rádio e vídeo — o próximo item continua na ordem.</string>
+    <string name="changelog">Novidades desta versão (5.12.36):
+ → FILA UNIVERSAL NA VOZ
+ • "Joga a rádio pro fim" e "joga o stream pro fim" agora movem o item certo da fila.
+ • O histórico por tipo tem rádio e stream: "o que já tocou de rádio hoje?".
+ • "O que tocou ontem" responde de ontem — antes respondia de hoje.</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -648,6 +648,8 @@
     <string name="dj_voice_queue_move_none">Não achei nada para mover para o fim da fila.</string>
     <string name="dj_voice_history_none">Ainda não tocou nada desse tipo hoje.</string>
     <string name="dj_voice_history_all">Já tocou hoje: %1$s.</string>
+    <string name="dj_voice_history_none_yesterday">Ontem também não tocou nada desse tipo.</string>
+    <string name="dj_voice_history_all_yesterday">Ontem tocou: %1$s.</string>
     <string name="dj_voice_download_no_ep">Não tem episódio tocando agora.</string>
     <string name="dj_voice_download_already">Esse episódio já está baixado: %1$s.</string>
     <string name="dj_voice_download_start">Baixando %1$s pra ouvir no carro.</string>

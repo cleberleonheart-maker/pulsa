@@ -240,14 +240,39 @@ object DjCommander {
     /**
      * Fila universal — o pedido de mover um item para o fim da fila.
      *
-     * `video`/`episode` vêm do tipo citado na frase ("joga o vídeo pro fim"); quando nenhum
-     * é citado, o alvo é o item atual (`any`). Quem escolhe **qual** item do tipo mover é o
-     * motor ([com.pulsa.player.playback.Playback], que conhece a fila) — aqui só o texto
-     * decide a intenção.
+     * `kind` é o tipo citado na frase ("joga o vídeo pro fim" → [Kinds.VIDEO]), com os
+     * mesmos nomes que o histórico usa — um vocabulário só ([Kinds]). Quando a frase não
+     * cita tipo, `kind` é `null` e o alvo é o item atual (`any`).
+     *
+     * Quem escolhe **qual** item do tipo mover é o motor
+     * ([com.pulsa.player.playback.Playback], que conhece a fila) — aqui só o texto decide a
+     * intenção.
      */
-    data class QueueMove(val video: Boolean, val episode: Boolean) {
-        val any: Boolean get() = !video && !episode
+    data class QueueMove(val kind: String?) {
+        val any: Boolean get() = kind == null
     }
+
+    /**
+     * As palavras de cada tipo, em pt/en/es.
+     *
+     * Uma lista só por tipo, usada pela reordenação e pelo histórico: quando as duas coisas
+     * tinham listas separadas, rádio e stream entraram em uma e não na outra.
+     */
+    private val VIDEO_WORDS = listOf("video", "videos", "filme", "filmes", "movie", "movies")
+    private val PODCAST_WORDS = listOf(
+        "podcast", "podcasts", "episodio", "episodios", "episode", "episodes",
+        "serie", "series"
+    )
+    private val MUSIC_WORDS = listOf(
+        "musica", "musicas", "cancao", "cancoes", "song", "songs", "music"
+    )
+    private val RADIO_WORDS = listOf(
+        "radio", "radios", "estacao", "estacoes", "station", "stations"
+    )
+    private val STREAM_WORDS = listOf("stream", "streams")
+
+    /** "Ontem", em pt/en/es — o dia do histórico. */
+    private val YESTERDAY_WORDS = listOf("ontem", "yesterday", "ayer", "anoche")
 
     private val MOVE_END_VERBS = listOf(
         "joga", "manda", "bota", "poe", "coloca", "move", "leva", "deixa",
@@ -262,18 +287,27 @@ object DjCommander {
         ).any { norm.contains(it) }
 
     /**
-     * "virgi, joga o vídeo pro fim" → `QueueMove(video=true)`; "manda essa pro fim da fila"
-     * → `QueueMove(any=true)`. `null` quando a frase não é reordenação.
+     * "virgi, joga o vídeo pro fim" → `QueueMove(kind="video")`; "manda essa pro fim da
+     * fila" → `QueueMove(kind=null)` (o item atual). `null` quando a frase não é reordenação.
      *
      * O verbo é obrigatório de propósito: "o que você faria para o fim do mês" tem o sinal
      * mas nenhum verbo de mover, e sem essa trava a frase ia para o "para" do vídeo.
+     *
+     * Os tipos são os mesmos do histórico ([Kinds]): vídeo, podcast, rádio e stream. A
+     * ordem é a de quem manda: quando a frase cita mais de um ("joga o vídeo e o episódio
+     * pro fim"), vale o primeiro — o vídeo, como já era.
      */
     fun moveToEndQuery(norm: String): QueueMove? {
         if (!moveToEndSignal(norm)) return null
         if (MOVE_END_VERBS.none { norm.contains(it) }) return null
-        val video = listOf("video", "videos", "filme", "filmes", "movie", "movies").any { norm.contains(it) }
-        val episode = listOf("episodio", "episodios", "episode", "episodes", "serie", "series", "podcast").any { norm.contains(it) }
-        return QueueMove(video = video, episode = episode)
+        val kind = when {
+            VIDEO_WORDS.any { norm.contains(it) } -> Kinds.VIDEO
+            PODCAST_WORDS.any { norm.contains(it) } -> Kinds.PODCAST
+            RADIO_WORDS.any { norm.contains(it) } -> Kinds.RADIO
+            STREAM_WORDS.any { norm.contains(it) } -> Kinds.STREAM
+            else -> null
+        }
+        return QueueMove(kind)
     }
 
     // ----- Histórico do que já tocou, por tipo ("o que já tocou de vídeo hoje?") -----
@@ -352,21 +386,31 @@ object DjCommander {
      * Usa o **"tocou"** (3ª pessoa) de propósito: o "o que toquei"/"toquei ontem" já é o
      * [playedYesterdayMatch], e misturar os dois faria "o que toquei" cair no histórico de
      * hoje. O tipo ausente é `all` — "o que já passou hoje" fala de tudo.
+     *
+     * O tipo é o do [Kinds] — o mesmo que o `play_log` grava, então "o que já tocou de
+     * stream" responde dos streams e "de vídeo" responde dos vídeos **e** dos streams (um
+     * stream é um vídeo para quem pergunta).
      */
     fun historyQuery(norm: String): String? {
         if (HISTORY_SIGNALS.none { norm.contains(it) }) return null
-        val video = listOf("video", "videos", "filme", "filmes", "movie", "movies").any { norm.contains(it) }
-        val podcast = listOf("podcast", "podcasts", "episodio", "episodios", "episode", "episodes", "serie", "series").any { norm.contains(it) }
-        val music = listOf("musica", "musicas", "cancao", "cancoes", "song", "songs", "music").any { norm.contains(it) }
-        val radio = norm.contains("radio") || norm.contains("estacao") || norm.contains("station")
-        return when {
-            video -> "video"
-            podcast -> "podcast"
-            music -> "music"
-            radio -> "radio"
-            else -> "all"
+        val kind = when {
+            VIDEO_WORDS.any { norm.contains(it) } -> Kinds.VIDEO
+            PODCAST_WORDS.any { norm.contains(it) } -> Kinds.PODCAST
+            MUSIC_WORDS.any { norm.contains(it) } -> Kinds.MUSIC
+            RADIO_WORDS.any { norm.contains(it) } -> Kinds.RADIO
+            STREAM_WORDS.any { norm.contains(it) } -> Kinds.STREAM
+            else -> Kinds.ALL
         }
+        return kind
     }
+
+    /**
+     * De qual dia é a pergunta de histórico: `-1` para ontem, `0` para hoje.
+     *
+     * O sinal "o que tocou" serve aos dois dias, e sem esta trava "o que tocou **ontem**"
+     * respondia com o histórico de **hoje** — a Virgin falava um dia que ninguém perguntou.
+     */
+    fun historyDayOffset(norm: String): Int = if (YESTERDAY_WORDS.any { norm.contains(it) }) -1 else 0
 
 
 

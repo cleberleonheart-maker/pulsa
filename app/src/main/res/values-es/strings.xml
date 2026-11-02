@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.35):
- → COLA UNIVERSAL
- • Ahora la radio puede entrar en la cola: mantén pulsada una estación y elige "Añadir a la cola".
- • También los vídeos de PeerTube: en el resultado de búsqueda, "Añadir a la cola".
- • La cola puede mezclar música, radio y vídeo — el siguiente sigue en orden.</string>
+    <string name="changelog">Novedades de esta versión (5.12.36):
+ → COLA UNIVERSAL POR VOZ
+ • "Mueve la radio al final" y "mueve el stream al final" ahora mueven el ítem correcto.
+ • El historial por tipo ya cubre la radio y el stream: "¿qué sonó de radio hoy?".
+ • "Qué sonó ayer" responde de ayer — antes respondía de hoy.</string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
     <string name="search_filter_all">Todo</string>
@@ -647,6 +647,8 @@
     <string name="dj_voice_queue_save_merged">Añadí %2$d canciones a la lista %1$s que ya existía.</string>
     <string name="dj_voice_history_none">Hoy todavía no sonó nada de eso.</string>
     <string name="dj_voice_history_all">Hoy sonó: %1$s.</string>
+    <string name="dj_voice_history_none_yesterday">Ayer tampoco sonó nada de eso.</string>
+    <string name="dj_voice_history_all_yesterday">Ayer sonó: %1$s.</string>
     <string name="dj_voice_download_no_ep">No hay un episodio sonando ahora.</string>
     <string name="dj_voice_download_already">Ese episodio ya está descargado: %1$s.</string>
     <string name="dj_voice_download_start">Descargando %1$s para el coche.</string>

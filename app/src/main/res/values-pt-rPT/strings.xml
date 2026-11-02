@@ -9,11 +9,11 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.35):
- → FILA UNIVERSAL
- • Agora o rádio pode entrar na fila: toque longo na estação e escolha "Adicionar à fila".
- • Os vídeos do PeerTube também: no resultado da pesquisa, "Adicionar à fila".
- • A fila pode misturar música, rádio e vídeo — o próximo item continua pela ordem.</string>
+    <string name="changelog">Novidades desta versão (5.12.36):
+ → FILA UNIVERSAL NA VOZ
+ • "Joga o rádio para o fim" e "joga o stream para o fim" movem agora o item certo da fila.
+ • O histórico por tipo tem rádio e stream: "o que já tocou de rádio hoje?".
+ • "O que tocou ontem" responde de ontem — antes respondia de hoje.</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -291,6 +291,10 @@
     <string name="dj_voice_queue_save_empty">A fila está vazia, não há nada para guardar.</string>
     <string name="dj_voice_queue_save_ask">Com que nome? Diga: salva a fila como playlist e o nome.</string>
     <string name="dj_voice_queue_save_done">Guardei %2$d músicas na playlist %1$s.</string>
+    <string name="dj_voice_history_none">Ainda não tocou nada desse tipo hoje.</string>
+    <string name="dj_voice_history_all">Já tocou hoje: %1$s.</string>
+    <string name="dj_voice_history_none_yesterday">Ontem também não tocou nada desse tipo.</string>
+    <string name="dj_voice_history_all_yesterday">Ontem tocou: %1$s.</string>
     <string name="dj_voice_playlist_created">Criei a playlist %1$s. É só dizer \"adiciona a playlist %1$s\" para guardar as músicas.</string>
     <string name="dj_voice_playlist_playing">A tocar a playlist %1$s: %2$d músicas.</string>
     <string name="dj_voice_decade_done">Vamos! Montei %1$d músicas dos anos %2$s!</string>

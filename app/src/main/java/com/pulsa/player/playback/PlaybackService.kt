@@ -92,6 +92,7 @@ import com.pulsa.player.podcast.PodcastDb
 import com.pulsa.player.podcast.PodcastPrefetch
 import com.pulsa.player.podcast.nextEpisodeToPlay
 import com.pulsa.player.dj.DjLearn
+import com.pulsa.player.dj.Kinds
 import java.io.File
 import kotlin.random.Random
 
@@ -1369,13 +1370,18 @@ class PlaybackService : MediaLibraryService() {
     }
 
     /**
-
+     *
      * Fila universal — reordenação por voz ("virgi, joga o vídeo pro fim").
      *
      * Move para o **fim** o item pedido: o atual quando a frase não cita tipo, ou o item do
      * tipo citado mais próximo — começando pelo que está tocando e depois pela **frente** da
      * fila. O caso comum da fila mista é a música tocando com um vídeo na sequência: é esse
      * vídeo que o usuário quer empurrar; o fundo da fila só entra quando não há nada adiante.
+     *
+     * O tipo é o do [com.pulsa.player.dj.Kinds] — `video`, `podcast`, `radio`, `stream` ou
+     * `null` (qualquer item). Os tipos são os mesmos que o histórico por tipo usa, então a
+     * mesma palavra vale nas duas coisas: "joga a rádio pro fim" e "o que já tocou de rádio"
+     * falam do mesmo tipo.
      *
      * Devolve o `Song` movido (para a Virgin nomear a resposta) ou `null` quando não há nada
      * para mover (fila com menos de 2 itens, item já no fim, ou nenhum do tipo citado).
@@ -1389,17 +1395,20 @@ class PlaybackService : MediaLibraryService() {
      * ExoPlayer reflete a ordem de `queue` 1:1 e os índices de `moveMediaItem` batem com a
      * nossa lista.
      */
-    fun moveToEnd(videoType: Boolean, episodeType: Boolean): Song? {
+    fun moveToEnd(kind: String?): Song? {
         val p = transport ?: return null
         val size = queue.size
         if (size < 2) return null
         val curIdx = index.coerceIn(0, size - 1)
-        val matches: (Song) -> Boolean = { s ->
-            when {
-                videoType -> s.needsVideoScreen
-                episodeType -> s.isPodcast
-                else -> true
-            }
+        // O tipo citado na voz. "vídeo" é o mais largo de propósito: o stream também é um
+        // vídeo para quem pergunta ("joga o vídeo pro fim" move o PeerTube que está na
+        // fila), e "stream" é o preciso, para quando a pessoa sabe que é stream.
+        val matches: (Song) -> Boolean = when (kind) {
+            Kinds.VIDEO -> { s -> s.needsVideoScreen }
+            Kinds.PODCAST -> { s -> s.isPodcast }
+            Kinds.RADIO -> { s -> s.isRadio }
+            Kinds.STREAM -> { s -> s.isStream }
+            else -> { _ -> true }
         }
         val from = if (matches(queue[curIdx])) curIdx else {
             val ahead = (curIdx + 1 until size).firstOrNull { matches(queue[it]) }

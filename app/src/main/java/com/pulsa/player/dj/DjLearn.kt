@@ -70,8 +70,9 @@ object DjLearn {
 
         /**
          * Log de reprodução. As três colunas extras (`kind`/`title`/`artist`) são o histórico
-         * por tipo levado ao banco: `kind` diz se foi música, vídeo, podcast ou rádio e
-         * `title`/`artist` guardam a legenda no momento do toque.
+         * por tipo levado ao banco: `kind` diz se foi música, vídeo, podcast, rádio ou
+         * stream (o vocabulário de [Kinds]) e `title`/`artist` guardam a legenda no momento
+         * do toque.
          *
          * Denormalizar o nome é de propósito: a linha do MediaStore de um vídeo pode sumir
          * (arquivo apagado, permissão revogada) e o histórico ficaria com ids órfãos — sem o
@@ -703,12 +704,7 @@ object DjLearn {
     }
 
     /** Tipo do [play_log] para o histórico por tipo. Música é `song_id` positivo. */
-    fun kindOf(song: com.pulsa.player.model.Song): String = when {
-        song.isPodcast -> "podcast"
-        song.isRadio -> "radio"
-        song.isVideo || song.isStream -> "video"
-        else -> "music"
-    }
+    fun kindOf(song: com.pulsa.player.model.Song): String = Kinds.of(song)
 
     /** Grava o toque de uma mídia não-música (vídeo/podcast/rádio/stream) no histórico. */
     fun recordTyped(context: Context, song: com.pulsa.player.model.Song) {
@@ -716,13 +712,19 @@ object DjLearn {
         learner(context).recordTyped(key, kindOf(song), song.title, song.artist)
     }
 
-    /** Tipos do [play_log] que uma consulta de histórico ("video"/"podcast"/…) abrange. */
+    /**
+     * Tipos do [play_log] que uma consulta de histórico ("video"/"podcast"/…) abrange.
+     *
+     * "vídeo" cobre o stream também: o PeerTube é um vídeo para quem pergunta, e o stream
+     * só tem tipo próprio quando a pergunta é precisa ("o que já tocou de stream").
+     */
     fun kindsFor(type: String): List<String> = when (type) {
-        "video" -> listOf("video")
-        "podcast" -> listOf("podcast")
-        "music" -> listOf("music")
-        "radio" -> listOf("radio")
-        else -> listOf("music", "video", "podcast", "radio")
+        Kinds.VIDEO -> listOf(Kinds.VIDEO, Kinds.STREAM)
+        Kinds.PODCAST -> listOf(Kinds.PODCAST)
+        Kinds.MUSIC -> listOf(Kinds.MUSIC)
+        Kinds.RADIO -> listOf(Kinds.RADIO)
+        Kinds.STREAM -> listOf(Kinds.STREAM)
+        else -> listOf(Kinds.MUSIC, Kinds.VIDEO, Kinds.PODCAST, Kinds.RADIO, Kinds.STREAM)
     }
 
     /** Itens que já tocaram hoje, por tipo, prontos para a locução. */

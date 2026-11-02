@@ -30,11 +30,11 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.35):
- → UNIVERSAL QUEUE
- • Radio can now join the queue: long-press a station and choose "Add to queue".
- • PeerTube videos too: in the search result, "Add to queue".
- • The queue can mix music, radio and video — the next item stays in order.</string>
+    <string name="changelog">What is new (5.12.36):
+ → UNIVERSAL QUEUE BY VOICE
+ • "Put the radio at the end" and "put the stream at the end" now move the right item.
+ • The history by type now covers radio and stream: "what played of radio today?".
+ • "What played yesterday" answers about yesterday — it used to answer about today.</string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
     <string name="search_filter_all">All</string>
@@ -645,6 +645,8 @@
     <string name="dj_voice_queue_save_merged">Added %2$d songs to the existing playlist %1$s.</string>
     <string name="dj_voice_history_none">Nothing like that has played yet today.</string>
     <string name="dj_voice_history_all">Played today: %1$s.</string>
+    <string name="dj_voice_history_none_yesterday">Nothing like that played yesterday either.</string>
+    <string name="dj_voice_history_all_yesterday">Played yesterday: %1$s.</string>
     <string name="dj_voice_download_no_ep">No episode is playing right now.</string>
     <string name="dj_voice_download_already">That episode is already downloaded: %1$s.</string>
     <string name="dj_voice_download_start">Downloading %1$s for the car.</string>

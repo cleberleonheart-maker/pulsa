@@ -245,13 +245,16 @@ class DjCommanderTest {
     }
 
     @Test
-
     fun action_queue_move() {
         assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, joga o video pro fim")))
         assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, manda o episodio pro fim da fila")))
         assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, bota essa musica por ultimo")))
         assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, coloca essa no final da fila")))
         assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, move to the end da fila")))
+        // Rádio e stream também são reordenáveis: a fila é universal, e antes eles caíam
+        // no caso "qualquer" — que movia o item que estava tocando, não o pedido.
+        assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, joga a radio pro fim")))
+        assertEquals("queue_move", DjCommander.action(DjCommander.norm("virgin, manda o stream pro fim da fila")))
     }
 
     @Test
@@ -268,12 +271,18 @@ class DjCommanderTest {
     fun queue_move_query_tipo() {
         val video = DjCommander.moveToEndQuery(DjCommander.norm("joga o video pro fim"))
         assertNotNull(video)
-        assertEquals(DjCommander.QueueMove(video = true, episode = false), video)
+        assertEquals(Kinds.VIDEO, video!!.kind)
         val episodio = DjCommander.moveToEndQuery(DjCommander.norm("manda o episodio pro fim da fila"))
-        assertEquals(DjCommander.QueueMove(video = false, episode = true), episodio)
+        assertEquals(Kinds.PODCAST, episodio!!.kind)
+        val radio = DjCommander.moveToEndQuery(DjCommander.norm("joga a radio pro fim"))
+        assertEquals(Kinds.RADIO, radio!!.kind)
+        val estacao = DjCommander.moveToEndQuery(DjCommander.norm("manda a estacao pro final da fila"))
+        assertEquals(Kinds.RADIO, estacao!!.kind)
+        val stream = DjCommander.moveToEndQuery(DjCommander.norm("bota o stream no fim da fila"))
+        assertEquals(Kinds.STREAM, stream!!.kind)
         val generico = DjCommander.moveToEndQuery(DjCommander.norm("coloca essa no final da fila"))
-        assertEquals(DjCommander.QueueMove(video = false, episode = false), generico)
-        assertTrue(generico!!.any)
+        assertNull(generico!!.kind)
+        assertTrue(generico.any)
         assertNull(DjCommander.moveToEndQuery("fim do video"))
     }
 
@@ -284,6 +293,9 @@ class DjCommanderTest {
         assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, o que ja passou hoje")))
         assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, o que tocou de musica")))
         assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, what played today")))
+        // Rádio e stream entram no histórico por tipo como os outros.
+        assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, o que ja toceu de radio hoje")))
+        assertEquals("queue_history", DjCommander.action(DjCommander.norm("virgin, o que ja toceu de stream hoje")))
     }
 
     @Test
@@ -292,9 +304,22 @@ class DjCommanderTest {
         assertEquals("video", DjCommander.historyQuery(DjCommander.norm("o que toceu de filme")))
         assertEquals("podcast", DjCommander.historyQuery(DjCommander.norm("quais podcasts tocaram hoje")))
         assertEquals("music", DjCommander.historyQuery(DjCommander.norm("o que toceu de musica")))
+        assertEquals("radio", DjCommander.historyQuery(DjCommander.norm("o que toceu de radio")))
+        assertEquals("stream", DjCommander.historyQuery(DjCommander.norm("o que toceu de stream")))
         assertEquals("all", DjCommander.historyQuery(DjCommander.norm("o que ja passou hoje")))
         assertNull(DjCommander.historyQuery(DjCommander.norm("toca uma musica")))
         assertNull(DjCommander.historyQuery(DjCommander.norm("virgin, o que voce acha disso")))
+    }
+
+    @Test
+    fun history_query_dia_de_ontem() {
+        // O sinal "o que tocou" serve aos dois dias: sem o dia, a Virgin responderia o
+        // histórico de **hoje** para uma pergunta sobre ontem.
+        assertEquals(-1, DjCommander.historyDayOffset(DjCommander.norm("o que tocou ontem")))
+        assertEquals(-1, DjCommander.historyDayOffset(DjCommander.norm("what played yesterday")))
+        assertEquals(-1, DjCommander.historyDayOffset(DjCommander.norm("que sonaron ayer")))
+        assertEquals(0, DjCommander.historyDayOffset(DjCommander.norm("o que tocou hoje")))
+        assertEquals(0, DjCommander.historyDayOffset(DjCommander.norm("quais podcasts tocaram")))
     }
 
     @Test
@@ -304,6 +329,7 @@ class DjCommanderTest {
         assertEquals("yesterday", DjCommander.action(DjCommander.norm("virgin, o que toquei ontem")))
         assertEquals("yesterday", DjCommander.action(DjCommander.norm("virgin, que toquei ontem")))
     }
+
 
     @Test
     fun action_download_episode() {
