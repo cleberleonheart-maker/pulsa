@@ -45,14 +45,16 @@ jobs:
           echo "KEY_ALIAS=${KEY_ALIAS}" >> "$GITHUB_ENV"
           echo "KEY_PASSWORD=${KEY_PASSWORD}" >> "$GITHUB_ENV"
       - name: Unit tests
-        run: ./gradlew :app:test --console=plain
+        # Só a variante debug: a release depende da chave de assinatura, que vem dos
+        # secrets e não existe em forks/PRs. A release é compilada no passo "Monta o APK".
+        run: ./gradlew :app:testDebugUnitTest --console=plain
       - name: Checagem das migrações do Room
         run: |
           ./gradlew :app:kspDebugKotlin --console=plain
           python3 tools/check_room_migration.py
       - name: Lint do Android (nao bloqueia)
         continue-on-error: true
-        run: ./gradlew :app:lint --console=plain
+        run: ./gradlew :app:lintDebug --console=plain
       - name: Monta o APK
         run: |
           mkdir -p apk-out
@@ -100,7 +102,7 @@ jobs:
       - name: Publica APK e arquivo de versao
         run: |
           if [ ! -f apk/app-release.apk ]; then
-            echo "::error::APK release assinado ausente: nada sera publicado."
+            echo "::error::APK release assinado ausente: nada sera publicado. Configure os secrets KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS e KEY_PASSWORD no repositorio."
             exit 1
           fi
           cp apk/app-release.apk pulsaweb/Pulsa.apk
