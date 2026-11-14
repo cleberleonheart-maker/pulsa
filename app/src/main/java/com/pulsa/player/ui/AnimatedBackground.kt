@@ -69,5 +69,4 @@ object AnimatedBackground {
         )
     }
 
-    fun isAttached(view: View): Boolean = target === view
 }

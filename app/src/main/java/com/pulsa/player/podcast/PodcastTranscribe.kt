@@ -3,6 +3,8 @@ package com.pulsa.player.podcast
 import android.content.Context
 import android.util.Base64
 import android.util.Log
+import com.pulsa.player.R
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.db.PodcastTranscriptEntity
@@ -34,15 +36,11 @@ object PodcastTranscribe {
     /** Teto de download para não encher o disco em episódio gigante. */
     private const val DOWNLOAD_LIMIT = 200L * 1024 * 1024
 
-    /** Uma transcrição "em andamento" recente evita disparar o mesmo trabalho duas vezes. */
-    private const val PENDING_TTL_MS = 3 * 60 * 1000L
-
+    /** Transcrições em voo **neste processo**. */
     private val running = ConcurrentHashMap.newKeySet<Long>()
 
-    fun hasTranscript(context: Context, episodeId: Long): Boolean {
-        val db = PulsaDatabase.get(context)
-        return db.podcastDao().transcriptForEpisode(episodeId)?.status == "done"
-    }
+    /** Quem está esperando uma transcrição em voo acabar, para ser respondido de verdade. */
+    private val waiters = ConcurrentHashMap<Long, MutableList<(Boolean, String?) -> Unit>>()
 
     fun getTranscript(context: Context, episodeId: Long): PodcastTranscript? {
         val db = PulsaDatabase.get(context)
@@ -60,10 +58,23 @@ object PodcastTranscribe {
     /**
      * Garante que o episódio tem transcrição. Chama [onDone] com `(true, null)` quando já
      * existe (ou acabou de ser gerada), ou `(false, motivo)` quando não dá para transcrever.
+     *
+     * Se já há uma transcrição **em voo** para o mesmo episódio, quem chama entra na fila de
+     * [waiters] e é respondido com o resultado — não com um "vou transcrever quando der". Era o
+     * que acontecia com o `AdSkip`: ele começava a transcrição, e a pergunta da pessoa pelo
+     * podcast chegava dois minutos depois e levava um "transcrevendo" que nunca virava resposta.
      */
     fun transcribeIfNeeded(context: Context, episode: Episode, onDone: (Boolean, String?) -> Unit) {
         val db = PulsaDatabase.get(context)
-        val existing = db.podcastDao().transcriptForEpisode(episode.id)
+        val existing = runCatching {
+            db.podcastDao().transcriptForEpisode(episode.id)
+        }.getOrElse { t ->
+            CrashLogger.writeLog(
+                context.applicationContext,
+                "Podcast: falha ao ler a transcricao id=${episode.id} -> $t"
+            )
+            null
+        }
         if (existing?.status == "done") {
             onDone(true, null)
             return
@@ -75,26 +86,34 @@ object PodcastTranscribe {
             return
         }
 
-        if (existing?.status == "pending" &&
-            System.currentTimeMillis() - existing.createdAt < PENDING_TTL_MS
-        ) {
-            onDone(false, "transcribe_pending")
-            return
-        }
-
+        // `running` é a verdade sobre o que está transcorrendo **agora**. Uma linha "pending"
+        // no banco sem nada em voo é lixo de um app morto no meio — e prometer "vou
+        // transcrever quando tiver condições" para ela é uma mentira que ninguém cumpre.
         if (!running.add(episode.id)) {
-            onDone(false, "transcribe_pending")
+            esperar(episode.id, onDone)
             return
         }
 
-        db.podcastDao().upsertTranscript(
-            PodcastTranscriptEntity(
-                episodeId = episode.id,
-                podcastId = episode.podcastId,
-                status = "pending",
-                createdAt = System.currentTimeMillis()
+        try {
+            db.podcastDao().upsertTranscript(
+                PodcastTranscriptEntity(
+                    episodeId = episode.id,
+                    podcastId = episode.podcastId,
+                    status = "pending",
+                    createdAt = System.currentTimeMillis()
+                )
             )
-        )
+        } catch (t: Throwable) {
+            // Sem esta linha o `running` ficaria marcado para sempre e o episódio nunca mais
+            // transcreveria — todo comando dele responderia "transcrevendo".
+            running.remove(episode.id)
+            CrashLogger.writeLog(
+                context.applicationContext,
+                "Podcast: nao consegui marcar a transcricao pendente id=${episode.id} -> $t"
+            )
+            onDone(false, "transcribe_failed")
+            return
+        }
 
         ThreadPool.postNetwork {
             var ok = false
@@ -131,29 +150,108 @@ object PodcastTranscribe {
                         )
                     }
                 }
-                ThreadPool.onUi { onDone(ok, if (ok) null else "transcribe_failed") }
+                ThreadPool.onUi { concluir(episode.id, ok, if (ok) null else "transcribe_failed", onDone) }
             }
         }
     }
 
+    /** Entra na fila de quem espera a transcrição em voo terminar. */
+    private fun esperar(episodeId: Long, onDone: (Boolean, String?) -> Unit) {
+        val fila = waiters.computeIfAbsent(episodeId) { ArrayList() }
+        synchronized(fila) { fila.add(onDone) }
+    }
+
+    /** Entrega o resultado para quem iniciou e para quem entrou na fila de espera. */
+    private fun concluir(
+        episodeId: Long,
+        ok: Boolean,
+        msg: String?,
+        onDone: (Boolean, String?) -> Unit
+    ) {
+        val fila = waiters.remove(episodeId)
+        val lista = fila?.let { synchronized(it) { ArrayList(it) } } ?: emptyList()
+        onDone(ok, msg)
+        lista.forEach { it(ok, msg) }
+    }
+
+    /**
+     * Pergunta sobre o episódio.
+     *
+     * Aqui é tudo bloqueio — Room para ler a transcrição, rede para transcrever e responder — e
+     * o comando de voz chega na main thread (o `SpeechRecognizer` entrega assim). Ler o banco
+     * ali derrubava o app. O trabalho sai para o pool e a resposta volta **sempre** na main
+     * thread, para o caller poder falar direto.
+     */
     fun askAboutEpisode(
         context: Context,
         episode: Episode,
         question: String,
         onAnswer: (String?) -> Unit
     ) {
-        val transcript = getTranscript(context, episode.id)
-        if (transcript != null && transcript.segments.isNotEmpty()) {
-            answerWithTranscript(context, episode, transcript, question, onAnswer)
-            return
-        }
-        transcribeIfNeeded(context, episode) { ok, msg ->
-            val fresh = if (ok) getTranscript(context, episode.id) else null
-            if (fresh != null && fresh.segments.isNotEmpty()) {
-                answerWithTranscript(context, episode, fresh, question, onAnswer)
-            } else {
-                onAnswer(msg ?: "transcribe_none")
+        ThreadPool.post {
+            val transcript = runCatching {
+                getTranscript(context, episode.id)
+            }.getOrElse { t ->
+                // Sem isto a exceção morre dentro do pool e a Virgin fica muda: o
+                // `ExecutorService` engole a exceção, e ninguém nunca responde.
+                CrashLogger.writeLog(
+                    context.applicationContext,
+                    "Podcast: falha ao ler a transcricao id=${episode.id} -> $t"
+                )
+                null
             }
+            if (transcript != null && transcript.segments.isNotEmpty()) {
+                answerWithTranscript(context, episode, transcript, question, onAnswer)
+                return@post
+            }
+            transcribeIfNeeded(context, episode) { ok, msg ->
+                if (!ok) {
+                    ThreadPool.onUi { onAnswer(msg ?: "transcribe_none") }
+                    return@transcribeIfNeeded
+                }
+                // A transcrição ficou pronta: reler o banco também sai da main thread.
+                ThreadPool.post {
+                    val fresh = runCatching { getTranscript(context, episode.id) }.getOrNull()
+                    if (fresh != null && fresh.segments.isNotEmpty()) {
+                        answerWithTranscript(context, episode, fresh, question, onAnswer)
+                    } else {
+                        ThreadPool.onUi { onAnswer("transcribe_none") }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * A fala da Virgin para a resposta de [askAboutEpisode].
+     *
+     * O mapeamento estava **copiado** nos dois dispatchers (`MainVirgin` e `DjSession`), e uma
+     * cópia pode divergir da outra sem ninguém perceber: o comando novo entra num e não no
+     * outro. Aqui é uma função só.
+     *
+     * O [resolve] é quem pega a string no idioma da pergunta, então esta função é pura — e o
+     * teste cobre os tokens, inclusive a citação offline que pode conter ":".
+     */
+    fun answerSpeech(token: String?, resolve: (Int, List<String>) -> String): String {
+        if (token == null) return resolve(R.string.dj_voice_transcribe_none, emptyList())
+        return when {
+            token == "transcribe_none" -> resolve(R.string.dj_voice_transcribe_none, emptyList())
+            token.startsWith("transcribe_need_key") -> resolve(R.string.dj_voice_transcribe_need_key, emptyList())
+            token.startsWith("transcribe_pending") -> resolve(R.string.dj_voice_transcribe_pending, emptyList())
+            token.startsWith("transcribe_failed") -> resolve(R.string.dj_voice_transcribe_failed, emptyList())
+            token.startsWith("transcribe_no_match") -> resolve(R.string.dj_voice_transcribe_no_match, emptyList())
+            token.startsWith("transcribe_offline:") -> {
+                // O tempo viaja em **milissegundos**, não em "min:seg": ele tem ":" e a
+                // citação também pode ter. Separar por ":" misturava os dois — a Virgin
+                // dizia "12" e a citação começava com "34:".
+                val parts = token.split(":", limit = 3)
+                val ms = parts.getOrNull(1)?.toLongOrNull()
+                val time = if (ms == null) "" else PodcastTranscriptParser.formatTime(ms)
+                // A citação é o resto do token: a transcrição costuma ter ":" no meio do trecho.
+                val quote = parts.getOrNull(2).orEmpty()
+                resolve(R.string.dj_voice_transcribe_offline, listOf(time, quote))
+            }
+            else -> token
         }
     }
 
@@ -360,6 +458,10 @@ Regras:
 
     // ---- pergunta sobre a transcrição ---------------------------------------------------
 
+    /**
+     * Responde com a transcrição. O callback sai **sempre** na main thread, venha do caminho
+     * curto (sem trecho relevante / sem chave) ou da chamada de rede.
+     */
     private fun answerWithTranscript(
         context: Context,
         episode: Episode,
@@ -369,15 +471,17 @@ Regras:
     ) {
         val relevant = PodcastTranscriptParser.findRelevant(transcript.segments, question)
         if (relevant.isEmpty()) {
-            onAnswer("transcribe_no_match")
+            ThreadPool.onUi { onAnswer("transcribe_no_match") }
             return
         }
         val quote = relevant.first()
-        val offline = "transcribe_offline:${PodcastTranscriptParser.formatTime(quote.startMs)}:${quote.text.take(120)}"
+        // O tempo vai em milissegundos: é o que deixa o token sem ambiguidade (ver
+        // [answerSpeech]) — a citação é texto livre e pode ter ":" no meio.
+        val offline = "transcribe_offline:${quote.startMs}:${quote.text.take(120)}"
 
         val key = Settings.geminiKey(context)
         if (key.isBlank()) {
-            onAnswer(offline)
+            ThreadPool.onUi { onAnswer(offline) }
             return
         }
 

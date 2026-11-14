@@ -84,19 +84,6 @@ object MotionControls {
         am.registerListener(listener, s, SensorManager.SENSOR_DELAY_UI)
     }
 
-    fun setEnabled(context: Context, enabled: Boolean) {
-        if (enabled) {
-            val am = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager ?: return
-            val s = sensor ?: am.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) ?: return
-            sensor = s
-            manager = am
-            active = true
-            am.registerListener(listener, s, SensorManager.SENSOR_DELAY_UI)
-        } else {
-            detach()
-        }
-    }
-
     fun detach() {
         active = false
         reset()

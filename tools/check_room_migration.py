@@ -43,6 +43,24 @@ PODCAST_TABLES = ["podcast_feeds", "podcast_episodes"]
 # playlist_auto_rules no banco legado nem no v7.
 RULES_TABLE = "playlist_auto_rules"
 
+# 9->10, 10->11 e 11->12: as tabelas novas (transcrição do podcast, marcador do podcast,
+# marcador do vídeo). Todas de criação pura — nenhuma coluna antiga é tocada — e por isso
+# cabem na mesma prova: a tabela nasce, o CREATE bate com o do Room, os índices batem, e
+# nada das tabelas anteriores se move.
+NEW_TABLE_MIGRATIONS = [
+    # (rótulo, nome da migração, nome da tabela, próxima migração, linha de insert de teste)
+    ("9->10 (transcricao do podcast)", "MIGRATION_9_10", "podcast_transcripts", "MIGRATION_10_11",
+     "INSERT INTO podcast_transcripts (episode_id, podcast_id, full_text, segments_json,"
+     " language, duration_ms, created_at, status)"
+     " VALUES (11, 22, 'texto', '[]', 'pt', 1000, 0, 'done')"),
+    ("10->11 (marcador do podcast)", "MIGRATION_10_11", "podcast_bookmarks", "MIGRATION_11_12",
+     "INSERT INTO podcast_bookmarks (episode_id, position_ms, title, created_at)"
+     " VALUES (11, 500, 'capitulo', 0)"),
+    ("11->12 (marcador do video)", "MIGRATION_11_12", "video_bookmarks", None,
+     "INSERT INTO video_bookmarks (video_key, position_ms, title, created_at)"
+     " VALUES ('abc', 500, 'parte', 0)"),
+]
+
 
 def join_concat_after(source: str, marker: str) -> str:
     """A partir de `marker`, junta os literais unidos por `+` numa string só.
@@ -144,9 +162,16 @@ def migration_78_statements(kotlin: str) -> list[str]:
 
 
 def migration_89_statements(kotlin: str) -> list[str]:
-    """Os `execSQL` de `MIGRATION_8_9` — o mesmo recorte da 7->8, do marcador ao `@Volatile`."""
+    """Os `execSQL` de `MIGRATION_8_9` — o mesmo recorte da 7->8, do marcador ao seguinte.
+
+    O fim do recorte é a próxima migração (ou o `@Volatile`): varrer além pegaria também o SQL
+    das migrações seguintes, e a 8->9 pareceria criar tabelas que não são dela.
+    """
     at = kotlin.index("MIGRATION_8_9")
     end = kotlin.index("@Volatile", at)
+    next_m = kotlin.find("MIGRATION_9_10", at)
+    if next_m >= 0:
+        end = min(end, next_m)
     region = kotlin[at:end]
 
     out = []
@@ -521,6 +546,180 @@ def table_exists(db: sqlite3.Connection, table: str) -> bool:
     return row is not None
 
 
+def migration_statements_named(kotlin: str, nome: str, proximo: str | None) -> list[str]:
+    """Os `execSQL` da migração `nome`, até a próxima migração (ou o `@Volatile`).
+
+    Mesmo recorte das outras: varrer além pegaria o SQL da migração seguinte, e a migração
+    pareceria criar tabela que não é dela.
+    """
+    at = kotlin.index(nome)
+    end = kotlin.index("@Volatile", at)
+    if proximo:
+        nxt = kotlin.find(proximo, at)
+        if nxt >= 0:
+            end = min(end, nxt)
+    region = kotlin[at:end]
+
+    out = []
+    i = 0
+    while True:
+        at_exec = region.find("execSQL(", i)
+        if at_exec < 0:
+            break
+        quote = region.find('"', at_exec)
+        if quote < 0:
+            break
+        out.append(join_concat_at(region, quote))
+        i = at_exec + len("execSQL(")
+    return out
+
+
+def room_expected_index_ddl(table: str) -> list[str]:
+    """Os `CREATE INDEX` que o Room geraria para `table` (KSP)."""
+    if not os.path.exists(GENERATED):
+        sys.exit(f"DDL gerado não encontrado: {GENERATED}\nRode ./gradlew kspDebugKotlin antes.")
+    java = open(GENERATED, encoding="utf-8").read()
+    out = []
+    for m in re.finditer(r'execSQL\("(.+)"\);', java):
+        sql = m.group(1).replace("\\`", "`")
+        if not sql.lstrip().startswith("CREATE "):
+            continue
+        if "INDEX" not in sql:
+            continue
+        if f"ON `{table}`" in sql:
+            out.append(sql)
+    return out
+
+
+def coluna_compativel(obtida: tuple, esperada: tuple) -> bool:
+    """Duas colunas do Room são compatíveis?
+
+    O `DEFAULT` só precisa bater quando a **entidade** declara um default (`@ColumnInfo(defaultValue
+    = ...)`): nesse caso o Room compara o valor do banco com o declarado e a diferença derruba
+    a validação de esquema na abertura. Quando a entidade não declara nada, o Room ignora o
+    `DEFAULT` que o banco tem — e é por isso que a migração pode criar a coluna com
+    `DEFAULT ''` enquanto o `CREATE` do Room (que roda na instalação nova) sai sem default.
+    """
+    if obtida[:3] != esperada[:3] or obtida[4] != esperada[4]:
+        return False
+    if esperada[3] is not None and obtida[3] != esperada[3]:
+        return False
+    return True
+
+
+def colunas_compativeis(obtidas: list, esperadas: list) -> bool:
+    if len(obtidas) != len(esperadas):
+        return False
+    return all(coluna_compativel(a, b) for a, b in zip(obtidas, esperadas))
+
+
+def validate_new_table(
+    kotlin: str,
+    antes: sqlite3.Connection,
+    rotulo: str,
+    nome_migracao: str,
+    tabela: str,
+    proximo: str | None,
+    insert_sql: str,
+) -> bool:
+    """Prova uma migração que só cria tabela (9->10, 10->11, 11->12).
+
+    As três são de criação pura: nenhuma coluna antiga é tocada. Então a prova é a mesma da
+    8->9 — a tabela não existia, o CREATE bate coluna a coluna com o do Room, os índices
+    batem (o `UNIQUE` é o que impede transcrição duplicada ou dois marcadores no mesmo
+    instante), reaplicar não estoura, o insert real é aceito, e nada das tabelas anteriores
+    se move.
+    """
+    print(f"\n== Migracao {rotulo} ==")
+    failed = False
+
+    stmts = migration_statements_named(kotlin, nome_migracao, proximo)
+    print(f"  {len(stmts)} statement(s) extraido(s) de {nome_migracao}")
+    if not stmts:
+        failed = True
+        print(f"  FALHA nenhum statement em {nome_migracao}")
+
+    if table_exists(antes, tabela):
+        failed = True
+        print(f"  FALHA {tabela} ja existia antes; a migracao deveria apenas criar")
+    else:
+        print(f"  ok   {tabela} nao existia antes (migracao so cria)")
+
+    db = sqlite3.connect(":memory:")
+    antes.backup(db)
+    for sql in stmts:
+        db.execute(sql)
+    db.commit()
+
+    try:
+        for sql in stmts:
+            db.execute(sql)
+        print("  ok   reaplicar os statements nao estoura (idempotente)")
+    except sqlite3.Error as e:
+        failed = True
+        print(f"  FALHA reaplicar os statements estoura: {e}")
+
+    got_cols = column_info(db, tabela)
+    fresh = sqlite3.connect(":memory:")
+    fresh.execute(room_expected_table_ddl(tabela))
+    want_cols = column_info(fresh, tabela)
+    if colunas_compativeis(got_cols, want_cols):
+        print(f"  ok   {tabela}: {len(got_cols)} colunas iguais ao esquema do Room")
+    else:
+        failed = True
+        print(f"  FALHA {tabela}: colunas divergem")
+        for a, b in zip(got_cols, want_cols or []):
+            if not coluna_compativel(a, b):
+                print(f"      obtido={a}")
+                print(f"      esperado={b}")
+        if len(got_cols) != len(want_cols or []):
+            print(f"      contagem difere: {len(got_cols)} vs {len(want_cols or [])}")
+
+    # Índices: comparar só as colunas deixaria passar o erro mais provável — criar a tabela
+    # do jeito certo e esquecer o `UNIQUE`, que é o que impede dois marcadores no mesmo
+    # instante (e duas transcrições do mesmo episódio).
+    ref = sqlite3.connect(":memory:")
+    ref.execute(room_expected_table_ddl(tabela))
+    for sql in room_expected_index_ddl(tabela):
+        ref.execute(sql)
+    got_idx = index_set(db, tabela)
+    want_idx = index_set(ref, tabela)
+    if got_idx == want_idx:
+        print(f"  ok   {tabela}: {len(got_idx)} indice(s) iguais ao do Room")
+    else:
+        failed = True
+        print(f"  FALHA {tabela}: indices divergem")
+        print(f"      obtido={sorted(got_idx)}")
+        print(f"      esperado={sorted(want_idx)}")
+
+    # Nada do que já existia pode ter sido tocado. A contagem vem **antes** do insert de
+    # teste: a linha que o teste grava é nova, não uma linha que o app perdeu.
+    for (t,) in antes.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+    ).fetchall():
+        want = antes.execute(f"SELECT COUNT(*) FROM {t}").fetchone()
+        got = db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()
+        if got is None or want is None:
+            failed = True
+            print(f"  FALHA {t} sumiu durante a migracao")
+            continue
+        if got[0] != want[0]:
+            failed = True
+            print(f"  FALHA {t}: {got[0]} linha(s), antes eram {want[0]}")
+        else:
+            print(f"  ok   {t} intacta ({got[0]} linha(s))")
+
+    try:
+        db.execute(insert_sql)
+        db.commit()
+        print("  ok   insert aceito")
+    except sqlite3.Error as e:
+        failed = True
+        print(f"  FALHA insert recusado: {e}")
+
+    return not failed
+
+
 def main() -> int:
     expected = room_expected_ddl()
     kotlin = open(KOTLIN, encoding="utf-8").read()
@@ -643,11 +842,27 @@ def main() -> int:
     if not validate_89(kotlin, migrated):
         failed = True
 
+    # 9->10, 10->11 e 11->12: tabelas novas (transcrição, marcadores do podcast e do vídeo).
+    # Cada uma roda sobre o resultado da anterior, como num aparelho real.
+    for rotulo, nome_migracao, tabela, proximo, insert_sql in NEW_TABLE_MIGRATIONS:
+        # A cópia é de **antes** da migração: é nela que se prova que a tabela não existia e
+        # que as tabelas antigas estavam intactas.
+        antes = sqlite3.connect(":memory:")
+        migrated.backup(antes)
+        for sql in migration_statements_named(kotlin, nome_migracao, proximo):
+            migrated.execute(sql)
+        migrated.commit()
+        if not validate_new_table(
+            kotlin, antes, rotulo, nome_migracao, tabela, proximo, insert_sql
+        ):
+            failed = True
+
     if failed:
         print("\nMIGRACAO NAO CONFERE")
         return 1
     print(
-        "\nMigracoes 6->7, 7->8 e 8->9 conferem com o esquema do Room e preservam os dados."
+        "\nMigracoes 6->7, 7->8, 8->9, 9->10, 10->11 e 11->12 conferem com o esquema do Room"
+        " e preservam os dados."
     )
     return 0
 

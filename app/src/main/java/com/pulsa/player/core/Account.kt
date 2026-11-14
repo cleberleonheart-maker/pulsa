@@ -38,14 +38,6 @@ object Account {
         return id
     }
 
-    fun setUserId(context: Context, userId: String?) {
-        val clean = sanitizeUserId(userId)
-        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().apply {
-                if (clean.isEmpty()) remove("user_id") else putString("user_id", clean)
-            }.apply()
-    }
-
     /** Marca que o servidor confirmou o registro desta conta (posto quando /register responde ok). */
     fun markRegistered(context: Context) {
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

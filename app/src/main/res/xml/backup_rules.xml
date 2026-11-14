@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    O backup do Google leva o que o app guarda em SharedPreferences. A conta já fica de fora,
+    e agora os secrets também.
+
+    - `pulsa_secrets.xml` guarda a chave do Gemini, a do Last.fm, a do Podcast Index, o token
+      de admin, o da nuvem, o token de reconhecimento (AudD) e o PIN de children. Eles são
+      cifrados com a MasterKey do Keystore, e a MasterKey **não** vai no backup: no aparelho
+      novo a leitura falha e o app entra em reset.
+    - `pulsa_settings.xml` **viaja**: é onde estão as preferências da pessoa (idioma, EQ,
+      crossfade, acentuação, teto de download, modo kids). Excluir o arquivo inteiro
+      apagava tudo isso no aparelho novo. O que era credencial dentro dele foi para as
+      prefs cifradas (ver `Settings.secretKeys`).
+-->
 <full-backup-content>
     <exclude domain="sharedpref" path="pulsa_account.xml" />
+    <exclude domain="sharedpref" path="pulsa_secrets.xml" />
 </full-backup-content>

@@ -2,7 +2,6 @@ package com.pulsa.player.dj
 import com.pulsa.player.core.Settings
 
 import android.content.Context
-import com.pulsa.player.data.Library
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
@@ -311,18 +310,6 @@ object DjSuggest {
             )
         }
         return answer
-    }
-
-    /** Resumo semanal em texto para a Virgin contar as novidades do usuário. */
-    fun weeklySummary(context: Context, songs: List<Song>): String? {
-        if (!isReady(context) || songs.isEmpty()) return null
-        val prompt = buildString {
-            append(DjIdentity.personalityPrompt())
-            appendLine("Essa é a biblioteca do usuário (título - artista).")
-            appendLine("Faça um resumo semanal pessoal de 2 a 3 frases comentando a coleção e dê uma dica musical.")
-            appendLine(songs.take(40).joinToString("\n") { "${it.title} - ${it.artist}" })
-        }
-        return generate(context, prompt, maxTokens = 220, tag = "resumo semanal")
     }
 
     /**

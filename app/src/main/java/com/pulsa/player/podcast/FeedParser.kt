@@ -5,7 +5,6 @@ import org.w3c.dom.Element
 import org.w3c.dom.Node
 import java.io.InputStream
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.xml.parsers.DocumentBuilderFactory

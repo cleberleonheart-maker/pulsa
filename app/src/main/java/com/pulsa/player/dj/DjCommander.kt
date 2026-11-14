@@ -86,11 +86,6 @@ object DjCommander {
             norm.contains("pode exclui") || norm.contains("pode remove") ||
             norm.contains("confirma") || norm.contains("confirmo")
 
-    private fun deny(norm: String): Boolean =
-        norm == "nao" || norm == "nao quero" || norm == "não" || norm == "nao!" ||
-            norm.contains("nao,") || norm.contains("nao ") || norm.endsWith("nao.") ||
-            norm.contains("cancel") || norm.contains("esquece") || norm.contains("cala a boca")
-
     fun hasWake(norm: String): Boolean =
         norm.contains("virgin") || norm.contains("virgem") ||
             norm.contains("virgene") || norm.contains("vargin")

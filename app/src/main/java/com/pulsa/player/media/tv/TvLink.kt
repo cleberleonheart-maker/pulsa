@@ -192,15 +192,6 @@ object TvLink {
         }
     }
 
-    /** Estado do player da TV (para o painel mostrar tocou/pausou), lido sob demanda. */
-    fun mediaState(onResult: (RokuEcp.PlayerState?) -> Unit) {
-        val device = (state as? State.Connected)?.device ?: return onResult(null)
-        ThreadPool.postNetwork {
-            val s = runCatching { RokuEcp.mediaPlayer(device.host) }.getOrNull()
-            ThreadPool.onUi { onResult(s) }
-        }
-    }
-
     /**
      * Abre de novo o Roku Media Player na TV (útil quando o usuário saiu para o menu).
      * [onResultado] chega na UI com se abriu de verdade (confirmado por active-app) —
@@ -395,10 +386,4 @@ object TvLink {
         )
     }
 
-    /** UUID do servidor, para teste/debug. */
-    internal fun uuidFor(context: Context): String =
-        serverUuid ?: Settings.deviceId(context.applicationContext).also { serverUuid = it }
-
-    /** Gera um UUID novo (só para inicialização limpa — o padrão vem do deviceId). */
-    fun novoUuid(): String = UUID.randomUUID().toString()
 }

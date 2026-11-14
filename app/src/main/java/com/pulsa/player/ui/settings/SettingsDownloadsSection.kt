@@ -288,8 +288,68 @@ internal fun SettingsActivity.promptPodcastAutoDownload(valueView: TextView?) {
         .show()
 }
 
-internal fun SettingsActivity.startCoverDownload() {
-    val id = PulsaWork.downloadCovers(this)
+/**
+ * A credencial do Podcast Index, que é **opcional**.
+ *
+ * Sem ela, a busca de podcast usa a iTunes Search API, que é pública e não pede conta. Com
+ * ela, o Podcast Index entra primeiro: o catálogo é maior, a busca é melhor e a API também
+ * traz transcrição — que o app usa para responder pergunta sobre o episódio.
+ *
+ * Os dois campos (chave e segredo) são guardados como segredo, no `EncryptedSharedPreferences`,
+ * como a chave do Gemini.
+ */
+internal fun SettingsActivity.refreshPodcastIndexKey(valueView: TextView?) {
+    valueView?.text = if (Settings.hasPodcastIndex(this)) {
+        getString(R.string.podcast_index_key_saved)
+    } else {
+        getString(R.string.podcast_index_key_missing)
+    }
+}
+
+internal fun SettingsActivity.promptPodcastIndexKey(valueView: TextView?) {
+    val keyInput = EditText(this).apply {
+        setText(Settings.podcastIndexKey(this@promptPodcastIndexKey))
+        hint = getString(R.string.podcast_index_key_label)
+        inputType = android.text.InputType.TYPE_CLASS_TEXT or
+            android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        maxLines = 1
+        isSingleLine = true
+        setPadding(48, 16, 48, 16)
+    }
+    val secretInput = EditText(this).apply {
+        setText(Settings.podcastIndexSecret(this@promptPodcastIndexKey))
+        hint = getString(R.string.podcast_index_secret_label)
+        inputType = android.text.InputType.TYPE_CLASS_TEXT or
+            android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        maxLines = 1
+        isSingleLine = true
+        setPadding(48, 16, 48, 16)
+    }
+    val box = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        addView(keyInput)
+        addView(secretInput)
+    }
+    MaterialAlertDialogBuilder(this)
+        .setTitle(R.string.podcast_index_key_row)
+        .setMessage(R.string.podcast_index_key_subtitle)
+        .setView(box)
+        .setPositiveButton(R.string.save) { _, _ ->
+            Settings.setPodcastIndexKey(this, keyInput.text.toString().trim())
+            Settings.setPodcastIndexSecret(this, secretInput.text.toString().trim())
+            refreshPodcastIndexKey(valueView)
+            Toast.makeText(this, R.string.podcast_index_key_saved, Toast.LENGTH_SHORT).show()
+        }
+        .setNeutralButton(R.string.podcast_index_key_clear) { _, _ ->
+            Settings.setPodcastIndexKey(this, "")
+            Settings.setPodcastIndexSecret(this, "")
+            refreshPodcastIndexKey(valueView)
+        }
+        .setNegativeButton(R.string.cancel, null)
+        .show()
+}
+
+internal fun SettingsActivity.startCoverDownload() {    val id = PulsaWork.downloadCovers(this)
     if (id == null) {
         Toast.makeText(this, R.string.covers_failed, Toast.LENGTH_SHORT).show()
         return

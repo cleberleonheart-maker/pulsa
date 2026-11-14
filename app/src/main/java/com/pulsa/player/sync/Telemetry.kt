@@ -4,11 +4,14 @@ import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 
 import android.content.Context
+import android.util.Log
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
 object Telemetry {
+
+    private const val TAG = "Telemetry"
 
     fun log(context: Context, msg: String) {
         ThreadPool.postNetwork {
@@ -33,6 +36,7 @@ object Telemetry {
                     Net.close(conn)
                     return@postNetwork
                 } catch (t: Throwable) {
+                    Log.w(TAG, "enviar telemetria falhou -> $t")
                 }
             }
         }

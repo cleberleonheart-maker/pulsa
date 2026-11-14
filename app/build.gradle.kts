@@ -22,8 +22,8 @@ android {
         minSdk = 23
 targetSdk = 34
 
-        versionCode = 233
-        versionName = "5.12.36"
+        versionCode = 236
+        versionName = "5.12.39"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
@@ -31,25 +31,52 @@ targetSdk = 34
         buildConfig = true
     }
 
+    // A chave de **release** tem que vir do ambiente (secrets do CI ou keystore local).
+    // O padrão antigo era a chave de debug do Android — `android`/`androiddebugkey` — e ela
+    // estava commitada no repositório (`app/keystore/pulsa.keystore`). Essa chave é pública:
+    // com ela, qualquer pessoa gera um APK com o mesmo `applicationId` e a mesma assinatura,
+    // e o Android aceita como atualização do Pulsa — a própria checagem de assinatura do app
+    // (`util/UpdateChecker`) passaria. Sem as variáveis, o arquivo apontado não existe e o
+    // build do release falha: melhor não publicar do que publicar um APK falsificável.
     signingConfigs {
-        create("pulsa") {
+        create("pulsaRelease") {
             val env = System.getenv()
             storeFile = file(env["KEYSTORE_PATH"] ?: "keystore/pulsa.keystore")
-            storePassword = env["KEYSTORE_PASSWORD"] ?: "android"
-            keyAlias = env["KEY_ALIAS"] ?: "androiddebugkey"
-            keyPassword = env["KEY_PASSWORD"] ?: "android"
+            storePassword = env["KEYSTORE_PASSWORD"].orEmpty()
+            keyAlias = env["KEY_ALIAS"].orEmpty()
+            keyPassword = env["KEY_PASSWORD"].orEmpty()
+        }
+
+        create("pulsaDebug") {
+            val env = System.getenv()
+            storeFile = file(env["KEYSTORE_PATH"] ?: "keystore/pulsa.keystore")
+            // Variável de ambiente vazia não pode virar senha: o fallback abaixo é o que
+            // segura o build local sem credencial no ambiente.
+            storePassword = env["KEYSTORE_PASSWORD"]?.takeIf { it.isNotBlank() } ?: "android"
+            keyAlias = env["KEY_ALIAS"]?.takeIf { it.isNotBlank() } ?: "androiddebugkey"
+            keyPassword = env["KEY_PASSWORD"]?.takeIf { it.isNotBlank() } ?: "android"
         }
     }
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("pulsa")
+            signingConfig = if (file("keystore/pulsa.keystore").exists()) {
+                signingConfigs.getByName("pulsaDebug")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("pulsa")
+            signingConfig = signingConfigs.getByName("pulsaRelease")
         }
+    }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+        htmlReport = true
     }
 
     compileOptions {
@@ -83,6 +110,8 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.3.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.3.1")
     implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
+    implementation("androidx.media3:media3-transformer:1.3.1")
+    implementation("androidx.media3:media3-effect:1.3.1")
     implementation("androidx.media3:media3-datasource-okhttp:1.3.1")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")

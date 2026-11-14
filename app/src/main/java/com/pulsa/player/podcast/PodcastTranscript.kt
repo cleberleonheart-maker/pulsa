@@ -2,6 +2,7 @@ package com.pulsa.player.podcast
 
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Locale
 
 /**
  * Modelo de transcrição para busca falada no podcast.
@@ -117,6 +118,8 @@ object PodcastTranscriptParser {
         val totalSec = (ms / 1000L).toInt()
         val min = totalSec / 60
         val sec = totalSec % 60
-        return String.format("%d:%02d", min, sec)
+        // `Locale.US` de propósito: sem ele, o "%d" sai com os dígitos do locale do aparelho
+        // (em árabe com numeração eastern, vira "١٢") e o tempo falado fica sem sentido.
+        return String.format(Locale.US, "%d:%02d", min, sec)
     }
 }

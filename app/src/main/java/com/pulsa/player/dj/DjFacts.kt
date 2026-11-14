@@ -12,9 +12,17 @@ import java.util.Locale
 
 object DjFacts {
 
+    /**
+     * A chave de comparação do artista: minúsculas, sem pontuação e **sem acento**.
+     *
+     * O acento importava porque as curiosidades locais moram num mapa com o nome escrito
+     * ("chitãozinho e xororó") e a busca era exata: o "Beyoncé" da biblioteca (com acento)
+     * não casava com a chave "beyonce", e o artista caía no MusicBrainz — que devolvia a
+     * mesma frase para todo mundo. Sem acento dos dois lados, o fato local volta.
+     */
     fun normalize(name: String?): String {
         if (name.isNullOrBlank()) return ""
-        return name.trim().lowercase(Locale.ROOT)
+        val clean = name.trim().lowercase(Locale.ROOT)
             .replace("'", "")
             .replace("\u0027", "")
             .replace(".", "")
@@ -25,13 +33,32 @@ object DjFacts {
             .replace("+", " e ")
             .replace("  ", " ")
             .trim()
+        return java.text.Normalizer
+            .normalize(clean, java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
+            .trim()
     }
 
+    /**
+     * O fato local do artista.
+     *
+     * A busca por substring era frouxa demais: "silva" (a banda de forró) casava dentro de
+     * "silvana" e de qualquer "João Silva", e a Virgin contava a mesma história para
+     * artistas diferentes. Agora a palavra tem que aparecer inteira, e a frase completa
+     * (com duas ou mais palavras) tem que aparecer junto.
+     */
     fun curiosityFor(artistName: String): String? {
         val key = normalize(artistName)
         if (key.isEmpty()) return null
-        return FACTS[key] ?: FACTS.entries.firstOrNull { entry ->
-            if (entry.key.isEmpty()) false else entry.key in key
+        FACTS_BY_KEY[key]?.let { return it }
+        val words = key.split(" ").filter { it.isNotBlank() }
+        return FACTS_BY_KEY.entries.firstOrNull { entry ->
+            val parts = entry.key.split(" ").filter { it.isNotBlank() }
+            when {
+                parts.isEmpty() -> false
+                parts.size == 1 -> words.any { it == parts[0] }
+                else -> key.contains(entry.key)
+            }
         }?.value
     }
 
@@ -41,8 +68,11 @@ object DjFacts {
     private const val CURIOSITY_MIN_MS = 5L * 60_000L
     private const val CURIOSITY_MAX_MS = 10L * 60_000L
 
-    private val remoteCache = HashMap<String, String>()
+    /** As frases possíveis por artista — a Virgin escolhe uma de relance. */
+    private val remoteCache = HashMap<String, List<String>>()
     private val remoteInFlight = HashSet<String>()
+    /** A última frase falada de cada artista, para não repetir a mesma. */
+    private val lastSpoken = HashMap<String, String>()
     private var lastRemoteQueryMs = 0L
     private var lastCuriosityMs = 0L
     private var nextCuriosityDelayMs = 0L
@@ -65,35 +95,148 @@ object DjFacts {
             onResult(null)
             return
         }
+        var cached: List<String>? = null
+        var startFetch = false
         synchronized(remoteCache) {
-            remoteCache[key]?.let { cached ->
-                onResult(cached.ifBlank { null })
-                return
+            val known = remoteCache[key]
+            if (known != null) {
+                cached = known
+            } else if (!remoteInFlight.contains(key)) {
+                remoteInFlight.add(key)
+                startFetch = true
             }
-            if (key in remoteInFlight) {
-                onResult(null)
-                return
-            }
-            remoteInFlight.add(key)
+        }
+        val known = cached
+        if (known != null) {
+            onResult(pickFact(key, known))
+            return
+        }
+        if (!startFetch) {
+            onResult(null)
+            return
         }
         ThreadPool.postNetwork {
-            val fact = musicBrainzFact(key)
+            val facts = musicBrainzFacts(key)
             synchronized(remoteCache) {
-                remoteCache[key] = fact ?: ""
+                remoteCache[key] = facts
                 remoteInFlight.remove(key)
             }
-            ThreadPool.onUi { onResult(fact) }
+            ThreadPool.onUi { onResult(pickFact(key, facts)) }
         }
     }
 
-    private fun musicBrainzFact(key: String): String? {
+    /**
+     * Escolhe a frase da vez — sem repetir a última do mesmo artista.
+     *
+     * O MusicBrainz devolve sempre os mesmos campos para o mesmo artista, então a frase
+     * montada era sempre igual ("Segundo o MusicBrainz, X surgiu em Y e está na ativa desde
+     * Z"), com o nome trocado e nada mais. Com várias frases possíveis — e a última de fora
+     * do sorteio — a mesma artista rende curiosidades diferentes.
+     */
+    private fun pickFact(key: String, facts: List<String>): String? {
+        if (facts.isEmpty()) return null
+        val last = synchronized(lastSpoken) { lastSpoken[key] }
+        val pool = if (facts.size > 1 && last != null) facts.filter { it != last } else facts
+        val chosen = pool.random()
+        synchronized(lastSpoken) { lastSpoken[key] = chosen }
+        return chosen
+    }
+
+    /**
+     * Os dados do artista no MusicBrainz, já limpos.
+     *
+     * Separado da frase porque a frase é a parte que muda: o banco devolve sempre os mesmos
+     * campos para o mesmo artista, e é por isso que a curiosidade era sempre a mesma.
+     */
+    data class ArtistInfo(
+        val name: String,
+        val type: String? = null,
+        val area: String? = null,
+        val beginArea: String? = null,
+        val year: Int? = null,
+        val endYear: Int? = null,
+        val genres: List<String> = emptyList(),
+        val legalName: String? = null,
+        val alias: String? = null
+    )
+
+    /**
+     * Todas as frases que os dados do artista permitem.
+     *
+     * As frases evitam concordância de gênero ("artista solo", "aparece com") porque o
+     * MusicBrainz traz "male"/"female" só para o gênero da pessoa — e a Virgin fala com
+     * qualquer um dos dois.
+     *
+     * O lugar entra na frase já com a preposição certa: cidade é "em Juazeiro" e país é
+     * "do Brasil" (e "dos Estados Unidos") — "começou em Brasil" era o jeito errado de
+     * falar.
+     */
+    fun factsFor(info: ArtistInfo): List<String> {
+        val out = ArrayList<String>()
+        val name = info.name
+        val genre = info.genres.take(2).joinToString(" e ").ifBlank { null }
+        val kind = when (info.type) {
+            "Person" -> "artista solo"
+            "Group" -> "banda"
+            "Orchestra" -> "orquestra"
+            else -> null
+        }
+        val city = info.beginArea
+        val cityDe = city?.let { "de $it" }
+        val cityEm = city?.let { "em $it" }
+        val country = info.area
+        val countryDe = country?.let { COUNTRY_DE[it] ?: "de $it" }
+        val countryEm = country?.let { COUNTRY_EM[it] ?: "em $it" }
+        val year = info.year
+        if (kind == "banda" && genre != null && city != null && year != null) {
+            out += "Segundo o MusicBrainz, $name é uma banda de $genre que começou $cityEm em $year."
+        }
+        if (kind == "banda" && genre != null && country != null) {
+            out += "Segundo o MusicBrainz, $name é uma banda de $genre $countryDe."
+        }
+        if (city != null && year != null) {
+            out += "Segundo o MusicBrainz, $name começou $cityEm, em $year."
+        }
+        if (genre != null && cityDe != null) {
+            out += "Segundo o MusicBrainz, $name aparece com $genre, e vem $cityDe."
+        }
+        if (year != null && countryDe != null) {
+            out += "Segundo o MusicBrainz, $name está em atividade desde $year e vem $countryDe."
+        }
+        if (genre != null) {
+            out += "Segundo o MusicBrainz, $name aparece com $genre."
+        }
+        if (info.legalName != null) {
+            out += "Segundo o MusicBrainz, o nome completo de $name é ${info.legalName}."
+        }
+        if (info.alias != null) {
+            out += "Segundo o MusicBrainz, $name também aparece como ${info.alias}."
+        }
+        if (info.endYear != null) {
+            out += "Segundo o MusicBrainz, $name parou em ${info.endYear}."
+        }
+        if (kind != null) {
+            out += "Segundo o MusicBrainz, $name aparece como $kind no MusicBrainz."
+        }
+        if (cityDe != null) {
+            out += "Segundo o MusicBrainz, $name vem $cityDe."
+        } else if (countryDe != null) {
+            out += "Segundo o MusicBrainz, $name vem $countryDe."
+        }
+        if (year != null && countryEm != null) {
+            out += "Segundo o MusicBrainz, $name começou $countryEm, em $year."
+        }
+        return out
+    }
+
+    private fun musicBrainzFacts(key: String): List<String> {
         val now = SystemClock.elapsedRealtime()
-        if (now - lastRemoteQueryMs < REMOTE_COOLDOWN_MS) return null
+        if (now - lastRemoteQueryMs < REMOTE_COOLDOWN_MS) return emptyList()
         lastRemoteQueryMs = now
         val query = URLEncoder.encode("artist:\"$key\"", "UTF-8")
         val url = "https://musicbrainz.org/ws/2/artist/?query=$query&limit=3&fmt=json"
-        val json = httpGetJson(url) ?: return null
-        val artists = runCatching { json.getJSONArray("artists") }.getOrNull() ?: return null
+        val json = httpGetJson(url) ?: return emptyList()
+        val artists = runCatching { json.getJSONArray("artists") }.getOrNull() ?: return emptyList()
         var best: JSONObject? = null
         var bestScore = 0
         for (i in 0 until artists.length()) {
@@ -104,28 +247,152 @@ object DjFacts {
                 best = a
             }
         }
-        val a = best ?: return null
-        val name = runCatching { a.getString("name") }.getOrNull() ?: return null
+        val a = best ?: return emptyList()
+        val name = runCatching { a.getString("name") }.getOrNull() ?: return emptyList()
         val type = runCatching { a.getString("type") }.getOrNull()
-        val area = runCatching { a.getJSONObject("area").getString("name") }.getOrNull()
-            ?: runCatching { a.getString("country") }.getOrNull()
-        val life = runCatching { a.getJSONObject("life-span").getString("begin") }.getOrNull()
-        val year = life?.take(4)?.toIntOrNull()
-        val kind = when (type) {
-            "Person" -> "artista solo"
-            "Group" -> "banda"
-            else -> null
+        val area = runCatching { a.getJSONObject("area").getString("name") }.getOrNull()?.let { ptPlace(it) }
+        val beginArea = runCatching { a.getJSONObject("begin-area").getString("name") }.getOrNull()?.let { ptPlace(it) }
+        val life = runCatching { a.getJSONObject("life-span") }.getOrNull()
+        val year = life?.optString("begin").orEmpty().take(4).toIntOrNull()
+        val endYear = life?.optString("end").orEmpty().take(4).toIntOrNull()
+        val aliases = aliasesOf(a, name)
+        return factsFor(
+            ArtistInfo(
+                name = name,
+                type = type,
+                area = area,
+                beginArea = beginArea,
+                year = year,
+                endYear = endYear,
+                genres = genresOf(a),
+                legalName = aliases.first,
+                alias = aliases.second
+            )
+        )
+    }
+
+    /** Os gêneros mais marcados do artista ("latin pop", "axé"…). */
+    private fun genresOf(a: JSONObject): List<String> {
+        val tags = runCatching { a.getJSONArray("tags") }.getOrNull() ?: return emptyList()
+        val scored = ArrayList<Pair<Int, String>>()
+        for (i in 0 until tags.length()) {
+            val t = tags.getJSONObject(i)
+            val n = runCatching { t.getString("name") }.getOrNull() ?: continue
+            val c = runCatching { t.getInt("count") }.getOrDefault(1)
+            scored += c to n
         }
-        return when {
-            area != null && year != null ->
-                "Segundo o MusicBrainz, $name surgiu em $area e está na ativa desde $year."
-            area != null ->
-                "Segundo o MusicBrainz, $name tem raízes registradas em $area."
-            year != null ->
-                "Segundo o MusicBrainz, $name está em atividade desde $year."
-            kind != null ->
-                "Segundo o MusicBrainz, $name é $kind."
-            else -> null
+        return scored.sortedByDescending { it.first }.map { it.second }.take(2)
+    }
+
+    /**
+     * Os apelidos do artista: o nome legal ("José Lima Sobrinho") e um outro nome de artista
+     * ("Chitãozinho e Xororó") — as duas coisas que valem uma frase.
+     */
+    private fun aliasesOf(a: JSONObject, name: String): Pair<String?, String?> {
+        val list = runCatching { a.getJSONArray("aliases") }.getOrNull() ?: return null to null
+        var legal: String? = null
+        var other: String? = null
+        for (i in 0 until list.length()) {
+            val al = list.getJSONObject(i)
+            val n = runCatching { al.getString("name") }.getOrNull() ?: continue
+            if (n.isBlank() || n.equals(name, ignoreCase = true)) continue
+            val type = runCatching { al.getString("type") }.getOrNull()
+            if (type == "Legal name" && legal == null) {
+                legal = n
+            } else if (type == "Artist name" && other == null) {
+                other = n
+            }
+        }
+        return legal to other
+    }
+
+    /**
+     * O nome do país vem em inglês do MusicBrainz ("Brazil"), e a Virgin fala português:
+     * "surgiu em Brazil" soava errado. Só os países que aparecem no dia a dia são trocados —
+     * o resto fica como está, que ainda é melhor do que inventar.
+     */
+    private fun ptPlace(raw: String): String {
+        val key = raw.trim().lowercase(Locale.ROOT)
+        return COUNTRIES_PT[key] ?: raw
+    }
+
+    private val COUNTRIES_PT = mapOf(
+        "brazil" to "Brasil",
+        "united states" to "Estados Unidos",
+        "united kingdom" to "Reino Unido",
+        "mexico" to "México",
+        "spain" to "Espanha",
+        "argentina" to "Argentina",
+        "france" to "França",
+        "germany" to "Alemanha",
+        "italy" to "Itália",
+        "japan" to "Japão",
+        "canada" to "Canadá",
+        "portugal" to "Portugal",
+        "sweden" to "Suécia",
+        "norway" to "Noruega",
+        "denmark" to "Dinamarca",
+        "finland" to "Finlândia",
+        "ireland" to "Irlanda",
+        "australia" to "Austrália",
+        "netherlands" to "Países Baixos",
+        "belgium" to "Bélgica",
+        "russia" to "Rússia",
+        "south korea" to "Coreia do Sul",
+        "colombia" to "Colômbia",
+        "chile" to "Chile",
+        "austria" to "Áustria",
+        "switzerland" to "Suíça",
+        "poland" to "Polônia",
+        "turkey" to "Turquia",
+        "greece" to "Grécia",
+        "scotland" to "Escócia",
+        "wales" to "País de Gales"
+    )
+
+    /** "vem **do** Brasil", "vem **da** França" — o artigo do país. */
+    private val COUNTRY_DE = mapOf(
+        "Brasil" to "do Brasil",
+        "Estados Unidos" to "dos Estados Unidos",
+        "Reino Unido" to "do Reino Unido",
+        "México" to "do México",
+        "Espanha" to "da Espanha",
+        "Argentina" to "da Argentina",
+        "França" to "da França",
+        "Alemanha" to "da Alemanha",
+        "Itália" to "da Itália",
+        "Japão" to "do Japão",
+        "Canadá" to "do Canadá",
+        "Portugal" to "de Portugal",
+        "Suécia" to "da Suécia",
+        "Noruega" to "da Noruega",
+        "Dinamarca" to "da Dinamarca",
+        "Finlândia" to "da Finlândia",
+        "Irlanda" to "da Irlanda",
+        "Austrália" to "da Austrália",
+        "Países Baixos" to "dos Países Baixos",
+        "Bélgica" to "da Bélgica",
+        "Rússia" to "da Rússia",
+        "Coreia do Sul" to "da Coreia do Sul",
+        "Colômbia" to "da Colômbia",
+        "Chile" to "do Chile",
+        "Áustria" to "da Áustria",
+        "Suíça" to "da Suíça",
+        "Polônia" to "da Polônia",
+        "Turquia" to "da Turquia",
+        "Grécia" to "da Grécia",
+        "Escócia" to "da Escócia",
+        "País de Gales" to "do País de Gales"
+    )
+
+    /** "começou **no** Brasil", "começou **na** França" — o lugar de onde começou. */
+    private val COUNTRY_EM = COUNTRY_DE.mapValues { (_, phrase) ->
+        when {
+            phrase.startsWith("do ") -> "no " + phrase.removePrefix("do ")
+            phrase.startsWith("dos ") -> "nos " + phrase.removePrefix("dos ")
+            phrase.startsWith("da ") -> "na " + phrase.removePrefix("da ")
+            phrase.startsWith("de ") -> "em " + phrase.removePrefix("de ")
+            else -> phrase
         }
     }
 
@@ -152,45 +419,26 @@ object DjFacts {
         }
     }
 
-    fun fallbackFor(songYear: Int, hasMB: Boolean, isCover: Boolean, isLive: Boolean, albumName: String?): String {
-        val mb = hasMB
-        return when {
-            isCover && isLive -> "Você tem uma versão ao vivo dessa faixa — versões assim sempre têm uma energia diferente, percebe?"
-            isCover -> "Essa é uma versão/cover — o artista que você ouve agora não é o dono original da faixa."
-            isLive && mb -> "Essa é uma gravação ao vivo com faixa de apoio. A edição mistura a voz ao vivo com um playback gravado."
-            isLive -> "Esse registro é ao vivo — dá pra sentir o clima da plateia até no fone!"
-            songYear in 1900..1990 -> "Essa faixa é de $songYear — som das eras do vinil, gravado num mundo bem diferente do de hoje."
-            songYear in 1990..2009 -> "Essa música é de $songYear, do auge do CD e do começo do streaming."
-            songYear >= 2009 -> "Essa é dos anos 2000 em diante — lançada em $songYear, quando o mundo já tocava pelo celular."
-            albumName != null && songYear > 1900 -> "Essa faixa entrou na sua biblioteca vinda de $albumName, um lançamento de $songYear."
-            else -> "Sua biblioteca guarda cada detalhe dessa faixa — eu só estou preparando o clima."
+    fun leadIn(intensity: String): String {
+        // Várias entradas por tom: a chamada fixa era metade do "sempre a mesma coisa".
+        val options = when (intensity) {
+            Settings.DJ_CALM -> listOf(
+                "Um momento, antes da próxima:",
+                "Ei, uma pausa rápida:",
+                "Antes de trocar de faixa:"
+            )
+            Settings.DJ_WILD -> listOf(
+                "Se liga nessa:",
+                "Olha só:",
+                "E antes da próxima:"
+            )
+            else -> listOf(
+                "Antes de seguir, uma curiosidade:",
+                "Uma curiosidade antes de trocar de faixa:",
+                "Sabe o que eu andei descobrindo?"
+            )
         }
-    }
-
-    private fun fallbackOrder(
-        song: com.pulsa.player.model.Song?,
-        albumName: String?
-    ): String {
-        val year = song?.year ?: 0
-        return when {
-            year in 1900..1990 -> "De $year! Essa faixa tem a cara das primeiras playlists da história, feitas em fitas cassete."
-            year in 1990..2009 -> "Ano $year. Foi nessa época que o MP3 transformou a sua coleção de discos em arquivos."
-            year >= 2010 -> "De $year, uma das mais novas da sua biblioteca."
-            song != null -> "Conhece a história dessa faixa? Eu sempre gosto de mexer nos detalhes."
-            else -> "O algoritmo me contou segredos sobre a sua biblioteca que nem você sabe."
-        }
-    }
-
-    fun leadIn(intensity: String): String = when (intensity) {
-        Settings.DJ_CALM -> "Um momento, antes da próxima:"
-        Settings.DJ_WILD -> "Se liga nessa:"
-        else -> "Antes de seguir, uma curiosidade:"
-    }
-
-    fun curiosityText(song: com.pulsa.player.model.Song?, artistName: String, albumName: String?, intensity: String): String {
-        val fact = curiosityFor(artistName)
-        val body = fact ?: fallbackOrder(song, albumName)
-        return if (fact != null) "${leadIn(intensity)} Você sabia? $body" else body
+        return options.random()
     }
 
     private val FACTS = mapOf(
@@ -264,4 +512,8 @@ object DjFacts {
         "márcia fellipe" to "Márcia Fellipe trouxe voz própria para o forró feminino e abriu espaço na cena dominada por homens.",
         "jean e rafael" to "A dupla de Goiás que nasceu do sertanejo universitário e virou presença garantida nas festas do interior."
     )
+
+    /** O mesmo mapa, com a chave normalizada (sem acento) para casar com o nome do artista. */
+    private val FACTS_BY_KEY: Map<String, String> =
+        FACTS.entries.associate { normalize(it.key) to it.value }
 }

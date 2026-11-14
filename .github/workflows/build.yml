@@ -21,31 +21,56 @@ jobs:
         run: echo "ANDROID_HOME=$ANDROID_HOME" && test -n "$ANDROID_HOME"
       - name: Make gradlew executable
         run: chmod +x gradlew
-      - name: Restaura keystore a partir dos secrets (CI)
-        if: env.KEYSTORE_BASE64 != ''
+      - name: Prepara o keystore de release (CI)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          mkdir -p app/keystore
-          echo "$KEYSTORE_BASE64" | base64 -d > app/keystore/pulsa.keystore
-      - name: Expõe credenciais de assinatura (com fallback p/ keystore local)
-        env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD:-android}" >> "$GITHUB_ENV"
-          echo "KEY_ALIAS=${KEY_ALIAS:-androiddebugkey}" >> "$GITHUB_ENV"
-          echo "KEY_PASSWORD=${KEY_PASSWORD:-android}" >> "$GITHUB_ENV"
+          # Sem fallback de propósito: o fallback antigo ("android"/"androiddebugkey") é a
+          # chave de debug do Android, que é pública — com ela, qualquer pessoa assina um
+          # APK com o pacote do Pulsa e o app aceita como atualização. Sem os secrets, as
+          # variáveis ficam vazias e o build do release falha (é o comportamento correto:
+          # melhor não publicar do que publicar um APK falsificável).
+          # O `secrets` não pode ser lido no `if` do passo (o contexto não existe ali), então
+          # a checagem é feita dentro do shell, com o valor no `env` do passo.
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::notice::Secrets de assinatura ausentes: este job roda sem release assinado."
+            exit 0
+          fi
+          mkdir -p app/keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > app/keystore/pulsa.keystore
+          echo "KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD}" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=${KEY_ALIAS}" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=${KEY_PASSWORD}" >> "$GITHUB_ENV"
       - name: Unit tests
         run: ./gradlew :app:test --console=plain
-      - name: Assemble release (assinado)
-        run: ./gradlew :app:assembleRelease --console=plain
+      - name: Checagem das migrações do Room
+        run: |
+          ./gradlew :app:kspDebugKotlin --console=plain
+          python3 tools/check_room_migration.py
+      - name: Lint do Android (nao bloqueia)
+        continue-on-error: true
+        run: ./gradlew :app:lint --console=plain
+      - name: Monta o APK
+        run: |
+          mkdir -p apk-out
+          if [ -f app/keystore/pulsa.keystore ]; then
+            ./gradlew :app:assembleRelease --console=plain
+            cp app/build/outputs/apk/release/app-release.apk apk-out/app-release.apk
+          else
+            # Sem keystore (PR de fork, secrets indisponíveis): o APK de debug só serve
+            # para o teste do CI. O job de publicação recusa esse arquivo.
+            ./gradlew :app:assembleDebug --console=plain
+            cp app/build/outputs/apk/debug/app-debug.apk apk-out/app-debug.apk
+          fi
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
           name: Pulsa-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          path: apk-out/
+          if-no-files-found: error
 
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -74,6 +99,10 @@ jobs:
           path: pulsaweb
       - name: Publica APK e arquivo de versao
         run: |
+          if [ ! -f apk/app-release.apk ]; then
+            echo "::error::APK release assinado ausente: nada sera publicado."
+            exit 1
+          fi
           cp apk/app-release.apk pulsaweb/Pulsa.apk
           printf '%s|%s|https://cleberleonheart-maker.github.io/pulsaweb/Pulsa.apk' "$CODE" "$NAME" > pulsaweb/version
           git -C pulsaweb config user.name "Pulsa CI"

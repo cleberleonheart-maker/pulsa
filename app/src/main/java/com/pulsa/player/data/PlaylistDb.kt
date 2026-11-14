@@ -22,8 +22,19 @@ import com.pulsa.player.model.SongMeta
  */
 data class BackupPlaylist(val name: String, val paths: List<String>)
 
-/** Uma favorita como vai para o backup: caminho + quando foi curtida. */
-data class BackupFavorite(val path: String, val likedAt: Long)
+/**
+ * Uma favorita como vai para o backup: caminho + quando foi curtida.
+ *
+ * [key] e [durationMs] são a identidade **portátil** da faixa (`SongKey`): o caminho resolve
+ * no mesmo aparelho, e a chave resolve no outro. Sem elas, uma favorita só voltava por
+ * sorte — o caminho do celular de origem não existe no celular novo.
+ */
+data class BackupFavorite(
+    val path: String,
+    val likedAt: Long,
+    val key: String = "",
+    val durationMs: Long = 0L
+)
 
 /**
  * Correção manual de nome como vai para o backup: caminho + os três campos corrigidos.
@@ -32,7 +43,14 @@ data class BackupFavorite(val path: String, val likedAt: Long)
  * porque é o que o `Library.applyOverrides` consegue casar sem custo, mas no arquivo isso
  * seria um id de outra máquina — ver [PlaylistBackup].
  */
-data class BackupMeta(val path: String, val title: String, val artist: String, val album: String)
+data class BackupMeta(
+    val path: String,
+    val title: String,
+    val artist: String,
+    val album: String,
+    val key: String = "",
+    val durationMs: Long = 0L
+)
 
 /**
  * Playlists, favoritas e correção de metadados, agora sobre Room.
@@ -61,8 +79,6 @@ class PlaylistDb private constructor(context: Context) {
     private val favoriteDao get() = db.favoriteDao()
     private val metaDao get() = db.songMetaDao()
     private val ruleDao get() = db.autoRuleDao()
-
-    fun isSystem(playlistId: Long): Boolean = playlistDao.systemFlag(playlistId) == 1
 
     fun ensureSpecialPlaylists(context: Context) {
         db.runInTransaction {

@@ -68,17 +68,6 @@ object MusicDownloader {
     }
 
     /**
-     * O mesmo download, mas **na thread que já está esperando pelo resultado** — é o que o
-     * `DownloadWorker` precisa, porque o WorkManager só sabe se deu certo quando a função
-     * retorna.
-     *
-     * Dá para repetir com segurança: [saveModern] apaga a entrada `IS_PENDING` quando a
-     * cópia falha, então um retry não deixa arquivo órfão no MediaStore.
-     */
-    fun downloadBlocking(context: Context, urlText: String, name: String): Boolean =
-        runCatching { downloadToStore(context, urlText, name) != null }.getOrDefault(false)
-
-    /**
      * O mesmo download, devolvendo o **endereço** que o MediaStore deu (`content://…`) em vez
      * de um booleano.
      *
@@ -140,7 +129,7 @@ object MusicDownloader {
             // no Android 11+), então ela é anotada no log legível — senão não há como saber se
             // a próxima tentativa continuou ou recomeçou.
             if (append) runCatching {
-                CrashLogger.writeLog(context, "download: retomando de $existing bytes (total $total) — $urlText")
+                CrashLogger.writeLog(context, "download: retomando de $existing bytes (total $total) — ${CrashLogger.urlSemQuery(urlText)}")
             }
             // O teto vale para podcast e para o download por URL, não só para o vídeo do
             // Download Center. O arquivo final é uma cópia do parcial para o MediaStore,
@@ -158,7 +147,7 @@ object MusicDownloader {
             // fica no lugar de propósito: é ele que deixa a próxima tentativa retomar.
             if (!isComplete(part.length(), total)) {
                 runCatching {
-                    CrashLogger.writeLog(context, "download: incompleto (${part.length()} de $total) — $urlText")
+                    CrashLogger.writeLog(context, "download: incompleto (${part.length()} de $total) — ${CrashLogger.urlSemQuery(urlText)}")
                 }
                 return null
             }

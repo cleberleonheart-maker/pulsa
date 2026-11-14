@@ -5,7 +5,6 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
-import com.pulsa.player.R
 import com.pulsa.player.core.NetworkStatus
 import com.pulsa.player.core.Settings
 import java.util.Locale

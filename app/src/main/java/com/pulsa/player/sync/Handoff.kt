@@ -1,5 +1,6 @@
 package com.pulsa.player.sync
 
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 
@@ -110,6 +111,7 @@ object Handoff {
                 if (http != 200 || text.isBlank()) continue
                 return JSONObject(text)
             } catch (t: Throwable) {
+                CrashLogger.writeLog(ctx.applicationContext, "HANDOFF: assumir sessao falhou -> $t")
             }
         }
         return null

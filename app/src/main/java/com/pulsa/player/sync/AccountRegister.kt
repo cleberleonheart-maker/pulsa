@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import com.pulsa.player.core.Account
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import org.json.JSONObject
@@ -88,6 +89,7 @@ object AccountRegister {
                     else -> Result.FAILED
                 }
             } catch (t: Throwable) {
+                CrashLogger.writeLog(context.applicationContext, "REGISTER: enviar cadastro falhou -> $t")
             }
         }
         return Result.FAILED

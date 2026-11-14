@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pulsa.player.R
 import com.pulsa.player.data.Library
-import com.pulsa.player.model.Song
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.ui.adapter.SongListAdapter
 import com.pulsa.player.core.CrashLogger

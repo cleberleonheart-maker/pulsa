@@ -3,6 +3,7 @@ package com.pulsa.player.sync
 import android.content.Context
 import android.os.Environment
 import android.os.SystemClock
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.model.Song
 import org.json.JSONObject
 import java.io.File
@@ -57,7 +58,7 @@ object Lyrics {
             }
         }
 
-        fetchOnline(song)?.let { online ->
+        fetchOnline(song, context)?.let { online ->
             if (online.source == Result.Source.ONLINE_SYNCED) {
                 context?.let { ctx -> saveCache(ctx, song, online.verbatim) }
                 saveBesideMusic(song, online.verbatim)
@@ -254,7 +255,7 @@ object Lyrics {
 
     // ---------- busca online (LRCLIB) ----------
 
-    private fun fetchOnline(song: Song): Result? {
+    private fun fetchOnline(song: Song, context: Context?): Result? {
         val fromName = fromFileName(song)
         var artist = song.artist.trim()
         var track = song.title.trim()
@@ -292,6 +293,7 @@ object Lyrics {
                 conn.disconnect()
             }
         } catch (e: Exception) {
+            context?.let { CrashLogger.writeLog(it.applicationContext, "LYRICS: busca online falhou -> $e") }
             null
         }
     }

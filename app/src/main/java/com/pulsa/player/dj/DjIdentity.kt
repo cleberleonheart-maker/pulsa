@@ -43,8 +43,6 @@ object DjIdentity {
         "Cola nessa que é sucesso."
     )
 
-    fun randomCatchPhrase(): String = catchPhrases().random()
-
     /** Bloco de persona que entra no prompt da IA para ela responder como Virgin. */
     fun personalityPrompt(): String = buildString {
         appendLine("Você é a Virgin, a DJ virtual única do aplicativo de música Pulsa, um app brasileiro.")

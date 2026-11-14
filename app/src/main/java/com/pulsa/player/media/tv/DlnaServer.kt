@@ -3,6 +3,7 @@ package com.pulsa.player.media.tv
 import android.content.Context
 import android.net.wifi.WifiManager
 import android.net.Uri
+import com.pulsa.player.core.CrashLogger
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -16,7 +17,6 @@ import java.net.InetSocketAddress
 import java.net.MulticastSocket
 import java.net.ServerSocket
 import java.net.Socket
-import java.net.URLDecoder
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -405,6 +405,7 @@ class DlnaServer(
             notFound(out)
         } catch (e: IOException) {
             // TV desconectou no meio do transfer: normal, não é erro para o usuário.
+            CrashLogger.writeLog(app, "DLNA: cliente desconectou no meio da midia -> $e")
         }
     }
 
@@ -443,6 +444,7 @@ class DlnaServer(
             notFound(out)
         } catch (e: IOException) {
             // O Chromecast desistiu da capa no meio: normal.
+            CrashLogger.writeLog(app, "DLNA: cliente desistiu da capa no meio -> $e")
         }
     }
 

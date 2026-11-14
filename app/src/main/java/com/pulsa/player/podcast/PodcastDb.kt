@@ -327,7 +327,9 @@ class PodcastDb(
      */
     fun logFeedFailure(what: String, url: String, error: String) {
         val ctx = context ?: return
-        CrashLogger.writeLog(ctx, "PODCAST: $what $url falhou -> $error")
+        // A query da URL vai fora: em podcast, o endereço de enclosure costuma ser assinado
+        // (token + expiração), e o log é espelhado em `Download/`, legível fora do app.
+        CrashLogger.writeLog(ctx, "PODCAST: $what ${CrashLogger.urlSemQuery(url)} falhou -> $error")
     }
 
     companion object {
@@ -362,14 +364,6 @@ class PodcastDb(
  * inevitavelmente esqueceria de popular o [PodcastCache], que é o que faz o episódio tocar.
  */
 object PodcastSync {
-
-    /**
-     * Assina (ou reativa) e devolve o id, `0` quando o feed não respondeu.
-     *
-     * Bloqueante de verdade: a rede está aqui, não num callback. Quem chama está em
-     * `ThreadPool.postNetwork` ou num `CoroutineWorker`.
-     */
-    fun subscribeNow(db: PodcastDb, podcast: Podcast): Long = db.subscribe(podcast)
 
     /**
      * Busca o feed e assina. O erro vai para `last_error` da assinatura.

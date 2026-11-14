@@ -112,15 +112,20 @@ object AdSkip {
             if (segments.any { it.isAd }) return@post
             val key = Settings.geminiKey(app)
             if (key.isBlank()) return@post
-            val markedSegs = classify(app, segments, key)
-            if (markedSegs == null || markedSegs == segments) return@post
-            db.podcastDao().upsertTranscript(
-                entity.copy(
-                    segmentsJson = PodcastTranscriptParser.toJson(markedSegs),
-                    fullText = markedSegs.joinToString(" ") { it.text }
+            // A classificação fala com o Gemini — rede vai no pool de rede. O pool local tem
+            // 4 threads e é o que faz a biblioteca e o comando de voz aparecerem; uma espera
+            // de 30s parada ali trava a fila inteira do app (já aconteceu com o sync).
+            ThreadPool.postNetwork {
+                val markedSegs = classify(app, segments, key)
+                if (markedSegs == null || markedSegs == segments) return@postNetwork
+                db.podcastDao().upsertTranscript(
+                    entity.copy(
+                        segmentsJson = PodcastTranscriptParser.toJson(markedSegs),
+                        fullText = markedSegs.joinToString(" ") { it.text }
+                    )
                 )
-            )
-            cache[episodeId] = markedSegs
+                cache[episodeId] = markedSegs
+            }
         }
     }
 

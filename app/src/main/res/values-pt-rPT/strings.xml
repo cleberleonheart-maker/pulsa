@@ -9,11 +9,24 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.36):
- → FILA UNIVERSAL NA VOZ
- • "Joga o rádio para o fim" e "joga o stream para o fim" movem agora o item certo da fila.
- • O histórico por tipo tem rádio e stream: "o que já tocou de rádio hoje?".
- • "O que tocou ontem" responde de ontem — antes respondia de hoje.</string>
+    <string name="changelog">Novidades desta versão (5.12.39):
+→ CONVERSOR DE MEDIA
+• Novo Conversor dentro do Pulsa: converte vídeos e áudio para MP4 (H264) ou M4A (AAC).
+• Aceita ligação direta ou ficheiro do dispositivo (vídeo, música, gravação de voz).
+• Escolha a resolução (480p, 720p, 1080p ou original) e a qualidade (automática, económica, equilibrada, alta).
+• Corte por tempo: marque o início e o fim do troço que quer manter.
+• Fila de conversões com progresso, cancelar, tentar de novo e eliminar o resultado.
+• O ficheiro convertido entra na biblioteca como media normal, pronto a reproduzir.
+• A ligação direta agora é lida antes de converter: a duração aparece e o corte por tempo é conferido.
+• A notificação mostra o progresso da conversão mesmo com o ecrã fechado.
+→ NUVEM E SINCRONIZAÇÃO
+• A nuvem tenta o servidor seguinte quando um deles recusa o token, em vez de desistir logo.
+• O progresso do podcast não recua: entre o dispositivo e a nuvem, vale quem estiver mais adiantado.
+• A ligação da transferência vai para a nuvem sem a parte que tem senha.
+→ PREFERÊNCIAS E CÓPIA DE SEGURANÇA
+• As preferências (idioma, equalizador, crossfade, transferências) agora viajam na cópia de segurança do Google.
+• O PIN do modo infantil e o token de reconhecimento passam a ficar cifrados no dispositivo.
+</string>
 
     <string name="now_playing">A tocar agora</string>
     <string name="now_playing_subtitle">A tocar agora</string>
@@ -322,7 +335,10 @@
     <string name="hero_status_playing">● A tocar</string>
     <string name="rec_token_saved">Token guardado!</string>
     <string name="gemini_key_saved">Chave guardada!</string>
+    <string name="server_cloud_token_hint">Token da nuvem (opcional)</string>
+    <string name="server_cloud_token_subtitle">Se o servidor proteger a pasta da nuvem (/cloud) com outro segredo, cole-o aqui. Em branco, vale o token de cima.</string>
     <string name="server_token_saved">Token guardado!</string>
+    <string name="server_http_warning">Atenção: esse endereço não é cifrado — o token e a sua biblioteca passam em claro na rede. Prefira https://</string>
     <string name="server_token_subtitle">Chave de acesso ao seu servidor. Use o mesmo token nos outros dispositivos e no servidor.</string>
     <string name="ban_loading">A carregar dispositivos…</string>
     <string name="eq_saved">Equalizador personalizado guardado</string>
@@ -395,6 +411,14 @@
     <string name="podcast_prefetch">Adiantar o próximo episódio</string>
     <string name="podcast_prefetch_hint">Enquanto um episódio toca, transfere o seguinte da fila por Wi‑Fi para a mudança não parar a carregar. Só por Wi‑Fi; nunca usa os seus dados móveis.</string>
     <string name="podcast_auto_download">Transferir novos episódios</string>
+    <string name="podcast_index_key_row">Podcast Index (opcional)</string>
+    <string name="podcast_index_key_hint">Usa o catálogo do Podcast Index na pesquisa de podcasts, em vez do da iTunes. Precisa de uma conta gratuita.</string>
+    <string name="podcast_index_key_subtitle">Cole a chave e o segredo da sua conta em podcastindex.org. Sem isto, a pesquisa continua a usar a iTunes.</string>
+    <string name="podcast_index_key_label">Chave</string>
+    <string name="podcast_index_secret_label">Segredo</string>
+    <string name="podcast_index_key_saved">Configurado</string>
+    <string name="podcast_index_key_missing">Não configurado</string>
+    <string name="podcast_index_key_clear">Limpar</string>
     <string name="podcast_auto_download_hint">Transfere automaticamente os episódios novos de cada podcast, só por Wi‑Fi e dentro do limite de espaço. Desligado por predefinição.</string>
     <string name="podcast_auto_download_off">Desligado</string>
     <string name="podcast_auto_download_value">%1$d por podcast</string>
@@ -406,6 +430,69 @@
     <string name="downloads_limit_reached">Limite de espaço atingido — elimine uma transferência para continuar</string>
     <string name="downloads_warning_free">Pouco espaço livre no dispositivo: %1$s. Considere eliminar transferências.</string>
     <string name="download_deleted">Transferência eliminada</string>
+
+    <string name="converter_title">Conversor</string>
+    <string name="converter_subtitle">Links e ficheiros do dispositivo</string>
+    <string name="converter_source">Origem</string>
+    <string name="converter_source_none">Nenhum ficheiro selecionado</string>
+    <string name="converter_source_details">%1$s\n%2$s • %3$s • %4$s • %5$s</string>
+    <string name="converter_source_pending">%1$s\n%2$s</string>
+    <string name="converter_link">Usar link</string>
+    <string name="converter_file">Escolher ficheiro</string>
+    <string name="converter_output">Formato de saída</string>
+    <string name="converter_format_mp4">Vídeo MP4</string>
+    <string name="converter_format_m4a">Áudio M4A</string>
+    <string name="converter_resolution">Resolução</string>
+    <string name="converter_resolution_original">Original</string>
+    <string name="converter_resolution_480">480p</string>
+    <string name="converter_resolution_720">720p</string>
+    <string name="converter_resolution_1080">1080p</string>
+    <string name="converter_quality">Qualidade</string>
+    <string name="converter_quality_auto">Automática</string>
+    <string name="converter_quality_economy">Económica</string>
+    <string name="converter_quality_balanced">Equilibrada</string>
+    <string name="converter_quality_high">Alta</string>
+    <string name="converter_remove_audio">Remover áudio</string>
+    <string name="converter_trim">Corte</string>
+    <string name="converter_trim_start">Início</string>
+    <string name="converter_trim_end">Fim</string>
+    <string name="converter_trim_hint">Use mm:ss ou hh:mm:ss. Deixe o fim vazio para usar até ao final.</string>
+    <string name="converter_name">Nome do ficheiro</string>
+    <string name="converter_start">Converter</string>
+    <string name="converter_queue">Fila de conversões</string>
+    <string name="converter_empty">Nenhuma conversão na fila</string>
+    <string name="converter_queued">Na fila</string>
+    <string name="converter_running">A converter…</string>
+    <string name="converter_finalizing">A finalizar…</string>
+    <string name="converter_done">Convertido</string>
+    <string name="converter_failed">Falhou</string>
+    <string name="converter_cancelled">Cancelado</string>
+    <string name="converter_play">Abrir resultado</string>
+    <string name="converter_delete">Eliminar conversão</string>
+    <string name="converter_retry">Tentar de novo</string>
+    <string name="converter_cancel">Cancelar</string>
+    <string name="converter_start_queued">Conversão adicionada à fila</string>
+    <string name="converter_source_required">Escolha um link ou um ficheiro</string>
+    <string name="converter_invalid_trim">O corte é inválido</string>
+    <string name="converter_trim_too_long">O fim do corte ultrapassa a duração do ficheiro</string>
+    <string name="converter_direct_link_only">Use um link direto de ficheiro. HLS e DASH não podem ser convertidos.</string>
+    <string name="converter_failed_detail">Falhou: %1$s</string>
+    <string name="converter_resolving_link">A resolver link…</string>
+    <string name="converter_duration_unknown">Duração desconhecida</string>
+    <string name="converter_video_audio">Vídeo e áudio</string>
+    <string name="converter_video_only">Só vídeo</string>
+    <string name="converter_audio_only">Só áudio</string>
+    <string name="converter_size_unknown">Tamanho desconhecido</string>
+    <string name="converter_delete_confirm">Eliminar esta conversão e o ficheiro gerado?</string>
+    <string name="converter_notification_channel">Conversões</string>
+    <string name="converter_notification_title">A converter media</string>
+    <string name="converter_notification_progress">A converter %1$d%%</string>
+    <string name="converter_notification_queued">À espera na fila</string>
+    <string name="converter_link_hint">Link direto do ficheiro</string>
+    <string name="converter_select_link">Usar este link</string>
+    <string name="converter_no_video">Este ficheiro não tem vídeo</string>
+    <string name="converter_no_audio">Este ficheiro não tem áudio</string>
+
     <string name="podcast_download_delete">Eliminar transferência</string>
 
     <string name="podcast_search">Procurar podcast</string>

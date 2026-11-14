@@ -58,7 +58,6 @@ object Settings {
     private const val KEY_REMOTE_CODE = "remote_control_code"
     private const val KEY_HANDOFF_AUTO = "handoff_auto_assume"
     private const val KEY_SERVER = "server_base"
-    private const val KEY_TUNNEL_URL = "tunnel_url"
     private const val TUNNEL_INFO_HOST = "https://raw.githubusercontent.com/cleberleonheart-maker/pulsaweb/main/tunnel.txt"
     private const val KEY_ALARM_HOUR = "alarm_hour"
     private const val KEY_ALARM_MINUTE = "alarm_minute"
@@ -74,6 +73,12 @@ object Settings {
 
     /** Servidor público fixo do Pulsa (Elastic IP + sslip.io). Entra sozinho, sem configurar nada. */
     const val DEFAULT_SERVER_URL = "https://pulsa.3.151.24.62.sslip.io"
+
+    /** Servidor do dono na rede local (modo LAN). É em claro — por isso é só do modo LAN. */
+    const val LAN_SERVER_URL = "http://192.168.100.7:8081"
+
+    /** Servidor na própria máquina (servidor de teste). */
+    const val LOCAL_SERVER_URL = "http://127.0.0.1:8081"
 
     // ============================================================
     // APARÊNCIA (constantes)
@@ -261,15 +266,47 @@ object Settings {
         return cachedTunnel
     }
 
-    /** Hosts a tentar, na ordem: configurado/túnel primeiro, depois o servidor público, LAN e localhost. */
-    fun serverCandidates(context: Context): List<String> {
+    /**
+     * Hosts a tentar, na ordem.
+     *
+     * A escolha em si é a parte pura ([serverCandidatesFor]); esta função só junta o que
+     * está guardado nas preferências.
+     */
+    fun serverCandidates(context: Context): List<String> =
+        serverCandidatesFor(serverMode(context), serverBase(context), onlineServer(context))
+
+    /**
+     * Os hosts a tentar, a partir do modo e dos endereços.
+     *
+     * Os candidatos **em claro** (`http://`) são só do modo LAN — o servidor do dono da rede,
+     * que é a razão de o modo existir. Antes eles eram acrescentados em **todos** os modos:
+     * com um servidor configurado (ou o túnel) fora do ar, o app caía no `192.168.100.7` e
+     * mandava o token, a biblioteca e o e-mail da pessoa em claro, sem ninguém ver. O
+     * configurado é a escolha de quem configurou; o padrão não é.
+     *
+     * Separado em função pura para ter teste: a regra é de segurança, e segurança sem
+     * teste é intenção.
+     */
+    fun serverCandidatesFor(mode: String, custom: String, online: String?): List<String> {
         val out = ArrayList<String>(4)
-        when (serverMode(context)) {
-            "online" -> onlineServer(context)?.let { if (!out.contains(it)) out.add(it) }
-            "custom" -> serverBase(context).let { if (it.isNotEmpty() && !out.contains(it)) out.add(it) }
+        when (mode) {
+            "online" -> online?.let { if (it.isNotEmpty() && !out.contains(it)) out.add(it) }
+            "custom" -> custom.let { if (it.isNotEmpty() && !out.contains(it)) out.add(it) }
+            "lan" -> {
+                for (def in listOf(DEFAULT_SERVER_URL, LAN_SERVER_URL, LOCAL_SERVER_URL)) {
+                    if (!out.contains(def)) out.add(def)
+                }
+            }
+            else -> {
+                // Modo que o app não conhece: só o servidor público em HTTPS. O default de
+                // segurança é o oposto do que o usuário pediu, e não o contrário.
+                if (!out.contains(DEFAULT_SERVER_URL)) out.add(DEFAULT_SERVER_URL)
+            }
         }
-        for (def in listOf(DEFAULT_SERVER_URL, "http://192.168.100.7:8081", "http://127.0.0.1:8081")) {
-            if (!out.contains(def)) out.add(def)
+        if (mode != "lan") {
+            // Fora do modo LAN, o servidor público em HTTPS ainda é uma opção — mas nunca o
+            // claro: o app não desce de segurança sozinho.
+            if (!out.contains(DEFAULT_SERVER_URL)) out.add(DEFAULT_SERVER_URL)
         }
         return out
     }
@@ -278,32 +315,98 @@ object Settings {
     // ============================================================
     // SECRETS (EncryptedSharedPreferences)
     // ============================================================
+
+    /**
+     * As chaves que **são** segredo: moram cifradas, nunca em prefs comuns.
+     *
+     * O `pulsa_settings.xml` viaja no backup do Google (é onde moram as preferências da
+     * pessoa: idioma, EQ, crossfade, teto de download). O que é credencial precisa sair de
+     * lá — por isso estas chaves são cifradas e o arquivo de settings não é mais excluído.
+     */
+    val secretKeys: List<String> = listOf(
+        "telemetry_token",
+        "cloud_token",
+        "admin_token",
+        "gemini_key",
+        "lastfm_key",
+        "lastfm_secret",
+        "lastfm_session",
+        "podcast_index_key",
+        "podcast_index_secret",
+        "rec_token",
+        "kids_pin"
+    )
+
+    @Volatile private var secretPrefsCache: SharedPreferences? = null
+
     private fun secretPrefs(context: Context): SharedPreferences {
-        val masterKey = MasterKey.Builder(context.applicationContext)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        return EncryptedSharedPreferences.create(
-            context.applicationContext,
-            SECRET_FILE,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        secretPrefsCache?.let { return it }
+        synchronized(this) {
+            secretPrefsCache?.let { return it }
+            val masterKey = MasterKey.Builder(context.applicationContext)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            val created = EncryptedSharedPreferences.create(
+                context.applicationContext,
+                SECRET_FILE,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+            secretPrefsCache = created
+            return created
+        }
     }
 
-    /** Lê um secret, migrando o valor em texto puro (das versões antigas) na primeira leitura. */
+    /**
+     * Lê um secret, migrando o valor em texto puro (das versões antigas) na primeira leitura.
+     *
+     * A cópia em texto puro é **apagada** depois da migração: ela morava no
+     * `pulsa_settings.xml`, que o backup do Google leva. E, se as prefs cifradas não
+     * abrirem (keystore quebrado), o valor antigo ainda aparece — o app continua
+     * funcionando em vez de entrar em reset.
+     */
     private fun secret(context: Context, key: String): String {
-        val sp = secretPrefs(context)
-        val stored = sp.getString(key, null)
+        val stored = runCatching { secretPrefs(context).getString(key, null) }.getOrNull()
         if (stored != null) return stored
         val legacy = prefs(context).getString(key, "") ?: ""
-        if (legacy.isNotEmpty()) sp.edit().putString(key, legacy).apply()
+        if (legacy.isEmpty()) return ""
+        val migrated = runCatching {
+            secretPrefs(context).edit().putString(key, legacy).apply()
+            true
+        }.getOrDefault(false)
+        if (migrated) prefs(context).edit().remove(key).apply()
         return legacy
     }
 
     private fun setSecret(context: Context, key: String, value: String) {
-        secretPrefs(context).edit().putString(key, value.trim()).apply()
-        prefs(context).edit().remove(key).apply()
+        val saved = runCatching {
+            secretPrefs(context).edit().putString(key, value.trim()).apply()
+            true
+        }.getOrDefault(false)
+        // A cópia em texto puro só some quando a cifrada foi escrita com sucesso.
+        if (saved) prefs(context).edit().remove(key).apply()
+    }
+
+    /**
+     * Passa para as prefs cifradas tudo o que ainda estiver em texto puro.
+     *
+     * O [secret] já migra na leitura, mas uma chave que ninguém lê ficaria em texto puro
+     * para sempre — e o backup levaria junto. Esta migração roda uma vez por aparelho
+     * (ver [Migrations]) e limpa as sobras.
+     */
+    fun migrateLegacySecrets(context: Context) {
+        val plain = prefs(context)
+        val keys = secretKeys.filter { plain.contains(it) }
+        if (keys.isEmpty()) return
+        for (key in keys) {
+            val value = plain.getString(key, null) ?: continue
+            val migrated = runCatching {
+                secretPrefs(context).edit().putString(key, value).apply()
+                true
+            }.getOrDefault(false)
+            if (migrated) plain.edit().remove(key).apply()
+        }
     }
 
     // ============================================================
@@ -314,6 +417,37 @@ object Settings {
 
     fun setTelemetryToken(context: Context, value: String) =
         setSecret(context, "telemetry_token", value)
+
+    /**
+     * O token do **blob da nuvem**, quando o servidor usa um segredo diferente.
+     *
+     * **Por que isso existe.** O servidor público aceita o token normal em `/state`, `/telem`
+     * e `/version`, mas responde `unauthorized` em `/cloud` — e o app usa o mesmo token nas
+     * duas. O sintoma é silencioso: o app insiste a cada 5 min e nunca diz nada, e a nuvem
+     * "funciona" só no papel (nada nunca chega, nada nunca sai).
+     *
+     * Este token é **opcional**: em branco, vale o token normal. Só é preciso quando o
+     * servidor Guardar a nuvem atrás de outro segredo — e, nesse caso, é o jeito de o app
+     * funcionar sem esperar o servidor mudar.
+     */
+    fun cloudToken(context: Context): String =
+        resolveCloudToken(secret(context, "cloud_token"), telemetryToken(context))
+
+    fun setCloudToken(context: Context, value: String) {
+        setSecret(context, "cloud_token", value)
+    }
+
+    /** `true` quando a nuvem tem token próprio (e não o token normal). */
+    fun hasCustomCloudToken(context: Context): Boolean =
+        secret(context, "cloud_token").isNotBlank()
+
+    /**
+     * Regra pura do token da nuvem: o token próprio manda; em branco, vale o token normal.
+     *
+     * Separada do `Context` de propósito — é a regra inteira, e ela se testa na JVM.
+     */
+    fun resolveCloudToken(own: String, fallback: String): String =
+        own.trim().ifBlank { fallback }
 
     fun hasCustomTelemetryToken(context: Context): Boolean =
         secret(context, "telemetry_token").isNotEmpty()
@@ -628,10 +762,6 @@ object Settings {
     fun djVoice(context: Context): Boolean =
         prefs(context).getBoolean("dj_voice", true)
 
-    fun setMasculineAvatar(context: Context, value: Boolean) {
-        prefs(context).edit().putBoolean("avatar_masculino", value).apply()
-    }
-
     fun masculineAvatar(context: Context): Boolean =
         prefs(context).getBoolean("avatar_masculino", false)
 
@@ -684,12 +814,11 @@ object Settings {
     fun tamiRadio(context: Context): Boolean =
         prefs(context).getBoolean("tami_radio", false)
 
-    fun setRecToken(context: Context, value: String) {
-        prefs(context).edit().putString("rec_token", value.trim()).apply()
-    }
+    fun setRecToken(context: Context, value: String) =
+        setSecret(context, "rec_token", value)
 
     fun recToken(context: Context): String =
-        prefs(context).getString("rec_token", "") ?: ""
+        secret(context, "rec_token")
 
     // ============================================================
     // SECRETS — TOKEN DE ADMINISTRAÇÃO
@@ -740,6 +869,37 @@ object Settings {
     fun geminiKey(context: Context): String =
         secret(context, "gemini_key")
 
+    /**
+     * Credencial do **Podcast Index**, quando a pessoa tem uma.
+     *
+     * A busca de podcast usava só a iTunes, e a razão estava escrita: o Podcast Index é
+     * melhor indexado, mas exige cadastro — e um app que não pode pedir chave na tela de
+     * busca não pode depender dele. Agora a chave é **opcional** e mora aqui: com ela, a
+     * busca usa o índice (que tem catálogo maior e transcrição); sem ela, a iTunes continua
+     * respondendo e nada trava.
+     *
+     * São dois valores porque a API exige os dois: a chave vai no cabeçalho e o segredo
+     * entra na assinatura. Guardados como segredo (EncryptedSharedPreferences), como a chave
+     * do Gemini.
+     */
+    fun setPodcastIndexKey(context: Context, value: String) {
+        setSecret(context, "podcast_index_key", value)
+    }
+
+    fun podcastIndexKey(context: Context): String =
+        secret(context, "podcast_index_key")
+
+    fun setPodcastIndexSecret(context: Context, value: String) {
+        setSecret(context, "podcast_index_secret", value)
+    }
+
+    fun podcastIndexSecret(context: Context): String =
+        secret(context, "podcast_index_secret")
+
+    /** `true` quando há credencial completa: sem o segredo, a API recusa a chamada. */
+    fun hasPodcastIndex(context: Context): Boolean =
+        podcastIndexKey(context).isNotBlank() && podcastIndexSecret(context).isNotBlank()
+
     fun setGeminiOn(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean("gemini_on", value).apply()
     }
@@ -767,13 +927,6 @@ object Settings {
         prefs(context).edit()
             .putString("peertube_instance", com.pulsa.player.data.PeerTube.normalizeInstance(value))
             .apply()
-    }
-
-    // ============================================================
-    // RETOMADA
-    // ============================================================
-    fun setResumeOn(context: Context, value: Boolean) {
-        prefs(context).edit().putBoolean("resume_on", value).apply()
     }
 
     fun resumeOn(context: Context): Boolean =
@@ -823,11 +976,11 @@ object Settings {
 
     /** Senha do modo kids, guardada como hash SHA-256 (ver [KidsMode.hash]). */
     fun setKidsPin(context: Context, hash: String) {
-        prefs(context).edit().putString("kids_pin", hash).apply()
+        setSecret(context, "kids_pin", hash)
     }
 
     fun kidsPin(context: Context): String =
-        prefs(context).getString("kids_pin", "") ?: ""
+        secret(context, "kids_pin")
 
     /**
      * Prefetch da fila de podcast — baixar o episódio **seguinte** enquanto o atual toca.
@@ -964,14 +1117,6 @@ object Settings {
         if (host.isBlank()) return null
         val name = prefs(context).getString("tv_name", "") ?: ""
         return host to name
-    }
-
-    fun clearTvDevice(context: Context) {
-        prefs(context).edit()
-            .remove("tv_host")
-            .remove("tv_name")
-            .remove("tv_rmp_id")
-            .apply()
     }
 
     /**

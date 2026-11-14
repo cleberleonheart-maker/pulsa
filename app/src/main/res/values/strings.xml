@@ -33,11 +33,24 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.36):
- → FILA UNIVERSAL NA VOZ
- • "Joga a rádio pro fim" e "joga o stream pro fim" agora movem o item certo da fila.
- • O histórico por tipo tem rádio e stream: "o que já tocou de rádio hoje?".
- • "O que tocou ontem" responde de ontem — antes respondia de hoje.</string>
+    <string name="changelog">Novidades desta versão (5.12.39):
+→ CONVERSOR DE MÍDIA
+• Novo Conversor dentro do Pulsa: converte vídeos e áudios para MP4 (H264) ou M4A (AAC).
+• Aceita link direto ou arquivo do aparelho (vídeo, música, gravação de voz).
+• Escolha a resolução (480p, 720p, 1080p ou original) e a qualidade (automática, econômica, equilibrada, alta).
+• Corte por tempo: marque o início e o fim do trecho que quer ficar.
+• Fila de conversões com progresso, cancelar, tentar de novo e excluir o resultado.
+• O arquivo convertido entra na biblioteca como mídia normal, pronta para tocar.
+• O link direto agora é lido antes de converter: a duração aparece e o corte por tempo é conferido.
+• A notificação mostra o progresso da conversão mesmo com a tela fechada.
+→ NUVEM E SINCRONIZAÇÃO
+• A nuvem tenta o próximo servidor quando um deles recusa o token, em vez de desistir na hora.
+• O progresso do podcast não regride: entre o aparelho e a nuvem, vale quem estiver mais adiantado.
+• O link do download vai para a nuvem sem a parte que tem senha.
+→ PREFERÊNCIAS E BACKUP
+• As preferências (idioma, equalizador, crossfade, downloads) agora viajam no backup do Google.
+• O PIN do modo criança e o token de reconhecimento passam a ficar cifrados no aparelho.
+</string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
     <string name="search_filter_all">Tudo</string>
@@ -401,6 +414,14 @@
     <string name="podcast_prefetch">Adiantar o próximo episódio</string>
     <string name="podcast_prefetch_hint">Enquanto um episódio toca, baixa o próximo da fila no Wi‑Fi para a troca não parar para carregar. Só no Wi‑Fi; nunca usa seus dados móveis.</string>
     <string name="podcast_auto_download">Baixar novos episódios</string>
+    <string name="podcast_index_key_row">Podcast Index (opcional)</string>
+    <string name="podcast_index_key_hint">Usa o catálogo do Podcast Index na busca de podcast, em vez do da iTunes. Precisa de uma conta gratuita.</string>
+    <string name="podcast_index_key_subtitle">Cole a chave e o segredo da sua conta no podcastindex.org. Sem isso, a busca continua usando a iTunes.</string>
+    <string name="podcast_index_key_label">Chave</string>
+    <string name="podcast_index_secret_label">Segredo</string>
+    <string name="podcast_index_key_saved">Configurado</string>
+    <string name="podcast_index_key_missing">Não configurado</string>
+    <string name="podcast_index_key_clear">Limpar</string>
     <string name="podcast_auto_download_hint">Baixa automaticamente os episódios novos de cada podcast, só no Wi‑Fi e dentro do limite de espaço. Desligado por padrão.</string>
     <string name="podcast_auto_download_off">Desligado</string>
     <string name="podcast_auto_download_value">%1$d por podcast</string>
@@ -427,6 +448,68 @@
     <string name="download_already">Já está nos baixados</string>
     <string name="download_start_running">Começando a baixar…</string>
     <string name="download_deleted">Download apagado</string>
+
+    <string name="converter_title">Conversor</string>
+    <string name="converter_subtitle">Links e arquivos do aparelho</string>
+    <string name="converter_source">Origem</string>
+    <string name="converter_source_none">Nenhum arquivo selecionado</string>
+    <string name="converter_source_details">%1$s\n%2$s • %3$s • %4$s • %5$s</string>
+    <string name="converter_source_pending">%1$s\n%2$s</string>
+    <string name="converter_link">Usar link</string>
+    <string name="converter_file">Escolher arquivo</string>
+    <string name="converter_output">Formato de saída</string>
+    <string name="converter_format_mp4">Vídeo MP4</string>
+    <string name="converter_format_m4a">Áudio M4A</string>
+    <string name="converter_resolution">Resolução</string>
+    <string name="converter_resolution_original">Original</string>
+    <string name="converter_resolution_480">480p</string>
+    <string name="converter_resolution_720">720p</string>
+    <string name="converter_resolution_1080">1080p</string>
+    <string name="converter_quality">Qualidade</string>
+    <string name="converter_quality_auto">Automática</string>
+    <string name="converter_quality_economy">Econômica</string>
+    <string name="converter_quality_balanced">Equilibrada</string>
+    <string name="converter_quality_high">Alta</string>
+    <string name="converter_remove_audio">Remover áudio</string>
+    <string name="converter_trim">Corte</string>
+    <string name="converter_trim_start">Início</string>
+    <string name="converter_trim_end">Fim</string>
+    <string name="converter_trim_hint">Use mm:ss ou hh:mm:ss. Deixe o fim vazio para usar até o final.</string>
+    <string name="converter_name">Nome do arquivo</string>
+    <string name="converter_start">Converter</string>
+    <string name="converter_queue">Fila de conversões</string>
+    <string name="converter_empty">Nenhuma conversão na fila</string>
+    <string name="converter_queued">Na fila</string>
+    <string name="converter_running">Convertendo…</string>
+    <string name="converter_finalizing">Finalizando…</string>
+    <string name="converter_done">Convertido</string>
+    <string name="converter_failed">Falhou</string>
+    <string name="converter_cancelled">Cancelado</string>
+    <string name="converter_play">Abrir resultado</string>
+    <string name="converter_delete">Excluir conversão</string>
+    <string name="converter_retry">Tentar de novo</string>
+    <string name="converter_cancel">Cancelar</string>
+    <string name="converter_start_queued">Conversão adicionada à fila</string>
+    <string name="converter_source_required">Escolha um link ou um arquivo</string>
+    <string name="converter_invalid_trim">O corte está inválido</string>
+    <string name="converter_trim_too_long">O fim do corte passa da duração do arquivo</string>
+    <string name="converter_direct_link_only">Use um link direto de arquivo. HLS e DASH não podem ser convertidos.</string>
+    <string name="converter_failed_detail">Falhou: %1$s</string>
+    <string name="converter_resolving_link">Resolvendo link…</string>
+    <string name="converter_duration_unknown">Duração desconhecida</string>
+    <string name="converter_video_audio">Vídeo e áudio</string>
+    <string name="converter_video_only">Só vídeo</string>
+    <string name="converter_audio_only">Só áudio</string>
+    <string name="converter_size_unknown">Tamanho desconhecido</string>
+    <string name="converter_delete_confirm">Excluir esta conversão e o arquivo gerado?</string>
+    <string name="converter_notification_channel">Conversões</string>
+    <string name="converter_notification_title">Convertendo mídia</string>
+    <string name="converter_notification_progress">Convertendo %1$d%%</string>
+    <string name="converter_notification_queued">Aguardando na fila</string>
+    <string name="converter_link_hint">Link direto do arquivo</string>
+    <string name="converter_select_link">Usar este link</string>
+    <string name="converter_no_video">Este arquivo não tem vídeo</string>
+    <string name="converter_no_audio">Este arquivo não tem áudio</string>
 
     <!-- F3 · podcast -->
     <string name="podcasts">Podcasts</string>
@@ -1212,6 +1295,7 @@
     <string name="server_default">Automático (servidor público + rede local)</string>
     <string name="server_hint">https://seu-servidor:8081</string>
     <string name="server_saved">Servidor atualizado — tudo passa a usar o novo endereço</string>
+    <string name="server_http_warning">Atenção: esse endereço não é criptografado — o token e a sua biblioteca trafegam em claro na rede. Prefira https://</string>
     <string name="server_online">Online automático (lê a URL pública do pulsaweb)</string>
     <string name="server_opt_lan">Automático (servidor público + rede local)</string>
     <string name="server_opt_online">Online automático (endereço público do servidor)</string>
@@ -1219,6 +1303,8 @@
     <string name="server_token">Token do servidor</string>
     <string name="server_token_subtitle">Chave de acesso ao seu servidor. Use o mesmo token nos outros aparelhos e no servidor.</string>
     <string name="server_token_hint">Cole aqui o token do servidor</string>
+    <string name="server_cloud_token_hint">Token da nuvem (opcional)</string>
+    <string name="server_cloud_token_subtitle">Se o servidor proteger a pasta da nuvem (/cloud) com outro segredo, cole ele aqui. Em branco, vale o token de cima.</string>
     <string name="server_token_saved">Token salvo!</string>
     <string name="server_token_missing">Padrão do app (sem token próprio)</string>
     <!-- Tocar na TV (item 290 — Roku ECP + DLNA). O "porquê" de cada texto está no

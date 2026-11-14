@@ -31,9 +31,6 @@ object ContentTree {
     const val PLAYLISTS = "playlists"
     const val PODCASTS = "podcasts"
 
-    /** Música acessível tanto por lista plana quanto por artista/álbum — mesma faixa, dois caminhos. */
-    const val MUSIC_ALL = "music_all"
-
     /**
      * Faixa de entrada: o que a árvore precisa saber, e nada mais. O `fileId` é o que o
      * servidor HTTP devolve em `/f/<id>`; `url` não existe aqui de propósito — a URL final

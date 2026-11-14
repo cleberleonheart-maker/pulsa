@@ -16,14 +16,6 @@ import com.pulsa.player.R
  */
 object UrlDownloader {
 
-    /**
-     * Só consulta o cache do [OfficialMediaResolver]. Este método é chamado no main
-     * thread, então não pode fazer rede — a resolução acontece antes, em
-     * [OfficialMediaResolver.resolveAsync].
-     */
-    fun resolveOfficial(url: String): OfficialMediaResolver.Resolved? =
-        OfficialMediaResolver.cached(url)
-
     /** Id de string de erro, ou `null` quando a URL pode ir para a fila do WorkManager. */
     fun validate(url: String): Int? {
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -46,6 +38,8 @@ object UrlDownloader {
         ) return true
         // Apple Music/iTunes: página, mesmo /song/ — o áudio real vem do previewUrl.
         if (lower.contains("music.apple.com") || lower.contains("itunes.apple.com")) return true
+        // Internet Archive: a página do item é HTML; o áudio vem do metadado do item.
+        if (lower.contains("archive.org/details/")) return true
         val path = lower.substringBefore('?').substringAfter("://").substringAfter('/')
         if (path.startsWith("watch") || path.startsWith("track") || path.startsWith("album") ||
             path.startsWith("playlist") || path.startsWith("shorts") || path.startsWith("embed")

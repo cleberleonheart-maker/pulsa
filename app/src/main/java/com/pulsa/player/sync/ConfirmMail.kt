@@ -1,4 +1,5 @@
 package com.pulsa.player.sync
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 
@@ -91,6 +92,7 @@ fun smtpStatus(context: Context, onStatus: (String) -> Unit) {
                     Net.close(conn)
                     break
                 } catch (t: Throwable) {
+                    CrashLogger.writeLog(context.applicationContext, "SENDMAIL: status do SMTP falhou -> $t")
                 }
             }
             Telemetry.log(context, "SMTP status=$status")

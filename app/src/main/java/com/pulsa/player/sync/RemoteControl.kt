@@ -1,12 +1,14 @@
 package com.pulsa.player.sync
 
 import com.pulsa.player.core.Blacklist
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -23,6 +25,8 @@ import java.util.concurrent.atomic.AtomicLong
 object RemoteControl {
 
     private const val INTERVAL_MS = 3_000L
+
+    private const val TAG = "RemoteControl"
 
     interface Listener {
         fun onState(snap: RemoteProtocol.Snap)
@@ -156,6 +160,7 @@ object RemoteControl {
                 if (http != 200 || text.isBlank()) continue
                 return RemoteProtocol.parseSession(text)
             } catch (t: Throwable) {
+                Log.w(TAG, "consultar sessao falhou -> $t")
             }
         }
         return null
@@ -185,6 +190,7 @@ object RemoteControl {
                     Net.close(conn)
                     return@postNetwork
                 } catch (t: Throwable) {
+                    CrashLogger.writeLog(ctx.applicationContext, "REMOTE: enviar comando falhou -> $t")
                 }
             }
         }

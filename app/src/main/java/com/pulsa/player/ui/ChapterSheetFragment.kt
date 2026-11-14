@@ -16,6 +16,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R
 import com.pulsa.player.core.ThreadPool
+import com.pulsa.player.data.VideoBookmarks
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.podcast.Bookmark
 import com.pulsa.player.podcast.Chapter
@@ -34,10 +35,18 @@ import com.pulsa.player.util.UiMode
  * lista montada e a posição atual para destacar. Tocar numa linha pula direto para ela
  * ([Playback.seekTo]) — o mesmo gesto de "tocar para pular" da fila. Marcadores são lidos do
  * banco e podem ser criados/removidos aqui; capítulos do feed são só leitura.
+ *
+ * **Dois alvos de marcador:** o episódio do podcast ([PodcastDb]) e o **vídeo local**
+ * ([VideoBookmarks]). Antes o vídeo ficava de fora — o `episodeId = 0` era o sinal de
+ * "sem marcador" — e o filme de 2 h ficava sem o "voltar neste minuto" que o episódio de
+ * podcast tem. A chave do vídeo é o caminho do arquivo.
  */
 class ChapterSheetFragment : BottomSheetDialogFragment() {
 
     private var episodeId = 0L
+
+    /** A chave do vídeo local (caminho do arquivo) quando o alvo é um marcador de vídeo. */
+    private var videoKey = ""
     private var chapters: List<Chapter> = emptyList()
     private var bookmarks: List<Bookmark> = emptyList()
     private var rows: List<ChapterRow> = emptyList()
@@ -61,11 +70,12 @@ class ChapterSheetFragment : BottomSheetDialogFragment() {
         positionMs = arguments?.getLong(ARG_POSITION, 0L) ?: 0L
         durationMs = arguments?.getLong(ARG_DURATION, 0L) ?: 0L
         episodeId = arguments?.getLong(ARG_EPISODE_ID, 0L) ?: 0L
+        videoKey = arguments?.getString(ARG_VIDEO_KEY).orEmpty()
 
         titleView = view.findViewById(R.id.chapter_title_header)
         emptyView = view.findViewById(R.id.chapter_empty)
         addButton = view.findViewById<View>(R.id.chapter_bookmark_add).apply {
-            visibility = if (episodeId > 0L) View.VISIBLE else View.GONE
+            visibility = if (canBookmark()) View.VISIBLE else View.GONE
             setOnClickListener { promptBookmark() }
         }
 
@@ -93,15 +103,25 @@ class ChapterSheetFragment : BottomSheetDialogFragment() {
         }
     }
 
+    /** Há marcador onde? No episódio do podcast ou no vídeo local. */
+    private fun canBookmark(): Boolean = episodeId > 0L || videoKey.isNotBlank()
+
     private fun loadBookmarks() {
-        if (episodeId <= 0L) {
+        if (!canBookmark()) {
             render()
             return
         }
         val app = requireContext().applicationContext
+        val episode = episodeId
+        val video = videoKey
         ThreadPool.post {
-            val found = runCatching { PodcastDb.get(app).bookmarks(episodeId) }
-                .getOrDefault(emptyList())
+            val found = runCatching {
+                if (episode > 0L) {
+                    PodcastDb.get(app).bookmarks(episode)
+                } else {
+                    VideoBookmarks.get(app).list(video)
+                }
+            }.getOrDefault(emptyList())
             ThreadPool.onUi {
                 if (!isAdded) return@onUi
                 bookmarks = found
@@ -122,7 +142,7 @@ class ChapterSheetFragment : BottomSheetDialogFragment() {
     }
 
     private fun promptBookmark() {
-        if (episodeId <= 0L) return
+        if (!canBookmark()) return
         val at = Playback.position.coerceAtLeast(0L)
         val fallback = getString(R.string.bookmark_default_title, Chapters.formatTime(at))
         val input = EditText(requireContext()).apply {
@@ -136,8 +156,16 @@ class ChapterSheetFragment : BottomSheetDialogFragment() {
             .setPositiveButton(R.string.save) { _, _ ->
                 val title = input.text.toString().trim().ifBlank { fallback }
                 val app = requireContext().applicationContext
+                val episode = episodeId
+                val video = videoKey
                 ThreadPool.post {
-                    runCatching { PodcastDb.get(app).addBookmark(episodeId, at, title) }
+                    runCatching {
+                        if (episode > 0L) {
+                            PodcastDb.get(app).addBookmark(episode, at, title)
+                        } else {
+                            VideoBookmarks.get(app).add(video, at, title)
+                        }
+                    }
                     ThreadPool.onUi { if (isAdded) loadBookmarks() }
                 }
             }
@@ -154,8 +182,16 @@ class ChapterSheetFragment : BottomSheetDialogFragment() {
             .setMessage(getString(R.string.bookmark_remove_message, label))
             .setPositiveButton(R.string.delete) { _, _ ->
                 val app = requireContext().applicationContext
+                val episode = episodeId
+                val video = videoKey
                 ThreadPool.post {
-                    runCatching { PodcastDb.get(app).deleteBookmark(bookmarkId) }
+                    runCatching {
+                        if (episode > 0L) {
+                            PodcastDb.get(app).deleteBookmark(bookmarkId)
+                        } else {
+                            VideoBookmarks.get(app).delete(bookmarkId)
+                        }
+                    }
                     ThreadPool.onUi { if (isAdded) loadBookmarks() }
                 }
             }
@@ -177,13 +213,21 @@ class ChapterSheetFragment : BottomSheetDialogFragment() {
         private const val ARG_POSITION = "position"
         private const val ARG_DURATION = "duration"
         private const val ARG_EPISODE_ID = "episode_id"
+        private const val ARG_VIDEO_KEY = "video_key"
 
+        /**
+         * Abre a folha de capítulos e marcadores.
+         *
+         * [episodeId] é o episódio do podcast; [videoKey] é o caminho do vídeo local. Quem
+         * tiver os dois (não é o caso hoje) manda o episódio — o vídeo é o plano B.
+         */
         fun show(
             fm: FragmentManager,
             chapters: List<Chapter>,
             positionMs: Long,
             durationMs: Long,
-            episodeId: Long = 0L
+            episodeId: Long = 0L,
+            videoKey: String = ""
         ) {
             val f = ChapterSheetFragment()
             f.arguments = Bundle().apply {
@@ -192,6 +236,7 @@ class ChapterSheetFragment : BottomSheetDialogFragment() {
                 putLong(ARG_POSITION, positionMs)
                 putLong(ARG_DURATION, durationMs)
                 putLong(ARG_EPISODE_ID, episodeId)
+                putString(ARG_VIDEO_KEY, videoKey)
             }
             f.show(fm, TAG)
         }

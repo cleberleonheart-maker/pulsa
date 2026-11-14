@@ -222,22 +222,36 @@ interface PodcastDao {
     )
     fun episodeIdByFeedAndGuid(feedUrl: String, guid: String): Long?
 
+    /**
+     * Os episódios que a pessoa já ouviu ou deixou no meio, com a identidade portátil.
+     *
+     * É o "onde parei" de cada episódio: sem isso, o celular novo sabe que a pessoa ouviu
+     * podcast, mas não sabe **onde** — e o episódio recomeça do zero como se fosse novo.
+     *
+     * O filtro é `position_ms > 0 OR played = 1` de propósito: um episódio que a pessoa
+     * marcou como ouvido sem positionar (o `markFinishedIfNeeded` grava `played = 1` aos 90%)
+     * também é estado dela e precisa viajar.
+     */
+    @Query(
+        "SELECT e.guid AS guid, f.feed_url AS feed_url, e.position_ms AS position_ms, " +
+            "e.played AS played, e.title AS title " +
+            "FROM podcast_episodes e " +
+            "JOIN podcast_feeds f ON f._id = e.podcast_id " +
+            "WHERE e.position_ms > 0 OR e.played = 1"
+    )
+    fun episodesWithProgress(): List<PodcastProgressExportRow>
+
+    /** Grava o progresso de um episódio de volta — só quando este aparelho tem o episódio. */
+    @Query("UPDATE podcast_episodes SET position_ms = :positionMs, played = :played WHERE _id = :id")
+    fun applyProgress(id: Long, positionMs: Long, played: Boolean)
+
     // ---- transcrições --------------------------------------------------------------------
 
     @Query("SELECT * FROM podcast_transcripts WHERE episode_id = :episodeId LIMIT 1")
     fun transcriptForEpisode(episodeId: Long): PodcastTranscriptEntity?
 
-    @Query("SELECT * FROM podcast_transcripts WHERE podcast_id = :podcastId ORDER BY created_at DESC")
-    fun transcriptsForPodcast(podcastId: Long): List<PodcastTranscriptEntity>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun upsertTranscript(entity: PodcastTranscriptEntity): Long
-
-    @Query("DELETE FROM podcast_transcripts WHERE episode_id = :episodeId")
-    fun deleteTranscript(episodeId: Long)
-
-    @Query("UPDATE podcast_transcripts SET status = :status WHERE episode_id = :episodeId")
-    fun setTranscriptStatus(episodeId: Long, status: String)
 }
 
 /** Os dois campos que o refresh automático precisa, para não carregar o feed inteiro. */

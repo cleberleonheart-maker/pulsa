@@ -3,6 +3,7 @@ package com.pulsa.player.data
 import android.content.Context
 import android.provider.BaseColumns
 import android.provider.MediaStore
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.model.Album
 import com.pulsa.player.model.Artist
 import com.pulsa.player.model.Song
@@ -246,6 +247,7 @@ object Library {
                 projection, null, null, "${MediaStore.Audio.AlbumColumns.ALBUM} COLLATE NOCASE ASC"
             )
         } catch (e: Exception) {
+            CrashLogger.writeLog(context.applicationContext, "LIBRARY: consulta de albuns falhou -> $e")
             null
         }
         cursor?.use { c ->
@@ -281,6 +283,7 @@ object Library {
                 projection, null, null, "${MediaStore.Audio.ArtistColumns.ARTIST} COLLATE NOCASE ASC"
             )
         } catch (e: Exception) {
+            CrashLogger.writeLog(context.applicationContext, "LIBRARY: consulta de artistas falhou -> $e")
             null
         }
         cursor?.use { c ->
@@ -304,6 +307,7 @@ object Library {
                 "${MediaStore.Audio.Media.TRACK}, ${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC"
             )
         } catch (e: Exception) {
+            CrashLogger.writeLog(context.applicationContext, "LIBRARY: consulta de musicas falhou -> $e")
             null
         }
         cursor?.use { c ->

@@ -50,7 +50,7 @@ object OfflineSpace {
     }
 
     fun usedBytes(context: Context, fresh: Boolean = false): Long =
-        DownloadStore.usedBytes(context) + podcastBytes(context, fresh)
+        DownloadStore.usedBytes(context) + podcastBytes(context, fresh) + ConversionStore.usedBytes()
 
     fun limitBytes(context: Context): Long {
         val mb = Settings.downloadLimitMb(context)
@@ -68,11 +68,32 @@ object OfflineSpace {
         runCatching { DownloadStore.dir(context).usableSpace }.getOrDefault(0L)
 
     /**
+     * Espaço livre do volume **externo**, onde o MediaStore publica o arquivo final.
+     *
+     * O download do app vive no volume interno (`filesDir`), e é lá que [freeBytes] mede. A
+     * conversão, não: o temporário é interno, mas o resultado é publicado no MediaStore
+     * (Movies/Music), que é outro volume — medir só o interno aprovava uma conversão que ia
+     * falhar na hora de publicar, com o arquivo já pronto.
+     */
+    fun freeExternalBytes(context: Context): Long =
+        runCatching {
+            val dir = context.getExternalFilesDir(null) ?: return@runCatching 0L
+            dir.usableSpace
+        }.getOrDefault(0L)
+
+    /**
      * Cabe [need] bytes com a folga de [MIN_FREE]. `usableSpace` pode dar `0` em alguns file
      * systems; sem um número confiável não bloqueia — quem avisa é a falha do fim.
      */
     fun hasRoomFor(context: Context, need: Long): Boolean {
         val free = freeBytes(context)
+        if (free <= 0L) return true
+        return free >= need + MIN_FREE
+    }
+
+    /** O mesmo que [hasRoomFor], mas no volume externo (o do MediaStore). */
+    fun hasRoomOnExternal(context: Context, need: Long): Boolean {
+        val free = freeExternalBytes(context)
         if (free <= 0L) return true
         return free >= need + MIN_FREE
     }

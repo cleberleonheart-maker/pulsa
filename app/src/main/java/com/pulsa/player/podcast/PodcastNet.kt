@@ -109,18 +109,24 @@ object PodcastNet {
     )
 
     /**
-     * Busca na **iTunes Search API**.
+     * Busca na **iTunes Search API** — ou no **Podcast Index**, quando há credencial.
      *
-     * **Por que iTunes e não o Podcast Index.** O Podcast Index é melhor indexado, mas exige
-     * cadastro e uma chave — um app que não pode mostrar chave na tela de busca não pode
-     * depender dele. A iTunes é sem chave, devolve JSON, e o `feedUrl` vem pronto no
-     * `lookup`: assinar o resultado é só gravar a string, sem segunda requisição para
-     * descobrir o XML.
+     * **Por que as duas.** O Podcast Index é melhor indexado, mas exige cadastro e uma chave —
+     * e um app que não pode mostrar chave na tela de busca não pode depender dele. A iTunes é
+     * sem chave, devolve JSON, e o `feedUrl` vem pronto no `lookup`: assinar o resultado é só
+     * gravar a string, sem segunda requisição para descobrir o XML. Com a credencial
+     * configurada (opcional, nas Configurações), o Podcast Index entra **primeiro** e a
+     * iTunes fica como reserva — catálogo maior, e a reserva garante que a busca nunca
+     * fique muda por causa de uma chave expirada.
      *
      * O host é fixo e o caminho é montado à mão, sem interpolar a query na URL: um termo
      * com `../` na busca não pode escolher outro host.
      */
-    fun search(query: String, onResult: (Result<List<Found>>) -> Unit) {
+    fun search(
+        query: String,
+        credentials: IndexCredentials? = null,
+        onResult: (Result<List<Found>>) -> Unit
+    ) {
         val q = query.trim()
         if (q.isEmpty()) {
             onResult(Result.success(emptyList()))
@@ -128,16 +134,105 @@ object PodcastNet {
         }
         ThreadPool.postNetwork {
             val result = runCatching {
-                val url = "https://$ITUNES_HOST/search?" +
-                    "media=podcast&entity=podcast&limit=$SEARCH_LIMIT&term=" +
-                    java.net.URLEncoder.encode(q, "UTF-8")
-                val arr = org.json.JSONObject(getText(url)).optJSONArray("results")
-                val out = mutableListOf<Found>()
-                for (i in 0 until (arr?.length() ?: 0)) fromSearch(arr!!.optJSONObject(i))?.let { out += it }
-                out
+                val fromIndex = if (credentials != null) searchIndex(q, credentials) else null
+                if (!fromIndex.isNullOrEmpty()) fromIndex else searchItunes(q)
             }
             ThreadPool.onUi { onResult(result) }
         }
+    }
+
+    /** A credencial do Podcast Index: chave pública e segredo da assinatura. */
+    data class IndexCredentials(val key: String, val secret: String)
+
+    /**
+     * A assinatura que a API exige: `Bearer` + MD5(chave + segredo + data), em maiúsculas.
+     *
+     * A data vai em segundos, e é a mesma nos três cabeçalhos — se a data do cabeçalho
+     * divergir da data da assinatura, a API responde 401 sem explicar.
+     */
+    fun indexAuthHeader(key: String, secret: String, epochSeconds: Long): String {
+        val stamp = epochSeconds.toString()
+        val digest = java.security.MessageDigest.getInstance("MD5")
+            .digest((key + secret + stamp).toByteArray())
+        val hex = digest.joinToString("") { "%02X".format(it) }
+        return "Bearer $hex"
+    }
+
+    /** A URL da busca do índice. O host é fixo; a query vai codificada. */
+    fun indexSearchUrl(query: String, limit: Int = SEARCH_LIMIT): String =
+        "https://api.podcastindex.org/api/1.0/search/byterm?max=$limit&q=" +
+            java.net.URLEncoder.encode(query, "UTF-8")
+
+    /** Converte um resultado do índice. `null` quando não dá para assinar (sem `feedUrl`). */
+    fun fromIndexHit(obj: org.json.JSONObject?): Found? {
+        if (obj == null) return null
+        val feed = obj.optString("feedUrl").trim()
+        if (feed.isEmpty()) return null
+        return Found(
+            feedUrl = feed,
+            title = obj.optString("title").ifBlank { "Podcast" },
+            author = obj.optString("author"),
+            artworkUrl = obj.optString("image"),
+            genre = categoriesOf(obj),
+            episodeCount = obj.optInt("episodeCount", 0)
+        )
+    }
+
+    private fun categoriesOf(obj: org.json.JSONObject): String {
+        val arr = obj.optJSONArray("categories") ?: return ""
+        val out = ArrayList<String>(arr.length())
+        for (i in 0 until arr.length()) {
+            obj.optJSONArray("categories")?.optString(i)?.trim()?.takeIf { it.isNotEmpty() }
+                ?.let { out += it }
+        }
+        return out.joinToString(" · ")
+    }
+
+    /**
+     * A busca no índice.
+     *
+     * Devolve `null` (e não lista vazia) quando a chamada falhou: a diferença decide se o
+     * app cai na iTunes ou fica com a busca muda.
+     */
+    private fun searchIndex(query: String, credentials: IndexCredentials): List<Found>? {
+        return try {
+            val epoch = System.currentTimeMillis() / 1000L
+            val conn = (URL(indexSearchUrl(query)).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = TIMEOUT_MS
+                readTimeout = TIMEOUT_MS
+                setRequestProperty("User-Agent", UA)
+                setRequestProperty("Accept", "application/json")
+                setRequestProperty("X-Auth-Key", credentials.key)
+                setRequestProperty("X-Auth-Date", epoch.toString())
+                setRequestProperty("Authorization", indexAuthHeader(credentials.key, credentials.secret, epoch))
+            }
+            val code = conn.responseCode
+            val body = if (code in 200..299) {
+                conn.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                ""
+            }
+            conn.disconnect()
+            if (body.isBlank()) return null
+            val hits = org.json.JSONObject(body).optJSONArray("hits") ?: return null
+            val out = mutableListOf<Found>()
+            for (i in 0 until hits.length()) fromIndexHit(hits.optJSONObject(i))?.let { out += it }
+            out
+        } catch (t: Throwable) {
+            null
+        }
+    }
+
+    /** A busca na iTunes — a de sempre, sem chave. */
+    private fun searchItunes(query: String): List<Found> {
+        val url = "https://$ITUNES_HOST/search?" +
+            "media=podcast&entity=podcast&limit=$SEARCH_LIMIT&term=" +
+            java.net.URLEncoder.encode(query, "UTF-8")
+        val arr = org.json.JSONObject(getText(url)).optJSONArray("results")
+        val out = mutableListOf<Found>()
+        for (i in 0 until (arr?.length() ?: 0)) fromSearch(arr!!.optJSONObject(i))?.let { out += it }
+        return out
     }
 
     /** Converte um resultado da busca. `null` quando não tem `feedUrl` — inscrevível é obrigatório. */

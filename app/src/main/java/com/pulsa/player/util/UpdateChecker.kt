@@ -55,13 +55,13 @@ object UpdateChecker {
 
     /** Consulta TODOS os hosts (publicos primeiro) e devolve o de MAIOR versionCode. */
     private fun queryLatest(context: Context): VersionResult? {
-        return bestFrom(publicHosts) ?: bestFrom(privateHosts(context))
+        return bestFrom(context, publicHosts) ?: bestFrom(context, privateHosts(context))
     }
 
-    private fun bestFrom(hostList: List<String>): VersionResult? {
+    private fun bestFrom(context: Context, hostList: List<String>): VersionResult? {
         var best: VersionResult? = null
         for (host in hostList) {
-            val text = fetchVersion(host) ?: continue
+            val text = fetchVersion(context, host) ?: continue
             val parts = text.split("|")
             if (parts.size < 2) continue
             val code = parts[0].trim().toLongOrNull() ?: continue
@@ -166,7 +166,7 @@ object UpdateChecker {
         }
     }
 
-    private fun fetchVersion(host: String): String? {
+    private fun fetchVersion(context: Context, host: String): String? {
         for (attempt in 1..2) {
             try {
                 val conn = URL(host).openConnection() as HttpURLConnection
@@ -183,6 +183,7 @@ object UpdateChecker {
                 try {
                     Thread.sleep(600)
                 } catch (t2: Throwable) {
+                    CrashLogger.writeLog(context.applicationContext, "UPDATE: espera entre tentativas falhou -> $t2")
                 }
             }
         }
@@ -206,6 +207,7 @@ object UpdateChecker {
                 .putLong("attempted_at", System.currentTimeMillis())
                 .apply()
         } catch (t: Throwable) {
+            CrashLogger.writeLog(context.applicationContext, "UPDATE: marcar tentativa falhou -> $t")
         }
     }
 
@@ -218,6 +220,7 @@ object UpdateChecker {
                 .remove("attempted_at")
                 .apply()
         } catch (t: Throwable) {
+            CrashLogger.writeLog(context.applicationContext, "UPDATE: limpar marca de tentativa falhou -> $t")
         }
     }
 
@@ -236,6 +239,7 @@ object UpdateChecker {
             CrashLogger.writeLog(context, "UPDATE: tentativa antiga de $name liberada")
             clearAttempted(context)
         } catch (t: Throwable) {
+            CrashLogger.writeLog(context.applicationContext, "UPDATE: limpar tentativa antiga falhou -> $t")
         }
     }
 
@@ -298,6 +302,7 @@ object UpdateChecker {
                 .setPositiveButton(R.string.close, null)
                 .show()
         } catch (t: Throwable) {
+            CrashLogger.writeLog(context.applicationContext, "UPDATE: aviso de bloqueio falhou -> $t")
         }
     }
 
@@ -370,7 +375,7 @@ object UpdateChecker {
                 .addAction(0, context.getString(R.string.update_now), pi)
                 .build()
             nm.notify(UpdateService.NOTIF_ANNOUNCE, notif)
-            CrashLogger.writeLog(context, "UPDATE: notificacao postada $latestName $apkUrl")
+            CrashLogger.writeLog(context, "UPDATE: notificacao postada $latestName ${CrashLogger.urlSemQuery(apkUrl)}")
         } catch (t: Throwable) {
             CrashLogger.writeLog(context, "UPDATE: notificacao falhou $t")
         }
@@ -445,6 +450,7 @@ object UpdateChecker {
                 try {
                     installer.abandonSession(sessionId)
                 } catch (t2: Throwable) {
+                    CrashLogger.writeLog(context.applicationContext, "UPDATE: abandonar sessao de instalacao falhou -> $t2")
                 }
             }
             installFallback(context, apk)
@@ -571,12 +577,12 @@ object UpdateChecker {
                 }
                 conn.disconnect()
                 val ok = isApkFile(context, target, expectedCode)
-                CrashLogger.writeLog(context, "UPDATE: baixado de $u -> $target (${total}B, ok=$ok)")
+                CrashLogger.writeLog(context, "UPDATE: baixado de ${CrashLogger.urlSemQuery(u)} -> $target (${total}B, ok=$ok)")
                 if (ok) return target
                 if (target.exists()) target.delete()
             } catch (t: Throwable) {
-                CrashLogger.writeLog(context, "UPDATE: download falhou $u $t")
-                Telemetry.log(context, "UPDATE download erro $u $t")
+                CrashLogger.writeLog(context, "UPDATE: download falhou ${CrashLogger.urlSemQuery(u)} $t")
+                Telemetry.log(context, "UPDATE download erro ${CrashLogger.urlSemQuery(u)} $t")
                 if (target.exists()) target.delete()
             }
         }

@@ -21,6 +21,7 @@ import androidx.media3.common.MimeTypes
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.pulsa.player.ConverterActivity
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
 import com.pulsa.player.core.Settings
@@ -495,6 +496,7 @@ class VideosTabFragment : Fragment() {
         val items = arrayOf(
             getString(R.string.video_play),
             getString(R.string.add_to_queue),
+            getString(R.string.converter_title),
             getString(R.string.share_music)
         )
         MaterialAlertDialogBuilder(requireContext())
@@ -503,7 +505,12 @@ class VideosTabFragment : Fragment() {
                 when (which) {
                     0 -> openPlayer(video, -1)
                     1 -> addToQueue(listOf(video))
-                    2 -> share(video)
+                    2 -> ConverterActivity.start(
+                        requireContext(),
+                        VideoLibrary.contentUri(video.id).toString(),
+                        video.title
+                    )
+                    3 -> share(video)
                 }
                 dialog.dismiss()
             }

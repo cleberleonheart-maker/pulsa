@@ -1,7 +1,6 @@
 package com.pulsa.player.ui.settings
 
 import android.content.Intent
-import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
@@ -17,6 +16,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.journeyapps.barcodescanner.ScanOptions
 import com.pulsa.player.R
 import com.pulsa.player.SettingsActivity
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.sync.Handoff
@@ -392,7 +392,14 @@ internal fun SettingsActivity.serverDialog() {
             }
             Settings.setServerBase(this, chosen)
             refreshServerLabel()
-            Toast.makeText(this, R.string.server_saved, Toast.LENGTH_SHORT).show()
+            // O endereço escolhido em claro é escolha de quem configurou — mas é bom avisar
+            // que o token e a biblioteca passam sem criptografia.
+            val semTls = chosen.startsWith("http://")
+            Toast.makeText(
+                this,
+                if (semTls) R.string.server_http_warning else R.string.server_saved,
+                Toast.LENGTH_LONG
+            ).show()
         }
         .setNegativeButton(R.string.cancel, null)
         .show()
@@ -416,6 +423,14 @@ internal fun SettingsActivity.refreshServerToken() {
     }
 }
 
+/**
+ * O token do servidor — e o da nuvem, quando o servidor protege `/cloud` com outro segredo.
+ *
+ * São dois campos no mesmo diálogo porque são a mesma família de segredo, e porque a
+ * diagnosed do servidor (`/cloud` respondendo `unauthorized` com o token normal) não tem
+ * conserto no app: tem conserto no servidor. Com o campo da nuvem, dá para resolver sem
+ * esperar o servidor mudar — e sem inventar um token novo na Configurações.
+ */
 internal fun SettingsActivity.promptServerToken() {
     val input = EditText(this).apply {
         if (Settings.hasCustomTelemetryToken(self)) {
@@ -427,12 +442,34 @@ internal fun SettingsActivity.promptServerToken() {
         isSingleLine = true
         setPadding(48, 16, 48, 16)
     }
+    val cloudInput = EditText(this).apply {
+        if (Settings.hasCustomCloudToken(self)) {
+            setText(Settings.cloudToken(self))
+        }
+        hint = getString(R.string.server_cloud_token_hint)
+        inputType = android.text.InputType.TYPE_CLASS_TEXT
+        maxLines = 1
+        isSingleLine = true
+        setPadding(48, 16, 48, 16)
+    }
+    val cloudLabel = TextView(this).apply {
+        text = getString(R.string.server_cloud_token_subtitle)
+        setTextSize(12f)
+        setPadding(48, 8, 48, 8)
+    }
+    val box = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        addView(input)
+        addView(cloudLabel)
+        addView(cloudInput)
+    }
     MaterialAlertDialogBuilder(this)
         .setTitle(R.string.server_token)
         .setMessage(R.string.server_token_subtitle)
-        .setView(input)
+        .setView(box)
         .setPositiveButton(R.string.save) { _, _ ->
             Settings.setTelemetryToken(this, input.text.toString().trim())
+            Settings.setCloudToken(this, cloudInput.text.toString().trim())
             refreshServerToken()
             Toast.makeText(this, R.string.server_token_saved, Toast.LENGTH_SHORT).show()
         }
@@ -459,6 +496,7 @@ internal fun SettingsActivity.sessionCall(body: String): String {
             Net.close(conn)
             return text
         } catch (t: Throwable) {
+            CrashLogger.writeLog(applicationContext, "SETTINGS: enviar sessao falhou -> $t")
         }
     }
     return ""
@@ -480,6 +518,7 @@ internal fun SettingsActivity.sessionGet(code: String): String {
             Net.close(conn)
             return text
         } catch (t: Throwable) {
+            CrashLogger.writeLog(applicationContext, "SETTINGS: ler sessao falhou -> $t")
         }
     }
     return ""

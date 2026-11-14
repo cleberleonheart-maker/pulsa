@@ -40,6 +40,7 @@ import com.pulsa.player.model.RemoteSongs
 import com.pulsa.player.model.Song
 import com.pulsa.player.model.Video
 import com.pulsa.player.model.toSong
+import com.pulsa.player.media.ChapterFiles
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.PlaybackSpeeds
 import com.pulsa.player.podcast.Chapter
@@ -48,6 +49,7 @@ import com.pulsa.player.podcast.FeedParser
 import com.pulsa.player.ui.ChapterSheetFragment
 import com.pulsa.player.util.TvFocus
 import com.pulsa.player.util.UiMode
+import java.io.File
 import kotlin.math.abs
 
 /**
@@ -194,6 +196,19 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
     private var streamDescription: String = ""
     /** Índice já extraído da descrição; vazio esconde o botão de capítulos. */
     private var videoChapters: List<Chapter> = emptyList()
+
+    /**
+     * Os capítulos **embutidos no arquivo** do vídeo local (MKV/MP4).
+     *
+     * É o índice que o próprio arquivo carrega — o que o app não tinha antes: o vídeo
+     * baixado vinha sem índice nenhum, porque o parser só lia a descrição do PeerTube. A
+     * leitura é feita em background ([ChapterFiles]) porque abrir um MKV de 4 GB para
+     * procurar o cabeçalho não pode travar a tela.
+     */
+    private var embeddedChapters: List<Chapter> = emptyList()
+
+    /** O caminho do vídeo local em reprodução — a chave do marcador ([VideoBookmarks]). */
+    private var currentVideoKey: String = ""
     private var resumeQueue: List<Song> = emptyList()
     private var resumeIndex = -1
     private var resumePlaying = false
@@ -478,8 +493,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
                 .ifBlank { getString(R.string.stream_default_title) }
             streamDescription = intent.getStringExtra(EXTRA_STREAM_DESCRIPTION).orEmpty()
             videoChapters = Chapters.parse(FeedParser.stripHtml(streamDescription))
-            findViewById<View>(R.id.vp_chapters)?.visibility =
-                if (videoChapters.isEmpty()) View.GONE else View.VISIBLE
+            updateChaptersButton()
             videoSongs = listOf(
                 RemoteSongs.stream(
                     url,
@@ -498,6 +512,7 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
             }
             index = (intent.getIntExtra(EXTRA_INDEX, 0)).coerceIn(0, videos.lastIndex)
             videoSongs = videos.map { it.toSong(getString(R.string.tab_videos)) }
+            loadEmbeddedChapters(videos.getOrNull(index))
         }
 
         // Guarda o que estava tocando para devolver na saída — o motor é único, então lançar
@@ -752,15 +767,65 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
      * [ChapterSheetFragment] existente, que pula direto com `Playback.seekTo`.
      */
     private fun showChapters() {
-        val chapters = videoChapters
+        val chapters = allChapters()
         if (chapters.isEmpty()) {
             Toast.makeText(this, R.string.video_chapters_empty, Toast.LENGTH_SHORT).show()
             return
         }
         val duration = Playback.currentSong?.durationMs?.takeIf { it > 0L }
             ?: seekBar.max.toLong()
-        ChapterSheetFragment.show(supportFragmentManager, chapters, Playback.position, duration)
+        ChapterSheetFragment.show(
+            supportFragmentManager,
+            chapters,
+            Playback.position,
+            duration,
+            videoKey = currentVideoKey
+        )
         showControls()
+    }
+
+    /**
+     * Os capítulos do vídeo: o índice da descrição (PeerTube) **e** o índice embutido no
+     * arquivo (MKV/MP4).
+     *
+     * Os dois são "capítulo", então entram na mesma folha e na mesma ordem por tempo. Quando
+     * os dois existem, a descrição vem primeiro só porque ela é a que a pessoa reconhece;
+     * a lista é ordenada por instante, então a ordem final é a do tempo.
+     */
+    private fun allChapters(): List<Chapter> {
+        val all = videoChapters + embeddedChapters
+        return all.sortedBy { it.startMs }
+    }
+
+    /** O botão de capítulos só aparece quando há índice de verdade. */
+    private fun updateChaptersButton() {
+        findViewById<View>(R.id.vp_chapters)?.visibility =
+            if (allChapters().isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    /**
+     * Lê os capítulos embutidos no arquivo do vídeo local.
+     *
+     * O arquivo pode ser grande (e o `moov` do MP4 pode estar no fim dele), então a leitura
+     * acontece em background e o botão só aparece quando o índice foi encontrado. Um vídeo
+     * sem índice não ganha botão — botão que abre folha vazia é pior do que botão nenhum.
+     */
+    private fun loadEmbeddedChapters(video: Video?) {
+        embeddedChapters = emptyList()
+        currentVideoKey = video?.path.orEmpty()
+        val path = video?.path?.takeIf { it.isNotBlank() } ?: return
+        ThreadPool.post {
+            val found = runCatching { ChapterFiles.read(File(path)) }.getOrDefault(emptyList())
+            val titled = found.map {
+                if (it.title.isBlank()) it.copy(title = Chapters.formatTime(it.startMs)) else it
+            }
+            ThreadPool.onUi {
+                if (!isFinishing && !isDestroyed) {
+                    embeddedChapters = titled
+                    updateChaptersButton()
+                }
+            }
+        }
     }
 
     override fun onSpeedChanged(speed: Float) {
@@ -785,6 +850,12 @@ class VideoPlayerActivity : AppCompatActivity(), Playback.Listener {
         // Stream remoto não tem arquivo de lado no MediaStore, então só o que o
         // usuário escolheu (SubtitleConfig) entra — o resto fica vazio.
         applySubtitle(song)
+        // O mesmo vale para o índice: o capítulo embutido é do **arquivo** que está
+        // tocando, então trocar de vídeo troca o índice (e a chave do marcador).
+        val current = videos.firstOrNull { it.id == song?.videoId }
+        if (current != null && current.path != currentVideoKey) {
+            loadEmbeddedChapters(current)
+        }
     }
 
     /**

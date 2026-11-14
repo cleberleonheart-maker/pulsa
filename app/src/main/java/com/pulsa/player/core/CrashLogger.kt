@@ -36,6 +36,20 @@ object CrashLogger {
 
     private val lock = Any()
 
+    /**
+     * A URL que pode entrar no log: sem a **query string**.
+     *
+     * A query é onde mora o segredo: link de enclosure assinado (`?token=…&expira=…`),
+     * link temporário de download, token de acesso na query. E o log do app é espelhado em
+     * `Download/Pulsa/pulsa-erros.log` — um arquivo que qualquer app com permissão de
+     * armazenamento consegue ler. Logar a URL inteira punha a credencial no colo de quem
+     * pegasse o celular.
+     *
+     * O caminho (host + arquivo) fica, porque é ele que diz **qual** servidor falhou — sem
+     * ele o log não serve para nada.
+     */
+    fun urlSemQuery(url: String): String = url.substringBefore('?')
+
     fun writeLog(context: Context, text: String) {
         synchronized(lock) {
             val line = "\n== ${stamp()} ==\n$text\n"

@@ -13,7 +13,6 @@ import com.pulsa.player.core.KidsFilter
 import com.pulsa.player.core.Settings
 import com.pulsa.player.model.Song
 import com.pulsa.player.playback.PlaybackSpeeds
-import kotlin.math.abs
 
 /**
  * A fachada do playback. É o **único** lugar do app que sabe que existe um motor de música.

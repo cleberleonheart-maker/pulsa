@@ -61,13 +61,6 @@ object StreamKind {
 
     fun isStream(url: String): Boolean = mimeTypeOf(url) != null
 
-    /** Extensão para salvar o stream como arquivo, quando um dia isso virar download. */
-    fun extensionOf(mimeType: String?): String = when (mimeType) {
-        MimeTypes.APPLICATION_M3U8 -> "m3u8"
-        MimeTypes.APPLICATION_MPD -> "mpd"
-        else -> "mp4"
-    }
-
     /**
      * URL http/https utilizável como stream de vídeo/áudio. Rejeita o que o app já bloqueia
      * de propósito (YouTube/Spotify e companhia) e o que não é URL, para o erro chegar na
@@ -97,7 +90,11 @@ object StreamKind {
             "youtube.com", "youtu.be", "spotify.com", "deezer.com",
             "soundcloud.com", "tidal.com", "music.apple.com", "vimeo.com"
         )
-        if (pageHosts.none { u.contains(it) }) return false
+        if (pageHosts.none { u.contains(it) }) {
+            // O Internet Archive tem duas formas: `/download/...` já é o arquivo, e
+            // `/details/...` é a página do item. Só a segunda é HTML.
+            return u.contains("archive.org/details/")
+        }
         val pagePaths = listOf(
             "watch", "track", "album", "playlist", "shorts", "embed", "video", "videos"
         )

@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Mesma regra do `backup_rules.xml` (Android 12+): a conta e os secrets ficam fora do
+    backup. O `pulsa_secrets.xml` depende da MasterKey do Keystore, que não viaja — no
+    aparelho novo a leitura falharia. O `pulsa_settings.xml` viaja: as preferências da
+    pessoa são trabalho manual (o PIN de children e o token de reconhecimento foram para as
+    prefs cifradas).
+-->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="pulsa_account.xml" />
+        <exclude domain="sharedpref" path="pulsa_secrets.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="pulsa_account.xml" />
+        <exclude domain="sharedpref" path="pulsa_secrets.xml" />
     </device-transfer>
 </data-extraction-rules>

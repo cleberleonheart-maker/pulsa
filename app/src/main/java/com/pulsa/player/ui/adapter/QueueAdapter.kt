@@ -11,7 +11,6 @@ import com.pulsa.player.R
 import com.pulsa.player.core.Helper
 import com.pulsa.player.data.ArtLoader
 import com.pulsa.player.model.Song
-import com.pulsa.player.playback.QueueKey
 
 /**
  * Lista da fila de reprodução na tela de reprodução.

@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.pulsa.player.ConverterActivity
 import com.pulsa.player.NowPlayingActivity
 import com.pulsa.player.R
 import com.pulsa.player.VideoPlayerActivity
@@ -100,7 +101,16 @@ class DownloadsTabFragment : Fragment() {
             }
         )
 
-
+        val openConverter = MaterialButton(ctx).apply {
+            text = getString(R.string.converter_title)
+            setOnClickListener { startActivity(Intent(ctx, ConverterActivity::class.java)) }
+        }
+        root.addView(
+            openConverter,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(16.dp, 0.dp, 16.dp, 8.dp)
+            }
+        )
 
         val list = RecyclerView(ctx).apply {
             layoutManager = LinearLayoutManager(ctx)

@@ -39,7 +39,6 @@ import com.pulsa.player.ui.FavoritesTabFragment
 import com.pulsa.player.ui.HighlightSync
 import com.pulsa.player.ui.LibraryDetailFragment
 import com.pulsa.player.ui.PlaylistDetailFragment
-import com.pulsa.player.ui.PlaylistDialog
 import com.pulsa.player.ui.PlaylistsTabFragment
 import com.pulsa.player.ui.PodcastDetailFragment
 import com.pulsa.player.ui.PodcastsTabFragment
@@ -267,7 +266,8 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
             tv.setPadding(32, 32, 32, 32)
             tv.text = "Pulsa: ocorreu um erro na tela inicial.\n\n" + t + "\n\n" + stackTrace(t)
             setContentView(tv)
-        } catch (ignored: Throwable) {
+        } catch (t: Throwable) {
+            runCatching { CrashLogger.writeLog(this, "MAIN: falha ao montar a tela de erro -> $t") }
         }
     }
 
@@ -276,7 +276,8 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
         setTheme(Settings.accentStyle(this))
         try {
             CastContext.getSharedInstance(this)
-        } catch (_: Throwable) {
+        } catch (t: Throwable) {
+            CrashLogger.writeLog(this, "CAST: contexto do Cast falhou -> $t")
         }
         super.onCreate(savedInstanceState)
         Telemetry.log(this, "createMain: super.onCreate ok")
@@ -494,6 +495,7 @@ class MainActivity : AppCompatActivity(), Playback.Listener {
                     db.syncAutoSongs(ctx, Library.allSongs(ctx))
                 }
             } catch (t: Throwable) {
+                CrashLogger.writeLog(ctx, "MAIN: playlists automaticas falharam -> $t")
             }
         }
     }

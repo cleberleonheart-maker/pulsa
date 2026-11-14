@@ -104,10 +104,7 @@ object DownloadStore {
             }
         }
 
-
     /**
-
-
      * Arquivo parcial, usado enquanto o download não termina.
      *
      * `internal` e não `private` de propósito: `private` no topo de um arquivo em Kotlin
@@ -115,9 +112,6 @@ object DownloadStore {
      * parcial — mora em outro arquivo do mesmo pacote.
      */
     internal fun partFor(context: Context, item: Item): File = File(dir(context), "${item.fileName}.part")
-
-    /** O `.part` está no disco: dá para continuar de onde parou em vez de recomeçar. */
-    fun isResumable(context: Context, item: Item): Boolean = partFor(context, item).length() > 0L
 
     private fun stateFile(context: Context): File = File(context.filesDir, "downloads.json")
 

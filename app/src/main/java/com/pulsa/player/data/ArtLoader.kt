@@ -258,23 +258,6 @@ object ArtLoader {
         }
     }
 
-    fun decodeLarge(path: String, context: Context): Bitmap? {
-        if (path.isBlank()) return null
-        val retriever = MediaMetadataRetriever()
-        return try {
-            retriever.setDataSource(path)
-            val pic = retriever.embeddedPicture
-            pic?.let { bytes ->
-                val b = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                b?.let { scaleDown(it, 1024) }
-            }
-        } catch (e: Exception) {
-            null
-        } finally {
-            runCatching { retriever.release() }
-        }
-    }
-
     private fun scaleDown(bitmap: Bitmap, maxSize: Int): Bitmap {
         val w = bitmap.width
         val h = bitmap.height

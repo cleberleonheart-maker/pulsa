@@ -8,6 +8,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
+import com.pulsa.player.core.CrashLogger
 import java.io.File
 import java.net.URL
 
@@ -99,6 +100,7 @@ object Subtitles {
                 file.outputStream().use { out -> input.copyTo(out) }
             }
         } catch (e: Exception) {
+            CrashLogger.writeLog(context.applicationContext, "SUBTITLES: baixar legenda falhou (${CrashLogger.urlSemQuery(url)}) -> $e")
             file.delete()
             return null
         } finally {

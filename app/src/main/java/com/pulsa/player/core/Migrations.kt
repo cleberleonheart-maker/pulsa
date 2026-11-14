@@ -15,12 +15,17 @@ object Migrations {
     private const val KEY_DATA_VERSION = "data_version"
 
     /** Versão atual do esquema de dados. Suba este valor junto com cada vX. */
-    private const val CURRENT = 1
+    private const val CURRENT = 2
 
     /** Lista de migrações, da mais antiga para a mais nova. */
     private val MIGRATIONS: List<Pair<Int, (Context) -> Unit>> = listOf(
         // Data version 1: base (schema atual do app 3.x). Nada a fazer.
-        1 to { ctx -> Unit }
+        1 to { ctx -> Unit },
+        // Data version 2: os segredos que viviam em texto puro no `pulsa_settings.xml` vão
+        // para as prefs cifradas. O arquivo de settings passou a viajar no backup do Google
+        // (é onde estão as preferências da pessoa), e credencial em texto puro não pode
+        // ir junto.
+        2 to { ctx -> Settings.migrateLegacySecrets(ctx) }
     )
 
     fun run(context: Context) {

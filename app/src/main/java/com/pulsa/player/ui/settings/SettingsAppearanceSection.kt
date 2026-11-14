@@ -1,6 +1,5 @@
 package com.pulsa.player.ui.settings
 
-import android.view.View
 import android.widget.TextView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R

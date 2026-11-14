@@ -1,6 +1,7 @@
 package com.pulsa.player.sync
 
 import android.content.Context
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Settings
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -42,7 +43,8 @@ object AdminApi {
                 } else {
                     Net.close(conn)
                 }
-            } catch (ignored: Throwable) {
+            } catch (t: Throwable) {
+                CrashLogger.writeLog(context.applicationContext, "ADMIN: login falhou -> $t")
             }
         }
         return false
@@ -79,7 +81,8 @@ object AdminApi {
                     return out
                 }
                 Net.close(conn)
-            } catch (ignored: Throwable) {
+            } catch (t: Throwable) {
+                CrashLogger.writeLog(context.applicationContext, "ADMIN: listar dispositivos falhou -> $t")
             }
         }
         return null
@@ -104,7 +107,8 @@ object AdminApi {
                     return true
                 }
                 Net.close(conn)
-            } catch (ignored: Throwable) {
+            } catch (t: Throwable) {
+                CrashLogger.writeLog(context.applicationContext, "ADMIN: banir falhou -> $t")
             }
         }
         return false

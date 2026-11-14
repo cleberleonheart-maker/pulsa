@@ -10,6 +10,8 @@
 #   - recursos XML, manifest, aapt2, dex, ProGuard, assinatura;
 #   - dependência nova que ainda não está no cache local do Gradle;
 #   - código Java, egenerated (R.java, BuildConfig.java) que o Gradle ainda não gerou.
+#     O `R.jar` do classpath é o da ÚLTIMA build do Gradle: um `R.id`/`R.string` novo só
+#     passa a resolver depois que o Gradle roda de novo.
 #
 # Atenção ao compilar poucos arquivos: o resto do código vem da ÚLTIMA build do Gradle
 # (classes já compiladas em app/build). Então símbolo novo em outro arquivo não aparece
@@ -85,7 +87,68 @@ def chave_versao(v):
         nums.append(int(parte) if parte.isdigit() else 0)
     return nums
 
+def artefato_versao(nome):
+    # `zxing-android-embedded-4.3.0-runtime` -> ("zxing-android-embedded", "4.3.0")
+    n = re.sub(r"-(runtime|api|api_jar-snapshot)$", "", nome)
+    achado = re.match(r"^(.*?)-(\d[\w.\-]*)$", n)
+    if not achado:
+        return None
+    return achado.group(1), achado.group(2)
+
 transformados = {}
+def registra(artefato, versao, jar, prioridade=0):
+    atual = transformados.get(artefato)
+    if atual is None:
+        transformados[artefato] = (versao, jar, prioridade)
+        return
+    if chave_versao(versao) > chave_versao(atual[0]):
+        transformados[artefato] = (versao, jar, prioridade)
+    elif chave_versao(versao) == chave_versao(atual[0]) and prioridade > atual[2]:
+        transformados[artefato] = (versao, jar, prioridade)
+
+# Gradle 8+: o cache é `~/.gradle/caches/<versão>/transforms/<hash>/transformed/`.
+# Só a versão do wrapper deste projeto entra: a máquina tem o cache de vários Gradles e de
+# vários projetos, e o nome do artefato sozinho não distingue `androidx.core:core` de
+# `core` de outro grupo — quem entrasse primeiro no classpath levaria o jar errado.
+import re
+versao_gradle = ""
+try:
+    for linha in open(os.path.join(raiz, "gradle/wrapper/gradle-wrapper.properties")):
+        m = re.search(r"gradle-(\d[\w.\-]*)-(all|bin)\.zip", linha)
+        if m:
+            versao_gradle = m.group(1)
+            break
+except OSError:
+    pass
+
+bases_transforms = []
+if versao_gradle:
+    cand = os.path.expanduser(f"~/.gradle/caches/{versao_gradle}/transforms")
+    if os.path.isdir(cand):
+        bases_transforms = [cand]
+if not bases_transforms:
+    bases_transforms = glob.glob(os.path.expanduser("~/.gradle/caches/*/transforms"))
+
+for base in bases_transforms:
+    for d in os.listdir(base):
+        t = os.path.join(base, d, "transformed")
+        if not os.path.isdir(t):
+            continue
+        for nome in os.listdir(t):
+            achado = artefato_versao(nome)
+            if not achado:
+                continue
+            artefato, versao = achado
+            jar = os.path.join(t, nome, "jars", "classes.jar")
+            if os.path.exists(jar):
+                registra(artefato, versao, jar, 2)
+                continue
+            # AAR transformada pelo Gradle 8+: o jar fica ao lado, com sufixo `-runtime`.
+            for sufixo, prioridade in (("-runtime.jar", 1), ("-api.jar", 0)):
+                cand = os.path.join(t, nome + sufixo)
+                if os.path.exists(cand):
+                    registra(artefato, versao, cand, prioridade)
+
 for base in (os.path.expanduser("~/.gradle/caches/transforms-3"),
              os.path.expanduser("~/.gradle/caches/transforms-4")):
     if not os.path.isdir(base):
@@ -95,17 +158,15 @@ for base in (os.path.expanduser("~/.gradle/caches/transforms-3"),
         if not os.path.isdir(t):
             continue
         for nome in os.listdir(t):
-            achado = re.match(r"^(.*?)-(\d[\w.\-]*)$", nome)
+            achado = artefato_versao(nome)
             if not achado:
                 continue
-            artefato, versao = achado.group(1), achado.group(2)
+            artefato, versao = achado
             jar = os.path.join(t, nome, "jars", "classes.jar")
             if not os.path.exists(jar):
                 continue
-            atual = transformados.get(artefato)
-            if atual is None or chave_versao(versao) > chave_versao(atual[0]):
-                transformados[artefato] = (versao, jar)
-for _, (_, jar) in sorted(transformados.items()):
+            registra(artefato, versao, jar, 2)
+for _, (_, jar, _) in sorted(transformados.items()):
     cp.append(jar)
 
 # módulos que são .jar direto (media3-exoplayer, lifecycle, gms, kotlinx...).

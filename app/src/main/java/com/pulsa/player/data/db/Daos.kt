@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
 
 @Dao
 interface PlaylistDao {
@@ -26,9 +25,6 @@ interface PlaylistDao {
 
     @Query("SELECT _id, name, auto_add FROM playlists WHERE _id = :id LIMIT 1")
     fun rowById(id: Long): AutoRow?
-
-    @Query("SELECT system FROM playlists WHERE _id = :id LIMIT 1")
-    fun systemFlag(id: Long): Int?
 
     @Query("SELECT auto_add FROM playlists WHERE _id = :id LIMIT 1")
     fun autoAddFlag(id: Long): Int?

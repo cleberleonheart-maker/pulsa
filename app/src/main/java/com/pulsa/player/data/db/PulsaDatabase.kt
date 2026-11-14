@@ -17,9 +17,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         PodcastEpisodeEntity::class,
         AutoRuleEntity::class,
         PodcastTranscriptEntity::class,
-        PodcastBookmarkEntity::class
+        PodcastBookmarkEntity::class,
+        VideoBookmarkEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class PulsaDatabase : RoomDatabase() {
@@ -30,6 +31,7 @@ abstract class PulsaDatabase : RoomDatabase() {
     abstract fun songMetaDao(): SongMetaDao
     abstract fun podcastDao(): PodcastDao
     abstract fun autoRuleDao(): AutoRuleDao
+    abstract fun videoBookmarkDao(): VideoBookmarkDao
 
     companion object {
         const val NAME = "pulsa.db"
@@ -253,6 +255,36 @@ abstract class PulsaDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * 11 → 12 são os marcadores do usuário no **vídeo**.
+         *
+         * Tabela nova, nenhuma linha antiga tocada — igual à 10 → 11 dos marcadores do
+         * podcast. O índice único em `(video_key, position_ms)` impede dois marcadores no
+         * mesmo instante, e os `DEFAULT` espelham a entidade porque o Room compara coluna a
+         * coluna na validação de esquema.
+         */
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `video_bookmarks` (" +
+                        "`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`video_key` TEXT NOT NULL, " +
+                        "`position_ms` INTEGER NOT NULL DEFAULT 0, " +
+                        "`title` TEXT NOT NULL DEFAULT '', " +
+                        "`created_at` INTEGER NOT NULL DEFAULT 0)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "`index_video_bookmarks_video_key_position_ms` " +
+                        "ON `video_bookmarks` (`video_key`, `position_ms`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_video_bookmarks_video_key` " +
+                        "ON `video_bookmarks` (`video_key`)"
+                )
+            }
+        }
+
         @Volatile
         private var instance: PulsaDatabase? = null
 
@@ -264,7 +296,7 @@ abstract class PulsaDatabase : RoomDatabase() {
             )
                 .addMigrations(
                     MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
-                    MIGRATION_10_11
+                    MIGRATION_10_11, MIGRATION_11_12
                 )
                 .build()
                 .also { instance = it }

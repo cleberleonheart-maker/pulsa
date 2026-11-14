@@ -17,6 +17,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.MainActivity
 import com.pulsa.player.R
+import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 import com.pulsa.player.data.db.FeedRef
 import com.pulsa.player.data.db.PodcastFeedRow
@@ -253,7 +254,18 @@ class PodcastsTabFragment : Fragment() {
             status.visibility = View.GONE
             results.visibility = View.GONE
             resultAdapter.items = emptyList()
-            PodcastNet.search(raw) { result ->
+            // Com credencial do Podcast Index, a busca usa o índice (catálogo maior); sem
+            // ela, a iTunes responde. A reserva fica dentro do `PodcastNet`, então aqui
+            // não há dois caminhos para manter.
+            val credentials = if (Settings.hasPodcastIndex(ctx)) {
+                PodcastNet.IndexCredentials(
+                    Settings.podcastIndexKey(ctx),
+                    Settings.podcastIndexSecret(ctx)
+                )
+            } else {
+                null
+            }
+            PodcastNet.search(raw, credentials) { result ->
                 loadingView.visibility = View.GONE
                 val found = result.getOrNull().orEmpty()
                 resultAdapter.items = found

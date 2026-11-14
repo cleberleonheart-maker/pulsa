@@ -216,4 +216,83 @@ class PlaylistBackupTest {
         assertEquals(4, r.missing)
         assertTrue(r.changed)
     }
+
+    @Test
+    fun playlistComItemsGuardaAIdentidadePortatil() {
+        // O formato novo: cada faixa viaja com caminho **e** a identidade (artista + título),
+        // que é o que resolve a música em outro aparelho, onde o caminho não existe.
+        val json = JSONObject().put(
+            "playlists",
+            org.json.JSONArray().put(
+                JSONObject()
+                    .put("name", "Batidinhas")
+                    .put(
+                        "paths",
+                        org.json.JSONArray().put("/sdcard/Music/a.mp3")
+                    )
+                    .put(
+                        "items",
+                        org.json.JSONArray().put(
+                            JSONObject()
+                                .put("path", "/sdcard/Music/a.mp3")
+                                .put("key", "bandamusica")
+                                .put("dur", 180000L)
+                        )
+                    )
+            )
+        )
+        val ref = parse(json).playlists.single().refs.single()
+        assertEquals("/sdcard/Music/a.mp3", ref.path)
+        assertEquals("bandamusica", ref.key)
+        assertEquals(180000L, ref.durationMs)
+    }
+
+    @Test
+    fun playlistAntigoSoComPathsNaoTemChave() {
+        // O arquivo de antes: só caminho. Ele continua legível — e continua restaurando no
+        // mesmo aparelho, que é o que o caminho resolve.
+        val json = JSONObject().put(
+            "playlists",
+            org.json.JSONArray().put(
+                JSONObject().put("name", "X").put(
+                    "paths",
+                    org.json.JSONArray().put("/a.mp3")
+                )
+            )
+        )
+        val ref = parse(json).playlists.single().refs.single()
+        assertEquals("/a.mp3", ref.path)
+        assertEquals("", ref.key)
+    }
+
+    @Test
+    fun favoritaGuardaAChave() {
+        val json = JSONObject().put(
+            "favorites",
+            org.json.JSONArray().put(
+                JSONObject()
+                    .put("path", "/a.mp3")
+                    .put("key", "bandamusica")
+                    .put("dur", 180000L)
+            )
+        )
+        val fav = parse(json).favorites.single()
+        assertEquals("bandamusica", fav.key)
+        assertEquals(180000L, fav.durationMs)
+    }
+
+    @Test
+    fun favoritaSoComChaveNaoEDescartada() {
+        // A nuvem pode trazer a identidade sem o caminho: é o caso da faixa que está no outro
+        // aparelho, num caminho que não existe aqui. Descartar seria perder a favorita.
+        val json = JSONObject().put(
+            "favorites",
+            org.json.JSONArray().put(
+                JSONObject().put("key", "bandamusica").put("dur", 180000L)
+            )
+        )
+        val fav = parse(json).favorites.single()
+        assertEquals("", fav.path)
+        assertEquals("bandamusica", fav.key)
+    }
 }

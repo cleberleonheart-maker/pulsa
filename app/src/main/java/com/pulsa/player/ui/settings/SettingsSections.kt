@@ -252,6 +252,12 @@ fun SettingsActivity.bindDownloads() {
         promptPodcastAutoDownload(autoDownloadValue)
     }
 
+    val podcastIndexValue = viewOrNull<TextView>(R.id.podcast_index_key_value)
+    refreshPodcastIndexKey(podcastIndexValue)
+    findViewById<View>(R.id.podcast_index_row).setOnClickListener {
+        promptPodcastIndexKey(podcastIndexValue)
+    }
+
     findViewById<MaterialSwitch>(R.id.skip_silence_switch).apply {
         isChecked = Settings.skipSilence(this@bindDownloads)
         setOnCheckedChangeListener { _, checked ->

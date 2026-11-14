@@ -129,6 +129,20 @@ data class PodcastBookmarkExportRow(
 )
 
 /**
+ * Progresso de um episódio com a **identidade portátil** dele, para o backup e a nuvem.
+ *
+ * O mesmo raciocínio do marcador: o `_id` do episódio é local e muda de máquina para máquina,
+ * e o que vale em qualquer aparelho é o `guid` do feed junto com a URL do feed.
+ */
+data class PodcastProgressExportRow(
+    @ColumnInfo(name = "guid") val guid: String,
+    @ColumnInfo(name = "feed_url") val feedUrl: String,
+    @ColumnInfo(name = "position_ms") val positionMs: Long,
+    @ColumnInfo(name = "played") val played: Boolean,
+    @ColumnInfo(name = "title") val title: String
+)
+
+/**
  * Transcrição de um episódio de podcast, guardada em cache.
  * Usado para "Virgin, o que falaram sobre X nesse episódio?".
  */

@@ -12,9 +12,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.MediaStore
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
@@ -1335,35 +1332,13 @@ class DjSession(
             "bookmark" -> voiceBookmark(norm)
             "podcast_ask" -> {
                 val q = DjCommander.podcastAskQuery(norm)
-                val song = com.pulsa.player.playback.Playback.currentSong
-                val pid = song?.podcastId
-                if (q == null || song == null || !song.isPodcast) {
-                    if (q != null) speak(say(R.string.dj_voice_chapter_not))
-                } else if (pid == null) {
-                    speak(say(R.string.dj_voice_transcribe_none))
-                } else {
-                    val ep = com.pulsa.player.podcast.PodcastDb.get(activity).getEpisodeById(pid)
-                    if (ep != null) {
-                        com.pulsa.player.podcast.PodcastTranscribe.askAboutEpisode(activity, ep, q.question) { ans ->
-                            val text = when {
-                                ans == null || ans == "transcribe_none" -> say(R.string.dj_voice_transcribe_none)
-                                ans.startsWith("transcribe_need_key") -> say(R.string.dj_voice_transcribe_need_key)
-                                ans.startsWith("transcribe_pending") -> say(R.string.dj_voice_transcribe_pending)
-                                ans.startsWith("transcribe_failed") -> say(R.string.dj_voice_transcribe_failed)
-                                ans.startsWith("transcribe_no_match") -> say(R.string.dj_voice_transcribe_no_match)
-                                ans.startsWith("transcribe_offline:") -> {
-                                    val parts = ans.split(":")
-                                    val t = if (parts.size >= 2) parts[1] else ""
-                                    val quote = if (parts.size >= 3) parts.drop(2).joinToString(":") else ""
-                                    say(R.string.dj_voice_transcribe_offline, t, quote)
-                                }
-                                else -> ans
-                            }
-                            speak(text)
-                        }
-                    } else {
-                        speak(say(R.string.dj_voice_transcribe_none))
-                    }
+                if (q != null) {
+                    DjPodcastAsk.ask(
+                        app = activity.applicationContext,
+                        question = q.question,
+                        resolver = { resId, args -> say(resId, *args.toTypedArray()) },
+                        falar = { speak(it) }
+                    )
                 }
             }
             "suggest" -> suggestSong()
@@ -1627,37 +1602,6 @@ class DjSession(
     }
 
     @Suppress("unused")
-    private fun showGeminiSetup() {
-        if (activity.isFinishing || activity.isDestroyed) return
-        val input = EditText(activity)
-        input.inputType = android.text.InputType.TYPE_CLASS_TEXT or
-            android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-        input.hint = activity.getString(R.string.dj_suggest_key_hint)
-        input.setText(Settings.geminiKey(activity))
-        input.setSingleLine(true)
-        val box = CheckBox(activity)
-        box.text = activity.getString(R.string.dj_suggest_enable)
-        box.isChecked = Settings.geminiOn(activity)
-        val layout = LinearLayout(activity)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(48, 8, 48, 0)
-        layout.addView(input)
-        layout.addView(box)
-        MaterialAlertDialogBuilder(activity)
-            .setTitle(R.string.dj_suggest_title)
-            .setView(layout)
-            .setPositiveButton(R.string.save) { _, _ ->
-                if (input.text.toString() != Settings.geminiKey(activity)) {
-                    DjSuggest.resetQuotaCooldown()
-                }
-                Settings.setGeminiKey(activity, input.text.toString())
-                Settings.setGeminiOn(activity, box.isChecked)
-                Telemetry.log(activity, "DJ Virgin AI config atualizada")
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
     private fun performScan() {
         if (scanInFlight) return
         scanInFlight = true

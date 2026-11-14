@@ -2,14 +2,16 @@ package com.pulsa.player.media
 
 import android.os.Looper
 import com.pulsa.player.core.ThreadPool
-import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 
 /**
  * #277 – Tenta resolver links de páginas para links diretos via APIs oficiais/públicas.
- * Foco em casos seguros: iTunes previewUrl. Evita scraping de HTML.
+ *
+ * As fontes e o trabalho puro de cada uma estão em [OfficialSources]; aqui está só a rede, o
+ * cache e a fila em background. A separação é o que permite testar a parte que decide sem
+ * aparelho e sem rede.
  */
 object OfficialMediaResolver {
 
@@ -53,11 +55,11 @@ object OfficialMediaResolver {
         // Rede no main thread falharia silenciosamente (NetworkOnMainThreadException).
         if (Looper.myLooper() == Looper.getMainLooper()) return null
 
-        val lower = url.lowercase()
-        val resolved = if (lower.contains("music.apple.com") || lower.contains("itunes.apple.com")) {
-            resolveItunes(url)
-        } else {
-            null
+        val resolved = when (OfficialSources.sourceOf(url)) {
+            OfficialSources.Source.APPLE -> resolveApple(url)
+            OfficialSources.Source.DEEZER -> resolveDeezer(url)
+            OfficialSources.Source.ARCHIVE -> resolveArchive(url)
+            null -> null
         }
         if (resolved != null) cache[key(url)] = resolved
         return resolved
@@ -72,50 +74,65 @@ object OfficialMediaResolver {
             path.endsWith(".webm") || path.endsWith(".mov")
     }
 
-    private fun resolveItunes(url: String): Resolved? {
+    /**
+     * Apple Music / iTunes: a faixa (`?i=`), o álbum ou a faixa pelo id do caminho.
+     *
+     * O `lookup` da Apple devolve o preview da faixa — 30 segundos, que é o que a loja
+     * distribui. É o limite honesto dessa API: o arquivo completo não existe para o
+     * developer.
+     */
+    private fun resolveApple(url: String): Resolved? {
+        val id = OfficialSources.appleLookupId(url) ?: return null
+        val collection = OfficialSources.appleIsCollection(url)
+        val body = getText(OfficialSources.appleLookupUrl(id, collection)) ?: return null
+        val (preview, name) = OfficialSources.applePreview(body) ?: return null
+        return Resolved(preview, name)
+    }
+
+    /** Deezer: a faixa ou a primeira faixa do álbum. Preview de 30 s, como o da Apple. */
+    private fun resolveDeezer(url: String): Resolved? {
+        val (id, album) = OfficialSources.deezerId(url) ?: return null
+        val body = getText(OfficialSources.deezerLookupUrl(id, album)) ?: return null
+        val (preview, name) = OfficialSources.deezerPreview(body) ?: return null
+        return Resolved(preview, name)
+    }
+
+    /**
+     * Internet Archive: o arquivo de áudio original do item.
+     *
+     * Este é o único dos três que entrega a faixa **completa**: o Archive hospeda o arquivo
+     * que o próprio autor publicou, e o download é direto, sem DRM e sem limite de tamanho.
+     */
+    private fun resolveArchive(url: String): Resolved? {
+        val id = OfficialSources.archiveIdentifier(url) ?: return null
+        val body = getText(OfficialSources.archiveMetadataUrl(id)) ?: return null
+        val (audio, title) = OfficialSources.archiveAudio(id, body) ?: return null
+        return Resolved(audio, title)
+    }
+
+    /**
+     * O corpo da resposta, ou `null`.
+     *
+     * `null` é o que o chamador entende: a fonte respondeu, mas não com o que a gente
+     * precisa. A diferença importa para a mensagem na tela — "não tem preview para esta
+     * faixa" é muito melhor do que "link inválido".
+     */
+    private fun getText(url: String): String? {
         return try {
-            val uri = java.net.URI(url)
-            val query = uri.query ?: ""
-            // Prioriza o ID da música quando vem via ?i= (links do Apple Music)
-            var trackId = ""
-            query.split("&").forEach { part ->
-                if (part.isBlank()) return@forEach
-                val kv = part.split("=")
-                if (kv.size >= 2 && kv[0] == "i") {
-                    trackId = kv[1]
-                }
+            val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8000
+                readTimeout = 8000
+                setRequestProperty("User-Agent", "Pulsa")
+                setRequestProperty("Accept", "application/json")
             }
-            if (trackId.isBlank()) {
-                val path = uri.path ?: ""
-                // /us/song/brave-heart/.../ID ou /song/.../ID
-                trackId = path.substringAfterLast('/').filter { it.isDigit() }
+            val code = conn.responseCode
+            val text = if (code in 200..299) {
+                conn.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                ""
             }
-            if (trackId.isNotBlank()) {
-                val lookup = URL("https://itunes.apple.com/lookup?id=$trackId")
-                val conn = (lookup.openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 8000
-                    readTimeout = 8000
-                    setRequestProperty("User-Agent", "Pulsa")
-                }
-                val body = conn.inputStream.bufferedReader().readText()
-                conn.disconnect()
-                val json = JSONObject(body)
-                val results = json.optJSONArray("results") ?: return null
-                for (i in 0 until results.length()) {
-                    val r = results.optJSONObject(i) ?: continue
-                    val preview = r.optString("previewUrl", "")
-                    if (preview.isNotBlank() && preview.startsWith("http")) {
-                        val name = buildString {
-                            val track = r.optString("trackName", "")
-                            val artist = r.optString("artistName", "")
-                            if (artist.isNotBlank()) append(artist).append(" - ")
-                            if (track.isNotBlank()) append(track) else append("itunes")
-                        }
-                        return Resolved(preview, name)
-                    }
-                }
-            }
-            null
+            conn.disconnect()
+            text.ifBlank { null }
         } catch (t: Throwable) {
             null
         }

@@ -30,7 +30,18 @@ android {
     }
 
     signingConfigs {
-        create("pulsa") {
+        // Mesma regra do celular: a chave de release vem do ambiente. O padrão antigo
+        // (`android`/`androiddebugkey`) era a chave de debug do Android, que é pública e
+        // estava commitada no repositório — com ela, qualquer pessoa assina um APK do Pulsa.
+        create("pulsaRelease") {
+            val env = System.getenv()
+            storeFile = rootProject.file(env["KEYSTORE_PATH"] ?: "app/keystore/pulsa.keystore")
+            storePassword = env["KEYSTORE_PASSWORD"].orEmpty()
+            keyAlias = env["KEY_ALIAS"].orEmpty()
+            keyPassword = env["KEY_PASSWORD"].orEmpty()
+        }
+
+        create("pulsaDebug") {
             val env = System.getenv()
             storeFile = rootProject.file(env["KEYSTORE_PATH"] ?: "app/keystore/pulsa.keystore")
             storePassword = env["KEYSTORE_PASSWORD"] ?: "android"
@@ -41,11 +52,15 @@ android {
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("pulsa")
+            signingConfig = if (rootProject.file("app/keystore/pulsa.keystore").exists()) {
+                signingConfigs.getByName("pulsaDebug")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("pulsa")
+            signingConfig = signingConfigs.getByName("pulsaRelease")
         }
     }
 

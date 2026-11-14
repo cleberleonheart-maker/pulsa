@@ -5,8 +5,6 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.view.GestureDetector
 
-import android.os.Handler
-import android.os.Looper
 
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -24,7 +22,6 @@ import com.pulsa.player.R
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.data.ArtLoader
 import com.google.android.gms.cast.framework.CastButtonFactory
-import com.google.android.gms.cast.framework.CastContext
 import com.pulsa.player.data.PlaylistDb
 import com.pulsa.player.playback.Playback
 import com.pulsa.player.playback.PlaybackSpeeds
@@ -59,9 +56,6 @@ class NowPlayingFragment : Fragment() {
     private var abButtonA: com.google.android.material.button.MaterialButton? = null
     private var abButtonB: com.google.android.material.button.MaterialButton? = null
     private var abButtonClear: com.google.android.material.button.MaterialButton? = null
-    private var abAButton: com.google.android.material.button.MaterialButton? = null
-    private var abBButton: com.google.android.material.button.MaterialButton? = null
-    private var abClearButton: com.google.android.material.button.MaterialButton? = null
     private var visualizerView: AudioVisualizerView? = null
     private var shaderView: MusicShaderView? = null
     private var speedRow: View? = null
@@ -249,7 +243,8 @@ class NowPlayingFragment : Fragment() {
         castButton = view.findViewById(R.id.np_cast)
         try {
             CastButtonFactory.setUpMediaRouteButton(requireContext(), castButton!!)
-        } catch (_: Throwable) {
+        } catch (t: Throwable) {
+            context?.applicationContext?.let { CrashLogger.writeLog(it, "CAST: preparar botao de Cast falhou -> $t") }
         }
     }
 

@@ -23,6 +23,7 @@ class PulsaApp : Application() {
         try {
             Migrations.run(this)
         } catch (t: Throwable) {
+            CrashLogger.writeLog(this, "APP: migracoes falharam -> $t")
         }
         try {
             val lang = Settings.language(this)
@@ -30,6 +31,7 @@ class PulsaApp : Application() {
                 androidx.core.os.LocaleListCompat.forLanguageTags(Settings.languageTag(lang))
             )
         } catch (t: Throwable) {
+            CrashLogger.writeLog(this, "APP: idioma do sistema falhou -> $t")
         }
         try {
             val info = packageManager.getPackageInfo(packageName, 0)
@@ -43,6 +45,7 @@ class PulsaApp : Application() {
             // sem passar pela tela). O `Ambient` não tem `Context`, então a ponte fica aqui.
             Ambient.setTone(Settings.ambientTone(this))
         } catch (t: Throwable) {
+            CrashLogger.writeLog(this, "APP: tom ambiente falhou -> $t")
         }
         try {
             // Item 293 — modo família/kids: vigia o volume do sistema (rebaixa quando passar do
@@ -50,14 +53,17 @@ class PulsaApp : Application() {
             com.pulsa.player.core.KidsMode.watchVolume(this)
             if (Settings.kidsMode(this)) com.pulsa.player.core.KidsMode.clampVolume(this)
         } catch (t: Throwable) {
+            CrashLogger.writeLog(this, "APP: modo crianca falhou -> $t")
         }
         try {
             RemoteSync.start(this)
         } catch (t: Throwable) {
+            CrashLogger.writeLog(this, "APP: sync remoto nao iniciou -> $t")
         }
         try {
             MirrorSync.start(this)
         } catch (t: Throwable) {
+            CrashLogger.writeLog(this, "APP: espelho de sessao nao iniciou -> $t")
         }
         try {
             // O tick de 3 s do RemoteSync morre com o processo; isto nao. E idempotente
@@ -65,6 +71,7 @@ class PulsaApp : Application() {
             // a contagem do job.
             PulsaWork.schedule(this)
         } catch (t: Throwable) {
+            CrashLogger.writeLog(this, "APP: agendamento do trabalho falhou -> $t")
         }
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
@@ -81,7 +88,8 @@ class PulsaApp : Application() {
                 val text = "Pulsa $version\nTIME: $time\nTHREAD: ${thread.name}\n" +
                     "REASON: ${throwable}\n---STACK---\n$sw\n"
                 CrashLogger.writeLog(this, text)
-            } catch (ignored: Throwable) {
+            } catch (t: Throwable) {
+                CrashLogger.writeLog(this, "APP: falha ao registrar o crash -> $t")
             }
         }
     }

@@ -1,11 +1,13 @@
 package com.pulsa.player.sync
 import com.pulsa.player.core.Blacklist
+import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Settings
 import com.pulsa.player.core.ThreadPool
 
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import com.pulsa.player.R
 import com.pulsa.player.data.Library
@@ -29,6 +31,8 @@ object MirrorSync {
 
     private const val INTERVAL_MS = 3_000L
 
+    private const val TAG = "MirrorSync"
+
     /** Desvio tolerado antes de reposicionar a faixa. Menor que isto causa glitches; maior deixa audível a defasagem. */
     private const val SEEK_THRESHOLD_MS = 500L
 
@@ -37,8 +41,10 @@ object MirrorSync {
 
     private fun hosts(): List<String> {
         val ctx = appContext
+        // Sem contexto, o servidor público em HTTPS primeiro: cair direto no claro do LAN
+        // mandaria o token e a biblioteca da pessoa sem criptografia.
         return if (ctx != null) Settings.serverCandidates(ctx) else
-            listOf("http://192.168.100.7:8081", "http://127.0.0.1:8081")
+            listOf(Settings.DEFAULT_SERVER_URL, Settings.LAN_SERVER_URL, Settings.LOCAL_SERVER_URL)
     }
 
     @Volatile
@@ -169,6 +175,7 @@ object MirrorSync {
                 Net.close(conn)
                 return true
             } catch (t: Throwable) {
+                CrashLogger.writeLog(ctx.applicationContext, "MIRROR: enviar comando falhou -> $t")
             }
         }
         return false
@@ -346,6 +353,7 @@ object MirrorSync {
                 if (codeHttp != 200 || text.isBlank()) continue
                 return JSONObject(text)
             } catch (t: Throwable) {
+                Log.w(TAG, "consultar sessao falhou -> $t")
             }
         }
         return null

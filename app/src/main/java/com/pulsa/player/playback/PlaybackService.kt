@@ -48,7 +48,6 @@ import com.pulsa.player.cast.CastBridge
 import com.pulsa.player.cast.SwitchablePlayer
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionResult
-import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import com.google.common.collect.ImmutableList
@@ -1620,6 +1619,7 @@ class PlaybackService : MediaLibraryService() {
             transport?.seekTo(ms)
             emitProgress()
         } catch (e: Exception) {
+            CrashLogger.writeLog(applicationContext, "PLAYBACK: seek falhou (id=${currentSong?.id}) -> $e")
         }
     }
 
@@ -2538,6 +2538,7 @@ class PlaybackService : MediaLibraryService() {
                 positionMs = abA
                 emitProgress()
             } catch (e: Exception) {
+                CrashLogger.writeLog(applicationContext, "PLAYBACK: loop A-B falhou (id=${currentSong?.id}) -> $e")
             }
             publishState()
             scheduleTick()
@@ -2551,6 +2552,7 @@ class PlaybackService : MediaLibraryService() {
                 positionMs = 0L
                 emitProgress()
             } catch (e: Exception) {
+                CrashLogger.writeLog(applicationContext, "PLAYBACK: repetir uma falhou (id=${currentSong?.id}) -> $e")
             }
             publishState()
             scheduleTick()
@@ -2576,6 +2578,7 @@ class PlaybackService : MediaLibraryService() {
             try {
                 transport?.seekTo(0)
             } catch (e: Exception) {
+                CrashLogger.writeLog(applicationContext, "PLAYBACK: seek final falhou (id=${currentSong?.id}) -> $e")
             }
         }
     }
