@@ -30,23 +30,14 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.39):
-→ MEDIA CONVERTER
-• New Converter inside Pulsa: converts videos and audio to MP4 (H264) or M4A (AAC).
-• Accepts a direct link or a file from the device (video, music, voice recording).
-• Choose the resolution (480p, 720p, 1080p or original) and the quality (automatic, economy, balanced, high).
-• Trim by time: mark the start and the end of the part you want to keep.
-• Conversion queue with progress, cancel, try again and delete the result.
-• The converted file lands in the library as regular media, ready to play.
-• A direct link is now read before converting: the duration shows up and the trim is checked.
-• The notification shows the conversion progress even with the screen closed.
-→ CLOUD AND SYNC
-• The cloud tries the next server when one of them rejects the token, instead of giving up right away.
-• Podcast progress never goes backwards: between the device and the cloud, the furthest one wins.
-• The download link goes to the cloud without the part that carries the password.
-→ SETTINGS AND BACKUP
-• Your settings (language, equalizer, crossfade, downloads) now travel with the Google backup.
-• The kids mode PIN and the recognition token are now encrypted on the device.
+    <string name="changelog">What is new (5.12.40):
+→ SAFER SETTINGS
+• Pulsa settings now live in DataStore, with atomic writes and Google backup support.
+• Migration preserves language, equalizer, crossfade, queue, profile, and every other choice.
+• The account, tokens, and PIN remain encrypted and outside the backup.
+• If storage fails, settings stay saved locally and return on the next launch.
+→ DOWNLOAD BY LINK
+• Direct audio and video links with folders such as “track” or “album” are no longer blocked.
 </string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>

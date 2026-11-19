@@ -14,7 +14,7 @@ object Changelog {
 
     fun check(context: Context) {
         try {
-            val prefs = context.getSharedPreferences(PREF, Context.MODE_PRIVATE)
+            val prefs = DataStorePreferences.preferences(context, PREF)
             val last = prefs.getLong(KEY, 0L)
             if (last >= BuildConfig.VERSION_CODE.toLong()) return
             prefs.edit().putLong(KEY, BuildConfig.VERSION_CODE.toLong()).apply()
@@ -25,7 +25,7 @@ object Changelog {
 
     fun checkUpdated(context: Context) {
         try {
-            val prefs = context.getSharedPreferences(PREF_INSTALL, Context.MODE_PRIVATE)
+            val prefs = DataStorePreferences.preferences(context, PREF_INSTALL)
             val last = prefs.getLong(KEY_INSTALL, 0L)
             val current = BuildConfig.VERSION_CODE.toLong()
             if (last == 0L) {

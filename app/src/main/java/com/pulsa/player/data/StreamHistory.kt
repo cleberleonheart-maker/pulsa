@@ -13,7 +13,7 @@ import org.json.JSONObject
  * aqui é a **URL** (e o uuid do PeerTube quando existe) — não o id do MediaStore, que o
  * stream não tem.
  *
- * Guardado em SharedPreferences (JSON), teto de 30, mais novo primeiro. Duplicata por
+ * Guardado no DataStore (JSON), teto de 30, mais novo primeiro. Duplicata por
  * url/uuid move o item pro topo em vez de encher a lista com a mesma entrada.
  */
 object StreamHistory {
@@ -37,7 +37,7 @@ object StreamHistory {
     private const val MAX = 30
 
     private fun prefs(context: Context): SharedPreferences =
-        context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        com.pulsa.player.core.DataStorePreferences.preferences(context, FILE)
 
     fun list(context: Context): List<Entry> = runCatching {
         val raw = prefs(context).getString(KEY, null).orEmpty()

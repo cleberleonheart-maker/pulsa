@@ -33,7 +33,7 @@ Um único motor de reprodução, controlável de fora do app, e uma biblioteca q
 | Vídeo | `VideoPlayerActivity` | `VideoView` |
 | Biblioteca de músicas | `data/Library.kt:25-43` | **já consulta o MediaStore** (ok) |
 | Playlists / favoritas / meta | `data/PlaylistDb.kt:12` | SQLite próprio `pulsa.db` v6 |
-| Ajustes | `core/Settings.kt:73` | `SharedPreferences` (segredos em `EncryptedSharedPreferences`, linha 163) |
+| Ajustes | `core/Settings.kt:73` | DataStore Preferences (segredos em `EncryptedSharedPreferences`, linha 163) |
 | Fundo | `core/ThreadPool.kt:8` | 3 threads fixas; `RemoteSync` faz polling por `Handler` (`RemoteSync.kt:68`); `UpdateService` cria `Thread` na mão |
 | Fora do app | — | nenhum `MediaButtonReceiver`, nenhum `MediaBrowserService`, nada de Auto/Wear/TV/Cast |
 
@@ -322,7 +322,7 @@ Cada passo é um commit. Nada de etapa que deixe o app sem música no meio do ca
 
 **E8 · Playlists e favoritas em Room (1–2 dias)**
 - Entidades: `PlaylistEntity`, `PlaylistSongEntity`, `FavoriteEntity`, `SongMetaEntity` — espelham `PlaylistDb.kt:14-53` 1:1.
-- Migrar do `pulsa.db` v6 para Room **preservando os dados** (ler o SQLite antigo, escrever no Room, marcar migrado em `SharedPreferences`) — a Virgin já "aprendeu" playlists e favoritas do usuário; perder isso é pior que demorar.
+- Migrar do `pulsa.db` v6 para Room **preservando os dados** (ler o SQLite antigo, escrever no Room, marcar migrado no DataStore) — a Virgin já "aprendeu" playlists e favoritas do usuário; perder isso é pior que demorar.
 - `PlaylistDb` continua existindo como camada de leitura durante um release, para rollback.
 
 **E9 · Fundo em WorkManager (1 dia)**

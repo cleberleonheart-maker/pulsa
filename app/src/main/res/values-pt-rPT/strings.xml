@@ -9,23 +9,14 @@
 
     <string name="sect_sync">Sincronização</string>
 
-    <string name="changelog">Novidades desta versão (5.12.39):
-→ CONVERSOR DE MEDIA
-• Novo Conversor dentro do Pulsa: converte vídeos e áudio para MP4 (H264) ou M4A (AAC).
-• Aceita ligação direta ou ficheiro do dispositivo (vídeo, música, gravação de voz).
-• Escolha a resolução (480p, 720p, 1080p ou original) e a qualidade (automática, económica, equilibrada, alta).
-• Corte por tempo: marque o início e o fim do troço que quer manter.
-• Fila de conversões com progresso, cancelar, tentar de novo e eliminar o resultado.
-• O ficheiro convertido entra na biblioteca como media normal, pronto a reproduzir.
-• A ligação direta agora é lida antes de converter: a duração aparece e o corte por tempo é conferido.
-• A notificação mostra o progresso da conversão mesmo com o ecrã fechado.
-→ NUVEM E SINCRONIZAÇÃO
-• A nuvem tenta o servidor seguinte quando um deles recusa o token, em vez de desistir logo.
-• O progresso do podcast não recua: entre o dispositivo e a nuvem, vale quem estiver mais adiantado.
-• A ligação da transferência vai para a nuvem sem a parte que tem senha.
-→ PREFERÊNCIAS E CÓPIA DE SEGURANÇA
-• As preferências (idioma, equalizador, crossfade, transferências) agora viajam na cópia de segurança do Google.
-• O PIN do modo infantil e o token de reconhecimento passam a ficar cifrados no dispositivo.
+    <string name="changelog">Novidades desta versão (5.12.40):
+→ PREFERÊNCIAS MAIS SEGURAS
+• As preferências do Pulsa agora ficam no DataStore, com gravação atómica e cópia de segurança no Google.
+• A migração preserva idioma, equalizador, crossfade, fila, perfil e todas as outras escolhas.
+• A conta, os tokens e o PIN continuam cifrados e fora da cópia de segurança.
+• Se o armazenamento falhar, as preferências ficam guardadas localmente e voltam no arranque seguinte.
+→ TRANSFERÊNCIA POR LIGAÇÃO
+• Ligações diretas de áudio e vídeo com pastas como “track” ou “album” já não são bloqueadas.
 </string>
 
     <string name="now_playing">A tocar agora</string>

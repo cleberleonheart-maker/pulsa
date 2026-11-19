@@ -30,23 +30,14 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.39):
-→ CONVERSOR DE MEDIOS
-• Nuevo Conversor dentro de Pulsa: convierte vídeos y audios a MP4 (H264) o M4A (AAC).
-• Acepta un enlace directo o un archivo del dispositivo (vídeo, música, grabación de voz).
-• Elige la resolución (480p, 720p, 1080p u original) y la calidad (automática, económica, equilibrada, alta).
-• Recorte por tiempo: marca el inicio y el final del trozo que quieres conservar.
-• Cola de conversiones con progreso, cancelar, reintentar y borrar el resultado.
-• El archivo convertido entra en la biblioteca como medio normal, listo para reproducir.
-• El enlace directo ahora se lee antes de convertir: aparece la duración y se comprueba el recorte.
-• La notificación muestra el progreso de la conversión incluso con la pantalla cerrada.
-→ NUBE Y SINCRONIZACIÓN
-• La nube prueba el siguiente servidor cuando uno rechaza el token, en vez de abandonar enseguida.
-• El progreso del podcast no retrocede: entre el dispositivo y la nube, gana quien esté más avanzado.
-• El enlace de la descarga va a la nube sin la parte que lleva la contraseña.
-→ AJUSTES Y COPIA DE SEGURIDAD
-• Los ajustes (idioma, ecualizador, crossfade, descargas) ahora viajan con la copia de seguridad de Google.
-• El PIN del modo infantil y el token de reconocimiento ahora están cifrados en el dispositivo.
+    <string name="changelog">Novedades de esta versión (5.12.40):
+→ AJUSTES MÁS SEGUROS
+• Los ajustes de Pulsa ahora viven en DataStore, con escritura atómica y copia de seguridad de Google.
+• La migración conserva idioma, ecualizador, crossfade, cola, perfil y todas las demás elecciones.
+• La cuenta, los tokens y el PIN siguen cifrados y fuera de la copia de seguridad.
+• Si el almacenamiento falla, los ajustes quedan guardados localmente y vuelven en el próximo inicio.
+→ DESCARGAR POR ENLACE
+• Los enlaces directos de audio y vídeo con carpetas como “track” o “album” ya no se bloquean.
 </string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>

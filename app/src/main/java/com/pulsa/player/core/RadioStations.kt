@@ -81,7 +81,7 @@ object RadioStations {
     /**
      * As rádios Buscadas por estado e guardadas para a sintonia percorrer sem internet.
      *
-     * Ficam num pref SEPARADO das do usuário de propósito: essas não aparecem na lista com
+     * Ficam num namespace SEPARADO das do usuário de propósito: essas não aparecem na lista com
      * lixeira para remover, e uma busca nova substitui o grupo inteiro sem tocar nas que o
      * usuário salvou à mão.
      */
@@ -120,7 +120,7 @@ object RadioStations {
     const val DEFAULT_STATE = "RS"
 
     private fun prefs(context: Context) =
-        context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        DataStorePreferences.preferences(context, FILE)
 
     fun list(context: Context): List<UserStation> {
         val raw = prefs(context).getString("stations", "") ?: ""

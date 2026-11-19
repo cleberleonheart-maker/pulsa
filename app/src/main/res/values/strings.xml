@@ -33,23 +33,14 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.39):
-→ CONVERSOR DE MÍDIA
-• Novo Conversor dentro do Pulsa: converte vídeos e áudios para MP4 (H264) ou M4A (AAC).
-• Aceita link direto ou arquivo do aparelho (vídeo, música, gravação de voz).
-• Escolha a resolução (480p, 720p, 1080p ou original) e a qualidade (automática, econômica, equilibrada, alta).
-• Corte por tempo: marque o início e o fim do trecho que quer ficar.
-• Fila de conversões com progresso, cancelar, tentar de novo e excluir o resultado.
-• O arquivo convertido entra na biblioteca como mídia normal, pronta para tocar.
-• O link direto agora é lido antes de converter: a duração aparece e o corte por tempo é conferido.
-• A notificação mostra o progresso da conversão mesmo com a tela fechada.
-→ NUVEM E SINCRONIZAÇÃO
-• A nuvem tenta o próximo servidor quando um deles recusa o token, em vez de desistir na hora.
-• O progresso do podcast não regride: entre o aparelho e a nuvem, vale quem estiver mais adiantado.
-• O link do download vai para a nuvem sem a parte que tem senha.
-→ PREFERÊNCIAS E BACKUP
-• As preferências (idioma, equalizador, crossfade, downloads) agora viajam no backup do Google.
-• O PIN do modo criança e o token de reconhecimento passam a ficar cifrados no aparelho.
+    <string name="changelog">Novidades desta versão (5.12.40):
+→ PREFERÊNCIAS MAIS SEGURAS
+• As preferências do Pulsa agora ficam no DataStore, com gravação atômica e backup no Google.
+• A migração preserva idioma, equalizador, crossfade, fila, perfil e todas as outras escolhas.
+• Conta, tokens e PIN continuam cifrados e fora do backup.
+• Se o armazenamento falhar, as preferências ficam salvas localmente e voltam no próximo arranque.
+→ DOWNLOAD POR LINK
+• Links diretos de áudio e vídeo com pastas como “track” ou “album” não são mais bloqueados.
 </string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>

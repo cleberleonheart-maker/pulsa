@@ -25,7 +25,7 @@ object DjMemory {
     private var loaded = false
 
     private fun prefs(context: Context) =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        com.pulsa.player.core.DataStorePreferences.preferences(context, PREFS)
 
     private fun load(context: Context) {
         if (loaded) return

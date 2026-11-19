@@ -18,7 +18,7 @@ import com.pulsa.player.model.Song
  * usuário do MediaStore nem a app instalado em outro cartão — e o `id` sobrevive. A chave é
  * o par (tipo, id) porque é o que o MediaStore garante.
  *
- * **Por que uma string e não um objeto.** A fila vai para `SharedPreferences` em JSON, e o
+ * **Por que uma string e não um objeto.** A fila vai para o DataStore em JSON, e o
  * formato já gravado (`queue_ids`, um `JSONArray` de números) precisa continuar legível por
  * uma versão anterior do app — downgrade, ou um `onCreate` antes de o usuário atualizar. Por
  * isso [encode] sai como `"a:42"` e [decode] aceita tanto esse formato quanto o número

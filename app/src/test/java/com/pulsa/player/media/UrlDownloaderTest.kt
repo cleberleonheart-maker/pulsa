@@ -1,7 +1,9 @@
 package com.pulsa.player.media
 
+import com.pulsa.player.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -32,5 +34,23 @@ class UrlDownloaderTest {
         val id = UrlDownloader.itemId("https://x/a b.mp3?x=1", "a/b:c")
         assertTrue(id.startsWith("url-"))
         assertTrue(id.none { it == '/' || it == ':' || it == ' ' })
+    }
+
+    @Test
+    fun `link direto com caminho de pagina nao e bloqueado`() {
+        assertNull(UrlDownloader.validate("https://example.com/track/audio.mp3"))
+        assertNull(UrlDownloader.validate("https://example.com/album/video.mp4?token=abc"))
+    }
+
+    @Test
+    fun `pagina sem link direto continua bloqueada`() {
+        assertEquals(
+            R.string.download_direct_only,
+            UrlDownloader.validate("https://example.com/track/123")
+        )
+        assertEquals(
+            R.string.download_direct_only,
+            UrlDownloader.validate("https://youtube.com/track/audio.mp3")
+        )
     }
 }

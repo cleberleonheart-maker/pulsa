@@ -162,7 +162,7 @@ object CrashLogger {
         // 32 cópias de 250 KB no Download, com o insert batendo de frente na anterior e o
         // SO renomeando para "(1)", "(2)"...
         //
-        // Agora o URI do espelho é guardado no SharedPreferences e reaproveitado direto.
+        // Agora o URI do espelho é guardado no DataStore e reaproveitado direto.
         // Não depende de nome, de extensão nem de coluna — que era justamente o problema.
         Settings.mirrorLogUri(context)?.let { saved ->
             val uri = android.net.Uri.parse(saved)

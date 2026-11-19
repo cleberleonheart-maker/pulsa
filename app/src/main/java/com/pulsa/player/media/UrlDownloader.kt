@@ -29,6 +29,17 @@ object UrlDownloader {
         return null
     }
 
+    private fun hasDirectMediaExtension(url: String): Boolean {
+        val path = url.substringBefore('?').substringBefore('#').lowercase()
+        val extension = path.substringAfterLast('/').substringAfterLast('.', "")
+        return extension in directMediaExtensions
+    }
+
+    private val directMediaExtensions = setOf(
+        "mp3", "m4a", "aac", "ogg", "opus", "flac", "wav", "amr", "3gpp",
+        "mp4", "m4v", "mkv", "webm", "mov", "avi", "flv", "3gp"
+    )
+
     private fun urlLooksLikePage(url: String): Boolean {
         val lower = url.lowercase()
         if (lower.contains("youtube.com") || lower.contains("youtu.be") ||
@@ -40,6 +51,7 @@ object UrlDownloader {
         if (lower.contains("music.apple.com") || lower.contains("itunes.apple.com")) return true
         // Internet Archive: a página do item é HTML; o áudio vem do metadado do item.
         if (lower.contains("archive.org/details/")) return true
+        if (hasDirectMediaExtension(lower)) return false
         val path = lower.substringBefore('?').substringAfter("://").substringAfter('/')
         if (path.startsWith("watch") || path.startsWith("track") || path.startsWith("album") ||
             path.startsWith("playlist") || path.startsWith("shorts") || path.startsWith("embed")

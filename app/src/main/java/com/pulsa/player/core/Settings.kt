@@ -2,6 +2,7 @@ package com.pulsa.player.core
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.pulsa.player.R
@@ -12,7 +13,7 @@ import com.pulsa.player.playback.QueueKey
  * Configurações centralizadas do Pulsa.
  *
  * Armazenamento:
- * - `pulsa_settings` — SharedPreferences normal (preferências não sensíveis)
+ * - `pulsa_settings` — namespace DataStore Preferences (preferências não sensíveis)
  * - `pulsa_secrets` — EncryptedSharedPreferences via Android Keystore (tokens/segredos)
  *
  * Organização por seções:
@@ -49,6 +50,7 @@ object Settings {
     // ============================================================
     private const val FILE = "pulsa_settings"
     private const val SECRET_FILE = "pulsa_secrets"
+    private const val PREF_TAG = "PulsaSettings"
     // ============================================================
     // CHAVES DE PREFERÊNCIA
     // ============================================================
@@ -141,10 +143,10 @@ object Settings {
     val SKIN_ORDER = arrayOf(SKIN_OFF, SKIN_NEON, SKIN_AURORA, SKIN_PARTICLES, SKIN_NEBULA)
 
     // ============================================================
-    // INFRAESTRUTURA (SharedPreferences)
+    // INFRAESTRUTURA (DataStore Preferences)
     // ============================================================
-    private fun prefs(context: Context) =
-        context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+    private fun prefs(context: Context): SharedPreferences =
+        DataStorePreferences.preferences(context, FILE)
 
     /**
      * URI do arquivo de log espelhado no `Download`, guardado para ser reaproveitado.
@@ -319,9 +321,8 @@ object Settings {
     /**
      * As chaves que **são** segredo: moram cifradas, nunca em prefs comuns.
      *
-     * O `pulsa_settings.xml` viaja no backup do Google (é onde moram as preferências da
-     * pessoa: idioma, EQ, crossfade, teto de download). O que é credencial precisa sair de
-     * lá — por isso estas chaves são cifradas e o arquivo de settings não é mais excluído.
+     * As preferências não sensíveis moram no DataStore. O que é credencial precisa sair
+     * de lá — por isso estas chaves são cifradas e nunca entram no namespace do DataStore.
      */
     val secretKeys: List<String> = listOf(
         "telemetry_token",
@@ -362,30 +363,33 @@ object Settings {
      * Lê um secret, migrando o valor em texto puro (das versões antigas) na primeira leitura.
      *
      * A cópia em texto puro é **apagada** depois da migração: ela morava no
-     * `pulsa_settings.xml`, que o backup do Google leva. E, se as prefs cifradas não
-     * abrirem (keystore quebrado), o valor antigo ainda aparece — o app continua
-     * funcionando em vez de entrar em reset.
+     * `pulsa_settings.xml` legado. E, se as prefs cifradas não abrirem (keystore quebrado),
+     * o valor antigo ainda aparece — o app continua funcionando em vez de entrar em reset.
      */
     private fun secret(context: Context, key: String): String {
         val stored = runCatching { secretPrefs(context).getString(key, null) }.getOrNull()
         if (stored != null) return stored
-        val legacy = prefs(context).getString(key, "") ?: ""
+        val legacy = runCatching {
+            val value = LegacyPreferencesFile.read(context, FILE)[key]
+            (value as? PreferenceValue.Text)?.value.orEmpty()
+        }.getOrDefault("")
         if (legacy.isEmpty()) return ""
         val migrated = runCatching {
-            secretPrefs(context).edit().putString(key, legacy).apply()
-            true
-        }.getOrDefault(false)
-        if (migrated) prefs(context).edit().remove(key).apply()
+            secretPrefs(context).edit().putString(key, legacy).commit()
+        }.onFailure { Log.e(PREF_TAG, "falha ao gravar secret cifrado $key", it) }.getOrDefault(false)
+        if (migrated && !LegacyPreferencesFile.remove(context, FILE, setOf(key))) {
+            Log.e(PREF_TAG, "falha ao remover secret legado $key")
+        }
         return legacy
     }
 
     private fun setSecret(context: Context, key: String, value: String) {
         val saved = runCatching {
-            secretPrefs(context).edit().putString(key, value.trim()).apply()
-            true
-        }.getOrDefault(false)
-        // A cópia em texto puro só some quando a cifrada foi escrita com sucesso.
-        if (saved) prefs(context).edit().remove(key).apply()
+            secretPrefs(context).edit().putString(key, value.trim()).commit()
+        }.onFailure { Log.e(PREF_TAG, "falha ao gravar secret cifrado $key", it) }.getOrDefault(false)
+        if (saved && !LegacyPreferencesFile.remove(context, FILE, setOf(key))) {
+            Log.e(PREF_TAG, "falha ao remover secret legado $key")
+        }
     }
 
     /**
@@ -396,17 +400,35 @@ object Settings {
      * (ver [Migrations]) e limpa as sobras.
      */
     fun migrateLegacySecrets(context: Context) {
-        val plain = prefs(context)
-        val keys = secretKeys.filter { plain.contains(it) }
-        if (keys.isEmpty()) return
-        for (key in keys) {
-            val value = plain.getString(key, null) ?: continue
-            val migrated = runCatching {
-                secretPrefs(context).edit().putString(key, value).apply()
-                true
-            }.getOrDefault(false)
-            if (migrated) plain.edit().remove(key).apply()
+        migrateLegacySecretsResult(context)
+    }
+
+    internal fun migrateLegacySecretsResult(context: Context): Boolean {
+        val legacy = try {
+            LegacyPreferencesFile.read(context, FILE)
+        } catch (t: Throwable) {
+            return false
         }
+        val keys = secretKeys.filter { legacy.containsKey(it) }
+        if (keys.isEmpty()) return true
+        val editor = runCatching { secretPrefs(context).edit() }.getOrNull() ?: return false
+        var hasValues = false
+        for (key in keys) {
+            val value = (legacy[key] as? PreferenceValue.Text)?.value ?: continue
+            val stored = runCatching { secretPrefs(context).getString(key, null) }.getOrNull()
+            if (stored != null) continue
+            editor.putString(key, value)
+            hasValues = true
+        }
+        if (hasValues) {
+            val migrated = runCatching { editor.commit() }
+                .onFailure { Log.e(PREF_TAG, "falha ao migrar secrets legados", it) }
+                .getOrDefault(false)
+            if (!migrated) return false
+        }
+        val removed = LegacyPreferencesFile.remove(context, FILE, keys.toSet())
+        if (!removed) Log.e(PREF_TAG, "falha ao remover secrets legados")
+        return removed
     }
 
     // ============================================================

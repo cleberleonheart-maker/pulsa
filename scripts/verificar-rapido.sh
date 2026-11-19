@@ -149,6 +149,19 @@ for base in bases_transforms:
                 if os.path.exists(cand):
                     registra(artefato, versao, cand, prioridade)
 
+# Os runtimes do DataStore saem do Gradle 8 como jars diretos no diretório
+# `transformed`, sem o nome versionado que o bloco acima reconhece.
+for base in bases_transforms:
+    if not os.path.isdir(base):
+        continue
+    for d in os.listdir(base):
+        t = os.path.join(base, d, "transformed")
+        if not os.path.isdir(t):
+            continue
+        for nome in os.listdir(t):
+            if nome.startswith("datastore-") and nome.endswith("-release-runtime.jar"):
+                cp.append(os.path.join(t, nome))
+
 for base in (os.path.expanduser("~/.gradle/caches/transforms-3"),
              os.path.expanduser("~/.gradle/caches/transforms-4")):
     if not os.path.isdir(base):
@@ -158,6 +171,8 @@ for base in (os.path.expanduser("~/.gradle/caches/transforms-3"),
         if not os.path.isdir(t):
             continue
         for nome in os.listdir(t):
+            if "datastore" in nome and nome.endswith("-release-runtime.jar"):
+                cp.append(os.path.join(t, nome))
             achado = artefato_versao(nome)
             if not achado:
                 continue

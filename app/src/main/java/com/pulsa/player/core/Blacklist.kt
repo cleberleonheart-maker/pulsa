@@ -56,11 +56,11 @@ object Blacklist {
     }
 
     fun warnedOnce(context: Context): Boolean =
-        context.getSharedPreferences("pulsa_blacklist", Context.MODE_PRIVATE)
+        DataStorePreferences.preferences(context, "pulsa_blacklist")
             .getBoolean(KEY_WARNED, false)
 
     fun markWarned(context: Context) {
-        context.getSharedPreferences("pulsa_blacklist", Context.MODE_PRIVATE)
+        DataStorePreferences.preferences(context, "pulsa_blacklist")
             .edit().putBoolean(KEY_WARNED, true).apply()
     }
 }

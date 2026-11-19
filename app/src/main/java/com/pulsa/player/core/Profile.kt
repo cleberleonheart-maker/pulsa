@@ -11,7 +11,7 @@ object Profile {
     private const val MAX_DIM = 320
 
     private fun prefs(context: Context) =
-        context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        DataStorePreferences.preferences(context, FILE)
 
     fun nick(context: Context): String =
         prefs(context).getString("nick", "") ?: ""

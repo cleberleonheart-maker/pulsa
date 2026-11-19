@@ -191,7 +191,7 @@ object UpdateChecker {
     }
 
     private fun prefs(context: Context) =
-        context.getSharedPreferences("pulsa_update", Context.MODE_PRIVATE)
+        com.pulsa.player.core.DataStorePreferences.preferences(context, "pulsa_update")
 
     /**
      * Guarda que o usuario ja baixou esta versao, pra nao oferecer em loop.

@@ -97,5 +97,5 @@ object SubtitleConfig {
     }
 
     private fun prefs(context: Context) =
-        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        com.pulsa.player.core.DataStorePreferences.preferences(context, FILE)
 }
