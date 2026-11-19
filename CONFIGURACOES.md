@@ -6,10 +6,12 @@ Documentação organizada de todas as preferências e configurações do projeto
 
 ### 1.1 Ponto central
 - **`app/src/main/java/com/pulsa/player/core/Settings.kt`** — `object Settings`. Único ponto central, organizado em seções comentadas (avatares, infraestrutura, sincronização, secrets, aparência, áudio, alarmes, DJ/IA, mídia, downloads/kids, TV, gestos/EQ, Last.fm, estado, cache). API inalterada.
-- **Arquivos de preferências:**
-  - `pulsa_settings` (SharedPreferences normal)
-  - `pulsa_secrets` (EncryptedSharedPreferences via Android Keystore - AES256-SIV/GCM)
-- **Sem DataStore** (pendente em IDEIAS.md:254). Sem PreferenceFragmentCompat.
+- **Persistência não sensível:** um único `DataStore<Preferences>` em `files/datastore`, com namespaces por nome legado. `core/DataStorePreferences.kt` expõe a compatibilidade `SharedPreferences`, mantém cache síncrono em memória e serializa as escritas com `updateData`.
+- **Namespaces DataStore:** `pulsa_settings`, `pulsa_profile`, `pulsa_blacklist`, `pulsa_radio_stations`, `pulsa_stream_history`, `pulsa_dj_memory`, `subtitle_config`, `pulsa_update`, `pulsa_last_changelog` e `pulsa_last_installed`.
+- **Exceções:** `pulsa_account` permanece em `SharedPreferences` normal; `pulsa_secrets` permanece em `EncryptedSharedPreferences` via Android Keystore (AES256-SIV/GCM). Todo o domínio `sharedpref` fica fora do backup; só o DataStore, no domínio `files`, viaja.
+- **Backup:** `res/xml/backup_rules.xml` (Android 11 e menores) e `res/xml/data_extraction_rules.xml` (Android 12+) excluem `domain="sharedpref" path="."` no `cloud-backup` e no `device-transfer`. A seção `cross-platform-transfer` (Android 16 QPR2, exige `platform-specific-params` com `bundleId`/`teamId` de um app iOS pareado) não é declarada: o Pulsa não tem app iOS, e um XML rejeitado pelo parser do sistema faria o backup voltar ao padrão "inclui tudo". Se um dia existir app iOS, essa seção precisa ser criada junto com a migração dos formatos.
+- **Migração:** a migração de dados v3 copia os XMLs legados, exclui `Settings.secretKeys` e grava o estado no DataStore. Os XMLs ficam apenas como cópia local de recuperação, fora do backup; se o DataStore falhar, as escritas vão para eles e são reconciliadas no arranque seguinte.
+- Sem PreferenceFragmentCompat.
 
 ### 1.2 Chaves principais (Settings.kt)
 
@@ -91,18 +93,19 @@ Documentação organizada de todas as preferências e configurações do projeto
 | `visualizer_on` | Bool | `visualizerOn()` / `setVisualizerOn()` | |
 | `tv_host/tv_name/tv_rmp_id` | String | `tvDevice()`, `tvRmpId()` | TV/Cast |
 
-### 1.3 Outras SharedPreferences
-| Arquivo | Chaves |
-|---|---|
-| `pulsa_account` | `hash`, `identifier`, `user_id`, `account_id`, `salt`, `registered`, `logged_in`, `guest`, `provider` |
-| `pulsa_profile` | `nick`, `photo_b64` |
-| `pulsa_blacklist` | `blacklist_warned_once` |
-| `pulsa_last_changelog` / `pulsa_last_installed` | `last_shown_code` / `last_installed_code` |
-| `pulsa_radio_stations` | `locals`, `state`, `stations` |
-| `pulsa_stream_history` | `entries` (JSON, máx 30) |
-| `pulsa_dj_memory` | facts + history (JSON) |
-| `subtitle_config` | `sub_<mediaId>` (JSON) |
-| `pulsa_update` | `attempted_name`, `attempted_code`, `attempted_at` |
+### 1.3 Outros namespaces e exceções
+| Namespace/arquivo | Persistência | Chaves |
+|---|---|---|
+| `pulsa_account` | SharedPreferences, fora do backup | `hash`, `identifier`, `user_id`, `account_id`, `salt`, `registered`, `logged_in`, `guest`, `provider` |
+| `pulsa_secrets` | EncryptedSharedPreferences, fora do backup | chaves listadas em `Settings.secretKeys` |
+| `pulsa_profile` | DataStore | `nick`, `photo_b64` |
+| `pulsa_blacklist` | DataStore | `blacklist_warned_once` |
+| `pulsa_last_changelog` / `pulsa_last_installed` | DataStore | `last_shown_code` / `last_installed_code` |
+| `pulsa_radio_stations` | DataStore | `locals`, `state`, `stations` |
+| `pulsa_stream_history` | DataStore | `entries` (JSON, máx 30) |
+| `pulsa_dj_memory` | DataStore | facts + history (JSON) |
+| `subtitle_config` | DataStore | `sub_<mediaId>` (JSON) |
+| `pulsa_update` | DataStore | `attempted_name`, `attempted_code`, `attempted_at` |
 
 ### 1.4 UI
 - **Tela principal:** `SettingsActivity.kt` + `res/layout/activity_settings.xml`
@@ -139,6 +142,7 @@ Helpers: `putKV(k,v)`, `getKV(k)`, `getAll()`, `clearStore()` (não usado)
 | `pulsa_web_id` | ID único do navegador/sessão |
 | `pulsa_web_code` | Código de pareamento com app Android |
 | `pulsa_web_token` | Token do servidor (`X-Pulsa-Token`). Pode vir de `?token=`/`#token=` |
+| `pulsa.tv` | Modo TV manual (`1`/`0`); a detecção automática também cobre Titan OS |
 
 ### 2.3 Modais / Controles relacionados a "configurações"
 | Elemento | Função | Arquivo/Linhas |
@@ -148,7 +152,9 @@ Helpers: `putKV(k,v)`, `getKV(k)`, `getAll()`, `clearStore()` (não usado)
 | Banner token servidor | `#token-banner` | `updateTokenBanner()`, `saveBannerToken()` 2888-2902 |
 | Player: `#p-eq`, `#p-speed` | Acessam EQ/velocidade | 554, 562 |
 
-**Arquitetura web:** tudo inline em `index.html` (3103 linhas), `sw.js` (cache `pulsa-web-v5`, network-first p/ navegação), `manifest.json` (PWA standalone).
+**Arquitetura web:** tudo inline em `index.html`, `sw.js` (cache `pulsa-web-v7`, network-first p/ navegação), `manifest.json` (PWA standalone em paisagem, ícone PNG 512 px). O modo TV cobre navegadores de TV e Philips Titan OS (`TitanOS`/`SmartTvA`/`TV_NT`/`NETTV`), com keycodes do controle, foco por D-pad e integração do controle remoto com o estado do celular Android. Na TV o foco inicial nunca cai em campo de busca (evita o teclado na tela); a saída usa `SmartTvA_API.exit()` quando o Titan OS oferece a API.
+
+**Publicação no Titan OS:** URL `https://cleberleonheart-maker.github.io/pulsaweb/?tv=1`. Os assets do portal ficam em `web/titan-os/` (`main-icon.jpg` 1024x1024, `store-icon.png` 1920x1080, `logo.png` 512x512 transparente, `background.png` 3840x2160, `screenshot-1.png`/`screenshot-2.png` 1920x1080) e os metadados em `web/titan-os/submission.json`. O token do servidor é informado no formulário do Partner Portal, nunca no repositório.
 
 ## 3) Arquivos de configuração do projeto
 | Arquivo | Função |
@@ -162,7 +168,7 @@ Helpers: `putKV(k,v)`, `getKV(k)`, `getAll()`, `clearStore()` (não usado)
 | `web/sw.js` | Service Worker |
 
 ## 4) Notas importantes
-- **Android:** Sem DataStore, tudo via SharedPreferences. `core/Settings.kt` centraliza as chaves (organizado por banners de seção); `SettingsActivity` só orquestra e delega diálogos para `ui/settings/`. Muitas configs também mudáveis por voz/DJ.
+- **Android:** Preferências não sensíveis no DataStore Preferences, com namespaces legados e compatibilidade `SharedPreferences`; `core/Settings.kt` centraliza as chaves (organizado por banners de seção). A conta permanece em SharedPreferences e os secrets em EncryptedSharedPreferences. Uma cópia local dos XMLs migrados protege contra corrupção do DataStore, mas não entra no backup. `SettingsActivity` só orquestra e delega diálogos para `ui/settings/`. Muitas configs também mudáveis por voz/DJ.
 - **Web:** Sem tela "Configurações" — usar modal Perfil ou criar nova aba/modal seguindo padrão `.mrow`.
 - **Sincronização:** Servidor configurável (`server_base`/token). Handoff/RemoteControl/MirrorSync usam essas configs.
 - **Backup/Restore:** `SettingsActivity.buildBackup()`/`applyRestore()` (em `ui/settings/SettingsBackupSection.kt`) exporta preferências + playlists/favoritos via SAF.
