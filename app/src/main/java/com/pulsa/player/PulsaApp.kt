@@ -1,7 +1,10 @@
 package com.pulsa.player
 
+import android.app.ActivityManager
 import android.app.Application
 import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Process
 import com.pulsa.player.audio.Ambient
 import com.pulsa.player.core.CrashLogger
 import com.pulsa.player.core.Migrations
@@ -20,6 +23,7 @@ class PulsaApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        if (isImeProcess()) return
         try {
             Migrations.run(this)
         } catch (t: Throwable) {
@@ -92,5 +96,15 @@ class PulsaApp : Application() {
                 CrashLogger.writeLog(this, "APP: falha ao registrar o crash -> $t")
             }
         }
+    }
+
+    private fun isImeProcess(): Boolean {
+        val name = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            Application.getProcessName()
+        } else {
+            val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+            manager.runningAppProcesses.firstOrNull { it.pid == Process.myPid() }?.processName
+        }
+        return name == "$packageName:ime"
     }
 }

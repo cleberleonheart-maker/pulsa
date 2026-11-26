@@ -53,6 +53,9 @@ fun SettingsActivity.bindAppearance() {
 
     findViewById<TextView>(R.id.language_value)?.text = languageLabel()
     findViewById<View>(R.id.language_row).setOnClickListener { pickLanguage() }
+
+    refreshKeyboardStatus()
+    findViewById<View>(R.id.ime_keyboard_row).setOnClickListener { showKeyboardSetup() }
 }
 
 // ============================================================

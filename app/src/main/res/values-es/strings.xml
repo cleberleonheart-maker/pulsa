@@ -30,14 +30,15 @@
     <string name="update_installed">Pulsa actualizada</string>
     <string name="update_installed_message">Tu aplicación se actualizó a la versión %1$s.\n\n¡Gracias por usar Pulsa!</string>
     <string name="changelog_title">Novedades de esta versión</string>
-    <string name="changelog">Novedades de esta versión (5.12.40):
-→ AJUSTES MÁS SEGUROS
-• Los ajustes de Pulsa ahora viven en DataStore, con escritura atómica y copia de seguridad de Google.
-• La migración conserva idioma, ecualizador, crossfade, cola, perfil y todas las demás elecciones.
-• La cuenta, los tokens y el PIN siguen cifrados y fuera de la copia de seguridad.
-• Si el almacenamiento falla, los ajustes quedan guardados localmente y vuelven en el próximo inicio.
-→ DESCARGAR POR ENLACE
-• Los enlaces directos de audio y vídeo con carpetas como “track” o “album” ya no se bloquean.
+    <string name="changelog">Novedades de esta versión (5.12.41):
+→ TECLADO PULSA
+• La app ya trae su propio teclado de Android, con el estilo Hyper Glass.
+• Acentos con pulsación larga, mayúsculas de una vez o fijas, números y símbolos, emoji y voz.
+• Sugerencias de palabras en portugués, inglés y español, sin enviar nada a internet.
+• Los campos de contraseña no muestran sugerencias, ni voz, ni botón de pegar.
+• El teclado funciona en un proceso aparte: no accede a internet ni registra lo que escribes.
+→ CÓMO USARLO
+• En Ajustes → Apariencia → Teclado Pulsa, activa el teclado y elígelo con el botón del globo.
 </string>
     <string name="search_hint">Buscar canciones, vídeos, podcasts, álbumes o artistas</string>
     <string name="search_empty">Sin resultados para \"%1$s\"</string>
@@ -1092,4 +1093,34 @@
     <string name="dj_voice_transcribe_failed">No pude transcribir este episodio ahora. Inténtalo más tarde.</string>
     <string name="dj_commands_transcribe">"Virgin, ¿qué dijeron sobre bitcoin en este episodio?" — pregunta sobre el podcast que suena</string>
     <string name="dj_commands_bookmark">"Virgin, marca este momento / qué marcadores" — marca, lista y borra marcadores del podcast que suena</string>
+
+    <string name="ime_name">Teclado Pulsa</string>
+    <string name="ime_paste">Pegar</string>
+    <string name="ime_settings">Ajustes del teclado</string>
+    <string name="ime_suggestion">Sugerir %1$s</string>
+    <string name="ime_backspace">Borrar</string>
+    <string name="ime_shift">Mayúsculas</string>
+    <string name="ime_space">Espacio</string>
+    <string name="ime_letters">Letras</string>
+    <string name="ime_numbers">Números</string>
+    <string name="ime_symbols">Símbolos</string>
+    <string name="ime_switch_keyboard">Cambiar de teclado</string>
+    <string name="ime_emoji">Emoji</string>
+    <string name="ime_voice">Voz</string>
+    <string name="ime_enter_search">Buscar</string>
+    <string name="ime_enter_send">Enviar</string>
+    <string name="ime_enter_go">Ir</string>
+    <string name="ime_enter_next">Siguiente</string>
+    <string name="ime_enter_previous">Anterior</string>
+    <string name="ime_enter_done">Listo</string>
+    <string name="ime_enter_newline">Nueva línea</string>
+    <string name="ime_voice_prompt">Habla ahora</string>
+    <string name="ime_settings_hint">Activa y elige el Teclado Pulsa en los ajustes de teclado de Android</string>
+    <string name="ime_status_disabled">No activado</string>
+    <string name="ime_status_enabled">Activado</string>
+    <string name="ime_status_active">En uso</string>
+    <string name="ime_setup_title">Activar el Teclado Pulsa</string>
+    <string name="ime_setup_message">Activa el Teclado Pulsa en los ajustes de teclado de Android y luego elígelo con el botón del globo.</string>
+    <string name="ime_open_system_settings">Abrir ajustes</string>
+    <string name="ime_choose_keyboard">Elegir teclado</string>
 </resources>

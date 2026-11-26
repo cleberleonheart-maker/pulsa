@@ -28,6 +28,7 @@ import com.pulsa.player.ui.settings.buildBackup
 import com.pulsa.player.ui.settings.applyRestore
 import com.pulsa.player.ui.settings.showRestoreReport
 import com.pulsa.player.ui.settings.SettingsSectionNav
+import com.pulsa.player.ui.settings.refreshKeyboardStatus
 import kotlin.math.abs
 
 class SettingsActivity : AppCompatActivity() {
@@ -189,6 +190,7 @@ class SettingsActivity : AppCompatActivity() {
         super.onResume()
         window.decorView.setBackgroundResource(R.drawable.bg_aurora)
         AnimatedBackground.stop()
+        refreshKeyboardStatus()
     }
 
     override fun onStop() {

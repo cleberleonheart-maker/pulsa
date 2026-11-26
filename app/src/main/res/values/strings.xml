@@ -33,14 +33,15 @@
     <string name="update_installed_message">Seu aplicativo foi atualizado para a versão %1$s.\n\nObrigado por usar a Pulsa!</string>
     <string name="changelog_title">O que foi feito</string>
 
-    <string name="changelog">Novidades desta versão (5.12.40):
-→ PREFERÊNCIAS MAIS SEGURAS
-• As preferências do Pulsa agora ficam no DataStore, com gravação atômica e backup no Google.
-• A migração preserva idioma, equalizador, crossfade, fila, perfil e todas as outras escolhas.
-• Conta, tokens e PIN continuam cifrados e fora do backup.
-• Se o armazenamento falhar, as preferências ficam salvas localmente e voltam no próximo arranque.
-→ DOWNLOAD POR LINK
-• Links diretos de áudio e vídeo com pastas como “track” ou “album” não são mais bloqueados.
+    <string name="changelog">Novidades desta versão (5.12.41):
+→ TECLADO PULSA
+• O app agora traz um teclado Android próprio, no estilo Hyper Glass.
+• Acentos por toque longo, shift de uma vez ou travado, números e símbolos, emoji e voz.
+• Sugestões de palavras em português, inglês e espanhol, sem enviar nada para a internet.
+• Campos de senha ficam sem sugestões, sem voz e sem botão de colar.
+• O teclado roda em um processo separado: não acessa a internet nem registra o que você digita.
+→ PARA USAR
+• Em Configurações → Aparência → Teclado Pulsa, ative o teclado e escolha-o pelo botão de globo.
 </string>
     <string name="search_hint">Buscar músicas, vídeos, podcasts, álbuns ou artistas</string>
     <string name="search_empty">Nenhum resultado para \"%1$s\"</string>
@@ -1333,4 +1334,34 @@
     <string name="dj_voice_transcribe_offline">Por volta de %1$s: %2$s</string>
     <string name="dj_voice_transcribe_failed">Não consegui transcrever esse episódio agora. Tente mais tarde.</string>
     <string name="dj_commands_transcribe">"Virgin, o que falaram sobre bitcoin nesse episódio?" — pergunta sobre o podcast tocando</string>
+
+    <string name="ime_name">Teclado Pulsa</string>
+    <string name="ime_paste">Colar</string>
+    <string name="ime_settings">Configurações do teclado</string>
+    <string name="ime_suggestion">Sugerir %1$s</string>
+    <string name="ime_backspace">Apagar</string>
+    <string name="ime_shift">Maiúsculas</string>
+    <string name="ime_space">Espaço</string>
+    <string name="ime_letters">Letras</string>
+    <string name="ime_numbers">Números</string>
+    <string name="ime_symbols">Símbolos</string>
+    <string name="ime_switch_keyboard">Trocar de teclado</string>
+    <string name="ime_emoji">Emoji</string>
+    <string name="ime_voice">Fala</string>
+    <string name="ime_enter_search">Buscar</string>
+    <string name="ime_enter_send">Enviar</string>
+    <string name="ime_enter_go">Ir</string>
+    <string name="ime_enter_next">Próximo</string>
+    <string name="ime_enter_previous">Anterior</string>
+    <string name="ime_enter_done">Concluir</string>
+    <string name="ime_enter_newline">Nova linha</string>
+    <string name="ime_voice_prompt">Fale agora</string>
+    <string name="ime_settings_hint">Ative e escolha o Teclado Pulsa nas configurações de teclado do Android</string>
+    <string name="ime_status_disabled">Não ativado</string>
+    <string name="ime_status_enabled">Ativado</string>
+    <string name="ime_status_active">Em uso</string>
+    <string name="ime_setup_title">Ativar o Teclado Pulsa</string>
+    <string name="ime_setup_message">Ative o Teclado Pulsa nas configurações de teclado do Android e depois escolha-o com o botão de globo.</string>
+    <string name="ime_open_system_settings">Abrir configurações</string>
+    <string name="ime_choose_keyboard">Escolher teclado</string>
 </resources>

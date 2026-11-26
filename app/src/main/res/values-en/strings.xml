@@ -30,14 +30,15 @@
     <string name="update_installed">Pulsa updated</string>
     <string name="update_installed_message">Your app was updated to version %1$s.\n\nThanks for using Pulsa!</string>
     <string name="changelog_title">What is new</string>
-    <string name="changelog">What is new (5.12.40):
-→ SAFER SETTINGS
-• Pulsa settings now live in DataStore, with atomic writes and Google backup support.
-• Migration preserves language, equalizer, crossfade, queue, profile, and every other choice.
-• The account, tokens, and PIN remain encrypted and outside the backup.
-• If storage fails, settings stay saved locally and return on the next launch.
-→ DOWNLOAD BY LINK
-• Direct audio and video links with folders such as “track” or “album” are no longer blocked.
+    <string name="changelog">What is new (5.12.41):
+→ PULSA KEYBOARD
+• The app now ships with its own Android keyboard, in the Hyper Glass style.
+• Accents by long press, one-shot or locked shift, numbers and symbols, emoji and voice.
+• Word suggestions in Portuguese, English and Spanish, without sending anything online.
+• Password fields get no suggestions, no voice and no paste button.
+• The keyboard runs in a separate process: it does not access the internet and does not log what you type.
+→ HOW TO USE IT
+• In Settings → Appearance → Pulsa Keyboard, enable the keyboard and pick it with the globe button.
 </string>
     <string name="search_hint">Search songs, videos, podcasts, albums or artists</string>
     <string name="search_empty">No results for \"%1$s\"</string>
@@ -1090,4 +1091,34 @@
     <string name="dj_voice_transcribe_failed">I could not transcribe this episode now. Try again later.</string>
     <string name="dj_commands_transcribe">"Virgin, what did they say about bitcoin in this episode?" — ask about the playing podcast</string>
     <string name="dj_commands_bookmark">"Virgin, bookmark this moment / which bookmarks" — marks, lists and removes bookmarks on the playing podcast</string>
+
+    <string name="ime_name">Pulsa Keyboard</string>
+    <string name="ime_paste">Paste</string>
+    <string name="ime_settings">Keyboard settings</string>
+    <string name="ime_suggestion">Suggest %1$s</string>
+    <string name="ime_backspace">Backspace</string>
+    <string name="ime_shift">Shift</string>
+    <string name="ime_space">Space</string>
+    <string name="ime_letters">Letters</string>
+    <string name="ime_numbers">Numbers</string>
+    <string name="ime_symbols">Symbols</string>
+    <string name="ime_switch_keyboard">Switch keyboard</string>
+    <string name="ime_emoji">Emoji</string>
+    <string name="ime_voice">Voice</string>
+    <string name="ime_enter_search">Search</string>
+    <string name="ime_enter_send">Send</string>
+    <string name="ime_enter_go">Go</string>
+    <string name="ime_enter_next">Next</string>
+    <string name="ime_enter_previous">Previous</string>
+    <string name="ime_enter_done">Done</string>
+    <string name="ime_enter_newline">New line</string>
+    <string name="ime_voice_prompt">Speak now</string>
+    <string name="ime_settings_hint">Enable and select Pulsa Keyboard in Android keyboard settings</string>
+    <string name="ime_status_disabled">Not enabled</string>
+    <string name="ime_status_enabled">Enabled</string>
+    <string name="ime_status_active">In use</string>
+    <string name="ime_setup_title">Enable Pulsa Keyboard</string>
+    <string name="ime_setup_message">Enable Pulsa Keyboard in Android keyboard settings, then select it with the globe button.</string>
+    <string name="ime_open_system_settings">Open settings</string>
+    <string name="ime_choose_keyboard">Choose keyboard</string>
 </resources>

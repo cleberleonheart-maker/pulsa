@@ -1,10 +1,16 @@
 package com.pulsa.player.ui.settings
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pulsa.player.R
 import com.pulsa.player.SettingsActivity
 import com.pulsa.player.core.Settings
+import com.pulsa.player.ime.PulsaImeService
 
 /**
  * Aparência — rótulos e diálogos de seleção (cor de destaque, idioma, crossfade).
@@ -89,3 +95,45 @@ internal fun SettingsActivity.pickAccent() {
         .show()
 }
 
+internal fun SettingsActivity.refreshKeyboardStatus() {
+    findViewById<TextView>(R.id.ime_keyboard_status)?.text = keyboardStatusLabel()
+}
+
+internal fun SettingsActivity.showKeyboardSetup() {
+    val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+    MaterialAlertDialogBuilder(this)
+        .setTitle(R.string.ime_setup_title)
+        .setMessage(R.string.ime_setup_message)
+        .setPositiveButton(R.string.ime_open_system_settings) { _, _ ->
+            runCatching {
+                startActivity(Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS))
+            }
+        }
+        .setNeutralButton(R.string.ime_choose_keyboard) { _, _ ->
+            manager?.showInputMethodPicker()
+        }
+        .setNegativeButton(R.string.cancel, null)
+        .show()
+}
+
+private fun SettingsActivity.keyboardStatusLabel(): String {
+    val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        ?: return getString(R.string.ime_status_disabled)
+    val id = ComponentName(this, PulsaImeService::class.java).flattenToString()
+    return runCatching {
+        val enabled = manager.enabledInputMethodList.any { it.id == id }
+        val current = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            manager.currentInputMethodInfo?.id
+        } else {
+            android.provider.Settings.Secure.getString(
+                contentResolver,
+                android.provider.Settings.Secure.DEFAULT_INPUT_METHOD,
+            )
+        }
+        when {
+            current?.split(':')?.contains(id) == true -> getString(R.string.ime_status_active)
+            enabled -> getString(R.string.ime_status_enabled)
+            else -> getString(R.string.ime_status_disabled)
+        }
+    }.getOrDefault(getString(R.string.ime_status_disabled))
+}

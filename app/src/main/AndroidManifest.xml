@@ -38,6 +38,12 @@
          celular, então declara a capacidade sem se fechar. -->
     <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
 
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application
         android:name=".PulsaApp"
         android:allowBackup="true"
@@ -161,6 +167,12 @@
             android:exported="false"
             android:screenOrientation="sensorPortrait" />
 
+        <activity
+            android:name=".ime.ImeVoiceActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <service
             android:name=".media.DownloadService"
             android:exported="false"
@@ -209,6 +221,20 @@
             android:name=".dj.HotwordService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
+
+        <service
+            android:name=".ime.PulsaImeService"
+            android:exported="true"
+            android:label="@string/ime_name"
+            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:process=":ime">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/ime_method" />
+        </service>
 
         <provider
             android:name="androidx.core.content.FileProvider"

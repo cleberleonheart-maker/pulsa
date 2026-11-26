@@ -35,6 +35,8 @@ Documentação organizada de todas as preferências e configurações do projeto
 | `language` | String | `language()` / `setLanguage()` | `pt` | pt/en/es/pt-PT |
 | `player_skin` | String | `skin()` / `setSkin()` | `neon` | off/neon/aurora/particles/nebula |
 
+> **Teclado Pulsa (IME):** a linha "Teclado Pulsa" em Aparência não é uma preferência — ela mostra o estado do teclado (`Não ativado` / `Ativado` / `Em uso`, via `InputMethodManager`) e abre um diálogo com as duas ações de ativação: as configurações de teclado do sistema e o seletor de teclado. O teclado em si (`com.pulsa.player.ime`) roda em processo próprio (`:ime`) e lê `language`/`accent` do espelho legado do DataStore, porque o DataStore Preferences não é multi-processo.
+
 #### Áudio / EQ / Espacial
 | Chave | Tipo | Getter/Setter | Default | Obs |
 |---|---|---|---|---|
